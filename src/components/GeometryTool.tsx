@@ -11,7 +11,7 @@ interface ButtonProps {
 class Button extends React.Component<ButtonProps> {
     render(): React.ReactNode {
         return (
-            <button onClick={this.props.onClick}>{this.props.label}</button>
+            <button className="m-2" onClick={this.props.onClick}>{this.props.label}</button>                 
         );
     }
 }
