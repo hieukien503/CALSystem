@@ -816,7 +816,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 id: point.props.id,
                 type: point,
                 node: this.drawPoint(point, point.props),
-                sharedWith: []
+                dependsOn: []
             })
 
             this.setState({pointIndex: index + 1});
@@ -830,6 +830,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 x: (pointer.x - this.layerMathObjectRef.current!.x()) / this.layerMathObjectRef.current!.scaleX(),
                 y: (pointer.y - this.layerMathObjectRef.current!.y()) / this.layerMathObjectRef.current!.scaleY()
             }
+
             let found = false;
             this.state.shapes.forEach((node) => {
                 if (isPoint(node.type)) {
@@ -860,7 +861,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     id: point.props.id,
                     type: point,
                     node: this.drawPoint(point, point.props),
-                    sharedWith: []
+                    dependsOn: []
                 });
 
                 this.setState({pointIndex: index + 1});
@@ -906,14 +907,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         id: line.props.id,
                         type: line,
                         node: this.drawLine(line, line.props),
-                        sharedWith: []
+                        dependsOn: [p1.props.id, p2.props.id]
                     });
-
-                    this.state.shapes.forEach((node) => {
-                        if (node.id === p1.props.id || node.id === p2.props.id) {
-                            node.sharedWith.push(line.props.id);
-                        }
-                    })
 
                     this.setState({lineIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
@@ -938,14 +933,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         id: segment.props.id,
                         type: segment,
                         node: this.drawSegment(segment, segment.props),
-                        sharedWith: []
+                        dependsOn: [p1.props.id, p2.props.id]
                     });
-
-                    this.state.shapes.forEach((node) => {
-                        if (node.id === p1.props.id || node.id === p2.props.id) {
-                            node.sharedWith.push(segment.props.id);
-                        }
-                    })
 
                     this.setState({segmentIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
@@ -970,14 +959,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         id: vector.props.id,
                         type: vector,
                         node: this.drawVector(vector, vector.props),
-                        sharedWith: []
+                        dependsOn: [p1.props.id, p2.props.id]
                     });
-
-                    this.state.shapes.forEach((node) => {
-                        if (node.id === p1.props.id || node.id === p2.props.id) {
-                            node.sharedWith.push(vector.props.id);
-                        }
-                    })
 
                     this.setState({vectorIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
@@ -1002,14 +985,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         id: ray.props.id,
                         type: ray,
                         node: this.drawRay(ray, ray.props),
-                        sharedWith: []
+                        dependsOn: [p1.props.id, p2.props.id]
                     });
-
-                    this.state.shapes.forEach((node) => {
-                        if (node.id === p1.props.id || node.id === p2.props.id) {
-                            node.sharedWith.push(ray.props.id);
-                        }
-                    })
 
                     this.setState({rayIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
@@ -1056,14 +1033,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     id: point.props.id,
                     type: point,
                     node: this.drawPoint(point, point.props),
-                    sharedWith: []
+                    dependsOn: []
                 });
 
                 this.setState({pointIndex: index + 1});
                 this.state.selectedShapes.push(point);
             }
+
+            if (this.state.selectedShapes.length < 4) {
+                let points = Array.from(this.state.selectedShapes);
+                const lastPoint = points[points.length - 1];
+                for (let i = 0; i < points.length - 1; i++) {
+                    if (points[i] === lastPoint) {
+                        this.state.selectedShapes.splice(i, 1);
+                        this.state.selectedShapes.pop();
+                        return;
+                    }
+                }
+            }
             
-            if (this.state.selectedShapes.length >= 4) {
+            else {
                 let points = Array.from(this.state.selectedShapes);
                 if (points[0] !== points[points.length - 1]) {
                     for (let i = 1; i < points.length - 1; i++) {
@@ -1083,6 +1072,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         props: createPolygonDefaultShapeProps(label, 0, 0, 10, 0)
                     }
 
+                    let dependcies: string[] = [];
+                    dependcies = points.map(point => point.props.id);
                     for (let i = 0; i < points.length; i++) {
                         // Create a segment for each 2 consecutive points
                         const start = points[i];
@@ -1105,16 +1096,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                             id: segment.props.id,
                             type: segment,
                             node: this.drawSegment(segment, segment.props),
-                            sharedWith: [polygon.props.id]
+                            dependsOn: [start.props.id, end.props.id]
                         });
 
-                        this.state.shapes.forEach((node) => {
-                            if (node.id === start.props.id || node.id === end.props.id) {
-                                node.sharedWith.push(segment.props.id);
-                                node.sharedWith.push(polygon.props.id);
-                            }
-                        })
-
+                        dependcies.push(segment.props.id);
                         this.setState({segmentIndex: index + 1});
                     }
 
@@ -1122,7 +1107,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         id: polygon.props.id,
                         type: polygon,
                         node: this.drawPolygon(polygon, polygon.props),
-                        sharedWith: []
+                        dependsOn: dependcies
                     });
 
                     this.setState({polygonIndex: this.state.polygonIndex + 1});
@@ -1171,7 +1156,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     id: point.props.id,
                     type: point,
                     node: this.drawPoint(point, point.props),
-                    sharedWith: []
+                    dependsOn: []
                 })
 
                 this.setState({pointIndex: index + 1});
@@ -1207,18 +1192,13 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     id: circle.props.id,
                     type: circle,
                     node: this.drawCircle(circle, circle.props),
-                    sharedWith: []
+                    dependsOn: [point.props.id]
                 });
-
-                this.state.shapes.forEach((node) => {
-                    if (node.id === point.props.id) {
-                        node.sharedWith.push(circle.props.id);
-                    }
-                })
 
                 this.setState({circleIndex: index + 1});
                 this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
             }
+
             catch (error) {
                 alert('Invalid expression for radius');
             }
@@ -1229,14 +1209,6 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         const { width, height, background_color } = this.props;
         return (
             <div>
-                <GeometryTool
-                    onPointClick={this.handlePointClick}
-                    onLineClick={this.handleLineClick}
-                    onSegmentClick={this.handleSegmentClick}
-                    onVectorClick={this.handleVectorClick}
-                    onPolygonClick={this.handlePolygonClick}
-                    onCircleClick={this.handleCircleClick}
-                    onRayClick={this.handleRayClick} />
                 <Stage 
                     ref={this.stageRef} 
                     width={width} 
@@ -1260,3 +1232,15 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 }
 
 export default KonvaCanvas;
+
+/**
+    <GeometryTool
+        onPointClick={this.handlePointClick}
+        onLineClick={this.handleLineClick}
+        onSegmentClick={this.handleSegmentClick}
+        onVectorClick={this.handleVectorClick}
+        onPolygonClick={this.handlePolygonClick}
+        onCircleClick={this.handleCircleClick}
+        onRayClick={this.handleRayClick}
+    />
+*/

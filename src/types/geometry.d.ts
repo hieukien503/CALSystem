@@ -6,7 +6,7 @@ export interface BaseShape {
 }
 
 export interface Shape2D extends BaseShape {
-    area?: number;
+
 }
 
 export interface Shape3D extends BaseShape {
@@ -14,11 +14,35 @@ export interface Shape3D extends BaseShape {
     volume?: number;
 }
 
+export interface Intersection extends Shape2D {
+    
+}
+
 // Point type
-export interface Point extends Shape2D {
+export interface Point extends BaseShape {
     x: number;
     y: number;
     z?: number;
+}
+
+export interface Midpoint extends Point {
+    
+}
+
+export interface Centroid extends Point {
+    
+}
+
+export interface Orthocenter extends Point {
+    
+}
+
+export interface Circumcenter extends Point {
+    
+}
+
+export interface Incenter extends Point {
+    
 }
 
 // 2D Shapes
@@ -37,6 +61,38 @@ export interface Line extends Shape2D {
     endLine: Point;
 }
 
+export interface AngleBisector extends Line {
+
+}
+
+export interface PerpendicularBisector extends Line {
+
+}
+
+export interface PerpendicularLine extends Line {
+
+}
+
+export interface TangentLine extends Line {
+
+}
+
+export interface Median extends Line {
+
+}
+
+export interface ParallelLine extends Line {
+
+}
+
+export interface Circle3Point extends Circle {
+
+}
+
+export interface SemiCircle extends Circle {
+
+}
+
 export interface Ray extends Shape2D {
     startRay: Point;
     endRay: Point;
@@ -44,6 +100,7 @@ export interface Ray extends Shape2D {
 
 export interface Polygon extends Shape2D {
     points: Point[];
+    area?: number;
 }
 
 export interface Circle extends Shape2D {
@@ -161,7 +218,7 @@ export interface ShapeNode {
     /** Konva node for the shape */
     node: Konva.Shape;
     /** IDs of other ShapeNodes this one depends on */
-    sharedWith: string[];
+    dependsOn: string[];
 }
 
 // Geometry state
