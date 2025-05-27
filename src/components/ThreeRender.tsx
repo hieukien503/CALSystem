@@ -1,7 +1,7 @@
 import React, { RefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Shape, GeometryState, ShapeProps } from '../types/geometry';
+import { Shape, GeometryState, ShapeProps, ShapeNode } from '../types/geometry';
 import {
     isPlane, isCylinder, isCone, isSphere, isPyramid, isCuboid, isPrism,
     isPoint, isLine, isVector, isSegment, isPolygon, isCircle, isRay
@@ -91,7 +91,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             numLoops: 0,
             spacing: 20,
             axisTickInterval: 1,
-            shapes: props.shapes,
+            shapes: new Map<string, ShapeNode>(),
             gridVisible: true,
             axesVisible: true,
             zoom_level: 1,

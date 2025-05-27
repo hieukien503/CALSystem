@@ -14,7 +14,7 @@ function App() {
             </h1>
             <main className="outer-main">
                 <div className="inner-main text-center text-gray-600 text-xl">
-                    <KonvaCanvas width={window.innerWidth} height={window.innerHeight * 0.6} background_color='#ffffff' />
+                    <KonvaCanvas width={window.innerWidth * 0.95} height={window.innerHeight * 0.6} background_color='#ffffff' />
                 </div>
             </main>
             <Footer />

@@ -1,5 +1,5 @@
 import React, { RefObject } from "react";
-import { Line, Vector, Segment, Polygon, Point, Circle, Ray, Shape, LineStyle, GeometryState } from "../types/geometry"
+import { Line, Vector, Segment, Polygon, Point, Circle, Ray, Shape, LineStyle, GeometryState, ShapeNode } from "../types/geometry"
 import Konva from "konva";
 import { Stage, Layer } from "react-konva";
 import { isCircle, isPoint, isPolygon, isVector, isLine, isSegment, isRay } from "../utils/type_guard";
@@ -7,6 +7,7 @@ import { KonvaAxis } from "../utils/KonvaAxis";
 import { KonvaGrid } from "../utils/KonvaGrid";
 import GeometryTool from "./GeometryTool";
 import { v4 as uuidv4 } from 'uuid';
+import { create } from "lodash";
 const math = require("mathjs");
 
 if (!Number.isInteger) {
@@ -68,6 +69,71 @@ const createLabelProps = (x: number, y: number, label: string, labelXOffset: num
     }
 }
 
+const createPointDefaultShapeProps = (label: string, radius: number = 0.02, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,
+        color: 'black',
+        visible: {shape: true, label: true},
+        fill: true,
+        id: uuidv4()
+    }
+}
+
+const createLineDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: 0,
+        label: label,
+        visible: {shape: true, label: true},
+        fill: true,
+        color: 'black',
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        id: uuidv4()
+    }
+}
+
+const createCircleDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,
+        color: 'black',
+        visible: {shape: true, label: true},
+        fill: true,
+        id: uuidv4()
+    }
+}
+
+const createPolygonDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: 0,
+        labelYOffset: 10,
+        labelZOffset: 0,
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: 0,  
+        visible: {shape: true, label: true},
+        color: 'red',
+        fill: true,
+        id: uuidv4(),
+        opacity: 0.1
+    }
+}
+
 interface CanvasProps {
     width: number;
     height: number;
@@ -93,7 +159,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             numLoops: 0,
             axisTickInterval: 1,
             spacing: BASE_SPACING,
-            shapes: [],
+            shapes: new Map<string, ShapeNode>(),
             gridVisible: true,
             zoom_level: 1,
             axesVisible: true,
@@ -644,9 +710,9 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         this.drawAxes();
         this.drawGrid();
 
-        shapes.forEach((shape) => {
-            if (shape.props.visible.shape) {
-                const konvaItem = this.createKonvaShape(shape);
+        shapes.forEach((node) => {
+            if (node.type.props.visible.shape) {
+                const konvaItem = this.createKonvaShape(node.type);
                 this.layerMathObjectRef.current!.add(konvaItem[0]);
                 this.layerTextRef.current!.add(konvaItem[1]);
             }
@@ -712,10 +778,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 y: (pointer.y - this.layerMathObjectRef.current!.y()) / this.layerMathObjectRef.current!.scaleY()
             }
 
-            this.state.shapes.forEach((shape) => {
-                if (isPoint(shape)) {
+            this.state.shapes.forEach((node) => {
+                if (isPoint(node.type)) {
                     // If the mouse is within 2 pixels of the point, don't create a new point
-                    if (Math.abs(Math.pow(shape.x - position.x, 2) + Math.pow(shape.y - position.y, 2)) <= 5) {
+                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 5) {
                         return;
                     }
                 }
@@ -733,24 +799,17 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             const point: Point = {
                 x: position.x,
                 y: position.y,
-                shapes: new Set(),
-                props: {
-                    label: label,
-                    labelXOffset: 0,
-                    labelYOffset: 10,
-                    line_size: 1,
-                    line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                    radius: 0.02,
-                    color: 'black',
-                    visible: {shape: true, label: true},
-                    fill: true,
-                    labelZOffset: 0,
-                    id: uuidv4()
-                }
+                props: createPointDefaultShapeProps(label)
             }
 
-            this.state.shapes.push(point);
-            this.setState({pointIndex: this.state.pointIndex + 1});
+            this.state.shapes.set(point.props.id, {
+                id: point.props.id,
+                type: point,
+                node: this.drawPoint(point, point.props),
+                sharedWith: []
+            })
+
+            this.setState({pointIndex: index + 1});
         }
 
         else if (['line', 'segment', 'vector', 'ray'].includes(this.state.mode)) {
@@ -762,10 +821,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 y: (pointer.y - this.layerMathObjectRef.current!.y()) / this.layerMathObjectRef.current!.scaleY()
             }
             let found = false;
-            this.state.shapes.forEach((shape) => {
-                if (isPoint(shape)) {
-                    if (Math.abs(Math.pow(shape.x - position.x, 2) + Math.pow(shape.y - position.y, 2)) <= 5) {
-                        this.state.selectedShapes.push(shape);
+            this.state.shapes.forEach((node) => {
+                if (isPoint(node.type)) {
+                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 5) {
+                        this.state.selectedShapes.push(node.type);
                         found = true;
                         return;
                     }
@@ -781,28 +840,20 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 }
 
                 this.label_used.push(label);
-
                 const point: Point = {
                     x: position.x,
                     y: position.y,
-                    shapes: new Set(),
-                    props: {
-                        label: label,
-                        labelXOffset: 0,
-                        labelYOffset: 10,
-                        labelZOffset: 0,
-                        line_size: 1,
-                        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                        radius: 0.02,
-                        color: 'black',
-                        visible: {shape: true, label: true},
-                        fill: true,
-                        id: uuidv4()
-                    }
+                    props: createPointDefaultShapeProps(label)
                 }
     
-                this.state.shapes.push(point);
-                this.setState({pointIndex: this.state.pointIndex + 1});
+                this.state.shapes.set(point.props.id, {
+                    id: point.props.id,
+                    type: point,
+                    node: this.drawPoint(point, point.props),
+                    sharedWith: []
+                });
+
+                this.setState({pointIndex: index + 1});
                 this.state.selectedShapes.push(point);
             }
 
@@ -815,108 +866,142 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             else {
                 const [p1, p2] = Array.from(this.state.selectedShapes);
-                let label = this.getExcelLabel('a', this.state.lineIndex);
-                let index = this.state.lineIndex;
-                while (this.label_used.includes(label)) {
-                    index++;
-                    label = this.getExcelLabel('a', index);
-                }
-
-                this.label_used.push(label);
-
                 if (this.state.mode === 'line') {
+                    let label = this.getExcelLabel('f', this.state.lineIndex);
+                    let index = this.state.lineIndex;
+                    while (this.label_used.includes(label)) {
+                        index++;
+                        label = this.getExcelLabel('f', index);
+                    }
+
+                    this.label_used.push(label);
+
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+
+                    let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
                     const line: Line = {
                         startLine: p1,
                         endLine: p2,
-                        props: {
-                            line_size: 1,
-                            line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                            radius: 0,
-                            label: label,
-                            visible: {shape: true, label: true},
-                            fill: true,
-                            color: 'black',
-                            labelXOffset: 0,
-                            labelYOffset: 10,
-                            labelZOffset: 0,
-                            id: uuidv4()
-                        }
+                        props: createLineDefaultShapeProps(
+                            label,
+                            0,
+                            p1.x - length * dx,
+                            (p1.y - length * dy - 10 / this.layerMathObjectRef.current!.scaleY() < 0) ? p1.y - length * dy - 10 / this.layerMathObjectRef.current!.scaleY() : p1.y - length * dy + 10 / this.layerMathObjectRef.current!.scaleY(),
+                            0
+                        )
                     }
 
-                    this.state.shapes.push(line);
-                    this.setState({lineIndex: this.state.lineIndex + 1});
+                    this.state.shapes.set(line.props.id, {
+                        id: line.props.id,
+                        type: line,
+                        node: this.drawLine(line, line.props),
+                        sharedWith: []
+                    });
+
+                    this.state.shapes.forEach((node) => {
+                        if (node.id === p1.props.id || node.id === p2.props.id) {
+                            node.sharedWith.push(line.props.id);
+                        }
+                    })
+
+                    this.setState({lineIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
                 }
 
                 else if (this.state.mode === 'segment') {
+                    let label = this.getExcelLabel('f', this.state.segmentIndex);
+                    let index = this.state.segmentIndex;
+                    while (this.label_used.includes(label)) {
+                        index++;
+                        label = this.getExcelLabel('f', index);
+                    }
+
+                    this.label_used.push(label);
                     const segment: Segment = {
                         startSegment: p1,
                         endSegment: p2,
-                        props: {
-                            line_size: 1,
-                            line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                            radius: 0,
-                            label: label,
-                            visible: {shape: true, label: true},
-                            fill: true,
-                            color: 'black',
-                            labelXOffset: 0,
-                            labelYOffset: 10,
-                            labelZOffset: 0,
-                            id: uuidv4()
-                        }
+                        props: createLineDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
                     }
 
-                    this.state.shapes.push(segment);
-                    this.setState({segmentIndex: this.state.segmentIndex + 1});
+                    this.state.shapes.set(segment.props.id, {
+                        id: segment.props.id,
+                        type: segment,
+                        node: this.drawSegment(segment, segment.props),
+                        sharedWith: []
+                    });
+
+                    this.state.shapes.forEach((node) => {
+                        if (node.id === p1.props.id || node.id === p2.props.id) {
+                            node.sharedWith.push(segment.props.id);
+                        }
+                    })
+
+                    this.setState({segmentIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
                 }
 
                 else if (this.state.mode === 'vector') {
+                    let label = this.getExcelLabel('u', this.state.vectorIndex);
+                    let index = this.state.vectorIndex;
+                    while (this.label_used.includes(label)) {
+                        index++;
+                        label = this.getExcelLabel('u', index);
+                    }
+
+                    this.label_used.push(label);
                     const vector: Vector = {
                         startVector: p1,
                         endVector: p2,
-                        props: {
-                            line_size: 1,
-                            line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                            radius: 0,
-                            label: label,
-                            visible: {shape: true, label: true},
-                            fill: true,
-                            color: 'black',
-                            labelXOffset: 0,
-                            labelYOffset: 10,
-                            labelZOffset: 0,
-                            id: uuidv4()
-                        }
+                        props: createLineDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
                     }
 
-                    this.state.shapes.push(vector);
-                    this.setState({vectorIndex: this.state.vectorIndex + 1});
+                    this.state.shapes.set(vector.props.id, {
+                        id: vector.props.id,
+                        type: vector,
+                        node: this.drawVector(vector, vector.props),
+                        sharedWith: []
+                    });
+
+                    this.state.shapes.forEach((node) => {
+                        if (node.id === p1.props.id || node.id === p2.props.id) {
+                            node.sharedWith.push(vector.props.id);
+                        }
+                    })
+
+                    this.setState({vectorIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
                 }
 
                 else if (this.state.mode === 'ray') {
+                    let label = this.getExcelLabel('f', this.state.rayIndex);
+                    let index = this.state.rayIndex;
+                    while (this.label_used.includes(label)) {
+                        index++;
+                        label = this.getExcelLabel('f', index);
+                    }
+
+                    this.label_used.push(label);
                     const ray: Ray = {
                         startRay: p1,
                         endRay: p2,
-                        props: {
-                            line_size: 1,
-                            line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                            radius: 0,
-                            label: label,
-                            visible: {shape: true, label: true},
-                            fill: true,
-                            color: 'black',
-                            labelXOffset: 0,
-                            labelYOffset: 10,
-                            labelZOffset: 0,
-                            id: uuidv4()
-                        }
+                        props: createLineDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
                     }
 
-                    this.state.shapes.push(ray);
-                    this.setState({rayIndex: this.state.rayIndex + 1});
+                    this.state.shapes.set(ray.props.id, {
+                        id: ray.props.id,
+                        type: ray,
+                        node: this.drawRay(ray, ray.props),
+                        sharedWith: []
+                    });
+
+                    this.state.shapes.forEach((node) => {
+                        if (node.id === p1.props.id || node.id === p2.props.id) {
+                            node.sharedWith.push(ray.props.id);
+                        }
+                    })
+
+                    this.setState({rayIndex: index + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
                 }
             }
@@ -932,10 +1017,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             }
 
             let found = false;
-            this.state.shapes.forEach((shape) => {
-                if (isPoint(shape)) {
-                    if (Math.abs(Math.pow(shape.x - position.x, 2) + Math.pow(shape.y - position.y, 2)) <= 5) {
-                        this.state.selectedShapes.push(shape);
+            this.state.shapes.forEach((node) => {
+                if (isPoint(node.type)) {
+                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 5) {
+                        this.state.selectedShapes.push(node.type);
                         found = true;
                         return;
                     }
@@ -951,41 +1036,24 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 }
 
                 this.label_used.push(label);
-
                 const point: Point = {
                     x: position.x,
                     y: position.y,
-                    shapes: new Set(),
-                    props: {
-                        label: label,
-                        labelXOffset: 0,
-                        labelYOffset: 10,
-                        labelZOffset: 0,
-                        line_size: 1,
-                        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                        radius: 0.02,
-                        color: 'black',
-                        visible: {shape: true, label: true},
-                        fill: true,
-                        id: uuidv4()
-                    }
+                    props: createPointDefaultShapeProps(label)
                 }
     
-                this.state.shapes.push(point);
-                this.setState({pointIndex: this.state.pointIndex + 1});
+                this.state.shapes.set(point.props.id, {
+                    id: point.props.id,
+                    type: point,
+                    node: this.drawPoint(point, point.props),
+                    sharedWith: []
+                });
+
+                this.setState({pointIndex: index + 1});
                 this.state.selectedShapes.push(point);
             }
             
-            if (this.state.selectedShapes.length <= 3) {
-                const points = Array.from(this.state.selectedShapes);
-                for (let i = 0; i < points.length; i++) {
-                    if (Math.abs(Math.pow(points[i].x - position.x, 2) + Math.pow(points[i].y - position.y, 2)) <= 5) {
-                        return;
-                    }
-                }
-            }
-
-            else {
+            if (this.state.selectedShapes.length >= 4) {
                 let points = Array.from(this.state.selectedShapes);
                 if (points[0] !== points[points.length - 1]) {
                     for (let i = 1; i < points.length - 1; i++) {
@@ -1002,23 +1070,51 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     let label = `poly${this.state.polygonIndex + 1}`;
                     const polygon: Polygon = {
                         points: points,
-                        props: {
-                            label: label,
-                            labelXOffset: 0,
-                            labelYOffset: 10,
-                            labelZOffset: 0,
-                            line_size: 1,
-                            line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                            radius: 0,  
-                            visible: {shape: true, label: true},
-                            color: 'red',
-                            fill: true,
-                            id: uuidv4(),
-                            opacity: 0.1
-                        }
+                        props: createPolygonDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
                     }
 
-                    this.state.shapes.push(polygon);
+                    for (let i = 0; i < points.length; i++) {
+                        // Create a segment for each 2 consecutive points
+                        const start = points[i];
+                        const end = points[(i + 1) % points.length];
+                        label = this.getExcelLabel('a', this.state.segmentIndex);
+                        let index = this.state.segmentIndex;
+                        while (this.label_used.includes(label)) {
+                            index++;
+                            label = this.getExcelLabel('a', index);
+                        }
+
+                        this.label_used.push(label);
+                        const segment: Segment = {
+                            startSegment: start,
+                            endSegment: end,
+                            props: createPolygonDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
+                        }
+
+                        this.state.shapes.set(segment.props.id, {
+                            id: segment.props.id,
+                            type: segment,
+                            node: this.drawSegment(segment, segment.props),
+                            sharedWith: [polygon.props.id]
+                        });
+
+                        this.state.shapes.forEach((node) => {
+                            if (node.id === start.props.id || node.id === end.props.id) {
+                                node.sharedWith.push(segment.props.id);
+                                node.sharedWith.push(polygon.props.id);
+                            }
+                        })
+
+                        this.setState({segmentIndex: index + 1});
+                    }
+
+                    this.state.shapes.set(polygon.props.id, {
+                        id: polygon.props.id,
+                        type: polygon,
+                        node: this.drawPolygon(polygon, polygon.props),
+                        sharedWith: []
+                    });
+
                     this.setState({polygonIndex: this.state.polygonIndex + 1});
                     this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
                 }
@@ -1035,10 +1131,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             }
 
             let found = false;
-            this.state.shapes.forEach((shape) => {
-                if (isPoint(shape)) {
-                    if (Math.abs(Math.pow(shape.x - position.x, 2) + Math.pow(shape.y - position.y, 2)) <= 5) {
-                        this.state.selectedShapes.push(shape);
+            this.state.shapes.forEach((node) => {
+                if (isPoint(node.type)) {
+                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 5) {
+                        this.state.selectedShapes.push(node.type);
                         found = true;
                         return;
                     }
@@ -1058,24 +1154,17 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 const point: Point = {
                     x: position.x,
                     y: position.y,
-                    shapes: new Set(),
-                    props: {
-                        label: label,
-                        labelXOffset: 0,
-                        labelYOffset: 10,
-                        labelZOffset: 0,
-                        line_size: 1,
-                        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                        radius: 0.02,
-                        color: 'black',
-                        visible: {shape: true, label: true},
-                        fill: true,
-                        id: uuidv4()
-                    }   
+                    props: createPointDefaultShapeProps(label)
                 }
 
-                this.state.shapes.push(point);
-                this.setState({pointIndex: this.state.pointIndex + 1});
+                this.state.shapes.set(point.props.id, {
+                    id: point.props.id,
+                    type: point,
+                    node: this.drawPoint(point, point.props),
+                    sharedWith: []
+                })
+
+                this.setState({pointIndex: index + 1});
                 this.state.selectedShapes.push(point);
             }
 
@@ -1101,23 +1190,23 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 const circle: Circle = {
                     centerC: point,
                     radius: radius,
-                    props: {
-                        label: label,
-                        labelXOffset: 0,
-                        labelYOffset: 10,
-                        labelZOffset: 0,
-                        line_size: 1,
-                        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-                        radius: radius,
-                        visible: {shape: true, label: true},
-                        color: 'black',
-                        fill: false,
-                        id: uuidv4()
-                    }   
+                    props: createCircleDefaultShapeProps(label, radius, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
                 }   
 
-                this.state.shapes.push(circle);
-                this.setState({circleIndex: this.state.circleIndex + 1});
+                this.state.shapes.set(circle.props.id, {
+                    id: circle.props.id,
+                    type: circle,
+                    node: this.drawCircle(circle, circle.props),
+                    sharedWith: []
+                });
+
+                this.state.shapes.forEach((node) => {
+                    if (node.id === point.props.id) {
+                        node.sharedWith.push(circle.props.id);
+                    }
+                })
+
+                this.setState({circleIndex: index + 1});
                 this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
             }
             catch (error) {
@@ -1131,7 +1220,6 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         return (
             <div>
                 <GeometryTool
-                    shapes={this.state.shapes}
                     onPointClick={this.handlePointClick}
                     onLineClick={this.handleLineClick}
                     onSegmentClick={this.handleSegmentClick}

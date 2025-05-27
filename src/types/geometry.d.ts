@@ -19,7 +19,6 @@ export interface Point extends Shape2D {
     x: number;
     y: number;
     z?: number;
-    shapes: Set<Shape>;
 }
 
 // 2D Shapes
@@ -154,10 +153,21 @@ export interface ShapeProps {
     id: string;
 }
 
+export interface ShapeNode {
+    /** ID of KonvaShape */
+    id: string;
+    /** Type of shape */
+    type: Shape;
+    /** Konva node for the shape */
+    node: Konva.Shape;
+    /** IDs of other ShapeNodes this one depends on */
+    sharedWith: string[];
+}
+
 // Geometry state
 export interface GeometryState {
     /** Array of shapes in the scene */
-    shapes: Shape[];
+    shapes: Map<string, ShapeNode>;
     
     /** Whether the grid is visible */
     gridVisible: boolean;

@@ -1,5 +1,5 @@
 import React from "react";
-import { Point, Shape } from "../types/geometry";
+import { Point, ShapeNode } from "../types/geometry";
 
 interface ButtonProps {
     label: string;
@@ -17,7 +17,7 @@ class Button extends React.Component<ButtonProps> {
 }
 
 interface GeometryToolProps {
-    shapes: Shape[];
+    // shapes: Map<string, ShapeNode>;
     onPointClick: () => void;
     onLineClick: () => void;
     onSegmentClick: () => void;
