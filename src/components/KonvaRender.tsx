@@ -255,10 +255,6 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         const event = e.evt as WheelEvent;
         let newScale = oldScale * (event.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
-        // Prevent zooming out too much
-        if (newScale < 0.005 || newScale > 200) {
-            newScale = oldScale;
-        }
 
         // Calculate the mouse position relative to the layer
         const mousePointTo = {
