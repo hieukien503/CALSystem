@@ -21,39 +21,6 @@ const FONT_CONFIG = {
 
 const LABEL_OFFSET = 5;
 
-// Utility functions
-function printRTL(text: string, originX: number, originY: number, opacity: number): Konva.Text[] {
-    const chars = text.split('');
-    let currentX = originX;
-    const texts: Konva.Text[] = [];
-    
-    for (let i = chars.length - 1; i >= 0; i--) {
-        const char = chars[i];
-        const temp = new Konva.Text({
-            text: char,
-            fontSize: FONT_CONFIG.fontSize,
-            fontFamily: FONT_CONFIG.fontFamily,
-        });
-
-        const text = new Konva.Text({
-            text: char,
-            fontSize: FONT_CONFIG.fontSize,
-            fontFamily: FONT_CONFIG.fontFamily,
-            x: currentX - (char.charCodeAt(0) >= 48 && char.charCodeAt(0) <= 57 ? 2 * temp.width() : 2.75 * temp.width()),
-            y: originY,
-            opacity: opacity,
-            verticalAlign: 'middle',
-            align: 'center',
-            listening: false
-        });
-
-        texts.push(text);
-        currentX -= temp.width();
-    }
-
-    return texts;
-}
-
 export class KonvaAxis {
     private props: AxisProps;
 
@@ -79,7 +46,7 @@ export class KonvaAxis {
         const visibleBottom = (height - layerPosition.y) / scale;
 
         // Calculate scaled dimensions
-        const scaledAxisWidth = axisWidth / scale;
+        const scaledAxisWidth = axisWidth;
         const scaledPointerWidth = pointerWidth / scale;
         const scaledPointerLength = pointerLength / scale;
         const scaledTickSpacing = xTickSpacing * axisTickInterval;
@@ -92,7 +59,9 @@ export class KonvaAxis {
             pointerWidth: scaledPointerWidth,
             pointerLength: scaledPointerLength,
             opacity: opacity,
-            listening: false
+            listening: false,
+            fill: axisColor,
+            strokeScaleEnabled: false
         });
         group.add(xAxis);
 
@@ -104,20 +73,11 @@ export class KonvaAxis {
             pointerWidth: scaledPointerWidth,
             pointerLength: scaledPointerLength,
             opacity: opacity,
-            listening: false
+            listening: false,
+            fill: axisColor,
+            strokeScaleEnabled: false,
         });
         group.add(yAxis);
-
-        // Helper function to format tick labels
-        const formatTickLabel = (value: number): string => {
-            let format = Math.log10(axisTickInterval) >= 0 ? 0 : Math.ceil(-Math.log10(axisTickInterval));
-            const formatted = Number(value.toFixed(format));
-            if (Math.abs(formatted) >= 1000000 || (Math.abs(formatted) <= 0.000001 && formatted > 0)) {
-                return formatted.toExponential(1);
-            }
-
-            return formatted.toString();
-        };
 
         // Draw x-axis ticks and labels
         const drawXTicks = (start: number, end: number, step: number, forward: boolean) => {
@@ -128,12 +88,24 @@ export class KonvaAxis {
                 const y_stage = (originY * scale) + layerPosition.y;
 
                 // Draw label
+                let useSci = (x !== originX) && (Math.abs((x - originX) / xTickSpacing) <= 1e-6 || Math.abs((x - originX) / xTickSpacing) >= 1e6);
+                const formatTickLabel = (value: number): string => {
+                    if (useSci) {
+                        return value.toExponential(1);
+                    }
+                    
+                    else {
+                        return value.toFixed(6).replace(/\.?0+$/, ''); // Remove trailing zeros
+                    }
+                };
+
                 const labelText = formatTickLabel((x - originX) / xTickSpacing);
                 let tmpLabel = new Konva.Text({
                     text: labelText,
                     fontSize: FONT_CONFIG.fontSize,
                     fontFamily: FONT_CONFIG.fontFamily,
-                })
+                });
+
                 const label = new Konva.Text({
                     text: labelText,
                     x: x_stage - tmpLabel.width() / 2 + (x === originX ? LABEL_OFFSET : 0),
@@ -159,15 +131,42 @@ export class KonvaAxis {
                 const y_stage = (y * scale) + layerPosition.y;
 
                 // Draw label
+                let useSci = (y !== originY) && (Math.abs((originY - y) / xTickSpacing) <= 1e-6 || Math.abs((originY - y) / xTickSpacing) >= 1e6);
+                const formatTickLabel = (value: number): string => {
+                    if (useSci) {
+                        return value.toExponential(1);
+                    }
+                    
+                    else {
+                        return value.toFixed(6).replace(/\.?0+$/, ''); // Remove trailing zeros
+                    }
+                };
                 const labelText = formatTickLabel((originY - y) / xTickSpacing);
-                const texts = printRTL(
-                    labelText,
-                    x_stage,
-                    (y === originY ? y_stage - FONT_CONFIG.fontSize : y_stage - 0.6 * LABEL_OFFSET),
-                    opacity
-                );
-                
-                texts.forEach(text => layerText.add(text));
+                const tmpLabel = new Konva.Text({
+                    text: labelText,
+                    fontSize: FONT_CONFIG.fontSize,
+                    fontFamily: FONT_CONFIG.fontFamily,
+                });
+
+                const label = new Konva.Text({
+                    text: labelText,
+                    x: x_stage - LABEL_OFFSET - tmpLabel.width(), // Position LABEL_OFFSET pixels to the left of the axis
+                    y: y_stage - LABEL_OFFSET / 1.25, // Center the label vertically at y_stage_center
+                    fontSize: FONT_CONFIG.fontSize,
+                    fontFamily: FONT_CONFIG.fontFamily,
+                    opacity: opacity,
+                    align: 'right', // Align text content to its right x-coordinate
+                    verticalAlign: 'middle', // Position text so its middle is at `y`
+                    listening: false
+                });
+
+                if (y === originY) {
+                    label.x(x_stage - 2 * LABEL_OFFSET); // Move right
+                    label.y(y_stage - 2 * LABEL_OFFSET); // Center vertically
+                    label.align('left'); // Align left
+                }
+
+                layerText.add(label);
             }
         };
 
