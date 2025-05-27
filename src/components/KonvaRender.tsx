@@ -7,7 +7,6 @@ import { KonvaAxis } from "../utils/KonvaAxis";
 import { KonvaGrid } from "../utils/KonvaGrid";
 import GeometryTool from "./GeometryTool";
 import { v4 as uuidv4 } from 'uuid';
-import { create } from "lodash";
 const math = require("mathjs");
 
 if (!Number.isInteger) {
@@ -312,7 +311,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         }
 
         let axisTickInterval = this.state.axisTickInterval;
-        if (numLoops === 7 || numLoops === -7) {
+        if (numLoops === 8 || numLoops === -8) {
             axisTickInterval = calcNextInterval(axisTickInterval, numLoops > 0);
             numLoops = 0;
         }
