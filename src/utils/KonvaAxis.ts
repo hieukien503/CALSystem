@@ -15,7 +15,7 @@ interface AxisProps {
 
 // Constants for font and styling
 const FONT_CONFIG = {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Arial'
 };
 
@@ -70,7 +70,8 @@ export class KonvaAxis {
         const { width, height, axisColor, axisWidth, pointerWidth, pointerLength, xTickSpacing, originX, originY, opacity } = this.props;
         const group = new Konva.Group();
 
-
+        layerText.destroyChildren(); // Clear previous text layer
+        
         // Calculate visible area based on layer position and scale
         const visibleLeft = -layerPosition.x / scale;
         const visibleRight = (width - layerPosition.x) / scale;
@@ -125,18 +126,23 @@ export class KonvaAxis {
 
                 // Draw label
                 const labelText = formatTickLabel((x - originX) / xTickSpacing);
+                let tmpLabel = new Konva.Text({
+                    text: labelText,
+                    fontSize: FONT_CONFIG.fontSize / scale,
+                    fontFamily: FONT_CONFIG.fontFamily,
+                })
                 const label = new Konva.Text({
                     text: labelText,
-                    x: (x === originX ? x + 0.25 * FONT_CONFIG.fontSize / scale : x - 0.6 * LABEL_OFFSET / scale),
+                    x: x - tmpLabel.width() / 2 + (x === originX ? LABEL_OFFSET / scale : 0),
                     y: originY + LABEL_OFFSET / scale,
                     fontSize: FONT_CONFIG.fontSize / scale,
                     fontFamily: FONT_CONFIG.fontFamily,
                     opacity: opacity,
-                    align: 'center',
+                    align: 'left',
                     verticalAlign: 'middle',
                     listening: false
                 });
-                
+
                 layerText.add(label);
             }
         };
