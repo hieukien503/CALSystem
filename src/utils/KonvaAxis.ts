@@ -22,7 +22,7 @@ const FONT_CONFIG = {
 const LABEL_OFFSET = 5;
 
 // Utility functions
-function printRTL(text: string, originX: number, originY: number, opacity: number, scale: number): Konva.Text[] {
+function printRTL(text: string, originX: number, originY: number, opacity: number): Konva.Text[] {
     const chars = text.split('');
     let currentX = originX;
     const texts: Konva.Text[] = [];
@@ -31,13 +31,13 @@ function printRTL(text: string, originX: number, originY: number, opacity: numbe
         const char = chars[i];
         const temp = new Konva.Text({
             text: char,
-            fontSize: FONT_CONFIG.fontSize / scale,
+            fontSize: FONT_CONFIG.fontSize,
             fontFamily: FONT_CONFIG.fontFamily,
         });
 
         const text = new Konva.Text({
             text: char,
-            fontSize: FONT_CONFIG.fontSize / scale,
+            fontSize: FONT_CONFIG.fontSize,
             fontFamily: FONT_CONFIG.fontFamily,
             x: currentX - (char.charCodeAt(0) >= 48 && char.charCodeAt(0) <= 57 ? 2 * temp.width() : 2.75 * temp.width()),
             y: originY,
@@ -124,18 +124,21 @@ export class KonvaAxis {
             for (let x = start; (forward ? x <= end : x >= end); x = forward ? x + step : x - step) {
                 if (x < visibleLeft - step || x > visibleRight + step) continue;
 
+                const x_stage = (x * scale) + layerPosition.x;
+                const y_stage = (originY * scale) + layerPosition.y;
+
                 // Draw label
                 const labelText = formatTickLabel((x - originX) / xTickSpacing);
                 let tmpLabel = new Konva.Text({
                     text: labelText,
-                    fontSize: FONT_CONFIG.fontSize / scale,
+                    fontSize: FONT_CONFIG.fontSize,
                     fontFamily: FONT_CONFIG.fontFamily,
                 })
                 const label = new Konva.Text({
                     text: labelText,
-                    x: x - tmpLabel.width() / 2 + (x === originX ? LABEL_OFFSET / scale : 0),
-                    y: originY + LABEL_OFFSET / scale,
-                    fontSize: FONT_CONFIG.fontSize / scale,
+                    x: x_stage - tmpLabel.width() / 2 + (x === originX ? LABEL_OFFSET : 0),
+                    y: y_stage + LABEL_OFFSET,
+                    fontSize: FONT_CONFIG.fontSize,
                     fontFamily: FONT_CONFIG.fontFamily,
                     opacity: opacity,
                     align: 'left',
@@ -152,14 +155,16 @@ export class KonvaAxis {
             for (let y = start; (forward ? y <= end : y >= end); y = forward ? y + step : y - step) {
                 if (y < visibleTop - step || y > visibleBottom + step) continue;
 
+                const x_stage = (originX * scale) + layerPosition.x;
+                const y_stage = (y * scale) + layerPosition.y;
+
                 // Draw label
                 const labelText = formatTickLabel((originY - y) / xTickSpacing);
                 const texts = printRTL(
                     labelText,
-                    originX,
-                    (y === originY ? y - FONT_CONFIG.fontSize / scale : y - 0.6 * LABEL_OFFSET / scale),
-                    opacity,
-                    scale
+                    x_stage,
+                    (y === originY ? y_stage - FONT_CONFIG.fontSize : y_stage - 0.6 * LABEL_OFFSET),
+                    opacity
                 );
                 
                 texts.forEach(text => layerText.add(text));

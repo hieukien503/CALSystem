@@ -55,13 +55,27 @@ const createDashArray = (lineStyle: LineStyle): number[] => {
     return [offset ?? 0, gap, dash, gap];
 };
 
-const createLabelProps = (x: number, y: number, label: string, labelXOffset: number, labelYOffset: number, scale: number, visible: boolean) => {
-    let font_size = FONT_DEFAULTS.SIZE / scale;
+const createLabelProps = (
+    x: number,
+    y: number,
+    label: string,
+    labelXOffset: number,
+    labelYOffset: number,
+    currentMathLayerScale: number, // Renamed 'scale' for clarity to avoid confusion with `scale` variable scope below
+    visible: boolean,
+    mathLayerX: number, // Pass the current X position of the math object layer
+    mathLayerY: number  // Pass the current Y position of the math object layer
+) => {
+    // Calculate the absolute stage coordinates for the label based on the math object's position
+    // and the math layer's scale and position.
+    const stageX = (x * currentMathLayerScale) + mathLayerX;
+    const stageY = (y * currentMathLayerScale) + mathLayerY;
+
     return {
-        x: x + labelXOffset,
-        y: y + labelYOffset,
+        x: stageX + labelXOffset, // labelXOffset is now directly in pixels
+        y: stageY + labelYOffset, // labelYOffset is now directly in pixels
         text: label,
-        fontSize: font_size,
+        fontSize: FONT_DEFAULTS.SIZE, // Fixed font size, as layerTextRef is no longer scaled
         fontFamily: FONT_DEFAULTS.FAMILY,
         fill: FONT_DEFAULTS.COLOR,
         visible: visible,
@@ -262,13 +276,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         layer.scale({ x: newScale, y: newScale });
         this.layerGridRef.current?.scale({ x: newScale, y: newScale });
         this.layerAxisRef.current?.scale({ x: newScale, y: newScale });
-        this.layerTextRef.current?.scale({ x: newScale, y: newScale });
 
         // Update all layers' positions
         layer.position(newPos);
         this.layerGridRef.current?.position(newPos);
         this.layerAxisRef.current?.position(newPos);
-        this.layerTextRef.current?.position(newPos);
 
         // Batch draw all layers
         layer.batchDraw();
@@ -364,7 +376,6 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             updatePosition(layer);
             updatePosition(this.layerAxisRef.current);
             updatePosition(this.layerGridRef.current);
-            updatePosition(this.layerTextRef.current);
 
             this.last_pointer = {
                 x: pointer.x,
@@ -651,7 +662,9 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             y = (shape.endRay.y + shape.startRay.y) / 2;
         }
 
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        const currentMathLayerScale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        const mathLayerX = this.layerMathObjectRef.current!.x();
+        const mathLayerY = this.layerMathObjectRef.current!.y();
         return new Konva.Text(
             createLabelProps(
                 x,
@@ -659,8 +672,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 shape.props.label,
                 shape.props.labelXOffset,
                 shape.props.labelYOffset,
-                scale,
-                shape.props.visible.shape && shape.props.visible.label
+                currentMathLayerScale, // Pass the scale of the math layer
+                shape.props.visible.shape && shape.props.visible.label,
+                mathLayerX, // Pass math layer's X
+                mathLayerY  // Pass math layer's Y
             )
         );
     }
@@ -887,7 +902,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                             label,
                             0,
                             p1.x - length * dx,
-                            (p1.y - length * dy - 10 / this.layerMathObjectRef.current!.scaleY() < 0) ? p1.y - length * dy - 10 / this.layerMathObjectRef.current!.scaleY() : p1.y - length * dy + 10 / this.layerMathObjectRef.current!.scaleY(),
+                            (p1.y - length * dy - 10 < 0) ? p1.y - length * dy - 10 : p1.y - length * dy + 10,
                             0
                         )
                     }
@@ -921,7 +936,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     const segment: Segment = {
                         startSegment: p1,
                         endSegment: p2,
-                        props: createLineDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
+                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0)
                     }
 
                     this.state.shapes.set(segment.props.id, {
@@ -953,7 +968,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     const vector: Vector = {
                         startVector: p1,
                         endVector: p2,
-                        props: createLineDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
+                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0)
                     }
 
                     this.state.shapes.set(vector.props.id, {
@@ -985,7 +1000,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     const ray: Ray = {
                         startRay: p1,
                         endRay: p2,
-                        props: createLineDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
+                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0)
                     }
 
                     this.state.shapes.set(ray.props.id, {
@@ -1070,7 +1085,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     let label = `poly${this.state.polygonIndex + 1}`;
                     const polygon: Polygon = {
                         points: points,
-                        props: createPolygonDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
+                        props: createPolygonDefaultShapeProps(label, 0, 0, 10, 0)
                     }
 
                     for (let i = 0; i < points.length; i++) {
@@ -1088,7 +1103,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         const segment: Segment = {
                             startSegment: start,
                             endSegment: end,
-                            props: createPolygonDefaultShapeProps(label, 0, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
+                            props: createPolygonDefaultShapeProps(label, 0, 0, 10, 0)
                         }
 
                         this.state.shapes.set(segment.props.id, {
@@ -1190,7 +1205,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 const circle: Circle = {
                     centerC: point,
                     radius: radius,
-                    props: createCircleDefaultShapeProps(label, radius, 0, 10 / this.layerMathObjectRef.current!.scaleY(), 0)
+                    props: createCircleDefaultShapeProps(label, radius, 0, 10, 0)
                 }   
 
                 this.state.shapes.set(circle.props.id, {
