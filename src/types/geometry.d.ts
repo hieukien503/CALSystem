@@ -221,10 +221,19 @@ export interface ShapeNode {
     dependsOn: string[];
 }
 
+export interface ShapeNode3D {
+    /** ID of KonvaShape */
+    id: string;
+    /** Type of shape */
+    type: Shape;
+    /** IDs of other ShapeNodes this one depends on */
+    dependsOn: string[];
+}
+
 // Geometry state
 export interface GeometryState {
     /** Array of shapes in the scene */
-    shapes: Map<string, ShapeNode>;
+    shapes: Map<string, ShapeNode | ShapeNode3D>;
     
     /** Whether the grid is visible */
     gridVisible: boolean;

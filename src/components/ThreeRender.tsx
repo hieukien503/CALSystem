@@ -1,17 +1,20 @@
 import React, { RefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Shape, GeometryState, ShapeProps, ShapeNode } from '../types/geometry';
+import { Shape, Sphere, GeometryState, ShapeProps, ShapeNode3D } from '../types/geometry';
 import {
     isPlane, isCylinder, isCone, isSphere, isPyramid, isCuboid, isPrism,
     isPoint, isLine, isVector, isSegment, isPolygon, isCircle, isRay
 } from '../utils/type_guard';
+import { GeometryTool3D } from './GeometryTool';
+import { v4 as uuidv4 } from 'uuid';
+
+const math = require('mathjs');
 
 interface ThreeDCanvasProps {
     width: number;
     height: number;
     background_color: string;
-    shapes: Shape[];
 }
 
 // Constants
@@ -73,6 +76,22 @@ const convertToVector3 = (x: number, y: number, z: number): THREE.Vector3 => {
     return new THREE.Vector3(x, z, y);
 }
 
+const createPointDefaultShapeProps = (label: string, radius: number = 0.02, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,
+        color: 'black',
+        visible: {shape: true, label: true},
+        fill: true,
+        id: uuidv4()
+    }
+}
+
 class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private sceneRef: RefObject<THREE.Scene | null>;
     private cameraRef: RefObject<THREE.PerspectiveCamera | null>;
@@ -91,7 +110,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             numLoops: 0,
             spacing: 20,
             axisTickInterval: 1,
-            shapes: new Map<string, ShapeNode>(),
+            shapes: new Map<string, ShapeNode3D>(),
             gridVisible: true,
             axesVisible: true,
             zoom_level: 1,
@@ -107,14 +126,17 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             selectedShapes: [],
             mode: 'none'
         }
+
+        this.handleMouseDown = this.handleMouseDown.bind(this);
     }
 
     componentDidMount(): void {
         this.initializeScene();
         this.updateShapes();
+        window.addEventListener("mousedown", this.handleMouseDown);
     }
 
-    componentDidUpdate(prevProps: ThreeDCanvasProps): void {
+    componentDidUpdate(prevProps: ThreeDCanvasProps, prevState: GeometryState): void {
         if (
             prevProps.width !== this.props.width ||
             prevProps.height !== this.props.height
@@ -127,7 +149,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             this.updateBackground();
         }
 
-        if (prevProps.shapes !== this.props.shapes) {
+        else {
             this.updateShapes();
         }
     }
@@ -139,8 +161,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     initializeScene(): void {
         const { width, height, background_color } = this.props;
         if (!this.canvasRef.current) return;
-        this.canvasRef.current.width = width * window.devicePixelRatio;
-        this.canvasRef.current.height = height * window.devicePixelRatio;
+        const rect = this.canvasRef.current.getBoundingClientRect();
+        this.canvasRef.current.width = rect.width * window.devicePixelRatio;
+        this.canvasRef.current.height = rect.height * window.devicePixelRatio;
 
         // Create scene
         const scene = new THREE.Scene();
@@ -158,7 +181,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             canvas: this.canvasRef.current,
             antialias: true
         });
-        renderer.setSize(width, height);
+
+        renderer.setSize(rect.width, rect.height);
         renderer.setPixelRatio(window.devicePixelRatio);
         this.rendererRef.current = renderer;
 
@@ -368,7 +392,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (isSphere(shape)) {
             geometry = new THREE.SphereGeometry(shape.radius, 32, 32);
             mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(shape.centerS.x, shape.centerS.y, shape.centerS.z || 0);
+            let center = convertToVector3(shape.centerS.x, shape.centerS.y, shape.centerS.z || 0)
+            mesh.position.set(center.x, center.y, center.z);
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, shape.radius + 0.5, 0));
         }
         
@@ -682,23 +707,212 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         });
 
         // Add new shapes
-        this.props.shapes.forEach(shape => {
-            const mesh = this.createShape(shape);
+        this.state.shapes.forEach(shape => {
+            const mesh = this.createShape(shape.type);
             if (mesh) {
                 this.sceneRef.current!.add(mesh);
             }
         })
     }
 
+    private handleClearClick = () => {
+        this.setState({
+            shapes: new Map<string, ShapeNode3D>(),
+            pointIndex: 0,
+            lineIndex: 0,
+            circleIndex: 0,
+            polygonIndex: 0,
+            rayIndex: 0,
+            segmentIndex: 0,
+            vectorIndex: 0,
+            selectedShapes: [],
+            mode: 'none'
+        })
+    }
+
+    private handlePointClick = () => {
+        this.setState({mode: 'point'});
+    }
+
+    private handleLineClick = () => {
+        this.setState({mode: 'line'});
+    }
+
+    private handleSegmentClick = () => {
+        this.setState({mode: 'segment'});
+    }
+
+    private handleVectorClick = () => {
+        this.setState({mode: 'vector'});
+    }
+
+    private handlePolygonClick = () => {
+        this.setState({mode: 'polygon'});
+    }
+
+    private handleCircleClick = () => {
+        this.setState({mode: 'circle'});
+    }
+
+    private handleRayClick = () => {
+        this.setState({mode: 'ray'});
+    }
+
+    private handleEditClick = () => {
+        this.setState({mode: 'edit'});
+    }
+
+    private handleDeleteClick = () => {
+        this.setState({mode: 'delete'});
+    }
+
+    private handleUndoClick = () => {
+
+    }
+
+    private handleRedoClick = () => {
+
+    }
+
+    private handleAddCuboid = () => {
+        this.setState({mode: 'cuboid'});
+    }
+
+    private handleAddCylinder = () => {
+        this.setState({mode: 'cylinder'});
+    }
+
+    private handleAddPrism = () => {
+        this.setState({mode: 'prism'});
+    }
+
+    private handleAddPyramid = () => {
+        this.setState({mode: 'pyramid'});
+    }
+
+    private handleAddSphere = () => {
+        this.setState({mode: 'sphere'});
+    }
+
+    private handleAddPlane = () => {
+        this.setState({mode: 'plane'});
+    }
+
+    private handleAddCone = () => {
+        this.setState({mode: 'cone'});
+    }
+
+    private handleMouseDown = (e: MouseEvent) => {
+        if (e.button !== 0) return;
+        if (this.state.mode !== 'none') {
+            this.handleDrawing();
+        }
+    }
+
+    private handleDrawing = () => {
+        let mode = this.state.mode
+        if (mode === "sphere") {
+            let coors = prompt('Enter the center radius');
+            let regex = /^\(\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*\)$/
+            if (!coors) return;
+            let match = coors.match(regex);
+            if (!match) {
+                alert('Invalid coordinates format')
+            }
+
+            else {
+                const x = parseFloat(match[1]); // group 1
+                const y = parseFloat(match[3]); // group 3
+                const z = parseFloat(match[5]); // group 5
+                let r = prompt('Enter the radius of the circle');
+                try {
+                    const radius = math.evaluate(r);
+                    if (typeof radius !== 'number' || radius <= 0) {
+                        alert('Invalid radius');
+                        return;
+                    }
+
+                    let s: Sphere = {
+                        centerS: {
+                            x: x,
+                            y: y,
+                            z: z,
+                            props: createPointDefaultShapeProps('O', 0.02, 0, 0.5, -0.5)
+                        },
+                        radius: radius,
+                        props: {
+                            line_style: {
+                                dash_size: 0,
+                                gap_size: 0,
+                                dot_size: 0
+                            },
+                            radius: radius,
+                            color: 'red',
+                            fill: true,
+                            opacity: 0.5,
+                            visible: {
+                                shape: true,
+                                label: false,
+                            },
+                            labelXOffset: 0,
+                            labelYOffset: 0,
+                            labelZOffset: 0,
+                            label: 'c',
+                            id: uuidv4(),
+                            line_size: 1
+                        }
+                    }
+
+                    this.state.shapes.set(s.props.id, {
+                        id: s.props.id,
+                        type: s,
+                        dependsOn: []
+                    })
+
+                    this.setState({mode: 'none'});
+                }
+
+                catch (error) {
+                    alert('Invalid expression for radius');
+                }
+            }
+        }
+    }
+
     render(): React.ReactNode {
         const { width, height, background_color } = this.props;
         return (
-            <canvas
-                ref={this.canvasRef}
-                width={width}
-                height={height}
-                style={{ background: background_color }}
-            />
+            <div className="flex flex-row h-full">
+                <GeometryTool3D 
+                    width={width * 0.3}
+                    onPointClick={this.handlePointClick}
+                    onLineClick={this.handleLineClick}
+                    onSegmentClick={this.handleSegmentClick}
+                    onVectorClick={this.handleVectorClick}
+                    onPolygonClick={this.handlePolygonClick}
+                    onCircleClick={this.handleCircleClick}
+                    onRayClick={this.handleRayClick}
+                    onEditClick={this.handleEditClick}
+                    onDeleteClick={this.handleDeleteClick}
+                    onClearClick={this.handleClearClick}
+                    onUndoClick={this.handleUndoClick}
+                    onRedoClick={this.handleRedoClick}
+                    onAddCuboid={this.handleAddCuboid}
+                    onAddCone={this.handleAddCone}
+                    onAddCylinder={this.handleAddCylinder}
+                    onAddPlane={this.handleAddPlane}
+                    onAddPrism={this.handleAddPrism}
+                    onAddPyramid={this.handleAddPyramid}
+                    onAddSphere={this.handleAddSphere}
+                />
+
+                <canvas
+                    ref={this.canvasRef}
+                    width={width * 0.7}
+                    height={height}
+                    style={{ background: background_color }}
+                />
+            </div>
         )
     }
 }
