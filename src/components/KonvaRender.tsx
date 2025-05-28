@@ -5,7 +5,7 @@ import { Stage, Layer } from "react-konva";
 import { isCircle, isPoint, isPolygon, isVector, isLine, isSegment, isRay } from "../utils/type_guard";
 import { KonvaAxis } from "../utils/KonvaAxis";
 import { KonvaGrid } from "../utils/KonvaGrid";
-import GeometryTool from "./GeometryTool";
+import { GeometryTool } from "./GeometryTool";
 import { v4 as uuidv4 } from 'uuid';
 import _ from "lodash";
 const math = require("mathjs");
@@ -1270,7 +1270,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         return (
             <div className="flex flex-row h-full">
                 <GeometryTool
-                    width={width * 0.2}
+                    width={width * 0.28}
                     onPointClick={this.handlePointClick}
                     onLineClick={this.handleLineClick}
                     onSegmentClick={this.handleSegmentClick}
@@ -1286,7 +1286,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 />
                 <Stage 
                     ref={this.stageRef} 
-                    width={width * 0.8}
+                    width={width * 0.72}
                     height={height} 
                     style={{background: background_color}}
                     onWheel={this.handleZoom}
