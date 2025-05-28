@@ -17,7 +17,7 @@ class Button extends React.Component<ButtonProps> {
 }
 
 interface GeometryToolProps {
-    // shapes: Map<string, ShapeNode>;
+    width: number;
     onPointClick: () => void;
     onLineClick: () => void;
     onSegmentClick: () => void;
@@ -25,6 +25,11 @@ interface GeometryToolProps {
     onPolygonClick: () => void;
     onCircleClick: () => void;
     onRayClick: () => void;
+    onEditClick: () => void;
+    onDeleteClick: () => void;
+    onClearClick: () => void;
+    onUndoClick: () => void;
+    onRedoClick: () => void;
 }
 
 interface GeometryToolState {
@@ -78,6 +83,26 @@ class GeometryTool extends React.Component<GeometryToolProps, GeometryToolState>
         else if (toolKey === "ray") {
             this.props.onRayClick();
         }
+
+        else if (toolKey === "edit") {
+            this.props.onEditClick();
+        }
+
+        else if (toolKey === "delete") {
+            this.props.onDeleteClick();
+        }
+
+        else if (toolKey === "clear") {
+            this.props.onClearClick();
+        }
+
+        else if (toolKey === "undo") {
+            this.props.onUndoClick();
+        }
+
+        else if (toolKey === "redo") {
+            this.props.onRedoClick();
+        }
     }
 
     render(): React.ReactNode {
@@ -123,11 +148,59 @@ class GeometryTool extends React.Component<GeometryToolProps, GeometryToolState>
                 label: "Create Ray",
                 requiredPoints: 2,
                 onClick: () => this.setActiveTool("ray")
+            },
+            {
+                key: "edit",
+                label: "Edit Shape",
+                requiredPoints: 0,
+                onClick: () => this.setActiveTool("edit")
+            },
+            {
+                key: "delete",
+                label: "Delete Shape",
+                requiredPoints: 0,
+                onClick: () => this.setActiveTool("delete")
+            },
+            {
+                key: "clear",
+                label: "Clear All",
+                requiredPoints: 0,
+                onClick: () => this.setActiveTool("clear")
+            },
+            {
+                key: "undo",
+                label: "Undo",
+                requiredPoints: 0,
+                onClick: () => this.setActiveTool("undo")
+            },
+            {
+                key: "redo",
+                label: "Redo",
+                requiredPoints: 0,
+                onClick: () => this.setActiveTool("redo")
             }
         ]
 
         return (
-            <div>
+            <div
+                style={{
+                    width: this.props.width,
+                    height: "100vh",
+                    background: "#f0f0f0",
+                    borderRight: "2px solid #ccc",
+                    position: "relative",
+                    padding: 8,
+                    boxSizing: "border-box",
+                }}
+                >
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(auto-fill, minmax(60px, 1fr))`,
+                        fontSize: "14px",
+                        gap: 8,
+                    }}
+                >
                 {tools.map((tool) => (
                     <Button
                         key={tool.key}
@@ -137,6 +210,7 @@ class GeometryTool extends React.Component<GeometryToolProps, GeometryToolState>
                         onClick={tool.onClick}
                     />
                 ))}
+                </div>
             </div>
         )
     }
