@@ -399,10 +399,10 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 onClick: () => this.setActiveTool("sphere")
             },
             {
-                key: "Plane",
+                key: "plane",
                 label: "Add Plane",
                 requiredPoints: 0,
-                onClick: () => this.setActiveTool("Plane")
+                onClick: () => this.setActiveTool("plane")
             },
             {
                 key: "cylinder",

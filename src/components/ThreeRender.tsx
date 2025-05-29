@@ -1,7 +1,7 @@
 import React, { RefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Shape, Sphere, GeometryState, ShapeProps, ShapeNode3D } from '../types/geometry';
+import { Shape, Sphere, GeometryState, ShapeProps, ShapeNode3D, Vector, Plane } from '../types/geometry';
 import {
     isPlane, isCylinder, isCone, isSphere, isPyramid, isCuboid, isPrism,
     isPoint, isLine, isVector, isSegment, isPolygon, isCircle, isRay
@@ -92,6 +92,22 @@ const createPointDefaultShapeProps = (label: string, radius: number = 0.02, labe
     }
 }
 
+const createLineDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: 0,
+        label: label,
+        visible: {shape: true, label: true},
+        fill: true,
+        color: 'black',
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        id: uuidv4()
+    }
+}
+
 class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private sceneRef: RefObject<THREE.Scene | null>;
     private cameraRef: RefObject<THREE.PerspectiveCamera | null>;
@@ -156,6 +172,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     componentWillUnmount() {
         this.disposeResources();
+        window.removeEventListener('mousedown', this.handleMouseDown)
     }
 
     initializeScene(): void {
@@ -803,8 +820,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     }
 
     private handleMouseDown = (e: MouseEvent) => {
-        if (e.button !== 0) return;
-        if (this.state.mode !== 'none') {
+        if (e.button === 0 && this.state.mode !== 'none') {
             this.handleDrawing();
         }
     }
@@ -814,10 +830,14 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         if (mode === "sphere") {
             let coors = prompt('Enter the center radius');
             let regex = /^\(\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*\)$/
-            if (!coors) return;
+            if (!coors) {
+                this.setState({mode: 'none'});
+                return;
+            }
+
             let match = coors.match(regex);
             if (!match) {
-                alert('Invalid coordinates format')
+                alert('Invalid coordinates format');
             }
 
             else {
@@ -875,6 +895,194 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 catch (error) {
                     alert('Invalid expression for radius');
                 }
+            }
+        }
+
+        else if (mode === "plane") {
+            let expr = prompt('Input the equation of the plane');
+            if (!expr) return
+            const parts = expr.split('=');
+            if (parts.length !== 2) {
+                alert('Invalid equation of a plane');
+                this.setState({mode: 'none'});
+                return;
+            }
+
+            const [lhs, rhs] = parts;
+            try {
+                const extractVariables = (node: math.MathNode, variables = new Set<string>()): Set<string> => {
+                    node.forEach?.((child: math.MathNode) => extractVariables(child, variables));
+                    if (node.type === 'SymbolNode') {
+                        const symbolNode = node as math.SymbolNode;
+                        variables.add(symbolNode.name);
+                    }
+                        return variables;
+                }
+
+                let nodes: math.MathNode[] = [];
+                for (const part of parts) {
+                    const node = math.parse(part.trim());
+                    nodes.push(node);
+                }
+
+                const allVars = new Set<string>();
+                nodes.forEach(node => extractVariables(node, allVars));
+
+                const usedVars = Array.from(allVars);
+                const expectedVars = ['x', 'y', 'z'];
+
+                if (usedVars.length > 3) {
+                    alert('Invalid equation of a plane');
+                    return;
+                }
+
+                const sortedUsed = [...usedVars].sort();
+                const sortedExpected = expectedVars.slice(0, usedVars.length).sort();
+
+                const isExact = sortedUsed.every((v, i) => v === sortedExpected[i]);
+
+                if (!isExact) {
+                    alert('Invalid equation of a plane');
+                    this.setState({mode: 'none'});
+                    return;
+                }
+
+                let left = math.parse(lhs);
+                let right = math.parse(rhs);
+                const eq = math.simplify(`(${left}) - (${right})`);
+                let expanded = math.simplify(eq, { expand: true });
+
+                // Get all terms and check degrees
+                const terms = expanded.args ?? [expanded];
+                for (const term of terms) {
+                    const poly = math.simplify(term.toString());
+                    const polyStr = poly.toString();
+
+                    // Check if any variable appears with power > 1
+                    const powerPattern = /(\w+)\^(\d+)/g;
+                    let match;
+                    while ((match = powerPattern.exec(polyStr)) !== null) {
+                        if (parseInt(match[2]) > 1) {
+                            alert('Invalid equation of a plane');
+                            this.setState({mode: 'none'});
+                            return;
+                        }
+                    }
+
+                    // Check for non-linear operations like sin, cos, log, etc.
+                    if (/sin|cos|tan|log|cot|sqrt/.test(polyStr)) {
+                        alert('Invalid equation of a plane');
+                        this.setState({mode: 'none'});
+                        return;
+                    }
+                }
+
+                let result = {
+                    A: 0,
+                    B: 0,
+                    C: 0,
+                    D: 0
+                }
+
+                const walk = (node: math.MathNode, multiplier = 1): void => {
+                    if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '+') {
+                        (node as math.OperatorNode).args.forEach(args => walk(args, multiplier));
+                    }
+                    
+                    else if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '-') {
+                        walk((node as math.OperatorNode).args[0], multiplier);
+                        walk((node as math.OperatorNode).args[1], -multiplier);
+                    }
+                    
+                    else if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '*') {
+                        let coeff = 1;
+                        let variable = '';
+                        (node as math.OperatorNode).args.forEach(arg => {
+                            if (arg.type === 'ConstantNode') coeff *= Number((arg as math.ConstantNode).value);
+                            if (arg.type === 'SymbolNode') variable = (arg as math.SymbolNode).name;
+                        });
+                        
+                        if (variable === 'x') result.A += coeff * multiplier;
+                        else if (variable === 'y') result.B += coeff * multiplier;
+                        else if (variable === 'z') result.C += coeff * multiplier;
+                    }
+                    
+                    else if (node.type === 'SymbolNode') {
+                        if ((node as math.SymbolNode).name === 'x') result.A += multiplier;
+                        else if ((node as math.SymbolNode).name === 'y') result.B += multiplier;
+                        else if ((node as math.SymbolNode).name === 'z') result.C += multiplier;
+                        
+                    }
+                    
+                    else if (node.type === 'ConstantNode') {
+                        result.D += Number((node as math.ConstantNode).value) * multiplier;
+                    }
+                }
+
+                let ast = math.parse(expanded.toString());
+                console.log(expanded.toString());
+                walk(ast);
+                if (Math.pow(result.A, 2) + Math.pow(result.B, 2) + Math.pow(result.C, 2) === 0) {
+                    this.setState({mode: 'none'});
+                    alert('Invalid equation of a plane');
+                    return;
+                }
+
+                let [x, y, z] = [0, 0, 0];
+
+                if (result.A === 0) {
+                    [x, y, z] = (result.C !== 0) ? [0, 0, -result.D / result.C] : [0, -result.D / result.B, 0];
+                }
+
+                else {
+                    [x, y, z] = [-result.D / result.A, 0, 0];
+                }
+
+                console.log(result, [x, y, z]);
+
+                let normal: Vector = {
+                    startVector: {
+                        x: 0,
+                        y: 0,
+                        z: 0,
+                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0)
+                    },
+
+                    endVector: {
+                        x: result.A,
+                        y: result.B,
+                        z: result.C,
+                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0)
+                    },
+
+                    props: createLineDefaultShapeProps('', 0, 0, 0, 0)
+                }
+
+                let p: Plane = {
+                    norm: normal,
+                    point: {
+                        x: x,
+                        y: y,
+                        z: z,
+                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0)
+                    },
+
+                    props: createLineDefaultShapeProps('p', 0, 0, 0, 0)
+                }
+
+                p.props.color = 'blue';
+                p.props.opacity = 1
+                this.state.shapes.set(p.props.id, {
+                    id: p.props.id,
+                    type: p,
+                    dependsOn: []
+                })
+
+                this.setState({mode: 'none'});
+            }
+
+            catch(error) {
+                alert('Cannot parse the input expression!');
             }
         }
     }
