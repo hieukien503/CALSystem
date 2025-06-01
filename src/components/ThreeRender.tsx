@@ -8,7 +8,7 @@ import {
 } from '../utils/type_guard';
 import { GeometryTool3D } from './GeometryTool';
 import { v4 as uuidv4 } from 'uuid';
-
+import type { MathNode, ConstantNode, SymbolNode } from 'mathjs';
 const math = require('mathjs');
 
 interface ThreeDCanvasProps {
@@ -364,7 +364,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         const material = new THREE.MeshPhongMaterial({
             color: shape.props.color,
             transparent: true,
-            opacity: shape.props.opacity ?? 0.1
+            opacity: shape.props.opacity ?? 0.1,
+            side: THREE.DoubleSide
         });
 
         let geometry: THREE.BufferGeometry | null = null;
@@ -374,7 +375,17 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         if (isPlane(shape)) {
             geometry = new THREE.PlaneGeometry(5, 5);
             mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(shape.point.x, shape.point.y, shape.point.z || 0);
+            let point = convertToVector3(shape.point.x, shape.point.y, shape.point.z || 0);
+            let norm = convertToVector3(
+                shape.norm.endVector.x - shape.norm.startVector.x,
+                shape.norm.endVector.y - shape.norm.startVector.y,
+                (shape.norm.endVector.z ?? 0) - (shape.norm.startVector.z ?? 0)
+            );
+
+            mesh.position.set(point.x, point.y, point.z);
+            const defaultNormal = new THREE.Vector3(0, 0, 1);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, norm);
+            mesh.quaternion.copy(quaternion);
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, 2.5, 0));
         }
         
@@ -431,7 +442,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             geometry = new THREE.ConeGeometry(radius, height, 4); // 4 sides for pyramid
             mesh = new THREE.Mesh(geometry, material);
             mesh.position.copy(baseCenter);
-            mesh.lookAt(apex);
             labelPosition = new THREE.Vector3().addVectors(baseCenter, apex).multiplyScalar(0.5);
         }
         
@@ -845,6 +855,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 const y = parseFloat(match[3]); // group 3
                 const z = parseFloat(match[5]); // group 5
                 let r = prompt('Enter the radius of the circle');
+                if (!r) return;
                 try {
                     const radius = math.evaluate(r);
                     if (typeof radius !== 'number' || radius <= 0) {
@@ -951,9 +962,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 let right = math.parse(rhs);
                 const eq = math.simplify(`(${left}) - (${right})`);
                 let expanded = math.simplify(eq, { expand: true });
+                console.log(expanded)
 
                 // Get all terms and check degrees
-                const terms = expanded.args ?? [expanded];
+                const terms = [expanded];
                 for (const term of terms) {
                     const poly = math.simplify(term.toString());
                     const polyStr = poly.toString();
@@ -985,8 +997,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
 
                 const walk = (node: math.MathNode, multiplier = 1): void => {
+                    console.log(node.type)
                     if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '+') {
-                        (node as math.OperatorNode).args.forEach(args => walk(args, multiplier));
+                        (node as math.OperatorNode).args.forEach((args: math.MathNode) => walk(args, multiplier));
                     }
                     
                     else if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '-') {
@@ -1020,7 +1033,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
 
                 let ast = math.parse(expanded.toString());
-                console.log(expanded.toString());
                 walk(ast);
                 if (Math.pow(result.A, 2) + Math.pow(result.B, 2) + Math.pow(result.C, 2) === 0) {
                     this.setState({mode: 'none'});
