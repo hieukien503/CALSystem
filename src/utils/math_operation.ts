@@ -1,4 +1,3 @@
-import { intersect, re } from 'mathjs';
 import * as GeometryShape from '../types/geometry';
 import { isCuboid, isPrism, isPyramid, isSphere, isCylinder, isCone, isPoint, isPolygon, isVector, isCircle, isRay, isLine, isSegment, isPlane } from './type_guard';
 const math = require('mathjs');
@@ -111,64 +110,165 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 z: (isLine(shape2) ? shape2.endLine.z : (isRay(shape2) ? shape2.endRay.z : shape2.endSegment.z)) ?? 0
             }
 
-            let u1 = {
-                x: end.x - start.x,
-                y: end.y - start.y,
-                z: end.z - start.z
+            let A = math.intersect(
+                [start.x, start.y, start.z],
+                [end.x, end.y, end.z],
+                [start2.x, start2.y, start2.z],
+                [end2.x, end2.y, end2.z]
+            )
+
+            if (A === null) {
+                return []
             }
 
-            let u2 = {
-                x: end2.x - start2.x,
-                y: end2.y - start2.y,
-                z: end2.z - start2.z
+            let v = {
+                x: A[0] - start.x,
+                y: A[1] - start.y,
+                z: (A.length == 2 ? 0 : A[2]) - start.z
             }
 
-            let A = 
-            [
-                [u1.x, -u2.x, 0],
-                [u1.y, -u2.y, 0],
-                [u1.z, -u2.z, 0]
-            ]
+            let crossProduct = cross(
+                end.x - start.x,
+                end.y - start.y,
+                end.z - start.z,
+                v.x,
+                v.y,
+                v.z
+            )
 
-            let b = [
-                [start2.x - start.x],
-                [start2.y - start.y],
-                [start2.z - start.z]
-            ];
+            if (isRay(shape1)) {
+                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
+                    return [];
+                }
 
-            let matrixA = math.matrix(A);
+                let v1 = {
+                    x: A[0] - start2.x,
+                    y: A[1] - start2.y,
+                    z: (A.length === 2 ? 0 : A[2]) - start2.z
+                }
 
-            const rankA = math.rank(matrixA);
-            const augmentedMatrix = math.concat(matrixA, math.matrix(b), 1);
-            const rankAug = math.rank(augmentedMatrix);
+                let crossProduct2 = cross(
+                    end2.x - start2.x,
+                    end2.y - start2.y,
+                    end2.z - start2.z,
+                    v1.x,
+                    v1.y,
+                    v1.z
+                )
 
-            if (rankA < rankAug) {
-                return []; // The lines do not intersect
+                if (isRay(shape2)) {
+                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
+                        return [];
+                    }
+                }
+
+                else if (isSegment(shape2)) {
+                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
+                        return [];
+                    }
+
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, end2.z - start2.z)) {
+                        return [];
+                    }
+                }
+
+                return [
+                    {
+                        x: A[0],
+                        y: A[1],
+                        z: (A.length === 2 ? 0 : A[2])
+                    }
+                ]
             }
 
-            else if (rankA < math.size(matrixA)[1]) {
-                throw new Error('The lines are coincident');
+            else if (isSegment(shape1)) {
+                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
+                    return [];
+                }
+
+                if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, end.z - start.z)) {
+                    return [];
+                }
+
+                let v1 = {
+                    x: A[0] - start2.x,
+                    y: A[1] - start2.y,
+                    z: (A.length === 2 ? 0 : A[2]) - start2.z
+                }
+
+                let crossProduct2 = cross(
+                    end2.x - start2.x,
+                    end2.y - start2.y,
+                    end2.z - start2.z,
+                    v1.x,
+                    v1.y,
+                    v1.z
+                )
+
+                if (isRay(shape2)) {
+                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
+                        return [];
+                    }
+                }
+
+                else if (isSegment(shape2)) {
+                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
+                        return [];
+                    }
+
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, end2.z - start2.z)) {
+                        return [];
+                    }
+                }
+
+                return [
+                    {
+                        x: A[0],
+                        y: A[1],
+                        z: (A.length === 2 ? 0 : A[2])
+                    }
+                ]
             }
 
             else {
-                const A_pinv = math.pinv(A)
-                const solutions = math.multiply(A_pinv, b);
-                if (
-                    (isRay(shape1) && solutions.get([0, 0]) < 0) ||
-                    (isRay(shape2) && solutions.get([0, 1]) < 0) ||
-                    (isSegment(shape1) && (solutions.get([0, 0]) < 0 || solutions.get([0, 0]) > 1)) ||
-                    (isSegment(shape2) && (solutions.get([0, 1]) < 0 || solutions.get([0, 1]) > 1))
-                ) {
-                    return []; // The intersection point is not valid
+                let v1 = {
+                    x: A[0] - start2.x,
+                    y: A[1] - start2.y,
+                    z: (A.length === 2 ? 0 : A[2]) - start2.z
                 }
 
-                // If we reach here, the intersection point is valid
-                // Calculate the intersection point
-                return [{
-                    x: start.x + u1.x * solutions.get([0, 0]),
-                    y: start.y + u1.y * solutions.get([0, 0]),
-                    z: (start.z ?? 0) + u1.z * solutions.get([0, 0])
-                }]
+                let crossProduct = cross(
+                    end2.x - start2.x,
+                    end2.y - start2.y,
+                    end2.z - start2.z,
+                    v1.x,
+                    v1.y,
+                    v1.z
+                )
+
+                if (isRay(shape2)) {
+                    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
+                        return [];
+                    }
+                }
+
+                else if (isSegment(shape2)) {
+                    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
+                        return [];
+                    }
+
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, end2.z - start2.z)) {
+                        return [];
+                    }
+                }
+
+                return [
+                    {
+                        x: A[0],
+                        y: A[1],
+                        z: (A.length === 2 ? 0 : A[2])
+                    }
+                ]
             }
         }
         
@@ -599,43 +699,60 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
         }
 
         if (isPlane(shape2)) {
-            // Plane intersection with line
-            let normal = {
+            let n = {
                 x: shape2.norm.endVector.x - shape2.norm.startVector.x,
                 y: shape2.norm.endVector.y - shape2.norm.startVector.y,
-                z: (shape2.norm.endVector.z ?? 0) - (shape2.norm.startVector.z ?? 0)
+                z: (shape2.norm.endVector.z ?? 0) - (shape2.norm.startVector.z ?? 0),
             }
 
-            if (dot(u.x, u.y, u.z, normal.x, normal.y, normal.z) === 0) {
-                // The line is parallel to the plane
-                if (normal.x * start.x + normal.y * start.y + (normal.z ?? 0) * (start.z ?? 0) - (normal.x * shape2.point.x + normal.y * shape2.point.y + (normal.z ?? 0) * (shape2.point.z ?? 0)) === 0) {
-                    // The line is in the plane
-                    throw new Error('The line is in the plane');
+            let A = math.intersect(
+                [start.x, start.y, start.z],
+                [end.x, end.y, end.z],
+                [n.x, n.y, n.z, n.x * shape2.point.x, n.y * shape2.point.y, n.z * (shape2.point.z ?? 0)]
+            )
+
+            if (A === null) {
+                return [];
+            }
+
+            let v = {
+                x: A[0] - start.x,
+                y: A[1] - start.y,
+                z: (A.length == 2 ? 0 : A[2]) - start.z
+            }
+
+            let crossProduct = cross(
+                end.x - start.x,
+                end.y - start.y,
+                end.z - start.z,
+                v.x,
+                v.y,
+                v.z
+            )
+
+            if (isRay(shape1)) {
+                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
+                    return [];
+                }
+            }
+
+            else if (isSegment(shape1)) {
+                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
+                    return [];
                 }
 
-                return []; // No intersection
+                if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, end.z - start.z)) {
+                    return [];
+                }
             }
 
-            let u1 = {
-                x: shape2.point.x - start.x,
-                y: shape2.point.y - start.y,
-                z: (shape2.point.z ?? 0) - (start.z ?? 0)
-            }
-
-            let t = (dot(u1.x, u1.y, u1.z, normal.x, normal.y, normal.z) / dot(u.x, u.y, u.z, normal.x, normal.y, normal.z));
-            if (
-                (isRay(shape1) && t < 0) ||
-                (isSegment(shape1) && (t < 0 || t > 1))
-            ) {
-                return []; // The intersection point is not valid
-            }
-
-            // If we reach here, the intersection point is valid
-            return [{
-                x: start.x + u.x * t,
-                y: start.y + u.y * t,
-                z: (start.z ?? 0) + u.z * t
-            }];
+            return [
+                {
+                    x: A[0],
+                    y: A[1],
+                    z: (A.length === 2 ? 0 : A[2])
+                }
+            ]
         }
 
         else if (isSphere(shape2)) {
@@ -1312,5 +1429,6 @@ export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Po
 }
 
 export const bisector_angle_line2 = (d1: GeometryShape.Line, d2: GeometryShape.Line) => {
-    
+    let A = getIntersections2D(d1, d2);
+
 }

@@ -14,8 +14,8 @@ export interface Shape3D extends BaseShape {
     volume?: number;
 }
 
-export interface Intersection extends Shape2D {
-    
+export interface Angle extends BaseShape {
+    degrees: number;
 }
 
 // Point type
@@ -23,6 +23,10 @@ export interface Point extends BaseShape {
     x: number;
     y: number;
     z?: number;
+}
+
+export interface Intersection extends Point {
+    
 }
 
 export interface Midpoint extends Point {
