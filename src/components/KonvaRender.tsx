@@ -2,21 +2,14 @@ import React, { RefObject } from "react";
 import { Line, Vector, Segment, Polygon, Point, Circle, Ray, Shape, LineStyle, GeometryState, ShapeNode } from "../types/geometry"
 import Konva from "konva";
 import { Stage, Layer } from "react-konva";
-import { isCircle, isPoint, isPolygon, isVector, isLine, isSegment, isRay } from "../utils/type_guard";
 import { KonvaAxis } from "../utils/KonvaAxis";
 import { KonvaGrid } from "../utils/KonvaGrid";
 import { GeometryTool } from "./GeometryTool";
 import { v4 as uuidv4 } from 'uuid';
+import * as operation from '../utils/math_operation'
 import _ from "lodash";
+import * as Factory from '../utils/Factory'
 const math = require("mathjs");
-
-if (!Number.isInteger) {
-    (Number as any).isInteger = function (value: any) { // Use (Number as any) to avoid TS errors
-        return typeof value === 'number' &&
-            isFinite(value) &&
-            Math.floor(value) === value;
-    };
-}
 
 // Constants
 const FONT_DEFAULTS = {
@@ -472,7 +465,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             visible: props.visible.shape,
             id: props.id,
             draggable: true,
-            strokeWidth: props.line_size / scale
+            strokeWidth: props.line_size / scale,
+            hitStrokeWidth: 20
         });
 
         return c;
@@ -622,44 +616,51 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     private createLabel = (shape: Shape): Konva.Text => {
         let x = 0, y = 0;
 
-        if (isCircle(shape)) {
-            x = shape.centerC.x;
-            y = shape.centerC.y + shape.radius * BASE_SPACING;
+        if (shape.type === 'Circle') {
+            let s: Circle = shape as Circle;
+            x = s.centerC.x;
+            y = s.centerC.y + s.radius * BASE_SPACING;
         }
         
-        else if (isPoint(shape)) {
-            x = shape.x;
-            y = shape.y;
+        else if (shape.type === 'Point') {
+            let p: Point = shape as Point;
+            x = p.x;
+            y = p.y;
         }
         
-        else if (isPolygon(shape)) {
-            shape.points.forEach((point) => {
+        else if (shape.type === 'Polygon') {
+            let poly: Polygon = shape as Polygon;
+            poly.points.forEach((point) => {
                 x += point.x;
                 y += point.y;
             });
 
-            x /= shape.points.length;
-            y /= shape.points.length;
+            x /= poly.points.length;
+            y /= poly.points.length;
         }
         
-        else if (isVector(shape)) {
-            x = (shape.endVector.x + shape.startVector.x) / 2;
-            y = (shape.endVector.y + shape.startVector.y) / 2;
+        else if (shape.type === 'Vector') {
+            let v: Vector = shape as Vector;
+            x = (v.endVector.x + v.startVector.x) / 2;
+            y = (v.endVector.y + v.startVector.y) / 2;
         }
         
-        else if (isLine(shape)) {
-            x = (shape.endLine.x + shape.startLine.x) / 2;
-            y = (shape.endLine.y + shape.startLine.y) / 2;
+        else if (shape.type === 'Line') {
+            let l: Line = shape as Line;
+            x = (l.endLine.x + l.startLine.x) / 2;
+            y = (l.endLine.y + l.startLine.y) / 2;
         }
         
-        else if (isSegment(shape)) {
-            x = (shape.startSegment.x + shape.endSegment.x) / 2;
-            y = (shape.startSegment.y + shape.endSegment.y) / 2;
+        else if (shape.type === 'Segment') {
+            let s: Segment = shape as Segment;
+            x = (s.startSegment.x + s.endSegment.x) / 2;
+            y = (s.startSegment.y + s.endSegment.y) / 2;
         }
 
-        else if (isRay(shape)) {
-            x = (shape.endRay.x + shape.startRay.x) / 2;
-            y = (shape.endRay.y + shape.startRay.y) / 2;
+        else if (shape.type === 'Ray') {
+            let r: Ray = shape as Ray;
+            x = (r.endRay.x + r.startRay.x) / 2;
+            y = (r.endRay.y + r.startRay.y) / 2;
         }
 
         const currentMathLayerScale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
@@ -682,33 +683,34 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     
     private createKonvaShape = (shape: Shape): [Konva.Shape, Konva.Text] => {
         let konvaShape: Konva.Shape;
+        switch (shape.type) {
+            case 'Circle':
+                konvaShape = this.drawCircle(shape as Circle, shape.props);
+                break;
+            
+            case 'Point':
+                konvaShape = this.drawPoint(shape as Point, shape.props);
+                break;
+            
+            case 'Line':
+                konvaShape = this.drawLine(shape as Line, shape.props);
+                break;
+            
+            case 'Polygon':
+                konvaShape = this.drawPolygon(shape as Polygon, shape.props);
+                break;
 
-        if (isCircle(shape)) {
-            konvaShape = this.drawCircle(shape, shape.props);
-        }
-        
-        else if (isPoint(shape)) {
-            konvaShape = this.drawPoint(shape, shape.props);
-        }
-        
-        else if (isPolygon(shape)) {
-            konvaShape = this.drawPolygon(shape, shape.props);
-        }
-        
-        else if (isVector(shape)) {
-            konvaShape = this.drawVector(shape, shape.props);
-        }
-        
-        else if (isLine(shape)) {
-            konvaShape = this.drawLine(shape, shape.props);
-        }
-
-        else if (isRay(shape)) {
-            konvaShape = this.drawRay(shape, shape.props);
-        }
-        
-        else {
-            konvaShape = this.drawSegment(shape as Segment, shape.props);
+            case 'Vector':
+                konvaShape = this.drawVector(shape as Vector, shape.props);
+                break;
+            
+            case 'Ray':
+                konvaShape = this.drawRay(shape as Ray, shape.props);
+                break;
+            
+            default:
+                konvaShape = this.drawSegment(shape as Segment, shape.props);
+                break;
         }
 
         return [konvaShape, this.createLabel(shape)];
@@ -842,9 +844,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             }
 
             this.state.shapes.forEach((node) => {
-                if (isPoint(node.type)) {
+                if (node.type.type === 'Point') {
+                    let p: Point = node.type as Point
                     // If the mouse is within 2 pixels of the point, don't create a new point
-                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 10) {
+                    if (Math.abs(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 10) {
                         return;
                     }
                 }
@@ -859,11 +862,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             this.label_used.push(label);
 
-            const point: Point = {
-                x: position.x,
-                y: position.y,
-                props: createPointDefaultShapeProps(label)
-            }
+            const point: Point = Factory.createPoint(
+                createPointDefaultShapeProps(label),
+                position.x,
+                position.y
+            )
 
             this.state.shapes.set(point.props.id, {
                 id: point.props.id,
@@ -886,9 +889,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             let found = false;
             this.state.shapes.forEach((node) => {
-                if (isPoint(node.type)) {
-                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 10) {
-                        this.state.selectedShapes.push(node.type);
+                if (node.type.type === 'Point') {
+                    let p: Point = node.type as Point
+                    if (Math.abs(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 10) {
+                        this.state.selectedShapes.push(p);
                         found = true;
                         return;
                     }
@@ -904,11 +908,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 }
 
                 this.label_used.push(label);
-                const point: Point = {
-                    x: position.x,
-                    y: position.y,
-                    props: createPointDefaultShapeProps(label)
-                }
+                const point: Point = Factory.createPoint(
+                    createPointDefaultShapeProps(label),
+                    position.x,
+                    position.y
+                )
     
                 this.state.shapes.set(point.props.id, {
                     id: point.props.id,
@@ -944,17 +948,17 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     const dy = p2.y - p1.y;
 
                     let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
-                    const line: Line = {
-                        startLine: p1,
-                        endLine: p2,
-                        props: createLineDefaultShapeProps(
+                    const line: Line = Factory.createLine(
+                        createLineDefaultShapeProps(
                             label,
                             0,
                             p1.x - length * dx,
                             (p1.y - length * dy - 10 < 0) ? p1.y - length * dy - 10 : p1.y - length * dy + 10,
                             0
-                        )
-                    }
+                        ),
+                        p1,
+                        p2
+                    )
 
                     this.state.shapes.set(line.props.id, {
                         id: line.props.id,
@@ -979,7 +983,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     const segment: Segment = {
                         startSegment: p1,
                         endSegment: p2,
-                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0)
+                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0),
+                        type: 'Segment'
                     }
 
                     this.state.shapes.set(segment.props.id, {
@@ -1005,7 +1010,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     const vector: Vector = {
                         startVector: p1,
                         endVector: p2,
-                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0)
+                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0),
+                        type: 'Vector'
                     }
 
                     this.state.shapes.set(vector.props.id, {
@@ -1031,7 +1037,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     const ray: Ray = {
                         startRay: p1,
                         endRay: p2,
-                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0)
+                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0),
+                        type: 'Ray'
                     }
 
                     this.state.shapes.set(ray.props.id, {
@@ -1058,9 +1065,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             let found = false;
             this.state.shapes.forEach((node) => {
-                if (isPoint(node.type)) {
-                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 10) {
-                        this.state.selectedShapes.push(node.type);
+                if (node.type.type === 'Point') {
+                    let p: Point = node.type as Point
+                    if (Math.abs(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 10) {
+                        this.state.selectedShapes.push(p);
                         found = true;
                         return;
                     }
@@ -1076,11 +1084,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 }
 
                 this.label_used.push(label);
-                const point: Point = {
-                    x: position.x,
-                    y: position.y,
-                    props: createPointDefaultShapeProps(label)
-                }
+                const point: Point = Factory.createPoint(
+                    createPointDefaultShapeProps(label),
+                    position.x,
+                    position.y
+                )
     
                 this.state.shapes.set(point.props.id, {
                     id: point.props.id,
@@ -1124,10 +1132,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 else {
                     points.pop();
                     let label = `poly${this.state.polygonIndex + 1}`;
-                    const polygon: Polygon = {
-                        points: points,
-                        props: createPolygonDefaultShapeProps(label, 0, 0, 10, 0)
-                    }
+                    const polygon: Polygon = Factory.createPolygon(
+                        createPolygonDefaultShapeProps(label, 0, 0, 10, 0),
+                        points
+                    )
+
+                    polygon.area = operation.getArea(polygon);
 
                     let dependcies: string[] = [];
                     dependcies = points.map(point => point.props.id);
@@ -1143,11 +1153,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         }
 
                         this.label_used.push(label);
-                        const segment: Segment = {
-                            startSegment: start,
-                            endSegment: end,
-                            props: createPolygonDefaultShapeProps(label, 0, 0, 10, 0)
-                        }
+                        const segment: Segment = Factory.createSegment(
+                            createPolygonDefaultShapeProps(label, 0, 0, 10, 0),
+                            start,
+                            end
+                        )
 
                         this.state.shapes.set(segment.props.id, {
                             id: segment.props.id,
@@ -1184,9 +1194,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             let found = false;
             this.state.shapes.forEach((node) => {
-                if (isPoint(node.type)) {
-                    if (Math.abs(Math.pow(node.type.x - position.x, 2) + Math.pow(node.type.y - position.y, 2)) <= 10) {
-                        this.state.selectedShapes.push(node.type);
+                if (node.type.type === 'Point') {
+                    let p: Point = node.type as Point
+                    if (Math.abs(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 10) {
+                        this.state.selectedShapes.push(p);
                         found = true;
                         return;
                     }
@@ -1202,12 +1213,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 }
 
                 this.label_used.push(label);
-
-                const point: Point = {
-                    x: position.x,
-                    y: position.y,
-                    props: createPointDefaultShapeProps(label)
-                }
+                const point: Point = Factory.createPoint(
+                    createPointDefaultShapeProps(label),
+                    position.x,
+                    position.y
+                )
 
                 this.state.shapes.set(point.props.id, {
                     id: point.props.id,
@@ -1239,11 +1249,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
                 this.label_used.push(label);
                 
-                const circle: Circle = {
-                    centerC: point,
-                    radius: radius,
-                    props: createCircleDefaultShapeProps(label, radius, 0, 10, 0)
-                }   
+                const circle: Circle = Factory.createCircle(
+                    createCircleDefaultShapeProps(label, radius, 0, 10, 0),
+                    point,
+                    radius
+                )  
 
                 this.state.shapes.set(circle.props.id, {
                     id: circle.props.id,
@@ -1263,6 +1273,38 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         this.historyStack.push(_.cloneDeep(this.state));
         this.futureStack = [];
+    }
+
+    private findChildren = (id: string): string[] => {
+        if (!this.state.shapes.get(id)) {
+            return [];
+        }
+
+        let children: string[] = [];
+        this.state.shapes.forEach((value, key) => {
+            if (value.dependsOn.includes(id)) {
+                children.push(key)
+            }
+        })
+
+        return children;
+    } 
+
+    private updateAndPropagate = (id: string, updateFn: (node: ShapeNode) => ShapeNode) => {
+        const node = this.state.shapes.get(id);
+        if (!node) return;
+
+        const updated = updateFn(node as ShapeNode);
+        this.state.shapes.set(id, updated);
+
+        let children = this.findChildren(id);
+        for (const child of children) {
+            this.updateAndPropagate(child, this.computeUpdateFor);
+        }
+    }
+
+    private computeUpdateFor = (node: ShapeNode): ShapeNode => {
+        
     }
 
     render(): React.ReactNode {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import KonvaCanvas from './KonvaRender';
 import ThreeDCanvas from './ThreeRender';
-import Footer from './Footer';
 
 const Header = () => {
     const [selectedTool, setSelectedTool] = useState<string>('basic');

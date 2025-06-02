@@ -3,6 +3,7 @@ import Konva from 'konva';
 // Base interfaces
 export interface BaseShape {
     props: ShapeProps;
+    type: ShapeType;
 }
 
 export interface Shape2D extends BaseShape {
@@ -14,8 +15,14 @@ export interface Shape3D extends BaseShape {
     volume?: number;
 }
 
+export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
+                        'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'AngleBisector' | 'PerpendicularBisector' |
+                        'PerpendicularLine' | 'TangentLine' | 'Median' | 'ParallelLine' | 'Circle3Point' | 'SemiCircle' | 
+                        'Angle' | 'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder'
+
 export interface Angle extends BaseShape {
     degrees: number;
+    type: 'Angle';
 }
 
 // Point type
@@ -25,9 +32,7 @@ export interface Point extends BaseShape {
     z?: number;
 }
 
-export interface Intersection extends Point {
-    
-}
+export type Intersection = Point | Line | Circle
 
 export interface Midpoint extends Point {
     
@@ -148,7 +153,7 @@ export interface Cuboid extends Shape3D {
 
 export interface Prism extends Shape3D {
     base: Polygon;
-    top_point: Point;
+    shiftVector: Vector;
 }
 
 // Union type for all shapes

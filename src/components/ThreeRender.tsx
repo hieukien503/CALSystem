@@ -1,11 +1,9 @@
 import React, { RefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Shape, Sphere, GeometryState, ShapeProps, ShapeNode3D, Vector, Plane } from '../types/geometry';
-import {
-    isPlane, isCylinder, isCone, isSphere, isPyramid, isCuboid, isPrism,
-    isPoint, isLine, isVector, isSegment, isPolygon, isCircle, isRay
-} from '../utils/type_guard';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
+import { Shape, Sphere, GeometryState, ShapeProps, ShapeNode3D, Vector, Plane, Cylinder, Cone, Pyramid, Cuboid, Prism, 
+        Polygon, Segment, Ray, Circle, Point, Line } from '../types/geometry';
 import { GeometryTool3D } from './GeometryTool';
 import { v4 as uuidv4 } from 'uuid';
 import type { MathNode, ConstantNode, SymbolNode } from 'mathjs';
@@ -114,6 +112,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private rendererRef: RefObject<THREE.WebGLRenderer | null>;
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
+    private labelRenderer: RefObject<CSS2DRenderer | null>;
 
     constructor(props: ThreeDCanvasProps) {
         super(props);
@@ -122,6 +121,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.rendererRef = React.createRef<THREE.WebGLRenderer>();
         this.controlsRef = React.createRef<OrbitControls>();
         this.canvasRef = React.createRef<HTMLCanvasElement>();
+        this.labelRenderer = React.createRef<CSS2DRenderer>();
         this.state = {
             numLoops: 0,
             spacing: 20,
@@ -251,12 +251,21 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         controls.dampingFactor = 0.05;
         this.controlsRef.current = controls;
 
+        // Add label renderer
+        if (this.labelRenderer.current) {
+            this.labelRenderer.current.setSize(rect.width, rect.height);
+            this.labelRenderer.current.domElement.style.position = 'absolute';
+            this.labelRenderer.current.domElement.style.top = '0px';
+            this.labelRenderer.current.domElement.style.pointerEvents = 'none';
+        }
+        
         // Animation loop
         const animate = () => {
             requestAnimationFrame(animate);
             controls.update();
-            if (this.sceneRef.current && this.cameraRef.current && this.rendererRef.current) {
+            if (this.sceneRef.current && this.cameraRef.current && this.rendererRef.current && this.labelRenderer.current) {
                 this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current);
+                this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current)
             }
         };
 
@@ -309,53 +318,34 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         xOffset: number,
         yOffset: number,
         zOffset: number
-    ): THREE.Sprite {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d')!;
-        
-        context.font = `${FONT_DEFAULTS.SIZE}px ${FONT_DEFAULTS.FAMILY}`;
-        
-        // Get size of text
-        const textMetrics = context.measureText(text);
-        const width = textMetrics.width + 10;
-        const height = 30;
+    ): CSS2DObject {
+        // Create the HTML element for the label
+        const div = document.createElement('div');
+        div.className = 'label';
+        div.textContent = text;
 
-        // Set canvas size
-        canvas.width = width;
-        canvas.height = height;
+        // Style the label with CSS directly
+        div.style.color = FONT_DEFAULTS.COLOR;
+        div.style.fontSize = `${FONT_DEFAULTS.SIZE}px`;
+        div.style.fontFamily = FONT_DEFAULTS.FAMILY;
+        div.style.padding = '2px 6px';
+        div.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+        div.style.borderRadius = '4px';
+        div.style.whiteSpace = 'nowrap';
+        div.style.pointerEvents = 'none'; // so it doesn’t block mouse events
+        div.style.userSelect = 'none';
 
-        // Make background transparent
-        context.clearRect(0, 0, width, height);
+        // Create CSS2DObject from the div
+        const label = new CSS2DObject(div);
 
-        // Draw text
-        context.font = `${FONT_DEFAULTS.SIZE}px ${FONT_DEFAULTS.FAMILY}`;
-        context.fillStyle = FONT_DEFAULTS.COLOR;
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(text, width / 2, height / 2);
-
-        // Create texture
-        const texture = new THREE.CanvasTexture(canvas);
-        const spriteMaterial = new THREE.SpriteMaterial({ 
-            map: texture,
-            transparent: true,
-            depthTest: false,
-            depthWrite: false
-        });
-        
-        const sprite = new THREE.Sprite(spriteMaterial);
-        
-        // Position sprite with offsets
-        const offsetPosition = new THREE.Vector3(
+        // Position label with offset
+        label.position.set(
             position.x + xOffset,
             position.y + yOffset,
             position.z + zOffset
         );
-        sprite.position.copy(offsetPosition);
-        sprite.scale.set(width / 40, height / 40, 1);
-        sprite.renderOrder = 999; // Ensure labels render on top
 
-        return sprite;
+        return label;
     }
 
     create3DMesh (shape: Shape): THREE.Object3D | null {
@@ -372,14 +362,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         let mesh: THREE.Mesh | THREE.Group | null = null;
         let labelPosition = new THREE.Vector3();
 
-        if (isPlane(shape)) {
+        if (shape.type === 'Plane') {
+            let pl: Plane = shape as Plane;
             geometry = new THREE.PlaneGeometry(5, 5);
             mesh = new THREE.Mesh(geometry, material);
-            let point = convertToVector3(shape.point.x, shape.point.y, shape.point.z || 0);
+            let point = convertToVector3(pl.point.x, pl.point.y, pl.point.z || 0);
             let norm = convertToVector3(
-                shape.norm.endVector.x - shape.norm.startVector.x,
-                shape.norm.endVector.y - shape.norm.startVector.y,
-                (shape.norm.endVector.z ?? 0) - (shape.norm.startVector.z ?? 0)
+                pl.norm.endVector.x - pl.norm.startVector.x,
+                pl.norm.endVector.y - pl.norm.startVector.y,
+                (pl.norm.endVector.z ?? 0) - (pl.norm.startVector.z ?? 0)
             );
 
             mesh.position.set(point.x, point.y, point.z);
@@ -389,110 +380,200 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, 2.5, 0));
         }
         
-        else if (isCylinder(shape)) {
-            const start = new THREE.Vector3(shape.centerBase1.x, shape.centerBase1.y, shape.centerBase1.z || 0);
-            const end = new THREE.Vector3(shape.centerBase2.x, shape.centerBase2.y, shape.centerBase2.z || 0);
+        else if (shape.type === 'Cylinder') {
+            let cy: Cylinder = shape as Cylinder;
+            const start = convertToVector3(cy.centerBase1.x, cy.centerBase1.y, cy.centerBase1.z || 0);
+            const end = convertToVector3(cy.centerBase2.x, cy.centerBase2.y, cy.centerBase2.z || 0);
             const direction = new THREE.Vector3().subVectors(end, start);
             const length = direction.length();
-            const radius = shape.radius;
+            const radius = cy.radius;
 
             geometry = new THREE.CylinderGeometry(radius, radius, length, 32);
             mesh = new THREE.Mesh(geometry, material);
             mesh.position.copy(start).add(direction.multiplyScalar(0.5));
-            mesh.lookAt(end);
+            const defaultNormal = new THREE.Vector3(0, 0, 1);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, direction);
+            mesh.quaternion.copy(quaternion);
             labelPosition = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
         }
         
-        else if (isCone(shape)) {
-            const center = new THREE.Vector3(shape.center.x, shape.center.y, shape.center.z || 0);
-            const apex = new THREE.Vector3(shape.apex.x, shape.apex.y, shape.apex.z || 0);
+        else if (shape.type === 'Cone') {
+            let co: Cone = shape as Cone;
+            const center = convertToVector3(co.center.x, co.center.y, co.center.z || 0);
+            const apex = convertToVector3(co.apex.x, co.apex.y, co.apex.z || 0);
             const direction = new THREE.Vector3().subVectors(apex, center);
             const height = direction.length();
-            const radius = shape.radius
+            const radius = co.radius
 
             geometry = new THREE.ConeGeometry(radius, height, 32);
             mesh = new THREE.Mesh(geometry, material);
             mesh.position.copy(center);
-            mesh.lookAt(apex);
+            const defaultNormal = new THREE.Vector3(0, 0, 1);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, direction);
+            mesh.quaternion.copy(quaternion);
             labelPosition = new THREE.Vector3().addVectors(center, apex).multiplyScalar(0.5);
         }
         
-        else if (isSphere(shape)) {
-            geometry = new THREE.SphereGeometry(shape.radius, 32, 32);
+        else if (shape.type === 'Sphere') {
+            let sp:  Sphere = shape as Sphere;
+            geometry = new THREE.SphereGeometry(sp.radius, 32, 32);
             mesh = new THREE.Mesh(geometry, material);
-            let center = convertToVector3(shape.centerS.x, shape.centerS.y, shape.centerS.z || 0)
+            let center = convertToVector3(sp.centerS.x, sp.centerS.y, sp.centerS.z || 0)
             mesh.position.set(center.x, center.y, center.z);
-            labelPosition.copy(mesh.position).add(new THREE.Vector3(0, shape.radius + 0.5, 0));
+            labelPosition.copy(mesh.position).add(new THREE.Vector3(0, sp.radius + 0.5, 0));
         }
         
-        else if (isPyramid(shape)) {
-            const apex = new THREE.Vector3(shape.apex.x, shape.apex.y, shape.apex.z || 0);
-            const baseCenter = new THREE.Vector3();
-            shape.base.points.forEach(point => {
-                baseCenter.x += point.x;
-                baseCenter.y += point.y;
-                baseCenter.z += (point.z || 0);
+        else if (shape.type === 'Pyramid') {
+            let py: Pyramid = shape as Pyramid;
+            const apex = convertToVector3(py.apex.x, py.apex.y, py.apex.z ?? 0);
+            const vertices: number[] = [];
+            const indices: number[] = [];
+
+            // Add base vertices
+            py.base.points.forEach(p => {
+                vertices.push(p.x, p.y, p.z ?? 0);
             });
-            baseCenter.divideScalar(shape.base.points.length);
 
-            const direction = new THREE.Vector3().subVectors(apex, baseCenter);
-            const height = direction.length();
-            const radius = 0.5; // Default radius, could be made configurable
+            // Add apex vertex
+            const apexIndex = py.base.points.length;
+            vertices.push(apex.x, apex.y, apex.z);
 
-            geometry = new THREE.ConeGeometry(radius, height, 4); // 4 sides for pyramid
+            // Create side faces (triangle fan)
+            for (let i = 0; i < py.base.points.length; i++) {
+                const next = (i + 1) % py.base.points.length;
+                indices.push(i, next, apexIndex); // triangle: base[i], base[next], apex
+            }
+
+            // Optionally: add base face (triangulate polygon)
+            // For simplicity, assuming base is convex and planar
+            for (let i = 1; i < py.base.points.length - 1; i++) {
+                indices.push(0, i, i + 1); // triangle: base[0], base[i], base[i+1]
+            }
+
+            let geometry = new THREE.BufferGeometry();
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.computeVertexNormals();
             mesh = new THREE.Mesh(geometry, material);
+
+            let baseCenter = new THREE.Vector3();
+            for (const p of py.base.points) {
+                baseCenter.add(convertToVector3(p.x, p.y, p.z ?? 0));
+            }
+            
+            baseCenter.divideScalar(py.base.points.length);
             mesh.position.copy(baseCenter);
             labelPosition = new THREE.Vector3().addVectors(baseCenter, apex).multiplyScalar(0.5);
         }
         
-        else if (isCuboid(shape)) {
-            const width = shape.bottomRightFront.x - shape.topLeftBack.x;
-            const height = shape.bottomRightFront.y - shape.topLeftBack.y;
-            const depth = (shape.bottomRightFront.z || 0) - (shape.topLeftBack.z || 0);
+        else if (shape.type === 'Cuboid') {
+            let cube: Cuboid = shape as Cuboid
+            const width = Math.abs(cube.bottomRightFront.x - cube.topLeftBack.x);
+            const height = Math.abs(cube.bottomRightFront.y - cube.topLeftBack.y);
+            const depth = Math.abs((cube.bottomRightFront.z || 0) - (cube.topLeftBack.z || 0));
 
             geometry = new THREE.BoxGeometry(width, height, depth);
             mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(
-                (shape.topLeftBack.x + shape.bottomRightFront.x) / 2,
-                (shape.topLeftBack.y + shape.bottomRightFront.y) / 2,
-                ((shape.topLeftBack.z || 0) + (shape.bottomRightFront.z || 0)) / 2
+                (cube.topLeftBack.x + cube.bottomRightFront.x) / 2,
+                (cube.topLeftBack.y + cube.bottomRightFront.y) / 2,
+                ((cube.topLeftBack.z || 0) + (cube.bottomRightFront.z || 0)) / 2
             );
 
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, height / 2 + 0.5, 0));
         }
         
-        else if (isPrism(shape)) {
-            const baseCenter = new THREE.Vector3();
-            shape.base.points.forEach(point => {
-                baseCenter.x += point.x;
-                baseCenter.y += point.y;
-                baseCenter.z += (point.z || 0);
+        else if (shape.type === 'Prism') {
+            let pr: Prism = shape as Prism
+            const direction = convertToVector3(
+                pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
+                pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
+                (pr.shiftVector.endVector.z ?? 0) - (pr.shiftVector.startVector.z ?? 0),
+            );
+
+            let base: THREE.Vector3[] = [], secondBase: THREE.Vector3[] = [];
+            pr.base.points.forEach(p => {
+                base.push(convertToVector3(p.x, p.y, p.z ?? 0));
+                let v = base[base.length - 1].clone()
+                secondBase.push(v.add(direction))
+            })
+
+            const geometry = new THREE.BufferGeometry();
+            // Prepare arrays for positions and indices
+            const positions: number[] = [];
+            const indices: number[] = [];
+
+            // Push base vertices positions
+            base.forEach(v => {
+                positions.push(v.x, v.y, v.z);
             });
-            baseCenter.divideScalar(shape.base.points.length);
 
-            const top = new THREE.Vector3(shape.top_point.x, shape.top_point.y, shape.top_point.z || 0);
-            const direction = new THREE.Vector3().subVectors(top, baseCenter);
-            const height = direction.length();
-            const radius = 0.5; // Default radius, could be made configurable
+            // Push top vertices positions
+            secondBase.forEach(v => {
+                positions.push(v.x, v.y, v.z);
+            });
 
-            geometry = new THREE.CylinderGeometry(radius, radius, height, shape.base.points.length);
-            mesh = new THREE.Mesh(geometry, material);
-            mesh.position.copy(baseCenter);
-            mesh.lookAt(top);
-            labelPosition = new THREE.Vector3().addVectors(baseCenter, top).multiplyScalar(0.5);
+            // --- Create base face (triangulate using triangle fan method) ---
+            // Base vertices are 0..n-1
+            for (let i = 1; i < base.length - 1; i++) {
+                indices.push(0, i, i + 1);
+            }
+
+            // --- Create top face ---
+            // Top vertices are n..2n-1
+            // We reverse winding order for top to keep normals consistent (facing outward)
+            for (let i = 1; i < base.length - 1; i++) {
+                indices.push(base.length, base.length + i + 1, base.length + i);
+            }
+
+            // --- Create side faces ---
+            for (let i = 0; i < base.length; i++) {
+                const next = (i + 1) % base.length;
+
+                // Quad between base and top vertices split into two triangles
+                // vertices: i, next, n + next, n + i
+                indices.push(i, next, base.length + next);
+                indices.push(i, base.length + next, base.length + i);
+            }
+
+            const positionNumComponents = 3;
+            const positionAttribute = new THREE.Float32BufferAttribute(positions, positionNumComponents);
+            geometry.setAttribute('position', positionAttribute);
+
+            geometry.setIndex(indices);
+
+            // Compute normals automatically
+            geometry.computeVertexNormals();
+
+            // Mesh
+            const mesh = new THREE.Mesh(geometry, material);
+            const baseCenter1 = new THREE.Vector3(), baseCenter2 = new THREE.Vector3();
+            base.forEach(v => {
+                baseCenter1.add(v);
+            })
+
+            secondBase.forEach(v => {
+                baseCenter2.add(v);
+            })
+
+            baseCenter1.divideScalar(base.length);
+            baseCenter2.divideScalar(secondBase.length);
+            mesh.position.copy(baseCenter1);
+            labelPosition = new THREE.Vector3().addVectors(baseCenter1, baseCenter2).multiplyScalar(0.5);
         }
         
-        else if (isVector(shape)) {
+        else if (shape.type === 'Vector') {
             // Calculate direction vector
+            let v: Vector = shape as Vector
             const start = new THREE.Vector3(
-                shape.startVector.x,
-                shape.startVector.y,
-                shape.startVector.z || 0
+                v.startVector.x,
+                v.startVector.y,
+                v.startVector.z || 0
             );
             const end = new THREE.Vector3(
-                shape.endVector.x,
-                shape.endVector.y,
-                shape.endVector.z || 0
+                v.endVector.x,
+                v.endVector.y,
+                v.endVector.z || 0
             );
             const direction = new THREE.Vector3().subVectors(end, start);
             const length = direction.length();
@@ -546,14 +627,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             color: shape.props.color,
             transparent: true,
             opacity: shape.props.opacity ?? 0.1,
-            wireframe: isCircle(shape)? true : false
+            wireframe: shape.type === 'Circle' ? true : false
         });
 
         let geometry: THREE.BufferGeometry | null = null;
         let mesh: THREE.Mesh | THREE.Group | null = null;
         let labelPosition = new THREE.Vector3();
 
-        if (isCircle(shape)) {
+        if (shape.type === 'Circle') {
+            let c: Circle = shape as Circle;
             // Create points for the circle
             const points = [];
             const segments = 64; // Number of segments for the circle
@@ -566,13 +648,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             for (let p of points) {
-                p.multiplyScalar(shape.radius);
+                p.multiplyScalar(c.radius);
             }
 
-            let normalVec = shape.normal? new THREE.Vector3(
-                shape.normal.endVector.x - shape.normal.startVector.x,
-                (shape.normal.endVector.z || 0) - (shape.normal.startVector.z || 0),
-                shape.normal.endVector.y - shape.normal.startVector.y
+            let normalVec = c.normal? new THREE.Vector3(
+                c.normal.endVector.x - c.normal.startVector.x,
+                (c.normal.endVector.z || 0) - (c.normal.startVector.z || 0),
+                c.normal.endVector.y - c.normal.startVector.y
             ).normalize() : new THREE.Vector3(0, 1, 0);
             let defaultNorm = new THREE.Vector3(0, 1, 0);
             if (!defaultNorm.equals(normalVec)) {
@@ -584,24 +666,27 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             for (let p of points) {
-                p.add(convertToVector3(shape.centerC.x, shape.centerC.y, shape.centerC.z || 0));
+                p.add(convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z || 0));
             }
 
-            mesh = createDashLine(points, shape.props);
-            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, shape.radius + 0.5, 0));
+            mesh = createDashLine(points, c.props);
+            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, c.radius + 0.5, 0));
         }
         
-        else if (isPoint(shape)) {
+        else if (shape.type === 'Point') {
+            let p: Point = shape as Point;
             geometry = new THREE.SphereGeometry(shape.props.radius, 32, 32);
             mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(shape.x, shape.z ?? 0, shape.y);
+            let pConvert = convertToVector3(p.x, p.y, p.z ?? 0);
+            mesh.position.set(pConvert.x, pConvert.y, pConvert.z);
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, shape.props.radius + 0.5, 0));
         }
         
-        else if (isLine(shape)) {
+        else if (shape.type === 'Line') {
+            let l: Line = shape as Line;
             let points = []
-            let start_point = convertToVector3(shape.startLine.x, shape.startLine.y, shape.startLine.z || 0)
-            let end_point = convertToVector3(shape.endLine.x, shape.endLine.y, shape.endLine.z || 0)
+            let start_point = convertToVector3(l.startLine.x, l.startLine.y, l.startLine.z || 0)
+            let end_point = convertToVector3(l.endLine.x, l.endLine.y, l.endLine.z || 0)
             let direction = new THREE.Vector3().subVectors(end_point, start_point)
             const P1 = new THREE.Vector3().copy(start_point).sub(direction.clone().multiplyScalar(LINE_EXTENSION))
             const P2 = new THREE.Vector3().copy(end_point).add(direction.clone().multiplyScalar(LINE_EXTENSION))
@@ -609,39 +694,42 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             points.push(P1)
             points.push(P2)
 
-            mesh = createDashLine(points, shape.props);
+            mesh = createDashLine(points, l.props);
             labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
 
-        else if (isRay(shape)) {
-            let points = []
-            const P1 = convertToVector3(shape.startRay.x, shape.startRay.y, shape.startRay.z || 0)
-            const P2 = convertToVector3(shape.endRay.x, shape.endRay.y, shape.endRay.z || 0)
-            const direction = new THREE.Vector3().subVectors(P2, P1)
-            const P3 = new THREE.Vector3().copy(P2).add(direction.clone().multiplyScalar(LINE_EXTENSION))
+        else if (shape.type === 'Ray') {
+            let r: Ray = shape as Ray;
+            let points = [];
+            const P1 = convertToVector3(r.startRay.x, r.startRay.y, r.startRay.z || 0);
+            const P2 = convertToVector3(r.endRay.x, r.endRay.y, r.endRay.z || 0);
+            const direction = new THREE.Vector3().subVectors(P2, P1);
+            const P3 = new THREE.Vector3().copy(P2).add(direction.clone().multiplyScalar(LINE_EXTENSION));
 
-            points.push(P1)
-            points.push(P3)
+            points.push(P1);
+            points.push(P3);
 
-            mesh = createDashLine(points, shape.props);
+            mesh = createDashLine(points, r.props);
             labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
         
-        else if (isSegment(shape)) {
+        else if (shape.type === 'Segment') {
+            let s: Segment = shape as Segment;
             let points = []
-            const P1 = convertToVector3(shape.startSegment.x, shape.startSegment.y, shape.startSegment.z || 0)
-            const P2 = convertToVector3(shape.endSegment.x, shape.endSegment.y, shape.endSegment.z || 0)
+            const P1 = convertToVector3(s.startSegment.x, s.startSegment.y, s.startSegment.z || 0)
+            const P2 = convertToVector3(s.endSegment.x, s.endSegment.y, s.endSegment.z || 0)
             
             points.push(P1)
             points.push(P2)
 
-            mesh = createDashLine(points, shape.props);
+            mesh = createDashLine(points, s.props);
             labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
         
-        else if (isPolygon(shape)) {
+        else if (shape.type === 'Polygon') {
             // Create a polygon from the points
-            const points = shape.points.map(point => new THREE.Vector3(point.x, point.y, point.z || 0));
+            let poly: Polygon = shape as Polygon;
+            const points = poly.points.map(point => new THREE.Vector3(point.x, point.y, point.z || 0));
             
             // Create a shape from the points
             const shapeGeometry = new THREE.Shape();
@@ -705,6 +793,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 shape.props.labelYOffset || 0,
                 shape.props.labelZOffset || 0
             );
+            
             group.add(label);
         }
 
@@ -713,7 +802,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     createShape (shape: Shape): THREE.Object3D | null {
         // 2D shapes
-        if (isCircle(shape) || isPoint(shape) || isLine(shape) || isSegment(shape) || isPolygon(shape) || isSegment(shape)) {
+        if (shape.type === 'Circle' || shape.type === 'Polygon' || shape.type === 'Line' || shape.type === 'Segment' || 
+            shape.type === 'Point' || shape.type === 'Ray') {
             return this.create2DShape(shape);
         }
 
@@ -868,9 +958,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             x: x,
                             y: y,
                             z: z,
-                            props: createPointDefaultShapeProps('O', 0.02, 0, 0.5, -0.5)
+                            props: createPointDefaultShapeProps('O', 0.02, 0, 0.5, -0.5),
+                            type: 'Point'
                         },
                         radius: radius,
+                        type: 'Sphere',
                         props: {
                             line_style: {
                                 dash_size: 0,
@@ -1057,17 +1149,20 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         x: 0,
                         y: 0,
                         z: 0,
-                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0)
+                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0),
+                        type: 'Point'
                     },
 
                     endVector: {
                         x: result.A,
                         y: result.B,
                         z: result.C,
-                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0)
+                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0),
+                        type: 'Point'
                     },
 
-                    props: createLineDefaultShapeProps('', 0, 0, 0, 0)
+                    props: createLineDefaultShapeProps('', 0, 0, 0, 0),
+                    type: 'Vector'
                 }
 
                 let p: Plane = {
@@ -1076,10 +1171,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         x: x,
                         y: y,
                         z: z,
-                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0)
+                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0),
+                        type: 'Point'
                     },
 
-                    props: createLineDefaultShapeProps('p', 0, 0, 0, 0)
+                    props: createLineDefaultShapeProps('p', 0, 0, 0, 0),
+                    type: 'Plane'
                 }
 
                 p.props.color = 'blue';
