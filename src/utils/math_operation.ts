@@ -1,5 +1,5 @@
 import * as GeometryShape from '../types/geometry';
-import { isCuboid, isPrism, isPyramid, isSphere, isCylinder, isCone, isPoint, isPolygon, isVector, isCircle, isRay, isLine, isSegment, isPlane } from './type_guard';
+import * as Factory from './Factory'
 const math = require('mathjs');
 
 const cross = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
@@ -61,6 +61,32 @@ const distance = (base: GeometryShape.Polygon, point: GeometryShape.Point) => {
     return height;
 }
 
+const getStartAndEnd = (shape: GeometryShape.Shape) => {
+    if ((shape.type === 'Line') || (shape.type === 'Ray') || (shape.type === 'Segment')) {
+        let start = {
+            x: ((shape.type === 'Line') ? (shape as GeometryShape.Line).startLine.x : 
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).startRay.x : (shape as GeometryShape.Segment).startSegment.x),
+            y: ((shape.type === 'Line') ? (shape as GeometryShape.Line).startLine.y : 
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).startRay.y : (shape as GeometryShape.Segment).startSegment.y),
+            z: ((shape.type === 'Line') ? (shape as GeometryShape.Line).startLine.z : 
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).startRay.z : (shape as GeometryShape.Segment).startSegment.z) ?? 0
+        }
+
+        let end = {
+            x: ((shape.type === 'Line') ? (shape as GeometryShape.Line).endLine.x : 
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).endRay.x : (shape as GeometryShape.Segment).endSegment.x),
+            y: ((shape.type === 'Line') ? (shape as GeometryShape.Line).endLine.y : 
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).endRay.y : (shape as GeometryShape.Segment).endSegment.y),
+            z: ((shape.type === 'Line') ? (shape as GeometryShape.Line).endLine.z : 
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).endRay.z : (shape as GeometryShape.Segment).endSegment.z) ?? 0
+        }
+
+        return [start, end]
+    }
+
+    return [];
+}
+
 export const getDistance = (shape1: GeometryShape.Point, shape2: GeometryShape.Point) => {
     return Math.sqrt((shape1.x - shape2.x) ** 2 + (shape1.y - shape2.y) ** 2 + ((shape1.z ?? 0) - (shape2.z ?? 0)) ** 2);
 }
@@ -75,41 +101,22 @@ const getPerimeter = (shape: GeometryShape.Polygon) => {
     return perimeter;
 }
 
-export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {x: number, y: number, z?: number}[] => {
-    if (!isLine(shape1) && !isCircle(shape1) && !isSegment(shape1) && !isRay(shape1) && !isPolygon(shape1)) {
+export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {x: number, y: number, z: number}[] => {
+    if (!(shape1.type === 'Line') && !(shape1.type === 'Circle') && !(shape1.type === 'Segment') && !(shape1.type === 'Ray') &&
+         !(shape1.type === 'Polygon')) {
         throw new Error('Shape1 must be a valid shape for intersection');
     }
 
-    if (!isLine(shape2) && !isCircle(shape2) && !isSegment(shape2) && !isRay(shape2) && !isPolygon(shape2)) {
+    if (!(shape2.type === 'Line') && !(shape2.type === 'Circle') && !(shape2.type === 'Segment') && !(shape2.type === 'Ray') &&
+         !(shape2.type === 'Polygon')) {
         throw new Error('Shape2 must be a valid shape for intersection');
     }
 
-    if (isLine(shape1) || isRay(shape1) || isSegment(shape1)) {
-        let start = {
-            x: (isLine(shape1) ? shape1.startLine.x : (isRay(shape1) ? shape1.startRay.x : shape1.startSegment.x)),
-            y: (isLine(shape1) ? shape1.startLine.y : (isRay(shape1) ? shape1.startRay.y : shape1.startSegment.y)),
-            z: (isLine(shape1) ? shape1.startLine.z : (isRay(shape1) ? shape1.startRay.z : shape1.startSegment.z)) ?? 0
-        }
+    if ((shape1.type === 'Line') || (shape1.type === 'Ray') || (shape1.type === 'Segment')) {
+        let [start, end] = getStartAndEnd(shape1);
 
-        let end = {
-            x: (isLine(shape1) ? shape1.endLine.x : (isRay(shape1) ? shape1.endRay.x : shape1.endSegment.x)),
-            y: (isLine(shape1) ? shape1.endLine.y : (isRay(shape1) ? shape1.endRay.y : shape1.endSegment.y)),
-            z: (isLine(shape1) ? shape1.endLine.z : (isRay(shape1) ? shape1.endRay.z : shape1.endSegment.z)) ?? 0
-        }
-
-        if (isLine(shape2) || isRay(shape2) || isSegment(shape2)) {
-            let start2 = {
-                x: (isLine(shape2) ? shape2.startLine.x : (isRay(shape2) ? shape2.startRay.x : shape2.startSegment.x)),
-                y: (isLine(shape2) ? shape2.startLine.y : (isRay(shape2) ? shape2.startRay.y : shape2.startSegment.y)),
-                z: (isLine(shape2) ? shape2.startLine.z : (isRay(shape2) ? shape2.startRay.z : shape2.startSegment.z)) ?? 0
-            }
-
-            let end2 = {
-                x: (isLine(shape2) ? shape2.endLine.x : (isRay(shape2) ? shape2.endRay.x : shape2.endSegment.x)),
-                y: (isLine(shape2) ? shape2.endLine.y : (isRay(shape2) ? shape2.endRay.y : shape2.endSegment.y)),
-                z: (isLine(shape2) ? shape2.endLine.z : (isRay(shape2) ? shape2.endRay.z : shape2.endSegment.z)) ?? 0
-            }
-
+        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment')) {
+            let [start2, end2] = getStartAndEnd(shape2);
             let A = math.intersect(
                 [start.x, start.y, start.z],
                 [end.x, end.y, end.z],
@@ -124,7 +131,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             let v = {
                 x: A[0] - start.x,
                 y: A[1] - start.y,
-                z: (A.length == 2 ? 0 : A[2]) - start.z
+                z: (A.length === 2 ? 0 : A[2]) - start.z
             }
 
             let crossProduct = cross(
@@ -136,7 +143,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 v.z
             )
 
-            if (isRay(shape1)) {
+            if (shape1.type === 'Ray') {
                 if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
                     return [];
                 }
@@ -156,13 +163,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     v1.z
                 )
 
-                if (isRay(shape2)) {
+                if (shape2.type === 'Ray') {
                     if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
                         return [];
                     }
                 }
 
-                else if (isSegment(shape2)) {
+                else if (shape2.type === 'Segment') {
                     if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
                         return [];
                     }
@@ -181,7 +188,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 ]
             }
 
-            else if (isSegment(shape1)) {
+            else if (shape1.type === 'Segment') {
                 if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
                     return [];
                 }
@@ -205,13 +212,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     v1.z
                 )
 
-                if (isRay(shape2)) {
+                if (shape2.type === 'Ray') {
                     if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
                         return [];
                     }
                 }
 
-                else if (isSegment(shape2)) {
+                else if (shape2.type === 'Segment') {
                     if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
                         return [];
                     }
@@ -246,13 +253,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     v1.z
                 )
 
-                if (isRay(shape2)) {
+                if (shape2.type === 'Ray') {
                     if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
                         return [];
                     }
                 }
 
-                else if (isSegment(shape2)) {
+                else if (shape2.type === 'Segment') {
                     if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
                         return [];
                     }
@@ -272,7 +279,8 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
         }
         
-        else if (isCircle(shape2)) {
+        else if (shape2.type === 'Circle') {
+            let circle: GeometryShape.Circle = shape2 as GeometryShape.Circle
             let u = {
                 x: end.x - start.x,
                 y: end.y - start.y,
@@ -280,13 +288,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             let u1 = {
-                x: shape2.centerC.x - start.x,
-                y: shape2.centerC.y - start.y,
-                z: (shape2.centerC.z ?? 0) - start.z
+                x: circle.centerC.x - start.x,
+                y: circle.centerC.y - start.y,
+                z: (circle.centerC.z ?? 0) - start.z
             }
 
             // Solve ||u1 - u * t||^2 = r^2
-            const r = shape2.radius;
+            const r = circle.radius;
             const a = dot(u.x, u.y, u.z, u.x, u.y, u.z);
             const b = -2 * dot(u1.x, u1.y, u1.z, u.x, u.y, u.z);
             const c = dot(u1.x, u1.y, u1.z, u1.x, u1.y, u1.z) - r * r;
@@ -298,8 +306,8 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             else if (discriminant === 0) {
                 let t = -b / (2 * a);
                 if (
-                    (isRay(shape1) && t < 0) ||
-                    (isSegment(shape1) && (t < 0 || t > 1))
+                    (shape1.type === 'Ray' && t < 0) ||
+                    (shape1.type === 'Segment' && (t < 0 || t > 1))
                 ) {
                     return []; // No intersection
                 }
@@ -313,7 +321,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             else {
                 const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
                 const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                if (isRay(shape1)) {
+                if (shape1.type === 'Ray') {
                     if (t1 < 0 && t2 < 0) {
                         return []; // No intersection
                     }
@@ -348,7 +356,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     ]
                 }
 
-                if (isSegment(shape1)) {
+                else if (shape1.type === 'Segment') {
                     if ((t1 < 0 || t1 > 1) && (t2 < 0 || t2 > 1)) {
                         return []; // No intersection
                     }
@@ -398,11 +406,12 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
         }
 
-        else if (isPolygon(shape2)) {
+        else if (shape2.type === 'Polygon') {
+            let poly: GeometryShape.Polygon = shape2 as GeometryShape.Polygon;
             let intersections = [];
-            for (let i = 0; i < shape2.points.length; i++) {
-                let point1 = shape2.points[i];
-                let point2 = shape2.points[(i + 1) % shape2.points.length];
+            for (let i = 0; i < poly.points.length; i++) {
+                let point1 = poly.points[i];
+                let point2 = poly.points[(i + 1) % poly.points.length];
 
                 let u = {
                     x: point2.x - point1.x,
@@ -445,8 +454,8 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     const A_pinv = math.pinv(A);
                     const solutions = math.multiply(A_pinv, b);
                     if (
-                        (isRay(shape1) && solutions.get([0, 0]) < 0) ||
-                        (isSegment(shape1) && (solutions.get([0, 0]) < 0 || solutions.get([0, 0]) > 1))
+                        (shape1.type === 'Ray' && solutions.get([0, 0]) < 0) ||
+                        (shape1.type === 'Segment' && (solutions.get([0, 0]) < 0 || solutions.get([0, 0]) > 1))
                     ) {
                         continue; // The intersection point is not valid
                     }
@@ -472,15 +481,18 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
         }
     }
 
-    else if (isCircle(shape1)) {
-        if (isLine(shape2) || isRay(shape2) || isSegment(shape2)) {
+    else if (shape1.type === 'Circle') {
+        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment')) {
             return getIntersections2D(shape2, shape1);
         }
 
-        if (isCircle(shape2)) {
+        let circle1: GeometryShape.Circle = shape1 as GeometryShape.Circle
+
+        if (shape2.type === 'Circle') {
+            let circle2: GeometryShape.Circle = shape2 as GeometryShape.Circle
             // Two circles intersection
-            let d = getDistance(shape1.centerC, shape2.centerC);
-            if (d === 0 && shape1.radius === shape2.radius) {
+            let d = getDistance(circle1.centerC, circle2.centerC);
+            if (d === 0 && circle1.radius === circle2.radius) {
                 throw new Error('The circles are coincident');
             }
 
@@ -488,16 +500,16 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 return []; // No intersection, circles are concentric
             }
             
-            if (d > shape1.radius + shape2.radius || d < Math.abs(shape1.radius - shape2.radius)) {
+            if (d > circle1.radius + circle2.radius || d < Math.abs(circle1.radius - circle2.radius)) {
                 return []; // No intersection
             }
 
-            let a = (shape1.radius ** 2 - shape2.radius ** 2 + d ** 2) / (2 * d);
-            let h = Math.sqrt(shape1.radius ** 2 - a ** 2);
+            let a = (circle1.radius ** 2 - circle2.radius ** 2 + d ** 2) / (2 * d);
+            let h = Math.sqrt(circle1.radius ** 2 - a ** 2);
             let p = {
-                x: shape1.centerC.x + a * (shape2.centerC.x - shape1.centerC.x) / d,
-                y: shape1.centerC.y + a * (shape2.centerC.y - shape1.centerC.y) / d,
-                z: (shape1.centerC.z ?? 0) + a * ((shape2.centerC.z ?? 0) - (shape1.centerC.z ?? 0)) / d
+                x: circle1.centerC.x + a * (circle2.centerC.x - circle1.centerC.x) / d,
+                y: circle1.centerC.y + a * (circle2.centerC.y - circle1.centerC.y) / d,
+                z: (circle1.centerC.z ?? 0) + a * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
             };
 
             if (h === 0) {
@@ -506,23 +518,24 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
 
             return [
                 {
-                    x: p.x + h * (shape2.centerC.y - shape1.centerC.y) / d,
-                    y: p.y - h * (shape2.centerC.x - shape1.centerC.x) / d,
-                    z: (p.z ?? 0) + h * ((shape2.centerC.z ?? 0) - (shape1.centerC.z ?? 0)) / d
+                    x: p.x + h * (circle2.centerC.y - circle1.centerC.y) / d,
+                    y: p.y - h * (circle2.centerC.x - circle1.centerC.x) / d,
+                    z: (p.z ?? 0) + h * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
                 },
                 {
-                    x: p.x - h * (shape2.centerC.y - shape1.centerC.y) / d,
-                    y: p.y + h * (shape2.centerC.x - shape1.centerC.x) / d,
-                    z: (p.z ?? 0) - h * ((shape2.centerC.z ?? 0) - (shape1.centerC.z ?? 0)) / d
+                    x: p.x - h * (circle2.centerC.y - circle1.centerC.y) / d,
+                    y: p.y + h * (circle2.centerC.x - circle1.centerC.x) / d,
+                    z: (p.z ?? 0) - h * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
                 }
             ];
         }
 
-        else if (isPolygon(shape2)) {
+        else if (shape2.type === 'Polygon') {
+            let poly: GeometryShape.Polygon = shape2 as GeometryShape.Polygon;
             let intersections = [];
-            for (let i = 0; i < shape2.points.length; i++) {
-                let point1 = shape2.points[i];
-                let point2 = shape2.points[(i + 1) % shape2.points.length];
+            for (let i = 0; i < poly.points.length; i++) {
+                let point1 = poly.points[i];
+                let point2 = poly.points[(i + 1) % poly.points.length];
                 let u = {
                     x: point2.x - point1.x,
                     y: point2.y - point1.y,
@@ -530,13 +543,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 let v = {
-                    x: shape1.centerC.x - point1.x,
-                    y: shape1.centerC.y - point1.y,
-                    z: (shape1.centerC.z ?? 0) - (point1.z ?? 0)
+                    x: circle1.centerC.x - point1.x,
+                    y: circle1.centerC.y - point1.y,
+                    z: (circle1.centerC.z ?? 0) - (point1.z ?? 0)
                 }
 
                 // Solve ||v - u * t||^2 = r^2
-                const r = shape1.radius;
+                const r = circle1.radius;
                 const a = dot(u.x, u.y, u.z, u.x, u.y, u.z);
                 const b = -2 * dot(v.x, v.y, v.z, u.x, u.y, u.z);
                 const c = dot(v.x, v.y, v.z, v.x, v.y, v.z) - r * r;
@@ -545,7 +558,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     continue; // No intersection
                 }
 
-                if (discriminant == 0) {
+                if (discriminant === 0) {
                     let t = -b / (2 * a);
                     if (t < 0 || t > 1) {
                         continue; // No intersection
@@ -587,25 +600,27 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
         }
     }
 
-    else if (isPolygon(shape1)) {
-        if (isLine(shape2) || isRay(shape2) || isSegment(shape2) || isCircle(shape2)) {
+    else if (shape1.type === 'Polygon') {
+        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment') || (shape2.type === 'Circle')) {
             return getIntersections2D(shape2, shape1);
         }
 
-        else if (isPolygon(shape2)) {
+        else if (shape2.type === 'Polygon') {
+            let poly1: GeometryShape.Polygon = shape1 as GeometryShape.Polygon;
+            let poly2: GeometryShape.Polygon = shape2 as GeometryShape.Polygon;
             let intersections = [];
-            for (let i = 0; i < shape1.points.length; i++) {
-                let point1 = shape1.points[i];
-                let point2 = shape1.points[(i + 1) % shape1.points.length];
+            for (let i = 0; i < poly1.points.length; i++) {
+                let point1 = poly1.points[i];
+                let point2 = poly1.points[(i + 1) % poly1.points.length];
                 let u = {
                     x: point2.x - point1.x,
                     y: point2.y - point1.y,
                     z: (point2.z ?? 0) - (point1.z ?? 0)
                 }
 
-                for (let j = 0; j < shape2.points.length; j++) {
-                    let point3 = shape2.points[j];
-                    let point4 = shape2.points[(j + 1) % shape2.points.length];
+                for (let j = 0; j < poly2.points.length; j++) {
+                    let point3 = poly2.points[j];
+                    let point4 = poly2.points[(j + 1) % poly2.points.length];
                     let v = {
                         x: point4.x - point3.x,
                         y: point4.y - point3.y,
@@ -667,30 +682,22 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
 }
 
 export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {x: number, y: number, z?: number}[] => {
-    if (!isPlane(shape1) && !isLine(shape1) && !isRay(shape1) && !isSegment(shape1) && !isSphere(shape1)) {
+    if (!(shape1.type === 'Line') && !(shape1.type === 'Plane') && !(shape1.type === 'Segment') && !(shape1.type === 'Ray') &&
+         !(shape1.type === 'Sphere')) {
         throw new Error('Shape1 must be a valid shape for intersection');
     }
 
-    if (!isPlane(shape2) && !isLine(shape2) && !isRay(shape2) && !isSegment(shape2) && !isSphere(shape2)) {
+    if (!(shape2.type === 'Line') && !(shape2.type === 'Plane') && !(shape2.type === 'Segment') && !(shape2.type === 'Ray') &&
+         !(shape2.type === 'Sphere')) {
         throw new Error('Shape2 must be a valid shape for intersection');
     }
 
-    if (isLine(shape1) || isRay(shape1) || isSegment(shape1)) {
-        if (isLine(shape2) || isRay(shape2) || isSegment(shape2)) {
+    if ((shape1.type === 'Line') || (shape1.type === 'Ray') || (shape1.type === 'Segment')) {
+        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment')) {
             return getIntersections2D(shape1, shape2);
         }
 
-        let start = {
-            x: (isLine(shape1) ? shape1.startLine.x : (isRay(shape1) ? shape1.startRay.x : shape1.startSegment.x)),
-            y: (isLine(shape1) ? shape1.startLine.y : (isRay(shape1) ? shape1.startRay.y : shape1.startSegment.y)),
-            z: (isLine(shape1) ? shape1.startLine.z : (isRay(shape1) ? shape1.startRay.z : shape1.startSegment.z)) ?? 0
-        }
-
-        let end = {
-            x: (isLine(shape1) ? shape1.endLine.x : (isRay(shape1) ? shape1.endRay.x : shape1.endSegment.x)),
-            y: (isLine(shape1) ? shape1.endLine.y : (isRay(shape1) ? shape1.endRay.y : shape1.endSegment.y)),
-            z: (isLine(shape1) ? shape1.endLine.z : (isRay(shape1) ? shape1.endRay.z : shape1.endSegment.z)) ?? 0
-        }
+        let [start, end] = getStartAndEnd(shape1);
 
         let u = {
             x: end.x - start.x,
@@ -698,17 +705,18 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             z: (end.z ?? 0) - (start.z ?? 0)
         }
 
-        if (isPlane(shape2)) {
+        if ((shape2.type === 'Plane')) {
+            let pl: GeometryShape.Plane = shape2 as GeometryShape.Plane
             let n = {
-                x: shape2.norm.endVector.x - shape2.norm.startVector.x,
-                y: shape2.norm.endVector.y - shape2.norm.startVector.y,
-                z: (shape2.norm.endVector.z ?? 0) - (shape2.norm.startVector.z ?? 0),
+                x: pl.norm.endVector.x - pl.norm.startVector.x,
+                y: pl.norm.endVector.y - pl.norm.startVector.y,
+                z: (pl.norm.endVector.z ?? 0) - (pl.norm.startVector.z ?? 0),
             }
 
             let A = math.intersect(
                 [start.x, start.y, start.z],
                 [end.x, end.y, end.z],
-                [n.x, n.y, n.z, n.x * shape2.point.x, n.y * shape2.point.y, n.z * (shape2.point.z ?? 0)]
+                [n.x, n.y, n.z, n.x * pl.point.x, n.y * pl.point.y, n.z * (pl.point.z ?? 0)]
             )
 
             if (A === null) {
@@ -718,7 +726,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             let v = {
                 x: A[0] - start.x,
                 y: A[1] - start.y,
-                z: (A.length == 2 ? 0 : A[2]) - start.z
+                z: (A.length === 2 ? 0 : A[2]) - start.z
             }
 
             let crossProduct = cross(
@@ -730,13 +738,13 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                 v.z
             )
 
-            if (isRay(shape1)) {
+            if (shape1.type === 'Ray') {
                 if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
                     return [];
                 }
             }
 
-            else if (isSegment(shape1)) {
+            else if (shape1.type === 'Segment') {
                 if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
                     return [];
                 }
@@ -755,16 +763,17 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             ]
         }
 
-        else if (isSphere(shape2)) {
+        else if (shape2.type === 'Sphere') {
             // Sphere intersection with line
+            let sp: GeometryShape.Sphere = shape2 as GeometryShape.Sphere
             let u1 = {
-                x: shape2.centerS.x - start.x,
-                y: shape2.centerS.y - start.y,
-                z: (shape2.centerS.z ?? 0) - (start.z ?? 0)
+                x: sp.centerS.x - start.x,
+                y: sp.centerS.y - start.y,
+                z: (sp.centerS.z ?? 0) - (start.z ?? 0)
             }
 
             // Solve ||u1 - u * t||^2 = r^2
-            const r = shape2.radius;
+            const r = sp.radius;
             const a = dot(u.x, u.y, u.z, u.x, u.y, u.z);
             const b = -2 * dot(u1.x, u1.y, u1.z, u.x, u.y, u.z);
             const c = dot(u1.x, u1.y, u1.z, u1.x, u1.y, u1.z) - r * r;
@@ -776,8 +785,8 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             else if (discriminant === 0) {
                 let t = -b / (2 * a);
                 if (
-                    (isRay(shape1) && t < 0) ||
-                    (isSegment(shape1) && (t < 0 || t > 1))
+                    (shape1.type === 'Ray' && t < 0) ||
+                    (shape1.type === 'Segment' && (t < 0 || t > 1))
                 ) {
                     return []; // No intersection
                 }
@@ -791,7 +800,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             else {
                 const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
                 const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                if (isRay(shape1)) {
+                if (shape1.type === 'Ray') {
                     if (t1 < 0 && t2 < 0) {
                         return []; // No intersection
                     }
@@ -813,7 +822,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                     }
                 }
 
-                else if (isSegment(shape1)) {
+                else if (shape1.type === 'Segment') {
                     if ((t1 < 0 || t1 > 1) && (t2 < 0 || t2 > 1)) {
                         return []; // No intersection
                     }
@@ -855,16 +864,16 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
         }
     }
 
-    else if (isPlane(shape1)) {
-        if (isLine(shape2) || isRay(shape2) || isSegment(shape2)) {
+    else if (shape1.type === 'Plane') {
+        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment')) {
             return getIntersections3D(shape1, shape2);
         }
 
         return []; // Plane intersection with sphere will not be handled here
     }
 
-    else if (isSphere(shape1)) {
-        if (isLine(shape2) || isRay(shape2) || isSegment(shape2)) {
+    else if (shape1.type === 'Sphere') {
+        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment')) {
             return getIntersections3D(shape1, shape2);
         }
 
@@ -1166,38 +1175,50 @@ export const inradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
 }
 
 export const volume = (shape: GeometryShape.Shape) => {
-    if (isCuboid(shape)) {
-        let x = Math.abs(shape.bottomRightFront.x - shape.topLeftBack.x);
-        let y = Math.abs(shape.bottomRightFront.y - shape.topLeftBack.y);
-        let z = Math.abs((shape.bottomRightFront.z ?? 0) - (shape.topLeftBack.z ?? 0));
+    if (shape.type === 'Cuboid') {
+        let cube: GeometryShape.Cuboid = shape as GeometryShape.Cuboid;
+        let x = Math.abs(cube.bottomRightFront.x - cube.topLeftBack.x);
+        let y = Math.abs(cube.bottomRightFront.y - cube.topLeftBack.y);
+        let z = Math.abs((cube.bottomRightFront.z ?? 0) - (cube.topLeftBack.z ?? 0));
         return x * y * z;
     }
 
-    if (isPrism(shape)) {
-        let base_area = getArea(shape.base);
-        let height = distance(shape.base, shape.top_point);
+    if (shape.type === 'Prism') {
+        let pr: GeometryShape.Prism = shape as GeometryShape.Prism;
+        let base_area = getArea(pr.base);
+        let top_point: GeometryShape.Point = Factory.createPoint(
+            pr.base.points[0].props,
+            pr.base.points[0].x + pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
+            pr.base.points[0].y + pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
+            (pr.base.points[0].z ?? 0) + (pr.shiftVector.endVector.x ?? 0) - (pr.shiftVector.startVector.x ?? 0)
+        )
+
+        let height = distance(pr.base, top_point);
         return base_area * height;
     }
 
-    if (isPyramid(shape)) {
-        let base_area = getArea(shape.base);
-        let height = distance(shape.base, shape.apex);
+    if (shape.type === 'Pyramid') {
+        let py: GeometryShape.Pyramid = shape as GeometryShape.Pyramid;
+        let base_area = getArea(py.base);
+        let height = distance(py.base, py.apex);
         return (base_area * height) / 3;
     }
     
-    if (isSphere(shape)) {
-        return (4 / 3) * Math.PI * Math.pow(shape.radius, 3);
+    if (shape.type === 'Sphere') {
+        return (4 / 3) * Math.PI * Math.pow((shape as GeometryShape.Sphere).radius, 3);
     }
 
-    if (isCylinder(shape)) {
-        let height = getDistance(shape.centerBase1, shape.centerBase2);
-        let base_area = Math.PI * Math.pow(shape.radius, 2);
+    if (shape.type === 'Cylinder') {
+        let cy: GeometryShape.Cylinder = shape as GeometryShape.Cylinder;
+        let height = getDistance(cy.centerBase1, cy.centerBase2);
+        let base_area = Math.PI * Math.pow(cy.radius, 2);
         return base_area * height;
     }
 
-    if (isCone(shape)) {
-        let height = getDistance(shape.center, shape.apex);
-        let base_area = Math.PI * Math.pow(shape.radius, 2);
+    if (shape.type === 'Cone') {
+        let co: GeometryShape.Cone = shape as GeometryShape.Cone;
+        let height = getDistance(co.center, co.apex);
+        let base_area = Math.PI * Math.pow(co.radius, 2);
         return (base_area * height) / 3;
     }
 
@@ -1205,42 +1226,54 @@ export const volume = (shape: GeometryShape.Shape) => {
 }
 
 export const surface_area = (shape: GeometryShape.Shape) => {
-    if (isCuboid(shape)) {
-        let x = Math.abs(shape.bottomRightFront.x - shape.topLeftBack.x);
-        let y = Math.abs(shape.bottomRightFront.y - shape.topLeftBack.y);
-        let z = Math.abs((shape.bottomRightFront.z ?? 0) - (shape.topLeftBack.z ?? 0));
+    if (shape.type === 'Cuboid') {
+        let cube: GeometryShape.Cuboid = shape as GeometryShape.Cuboid;
+        let x = Math.abs(cube.bottomRightFront.x - cube.topLeftBack.x);
+        let y = Math.abs(cube.bottomRightFront.y - cube.topLeftBack.y);
+        let z = Math.abs((cube.bottomRightFront.z ?? 0) - (cube.topLeftBack.z ?? 0));
         return 2 * (x * y + x * z + y * z);
     }
 
-    if (isPrism(shape)) {
-        let base_area = getArea(shape.base);
-        let height = distance(shape.base, shape.top_point);
-        let perimeter = getPerimeter(shape.base);
+    if (shape.type === 'Prism') {
+        let pr: GeometryShape.Prism = shape as GeometryShape.Prism;
+        let base_area = getArea(pr.base);
+        let top_point: GeometryShape.Point = Factory.createPoint(
+            pr.base.points[0].props,
+            pr.base.points[0].x + pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
+            pr.base.points[0].y + pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
+            (pr.base.points[0].z ?? 0) + (pr.shiftVector.endVector.x ?? 0) - (pr.shiftVector.startVector.x ?? 0)
+        )
+
+        let height = distance(pr.base, top_point);
+        let perimeter = getPerimeter(pr.base);
         return 2 * base_area + perimeter * height;
     }
 
-    if (isPyramid(shape)) {
-        let perimeter = getPerimeter(shape.base);
-        let mid = midPoint(shape.base.points[0], shape.base.points[1]);
-        let d = L2_norm(mid.x - shape.apex.x, mid.y - shape.apex.y, (mid.z ?? 0) - (shape.apex.z ?? 0));
-        return perimeter / 2 * d + getArea(shape.base);
+    if (shape.type === 'Pyramid') {
+        let py: GeometryShape.Pyramid = shape as GeometryShape.Pyramid;
+        let perimeter = getPerimeter(py.base);
+        let mid = midPoint(py.base.points[0], py.base.points[1]);
+        let d = L2_norm(mid.x - py.apex.x, mid.y - py.apex.y, (mid.z ?? 0) - (py.apex.z ?? 0));
+        return perimeter / 2 * d + getArea(py.base);
     }
 
-    if (isSphere(shape)) {
-        return 4 * Math.PI * Math.pow(shape.radius, 2);
+    if (shape.type === 'Sphere') {
+        return 4 * Math.PI * Math.pow((shape as GeometryShape.Sphere).radius, 2);
     }
     
-    if (isCylinder(shape)) {
-        let height = getDistance(shape.centerBase1, shape.centerBase2);
-        let base_area = Math.PI * Math.pow(shape.radius, 2);
-        return 2 * base_area + 2 * Math.PI * shape.radius * height;
+    if (shape.type === 'Cylinder') {
+        let cy: GeometryShape.Cylinder = shape as GeometryShape.Cylinder;
+        let height = getDistance(cy.centerBase1, cy.centerBase2);
+        let base_area = Math.PI * Math.pow(cy.radius, 2);
+        return 2 * base_area + 2 * Math.PI * cy.radius * height;
     }
     
-    if (isCone(shape)) {
-        let height = getDistance(shape.center, shape.apex);
-        let base_area = Math.PI * Math.pow(shape.radius, 2);
-        let slant_height = Math.sqrt(Math.pow(shape.radius, 2) + Math.pow(height, 2));
-        return Math.PI * shape.radius * slant_height + base_area;
+    if (shape.type === 'Cone') {
+        let co: GeometryShape.Cone = shape as GeometryShape.Cone;
+        let height = getDistance(co.center, co.apex);
+        let base_area = Math.PI * Math.pow(co.radius, 2);
+        let slant_height = Math.sqrt(Math.pow(co.radius, 2) + Math.pow(height, 2));
+        return Math.PI * co.radius * slant_height + base_area;
     }
     
     throw new Error('Invalid shape');
@@ -1383,13 +1416,15 @@ export const dihedralAngle = (A: GeometryShape.Point, d: GeometryShape.Line, B: 
 export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
     if (isColinear(A, B, C)) {
         if (A.z === undefined || B.z === undefined || C.z === undefined) {
-            return {
-                point: B,
-                direction: {
-                    x: 0,
-                    y: 1
+            return [
+                {
+                    point: B,
+                    direction: {
+                        x: 0,
+                        y: 1
+                    }
                 }
-            }
+            ]
         }
 
         throw new Error('Cannot calculate bisector angle line for collinear points in 3D');
@@ -1407,28 +1442,147 @@ export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Po
         z: (C.z ?? 0) - (B.z ?? 0)
     }
 
-    return {
-        line1: {
-            point: B,
+    let point = {
+        x: B.x,
+        y: B.y,
+        z: B.z ?? 0
+    }
+
+    return [
+        {
+            point: point,
             direction: {
                 x: BA.x / L2_norm(BA.x, BA.y, BA.z) + BC.x / L2_norm(BC.x, BC.y, BC.z),
                 y: BA.y / L2_norm(BA.x, BA.y, BA.z) + BC.y / L2_norm(BC.x, BC.y, BC.z),
                 z: (BA.z ?? 0) / L2_norm(BA.x, BA.y, BA.z) + (BC.z ?? 0) / L2_norm(BC.x, BC.y, BC.z)
             }
         },
-
-        line2: {
-            point: B,
+        {
+            point: point,
             direction: {
                 x: BA.x / L2_norm(BA.x, BA.y, BA.z) - BC.x / L2_norm(BC.x, BC.y, BC.z),
                 y: BA.y / L2_norm(BA.x, BA.y, BA.z) - BC.y / L2_norm(BC.x, BC.y, BC.z),
                 z: (BA.z ?? 0) / L2_norm(BA.x, BA.y, BA.z) - (BC.z ?? 0) / L2_norm(BC.x, BC.y, BC.z)
             }
         }
-    }
+    ]
 }
 
 export const bisector_angle_line2 = (d1: GeometryShape.Line, d2: GeometryShape.Line) => {
     let A = getIntersections2D(d1, d2);
+    if (A.length === 0) {
+        throw new Error('Cannot construct bisector angle line from 2 parallel lines');
+    }
 
+    let u1 = {
+        x: d1.endLine.x - d1.startLine.x,
+        y: d1.endLine.y - d1.startLine.y,
+        z: (d1.endLine.z ?? 0) - (d1.startLine.z ?? 0)
+    }
+
+    let u2 = {
+        x: d2.endLine.x - d2.startLine.x,
+        y: d2.endLine.y - d2.startLine.y,
+        z: (d2.endLine.z ?? 0) - (d2.startLine.z ?? 0)
+    }
+
+    let B = {
+        x: A[0],
+        y: A[1],
+        z: (A.length === 2 ? 0 : A[2])
+    }
+
+    return [
+        {
+            point: B,
+            direction: {
+                x: u1.x / L2_norm(u1.x, u1.y, u1.z) + u2.x / L2_norm(u2.x, u2.y, u2.z),
+                y: u1.y / L2_norm(u1.x, u1.y, u1.z) + u2.y / L2_norm(u2.x, u2.y, u2.z),
+                z: (u1.z ?? 0) / L2_norm(u1.x, u1.y, u1.z) + (u2.z ?? 0) / L2_norm(u2.x, u2.y, u2.z)
+            }
+        },
+
+        {
+            point: B,
+            direction: {
+                x: u1.x / L2_norm(u1.x, u1.y, u1.z) - u2.x / L2_norm(u2.x, u2.y, u2.z),
+                y: u1.y / L2_norm(u1.x, u1.y, u1.z) - u2.y / L2_norm(u2.x, u2.y, u2.z),
+                z: (u1.z ?? 0) / L2_norm(u1.x, u1.y, u1.z) - (u2.z ?? 0) / L2_norm(u2.x, u2.y, u2.z)
+            }
+        }
+    ]
+}
+
+export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle) => {
+    let d = getDistance(p, c.centerC);
+    if (d < c.radius) {
+        return [];
+    }
+
+    let n = c.normal ? {
+        x: c.normal.endVector.x - c.normal.startVector.x,
+        y: c.normal.endVector.y - c.normal.startVector.y,
+        z: (c.normal.endVector.z ?? 0) - (c.normal.startVector.z ?? 0)
+    } : {
+        x: 0,
+        y: 0,
+        z: 1
+    } 
+
+    if (n.x * p.x + n.y * p.y + n.z * (p.z ?? 0) !== (n.x * c.centerC.x + n.y * c.centerC.y + n.z * (c.centerC.z ?? 0))) {
+        return [];
+    }
+
+    if (d === c.radius) {
+        let v = {
+            x: c.centerC.x - p.x,
+            y: c.centerC.y - p.y,
+            z: (c.centerC.z ?? 0) - (p.z ?? 0)
+        }
+        return [
+            {
+                point:  p,
+                direction: {
+                    x: v.y,
+                    y: -v.x,
+                    z: 0
+                }
+            }
+        ]
+    }
+
+    else {
+        let m = midPoint(p, c.centerC)
+        let c1: GeometryShape.Circle = Factory.createCircle(
+            c.props,
+            Factory.createPoint(
+                p.props,
+                m.x,
+                m.y,
+                m.z
+            ),
+            d / 2,
+            c.normal
+        )
+
+        let intersections = getIntersections2D(c1, c);
+        return [
+            {
+                point: p,
+                direction: {
+                    x: intersections[0].x - p.x,
+                    y: intersections[0].y - p.y,
+                    z: intersections[0].z - (p.z ?? 0),
+                }
+            },
+            {
+                point: p,
+                direction: {
+                    x: intersections[1].x - p.x,
+                    y: intersections[1].y - p.y,
+                    z: intersections[1].z - (p.z ?? 0),
+                }
+            }
+        ]
+    }
 }
