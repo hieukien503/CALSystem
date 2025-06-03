@@ -102,13 +102,11 @@ const getPerimeter = (shape: GeometryShape.Polygon) => {
 }
 
 export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {x: number, y: number, z: number}[] => {
-    if (!(shape1.type === 'Line') && !(shape1.type === 'Circle') && !(shape1.type === 'Segment') && !(shape1.type === 'Ray') &&
-         !(shape1.type === 'Polygon')) {
+    if (!(['Segment', 'Line', 'Ray', 'Polygon', 'Circle'].includes(shape1.type))) {
         throw new Error('Shape1 must be a valid shape for intersection');
     }
 
-    if (!(shape2.type === 'Line') && !(shape2.type === 'Circle') && !(shape2.type === 'Segment') && !(shape2.type === 'Ray') &&
-         !(shape2.type === 'Polygon')) {
+    if (!(['Segment', 'Line', 'Ray', 'Polygon', 'Circle'].includes(shape2.type))) {
         throw new Error('Shape2 must be a valid shape for intersection');
     }
 
@@ -682,13 +680,11 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
 }
 
 export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {x: number, y: number, z?: number}[] => {
-    if (!(shape1.type === 'Line') && !(shape1.type === 'Plane') && !(shape1.type === 'Segment') && !(shape1.type === 'Ray') &&
-         !(shape1.type === 'Sphere')) {
+    if (!(['Segment', 'Line', 'Ray', 'Plane', 'Sphere'].includes(shape1.type))) {
         throw new Error('Shape1 must be a valid shape for intersection');
     }
 
-    if (!(shape2.type === 'Line') && !(shape2.type === 'Plane') && !(shape2.type === 'Segment') && !(shape2.type === 'Ray') &&
-         !(shape2.type === 'Sphere')) {
+    if (!(['Segment', 'Line', 'Ray', 'Plane', 'Sphere'].includes(shape2.type))) {
         throw new Error('Shape2 must be a valid shape for intersection');
     }
 
@@ -1018,20 +1014,16 @@ export const midPoint = (shape1: GeometryShape.Point, shape2: GeometryShape.Poin
     }
 }
 
-export const getCentroid = (shape: GeometryShape.Polygon) => {
-    const centroid = {
-        x: 0,
-        y: 0,
-        z: 0
+export const centroid = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
+    if (isColinear(A, B, C)) {
+        throw new Error('The points are collinear');
     }
 
-    shape.points.forEach(point => {
-        centroid.x += point.x / shape.points.length;
-        centroid.y += point.y / shape.points.length;
-        centroid.z += (point.z ?? 0) / shape.points.length;
-    });
-
-    return centroid;
+    return {
+        x: (A.x + B.x + C.x) / 3,
+        y: (A.y + B.y + C.y) / 3,
+        z: ((A.z ?? 0) + (B.z ?? 0) + (C.z ?? 0)) / 3
+    };
 }
 
 export const getArea = (shape: GeometryShape.Polygon) => {
@@ -1416,15 +1408,18 @@ export const dihedralAngle = (A: GeometryShape.Point, d: GeometryShape.Line, B: 
 export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
     if (isColinear(A, B, C)) {
         if (A.z === undefined || B.z === undefined || C.z === undefined) {
-            return [
-                {
-                    point: B,
-                    direction: {
-                        x: 0,
-                        y: 1
-                    }
+            return {
+                point: {
+                    x: B.x,
+                    y: B.y,
+                    z: (B.z ?? 0)
+                },
+                direction: {
+                    x: B.y - A.y,
+                    y: A.x - B.x,
+                    z: 0
                 }
-            ]
+            }
         }
 
         throw new Error('Cannot calculate bisector angle line for collinear points in 3D');
@@ -1448,30 +1443,20 @@ export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Po
         z: B.z ?? 0
     }
 
-    return [
-        {
+    return {
             point: point,
             direction: {
                 x: BA.x / L2_norm(BA.x, BA.y, BA.z) + BC.x / L2_norm(BC.x, BC.y, BC.z),
                 y: BA.y / L2_norm(BA.x, BA.y, BA.z) + BC.y / L2_norm(BC.x, BC.y, BC.z),
                 z: (BA.z ?? 0) / L2_norm(BA.x, BA.y, BA.z) + (BC.z ?? 0) / L2_norm(BC.x, BC.y, BC.z)
             }
-        },
-        {
-            point: point,
-            direction: {
-                x: BA.x / L2_norm(BA.x, BA.y, BA.z) - BC.x / L2_norm(BC.x, BC.y, BC.z),
-                y: BA.y / L2_norm(BA.x, BA.y, BA.z) - BC.y / L2_norm(BC.x, BC.y, BC.z),
-                z: (BA.z ?? 0) / L2_norm(BA.x, BA.y, BA.z) - (BC.z ?? 0) / L2_norm(BC.x, BC.y, BC.z)
-            }
         }
-    ]
 }
 
 export const bisector_angle_line2 = (d1: GeometryShape.Line, d2: GeometryShape.Line) => {
     let A = getIntersections2D(d1, d2);
     if (A.length === 0) {
-        throw new Error('Cannot construct bisector angle line from 2 parallel lines');
+        throw new Error('Cannot construct bisector angle line from 2 parallel or coincident lines');
     }
 
     let u1 = {
@@ -1487,9 +1472,9 @@ export const bisector_angle_line2 = (d1: GeometryShape.Line, d2: GeometryShape.L
     }
 
     let B = {
-        x: A[0],
-        y: A[1],
-        z: (A.length === 2 ? 0 : A[2])
+        x: A[0].x,
+        y: A[0].y,
+        z: A[0].z
     }
 
     return [
@@ -1584,5 +1569,177 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle) => 
                 }
             }
         ]
+    }
+}
+
+export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): GeometryShape.Shape => {
+    if (!(['Segment', 'Line', 'Ray', 'Point', 'Plane'].includes(o2.type))) {
+        throw new Error('Cannot perform reflection');
+    }
+
+    if (o1.type === 'Vector') {
+        let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
+        return Factory.createVector(
+            v.props,
+            reflection(v.startVector, o2) as GeometryShape.Point,
+            reflection(v.endVector, o2) as GeometryShape.Point
+        )
+    }
+
+    else if (o1.type === 'Point') {
+        let p: GeometryShape.Point = o1 as GeometryShape.Point;
+        if (['Segment', 'Ray', 'Line'].includes(o2.type)) {
+            let [start, end] = getStartAndEnd(o2);
+            let d = {
+                x: end.x - start.x,
+                y: end.y - start.y,
+                z: end.z - start.z
+            }
+
+            let v = {
+                x: start.x - p.x,
+                y: start.y - p.y,
+                z: start.z - (p.z ?? 0)
+            }
+
+            let cross_uv = cross(
+                v.x, v.y, v.z,
+                d.x, d.y, d.z
+            )
+
+            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) === 0) {
+                return o1
+            }
+
+            let dot_uv = dot(
+                v.x, v.y, v.z,
+                d.x, d.y, d.z
+            )
+
+            let norm = L2_norm(d.x, d.y, d.z)
+            let v1 = {
+                x: dot_uv / norm * d.x,
+                y: dot_uv / norm * d.y,
+                z: dot_uv / norm * d.z,
+            }
+
+            let foot = {
+                x: start.x + v1.x,
+                y: start.y + v1.y,
+                z: start.z + v1.z
+            }
+
+            return Factory.createPoint(
+                p.props,
+                2 * foot.x - p.x,
+                2 * foot.y - p.y,
+                2 * foot.z - (p.z ?? 0)
+            )
+        }
+
+        else if (o2.type === 'Point') {
+            let p2: GeometryShape.Point = o2 as GeometryShape.Point;
+            return Factory.createPoint(
+                p.props,
+                2 * p2.x - p.x,
+                2 * p2.y - p.y,
+                2 * (p2.z ?? 0) - (p.z ?? 0)
+            )
+        }
+
+        else if (o2.type === 'Plane') {
+            let pl: GeometryShape.Plane = o2 as GeometryShape.Plane;
+            let n = {
+                x: pl.norm.endVector.x - pl.norm.startVector.x,
+                y: pl.norm.endVector.y - pl.norm.startVector.y,
+                z: (pl.norm.endVector.z ?? 0) - (pl.norm.startVector.z ?? 0),
+            }
+
+            let numerator = n.x * pl.point.x + n.y * pl.point.y + n.z * (pl.point.z ?? 0);
+            let denominator = dot(n.x, n.y, n.z, n.x, n.y, n.z);
+            return Factory.createPoint(
+                p.props,
+                p.x - (2 * n.x * numerator) / denominator,
+                p.y - (2 * n.y * numerator) / denominator,
+                (p.z ?? 0) - (2 * n.z * numerator) / denominator
+            )
+        }
+
+        else throw new Error('Cannot perform reflection');
+    }
+
+    else if (o1.type === 'Circle') {
+        let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
+        let p = reflection(c.centerC, o2) as GeometryShape.Point;
+        return Factory.createCircle(
+            c.props,
+            p,
+            c.radius,
+            c.normal
+        )
+    }
+
+    else if (o1.type === 'Polygon') {
+        let poly: GeometryShape.Polygon = o1 as GeometryShape.Polygon;
+        let points: GeometryShape.Point[] = [];
+        poly.points.forEach(p => {
+            points.push(reflection(p, o2) as GeometryShape.Point);
+        })
+
+        return Factory.createPolygon(
+            o1.props,
+            points
+        )
+    }
+
+    else if (['Line', 'Segment', 'Ray'].includes(o1.type)) {
+        let [start2, end2] = getStartAndEnd(o1);
+        let [start3, end3] = [
+            reflection(Factory.createPoint(
+                o2.props,
+                start2.x,
+                start2.y,
+                start2.z
+            ), o2) as GeometryShape.Point, reflection(Factory.createPoint(
+                o2.props,
+                end2.x,
+                end2.y,
+                end2.z
+            ), o2) as GeometryShape.Point
+        ]
+
+        switch (o1.type) {
+            case 'Segment':
+                return Factory.createSegment(o2.props, start3, end3);
+            
+            case 'Line':
+                return Factory.createLine(o2.props, start3, end3);
+            
+            default:
+                return Factory.createRay(o2.props, start3, end3);
+        }
+    }
+
+    else if (o1.type === 'Sphere') {
+        let c: GeometryShape.Sphere = o1 as GeometryShape.Sphere;
+        let p = reflection(c.centerS, o2) as GeometryShape.Point;
+        return Factory.createSphere(
+            c.props,
+            p,
+            c.radius
+        )
+    }
+
+    else if (o1.type === 'Plane') {
+        let pl: GeometryShape.Plane = o1 as GeometryShape.Plane;
+        return Factory.createPlane(
+            pl.props,
+            reflection(pl.point, o2) as GeometryShape.Point,
+            reflection(pl.norm, o2) as GeometryShape.Vector
+        )
+    }
+
+    else {
+        throw new Error('Cannot perform reflection');
     }
 }

@@ -79,3 +79,25 @@ export const createPolygon = (props: GeometryShape.ShapeProps, points: GeometryS
     poly.area = getArea(poly);
     return poly;
 }
+
+export const createSphere = (props: GeometryShape.ShapeProps, center: GeometryShape.Point, radius: number): GeometryShape.Sphere => {
+    let s: GeometryShape.Sphere = {
+        centerS: center,
+        radius: radius,
+        props: props,
+        type: 'Sphere'
+    }
+
+    return s;
+}
+
+export const createPlane = (props: GeometryShape.ShapeProps, point: GeometryShape.Point, norm: GeometryShape.Vector): GeometryShape.Plane => {
+    let p: GeometryShape.Plane = {
+        point: point,
+        norm: norm,
+        props: props,
+        type: 'Sphere'
+    }
+
+    return p;
+}
