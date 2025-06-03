@@ -16,13 +16,19 @@ export interface Shape3D extends BaseShape {
 }
 
 export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
-                        'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'AngleBisector' | 'PerpendicularBisector' |
-                        'PerpendicularLine' | 'TangentLine' | 'Median' | 'ParallelLine' | 'Circle3Point' | 'SemiCircle' | 
-                        'Angle' | 'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder'
+                        'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'InternalAngleBisector' |
+                        'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' | 'Median' |
+                        'ParallelLine' | 'Circle3Point' | 'SemiCircle' | 'Circle2Point' | 'Angle' | 'Cuboid' | 'Cone' |
+                        'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' | 'Projection' |
+                        'Enlarge';
 
 export interface Angle extends BaseShape {
     degrees: number;
-    type: 'Angle';
+}
+
+export interface Enlarge extends BaseShape {
+    center: Point,
+    scaleFactor: number
 }
 
 // Point type
@@ -30,28 +36,6 @@ export interface Point extends BaseShape {
     x: number;
     y: number;
     z?: number;
-}
-
-export type Intersection = Point | Line | Circle
-
-export interface Midpoint extends Point {
-    
-}
-
-export interface Centroid extends Point {
-    
-}
-
-export interface Orthocenter extends Point {
-    
-}
-
-export interface Circumcenter extends Point {
-    
-}
-
-export interface Incenter extends Point {
-    
 }
 
 // 2D Shapes
@@ -68,38 +52,6 @@ export interface Segment extends Shape2D {
 export interface Line extends Shape2D {
     startLine: Point;
     endLine: Point;
-}
-
-export interface AngleBisector extends Line {
-
-}
-
-export interface PerpendicularBisector extends Line {
-
-}
-
-export interface PerpendicularLine extends Line {
-
-}
-
-export interface TangentLine extends Line {
-
-}
-
-export interface Median extends Line {
-
-}
-
-export interface ParallelLine extends Line {
-
-}
-
-export interface Circle3Point extends Circle {
-
-}
-
-export interface SemiCircle extends Circle {
-
 }
 
 export interface Ray extends Shape2D {
