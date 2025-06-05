@@ -1,5 +1,5 @@
 import React, { RefObject } from "react";
-import { Line, Vector, Segment, Polygon, Point, Circle, Ray, Shape, LineStyle, GeometryState, ShapeNode } from "../types/geometry"
+import { Line, Vector, Segment, Polygon, Point, Circle, Ray, Shape, LineStyle, GeometryState, ShapeNode, Angle, Enlarge, Rotation } from "../types/geometry"
 import Konva from "konva";
 import { Stage, Layer } from "react-konva";
 import { KonvaAxis } from "../utils/KonvaAxis";
@@ -613,6 +613,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         return r;
     };
 
+    private drawAngle = (shape: Angle, props: Shape['props']): Konva.Arc => {
+        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let strokeWidth = props.line_size / scale;
+        let a = new Konva.Arc({
+            x: shape.vertex.x,
+            y: shape.vertex.y,
+            innerRadius: 15,
+            outerRadius: 20,
+            angle: shape.degrees,
+            rotation: shape.startAngle,
+            stroke: props.color,
+            opacity: props.opacity ?? 0.5,
+            strokeWidth: strokeWidth,
+            visible: props.visible.shape,
+            id: props.id
+        });
+
+        return a;
+    }
+
     private createLabel = (shape: Shape): Konva.Text => {
         let x = 0, y = 0;
 
@@ -708,8 +728,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 konvaShape = this.drawRay(shape as Ray, shape.props);
                 break;
             
-            default:
+            case 'Segment':
                 konvaShape = this.drawSegment(shape as Segment, shape.props);
+                break;
+            
+            default:
+                konvaShape = this.drawAngle(shape as Angle, shape.props);
                 break;
         }
 
@@ -1320,6 +1344,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             'Circumcenter': this.updateCircumcenter,
             'Incenter': this.updateIncenter,
             'AngleBisector': this.updateAngleBisector,
+            'Incircle3Point': this.updateIncircle3Point,
             'PerpendicularBisector': this.updatePerpendicularBisector,
             'PerpendicularLine': this.updatePerpendicularLine,
             'TangentLine': this.updateTangentLine,
@@ -1331,7 +1356,9 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             'Reflection': this.updateReflection, 
             'Rotation': this.updateRotation,
             'Projection': this.updateProjection,
-            'Enlarge': this.updateEnlarge
+            'Enlarge': this.updateEnlarge,
+            'Excenter': this.updateExcenter,
+            'Excircle': this.updateExcircle
         }
 
         if (node.type.type in map) {
@@ -1722,6 +1749,743 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         else {
             return { ...node };
         }
+    }
+
+    private updateAngle = (node: ShapeNode): ShapeNode => {
+        let ids = node.dependsOn;
+        if (ids.length === 3) {
+            // Handle 3 points
+            let [shape1, shape2, shape3] = [this.state.shapes.get(ids[0]), this.state.shapes.get(ids[1]), this.state.shapes.get(ids[2])];
+            if (!shape1 || !shape2 || !shape3) {
+                return node;
+            }
+
+            const posA = (shape1 as ShapeNode).node.position();
+            const posB = (shape2 as ShapeNode).node.position();
+            const posC = (shape3 as ShapeNode).node.position();
+
+            let [A, B, C] = [
+                Factory.createPoint(node.type.props, posA.x, posA.y),
+                Factory.createPoint(node.type.props, posB.x, posB.y),
+                Factory.createPoint(node.type.props, posC.x, posC.y)
+            ]
+
+            let angle = operation.angleBetween3Points(A, B, C);
+            let BA = {
+                x: A.x - B.x,
+                y: A.y - B.y
+            }
+
+            const angleFromXAxis = (v: {x: number, y: number}) => {
+                return (Math.atan2(-v.y, v.x) * 180) / Math.PI;
+            }
+
+            const clampAngle = (degree: number) => {
+                return (degree + 360) % 360;
+            }
+
+            let startAngle = clampAngle(angleFromXAxis(BA));
+            
+            let a = node.node as Konva.Arc;
+            a.position({x: B.x, y: B.y});
+            a.angle(angle);
+            a.rotation(startAngle);
+            return { ...node };
+        }
+
+        else if (ids.length === 2) {
+            // Handle 2 lines
+            let [shape1, shape2] = [this.state.shapes.get(ids[0]), this.state.shapes.get(ids[1])];
+            if (!shape1 || !shape2) {
+                return node;
+            }
+
+            try {
+                let bisectors = operation.bisector_angle_line2(shape1.type as Line, shape2.type as Line);
+                let selected = node.type.type === 'InternalAngleBisector' ? bisectors[0] : bisectors[1];
+                
+                const dx = selected.direction.x;
+                const dy = selected.direction.y;
+
+                let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+                let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+                let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+                let l = node.node as Konva.Line;
+                l.points([selected.point.x - length * norm_dx, selected.point.y - length * norm_dy, selected.point.x + length * norm_dx, selected.point.y + length * norm_dy]);
+                node.node.show();
+                return { ...node };
+            }
+            catch (error) {
+                node.node.hide();
+                return { ...node };
+            }
+        }
+
+        else {
+            return { ...node };
+        } 
+    }
+
+    private updateCircle3Point = (node: ShapeNode): ShapeNode => {
+        const [id1, id2, id3] = node.dependsOn;
+        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        if (!p1 || !p2 || !p3) {
+            return { ... node };
+        }
+
+        const posA = (p1 as ShapeNode).node.position();
+        const posB = (p2 as ShapeNode).node.position();
+        const posC = (p3 as ShapeNode).node.position();
+
+        let [A, B, C] = [
+            Factory.createPoint(node.type.props, posA.x, posA.y),
+            Factory.createPoint(node.type.props, posB.x, posB.y),
+            Factory.createPoint(node.type.props, posC.x, posC.y)
+        ]
+
+        try {
+            let [circumcenter, circumradius] = [operation.circumcenter(A, B, C), operation.circumradius(A, B, C)];
+            let circle = node.node as Konva.Circle;
+            circle.position({x: circumcenter.x, y: circumcenter.y});
+            circle.radius(circumradius);
+            node.node.show();
+            return { ...node };
+        }
+
+        catch(error) {
+            node.node.hide();
+            return { ...node };
+        }
+    }
+
+    private updateIncircle3Point = (node: ShapeNode): ShapeNode => {
+        const [id1, id2, id3] = node.dependsOn;
+        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        if (!p1 || !p2 || !p3) {
+            return { ... node };
+        }
+
+        const posA = (p1 as ShapeNode).node.position();
+        const posB = (p2 as ShapeNode).node.position();
+        const posC = (p3 as ShapeNode).node.position();
+
+        let [A, B, C] = [
+            Factory.createPoint(node.type.props, posA.x, posA.y),
+            Factory.createPoint(node.type.props, posB.x, posB.y),
+            Factory.createPoint(node.type.props, posC.x, posC.y)
+        ]
+
+        try {
+            let [incenter, inradius] = [operation.incenter(A, B, C), operation.inradius(A, B, C)];
+            let circle = node.node as Konva.Circle;
+            circle.position({x: incenter.x, y: incenter.y});
+            circle.radius(inradius);
+            node.node.show();
+            return { ...node };
+        }
+
+        catch(error) {
+            node.node.hide();
+            return { ...node };
+        }
+    }
+
+    private updateSemiCircle = (node: ShapeNode): ShapeNode => {
+        const [id1, id2] = node.dependsOn;
+        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        if (!start || !end) {
+            return { ... node };
+        }
+
+        const posA = (start as ShapeNode).node.position();
+        const posB = (end as ShapeNode).node.position();
+
+        let [A, B] = [
+            Factory.createPoint(node.type.props, posA.x, posA.y),
+            Factory.createPoint(node.type.props, posB.x, posB.y)
+        ]
+
+        let M = operation.midPoint(A, B);
+        let MB = {
+            x: B.x - M.x,
+            y: B.y - M.y
+        }
+
+        const angleFromXAxis = (v: {x: number, y: number}) => {
+            return (Math.atan2(-v.y, v.x) * 180) / Math.PI;
+        }
+
+        const clampAngle = (degree: number) => {
+            return (degree + 360) % 360;
+        }
+
+        let startAngle = clampAngle(angleFromXAxis(MB));
+
+        let arc = node.node as Konva.Arc;
+        arc.position({x: M.x, y: M.y});
+        arc.rotation(startAngle);
+        arc.angle(180);
+        return { ...node };
+    }
+
+    private updateReflection = (node: ShapeNode): ShapeNode => {
+        const [id1, id2] = node.dependsOn;
+        const shape1 = this.state.shapes.get(id1);
+        const shape2 = this.state.shapes.get(id2);
+
+        if (!shape1 || !shape2) {
+            return { ...node };
+        }
+
+        // shape1 is object, shape2 is mirror
+        let reflected = operation.reflection(shape1.type, shape2.type);
+        if ('x' in reflected && 'y' in reflected) {
+            // reflected is Point
+            let p = node.node as Konva.Circle;
+            p.position({x: reflected.x, y: reflected.y});
+            return { ... node};
+        }
+
+        else if ('radius' in reflected) {
+            // reflected is Circle
+            let p = node.node as Konva.Circle;
+            p.position({x: (reflected as Circle).centerC.x, y: (reflected as Circle).centerC.y});
+            p.radius(reflected.radius);
+            return { ... node};
+        }
+
+        else if ('points' in reflected) {
+            let p = node.node as Konva.Line;
+            let points: number[] = [];
+            reflected.points.forEach((p: Point) => {
+                points.push(p.x, p.y);
+            });
+
+            p.points(points);
+            return { ... node};
+        }
+
+        else if ('startLine' in reflected) {
+            let l = node.node as Konva.Line;
+            const dx = (reflected as Line).endLine.x - (reflected as Line).startLine.x;
+            const dy = (reflected as Line).endLine.y - (reflected as Line).startLine.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            l.points([(reflected as Line).startLine.x - length * norm_dx, (reflected as Line).startLine.y - length * norm_dy, (reflected as Line).startLine.x + length * norm_dx, (reflected as Line).startLine.y + length * norm_dy]);
+            return { ...node };
+        }
+
+        else if ('startVector' in reflected) {
+            let l = node.node as Konva.Arrow;
+            l.points([(reflected as Vector).startVector.x, (reflected as Vector).startVector.y, (reflected as Vector).endVector.x, (reflected as Vector).endVector.y]);
+            return { ...node };
+        }
+
+        else if ('startSegment' in reflected) {
+            let l = node.node as Konva.Line;
+            l.points([(reflected as Segment).startSegment.x, (reflected as Segment).startSegment.y, (reflected as Segment).endSegment.x, (reflected as Segment).endSegment.y]);
+            return { ...node };
+        }
+
+        else if ('startRay' in reflected) {
+            let l = node.node as Konva.Line;
+            const dx = (reflected as Ray).endRay.x - (reflected as Ray).startRay.x;
+            const dy = (reflected as Ray).endRay.y - (reflected as Ray).startRay.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            l.points([(reflected as Ray).startRay.x, (reflected as Ray).startRay.y, (reflected as Ray).startRay.x + length * norm_dx, (reflected as Ray).startRay.y + length * norm_dy]);
+            return { ...node };
+        }
+
+        else {
+            return { ...node };
+        }
+    }
+
+    private updateTangentLine = (node: ShapeNode): ShapeNode => {
+        const matchTangent = (
+            oldNode: ShapeNode,
+            candidates: Konva.Line[]
+        ): Konva.Line => {
+            const oldLine = oldNode.node as Konva.Line;
+            const oldPts = oldLine.points();
+            const oldVec = {
+                x: oldPts[2] - oldPts[0],
+                y: oldPts[3] - oldPts[1],
+            };
+
+            function angleScore(candidate: Konva.Line): number {
+                const pts = candidate.points();
+                const vec = {
+                    x: pts[2] - pts[0],
+                    y: pts[3] - pts[1],
+                };
+                
+                const dot = oldVec.x * vec.x + oldVec.y * vec.y;
+                const len1 = Math.hypot(oldVec.x, oldVec.y);
+                const len2 = Math.hypot(vec.x, vec.y);
+                const cosTheta = dot / (len1 * len2);
+                return Math.acos(Math.max(-1, Math.min(1, cosTheta))); // angle difference in radians
+            }
+
+            // Choose the candidate with the smallest angle difference
+            let best = candidates[0];
+            let bestScore = angleScore(best);
+
+            for (let i = 1; i < candidates.length; i++) {
+                const score = angleScore(candidates[i]);
+                if (score < bestScore) {
+                    best = candidates[i];
+                    bestScore = score;
+                }
+            }
+
+            return best;
+        }
+
+        const [pointId, circleId] = node.dependsOn;
+        const point = this.state.shapes.get(pointId);
+        const circle = this.state.shapes.get(circleId);
+        if (!point || !circle) return { ...node };
+
+        let [A, c] = [
+            Factory.createPoint(
+                point.type.props,
+                (point.type as Point).x,
+                (point.type as Point).y,
+                (point.type as Point).z ?? 0
+            ),
+
+            Factory.createCircle(
+                circle.type.props,
+                (circle.type as Circle).centerC,
+                (circle.type as Circle).radius,
+                (circle.type as Circle).normal
+            )
+        ]
+
+        const newTangents = operation.tangentLine(A, c); // returns 0–2 lines
+        if (newTangents.length === 0) {
+            (node.node as Konva.Line).hide();
+            return { ...node };
+        }
+
+        let tangents: Konva.Line[] = [];
+        newTangents.forEach(l => {
+            const dx = l.direction.x;
+            const dy = l.direction.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            let line: Konva.Line = node.node.clone();
+            line.points([l.point.x - length * norm_dx, l.point.y - length * norm_dy, l.point.x + length * norm_dx, l.point.y + length * norm_dy]);
+            tangents.push(line);
+        })
+
+        const match = matchTangent(node, tangents);
+        const [x1, y1, x2, y2] = match.points();
+        const line = node.node as Konva.Line;
+        line.points([x1, y1, x2, y2]);
+        line.show();
+
+        return { ...node };
+    }
+
+    private updatePerpendicularBisector = (node: ShapeNode): ShapeNode => {
+        // Only depends on segment ID or 2 points
+        if (node.dependsOn.length === 1) {
+            const shape = this.state.shapes.get(node.dependsOn[0]);
+            if (!shape) {
+                return { ...node };
+            }
+
+            let segmentPos = ((shape as ShapeNode).node as Konva.Line).points();
+            let midPoint = {
+                x: (segmentPos[2] + segmentPos[0]) / 2,
+                y: (segmentPos[3] + segmentPos[1]) / 2
+            }
+
+            const dx = segmentPos[1] - segmentPos[3];
+            const dy = segmentPos[2] - segmentPos[0];
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([midPoint.x - length * norm_dx, midPoint.y - length * norm_dy, midPoint.x + length * norm_dx, midPoint.y + length * norm_dy]);
+            return { ...node };
+        }
+
+        else if (node.dependsOn.length === 2) {
+            const [id1, id2] = node.dependsOn;
+            const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+            if (!start || !end) {
+                return { ... node };
+            }
+
+            const posA = (start as ShapeNode).node.position();
+            const posB = (end as ShapeNode).node.position();
+
+            let midPoint = {
+                x: (posA.x + posB.x) / 2,
+                y: (posA.y + posB.y) / 2
+            }
+
+            const dx = posA.x - posB.x;
+            const dy = posB.y - posB.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([midPoint.x - length * norm_dx, midPoint.y - length * norm_dy, midPoint.x + length * norm_dx, midPoint.y + length * norm_dy]);
+            return { ...node };
+        }
+
+        else {
+            return { ...node };
+        }
+    }
+
+    private updatePerpendicularLine = (node: ShapeNode): ShapeNode => {
+        const [id1, id2] = node.dependsOn;
+        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        if (!start || !end) {
+            return { ... node };
+        }
+
+        // shape1 is point, shape2 is line/segment/ray
+        let segmentPos = ((end as ShapeNode).node as Konva.Line).points();
+        let pointPos = ((start as ShapeNode).node as Konva.Circle).position();
+
+        const dx = segmentPos[1] - segmentPos[3];
+        const dy = segmentPos[2] - segmentPos[0];
+
+        let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+        let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+        let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+        let line: Konva.Line = node.node as Konva.Line;
+        line.points([pointPos.x - length * norm_dx, pointPos.y - length * norm_dy, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
+        return { ...node };
+    }
+
+    private updateParallelLine = (node: ShapeNode): ShapeNode => {
+        const [id1, id2] = node.dependsOn;
+        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        if (!start || !end) {
+            return { ... node };
+        }
+
+        // shape1 is point, shape2 is line/segment/ray
+        let segmentPos = ((end as ShapeNode).node as Konva.Line).points();
+        let pointPos = ((start as ShapeNode).node as Konva.Circle).position();
+
+        const dx = segmentPos[2] - segmentPos[0];
+        const dy = segmentPos[3] - segmentPos[1];
+
+        let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+        let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+        let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+        let line: Konva.Line = node.node as Konva.Line;
+        line.points([pointPos.x - length * norm_dx, pointPos.y - length * norm_dy, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
+        return { ...node };
+    }
+
+    private updateProjection = (node: ShapeNode): ShapeNode => {
+        const [id1, id2, id3] = node.dependsOn;
+        const [shape1, shape2, shape3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        if (!shape1 || !shape2 || !shape3) {
+            return { ... node };
+        }
+
+        let projected_point: Point = operation.point_projection(
+            shape1.type as Point,
+            shape2.type,
+            shape3.type as Line
+        )
+
+        let point = node.node as Konva.Circle;
+        point.position({x: projected_point.x, y: projected_point.y});
+        return { ...node };
+    }
+
+    private updateExcircle = (node: ShapeNode): ShapeNode => {
+        const [id1, id2, id3] = node.dependsOn;
+        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        if (!p1 || !p2 || !p3) {
+            return { ... node };
+        }
+
+        const posA = (p1 as ShapeNode).node.position();
+        const posB = (p2 as ShapeNode).node.position();
+        const posC = (p3 as ShapeNode).node.position();
+
+        let [A, B, C] = [
+            Factory.createPoint(node.type.props, posA.x, posA.y),
+            Factory.createPoint(node.type.props, posB.x, posB.y),
+            Factory.createPoint(node.type.props, posC.x, posC.y)
+        ]
+
+        try {
+            let [excenter, exradius] = [operation.excenter(A, B, C), operation.exradius(A, B, C)];
+            let circle = node.node as Konva.Circle;
+            circle.position({x: excenter.x, y: excenter.y});
+            circle.radius(exradius);
+            node.node.show();
+            return { ...node };
+        }
+
+        catch(error) {
+            node.node.hide();
+            return { ...node };
+        }
+    }
+
+    private updateExcenter = (node: ShapeNode): ShapeNode => {
+        const [id1, id2, id3] = node.dependsOn;
+        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        if (!p1 || !p2 || !p3) {
+            return { ... node };
+        }
+
+        const posA = (p1 as ShapeNode).node.position();
+        const posB = (p2 as ShapeNode).node.position();
+        const posC = (p3 as ShapeNode).node.position();
+
+        let [A, B, C] = [
+            Factory.createPoint(node.type.props, posA.x, posA.y),
+            Factory.createPoint(node.type.props, posB.x, posB.y),
+            Factory.createPoint(node.type.props, posC.x, posC.y)
+        ]
+
+        try {
+            let ortho = operation.excenter(A, B, C);
+            let point = node.node as Konva.Circle;
+            point.position({x: ortho.x as number, y: ortho.y as number});
+            point.show();
+            return { ...node };
+        }
+
+        catch (error) {
+            node.node.hide();
+            return { ...node };
+        }
+    }
+
+    private updateRotation = (node: ShapeNode): ShapeNode => {
+        const [id1, id2] = node.dependsOn;
+        const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        if (!p1 || !p2) {
+            return { ... node };
+        }
+
+        if (node.rotationFactor === undefined) {
+            return { ... node};
+        }
+
+        let rotated_obj = operation.rotation(
+            p1.type, p2.type, node.rotationFactor.degree, node.rotationFactor.CCW
+        );
+
+        if ('x' in rotated_obj && 'y' in rotated_obj) {
+            let p = node.node as Konva.Circle;
+            p.position({x: (rotated_obj as Point).x, y: (rotated_obj as Point).y});
+
+        }
+
+        else if ('centerC' in rotated_obj && 'radius' in rotated_obj) {
+            let p = node.node as Konva.Circle;
+            p.position({x: (rotated_obj as Circle).centerC.x, y: (rotated_obj as Circle).centerC.y});
+            p.radius((rotated_obj as Circle).radius);
+        }
+
+        else if ('points' in rotated_obj) {
+            let p = node.node as Konva.Line;
+            let points: number[] = [];
+            (rotated_obj as Polygon).points.forEach((p: Point) => {
+                points.push(p.x, p.y);
+            })
+
+            p.points(points);
+        }
+
+        else if ('startLine' in rotated_obj) {
+            let pointPos = {
+                x: (rotated_obj as Line).startLine.x,
+                y: (rotated_obj as Line).startLine.y
+            }
+
+            let d = {
+                x: (rotated_obj as Line).endLine.x - (rotated_obj as Line).startLine.x,
+                y: (rotated_obj as Line).endLine.y - (rotated_obj as Line).startLine.y
+            }
+
+            const dx = d.x;
+            const dy = d.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([pointPos.x - length * norm_dx, pointPos.y - length * norm_dy, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
+            return { ...node };
+        }
+
+        else if ('startRay' in rotated_obj) {
+            let pointPos = {
+                x: (rotated_obj as Ray).startRay.x,
+                y: (rotated_obj as Ray).startRay.y
+            }
+
+            let d = {
+                x: (rotated_obj as Ray).endRay.x - (rotated_obj as Ray).startRay.x,
+                y: (rotated_obj as Ray).endRay.y - (rotated_obj as Ray).startRay.y
+            }
+
+            const dx = d.x;
+            const dy = d.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([pointPos.x, pointPos.y, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
+        }
+
+        else if ('startSegment' in rotated_obj) {
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([
+                (rotated_obj as Segment).startSegment.x, (rotated_obj as Segment).startSegment.y,
+                (rotated_obj as Segment).endSegment.x, (rotated_obj as Segment).endSegment.y
+            ]);
+        }
+
+        else if ('startVector' in rotated_obj) {
+            let line: Konva.Line = node.node as Konva.Arrow;
+            line.points([
+                (rotated_obj as Vector).startVector.x, (rotated_obj as Vector).startVector.y,
+                (rotated_obj as Vector).endVector.x, (rotated_obj as Vector).endVector.y
+            ]);
+        }
+
+        return { ...node };
+    }
+
+    private updateEnlarge = (node: ShapeNode): ShapeNode => {
+        const [id1, id2] = node.dependsOn;
+        const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        if (!p1 || !p2) {
+            return { ... node };
+        }
+
+        if (node.rotationFactor === undefined) {
+            return { ... node};
+        }
+
+        if (node.scaleFactor === undefined) {
+            return { ...node };
+        }
+
+        let enlarge_obj = operation.enlarge(p1.type, p2.type as Point, node.scaleFactor);
+        if ('x' in enlarge_obj && 'y' in enlarge_obj) {
+            let p = node.node as Konva.Circle;
+            p.position({x: (enlarge_obj as Point).x, y: (enlarge_obj as Point).y});
+
+        }
+
+        else if ('centerC' in enlarge_obj && 'radius' in enlarge_obj) {
+            let p = node.node as Konva.Circle;
+            p.position({x: (enlarge_obj as Circle).centerC.x, y: (enlarge_obj as Circle).centerC.y});
+            p.radius((enlarge_obj as Circle).radius);
+        }
+
+        else if ('points' in enlarge_obj) {
+            let p = node.node as Konva.Line;
+            let points: number[] = [];
+            (enlarge_obj as Polygon).points.forEach((p: Point) => {
+                points.push(p.x, p.y);
+            })
+
+            p.points(points);
+        }
+
+        else if ('startLine' in enlarge_obj) {
+            let pointPos = {
+                x: (enlarge_obj as Line).startLine.x,
+                y: (enlarge_obj as Line).startLine.y
+            }
+
+            let d = {
+                x: (enlarge_obj as Line).endLine.x - (enlarge_obj as Line).startLine.x,
+                y: (enlarge_obj as Line).endLine.y - (enlarge_obj as Line).startLine.y
+            }
+
+            const dx = d.x;
+            const dy = d.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([pointPos.x - length * norm_dx, pointPos.y - length * norm_dy, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
+            return { ...node };
+        }
+
+        else if ('startRay' in enlarge_obj) {
+            let pointPos = {
+                x: (enlarge_obj as Ray).startRay.x,
+                y: (enlarge_obj as Ray).startRay.y
+            }
+
+            let d = {
+                x: (enlarge_obj as Ray).endRay.x - (enlarge_obj as Ray).startRay.x,
+                y: (enlarge_obj as Ray).endRay.y - (enlarge_obj as Ray).startRay.y
+            }
+
+            const dx = d.x;
+            const dy = d.y;
+
+            let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
+            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([pointPos.x, pointPos.y, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
+        }
+
+        else if ('startSegment' in enlarge_obj) {
+            let line: Konva.Line = node.node as Konva.Line;
+            line.points([
+                (enlarge_obj as Segment).startSegment.x, (enlarge_obj as Segment).startSegment.y,
+                (enlarge_obj as Segment).endSegment.x, (enlarge_obj as Segment).endSegment.y
+            ]);
+        }
+
+        else if ('startVector' in enlarge_obj) {
+            let line: Konva.Line = node.node as Konva.Arrow;
+            line.points([
+                (enlarge_obj as Vector).startVector.x, (enlarge_obj as Vector).startVector.y,
+                (enlarge_obj as Vector).endVector.x, (enlarge_obj as Vector).endVector.y
+            ]);
+        }
+
+        return { ...node };
     }
 
     render(): React.ReactNode {
