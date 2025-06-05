@@ -18,17 +18,33 @@ export interface Shape3D extends BaseShape {
 export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
                         'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'InternalAngleBisector' |
                         'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' | 'Median' |
-                        'ParallelLine' | 'Circle3Point' | 'SemiCircle' | 'Circle2Point' | 'Angle' | 'Cuboid' | 'Cone' |
-                        'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' | 'Projection' |
-                        'Enlarge';
+                        'ParallelLine' | 'Circle3Point' | 'Incircle3Point' | 'SemiCircle' | 'Circle2Point' | 'Angle' |
+                        'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' |
+                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle';
 
 export interface Angle extends BaseShape {
+    vertex: Point;
+    startAngle: number;
     degrees: number;
 }
 
 export interface Enlarge extends BaseShape {
-    center: Point,
-    scaleFactor: number
+    object: Shape;
+    center: Point;
+    scaleFactor: number;
+}
+
+export interface Rotation extends BaseShape {
+    object: Shape;
+    center: Line | Segment | Ray | Point;
+    degree: number;
+    CCW: boolean;
+}
+
+export interface SemiCircle extends BaseShape {
+    start: Point,
+    end: Point,
+    normal?: GeometryState.Vector
 }
 
 // Point type
@@ -117,6 +133,10 @@ export type Shape =
     | Polygon 
     | Circle 
     | Ray
+    | Angle
+    | Enlarge
+    | Rotation
+    | SemiCircle
     | Sphere 
     | Plane 
     | Cuboid 
@@ -180,6 +200,13 @@ export interface ShapeNode {
     node: Konva.Shape;
     /** IDs of other ShapeNodes this one depends on */
     dependsOn: string[];
+    /** For enlarge */
+    scaleFactor?: number;
+    /** For rotation */
+    rotationFactor?: {
+        degree: number;
+        CCW: boolean;
+    }
 }
 
 export interface ShapeNode3D {

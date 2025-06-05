@@ -69,6 +69,18 @@ export const createCircle = (props: GeometryShape.ShapeProps, center: GeometrySh
     return c;
 }
 
+export const createSemiCircle = (props: GeometryShape.ShapeProps, start: GeometryShape.Point, end: GeometryShape.Point, normal?: GeometryShape.Vector): GeometryShape.SemiCircle => {
+    let c: GeometryShape.SemiCircle = {
+        start: start,
+        end: end,
+        props: props,
+        normal: normal,
+        type: 'SemiCircle'
+    }
+
+    return c;
+}
+
 export const createPolygon = (props: GeometryShape.ShapeProps, points: GeometryShape.Point[]): GeometryShape.Polygon => {
     let poly: GeometryShape.Polygon = {
         points: points,
@@ -97,6 +109,81 @@ export const createPlane = (props: GeometryShape.ShapeProps, point: GeometryShap
         norm: norm,
         props: props,
         type: 'Sphere'
+    }
+
+    return p;
+}
+
+export const createCuboid = (props: GeometryShape.ShapeProps, topLeftBack: GeometryShape.Point, bottomRightFront: GeometryShape.Point): GeometryShape.Cuboid => {
+    let p: GeometryShape.Cuboid = {
+        topLeftBack: topLeftBack,
+        bottomRightFront: bottomRightFront,
+        props: props,
+        type: 'Cuboid'
+    }
+
+    return p;
+}
+
+export const createCylinder = (
+    props: GeometryShape.ShapeProps,
+    point1: GeometryShape.Point,
+    point2: GeometryShape.Point,
+    radius: number
+): GeometryShape.Cylinder => {
+    let p: GeometryShape.Cylinder = {
+        centerBase1: point1,
+        centerBase2: point2,
+        radius: radius,
+        props: props,
+        type: 'Cylinder'
+    }
+
+    return p;
+}
+
+export const createPrism = (
+    props: GeometryShape.ShapeProps,
+    base: GeometryShape.Polygon,
+    shiftVector: GeometryShape.Vector
+): GeometryShape.Prism => {
+    let p: GeometryShape.Prism = {
+        base: base,
+        shiftVector: shiftVector,
+        props: props,
+        type: 'Prism'
+    }
+
+    return p;
+}
+
+export const createPyramid = (
+    props: GeometryShape.ShapeProps,
+    base: GeometryShape.Polygon,
+    apex: GeometryShape.Point
+): GeometryShape.Pyramid => {
+    let p: GeometryShape.Pyramid = {
+        base: base,
+        apex: apex,
+        props: props,
+        type: 'Pyramid'
+    }
+
+    return p;
+}
+
+export const createCone = (
+    props: GeometryShape.ShapeProps,
+    center: GeometryShape.Point,
+    apex: GeometryShape.Point,
+    radius: number
+): GeometryShape.Cone => {
+    let p: GeometryShape.Cone = {
+        center: center,
+        apex: apex,
+        radius: radius,
+        props: props,
+        type: 'Cone'
     }
 
     return p;
