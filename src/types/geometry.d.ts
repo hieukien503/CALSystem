@@ -258,6 +258,4 @@ export interface GeometryState {
 
     /** Selected shapes */
     selectedShapes: Point[];
-    /** Whether the tool is active */
-    mode: string;
 }
