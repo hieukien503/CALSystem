@@ -1030,7 +1030,8 @@ export const getArea = (shape: GeometryShape.Polygon) => {
     let area = 0;
 
     for (let i = 0; i < shape.points.length; i++) {
-        area += shape.points[i].x * shape.points[i + 1].y - shape.points[i + 1].x * shape.points[i].y;
+        let next = (i + 1) % shape.points.length;
+        area += shape.points[i].x * shape.points[next].y - shape.points[next].x * shape.points[i].y;
     }
 
     return Math.abs(area) / 2;

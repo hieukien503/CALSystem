@@ -113,6 +113,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
     private labelRenderer: RefObject<CSS2DRenderer | null>;
+    private mode: string;
 
     constructor(props: ThreeDCanvasProps) {
         super(props);
@@ -140,10 +141,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             segmentIndex: 0,
             vectorIndex: 0,
             selectedShapes: [],
-            mode: 'none'
         }
 
         this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.mode = 'edit';
     }
 
     componentDidMount(): void {
@@ -843,44 +844,45 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             segmentIndex: 0,
             vectorIndex: 0,
             selectedShapes: [],
-            mode: 'none'
-        })
+        });
+
+        this.mode = 'edit';
     }
 
     private handlePointClick = () => {
-        this.setState({mode: 'point'});
+        this.mode = 'point';
     }
 
     private handleLineClick = () => {
-        this.setState({mode: 'line'});
+        this.mode = 'line';
     }
 
     private handleSegmentClick = () => {
-        this.setState({mode: 'segment'});
+        this.mode = 'segment';
     }
 
     private handleVectorClick = () => {
-        this.setState({mode: 'vector'});
+        this.mode = 'vector';
     }
 
     private handlePolygonClick = () => {
-        this.setState({mode: 'polygon'});
+        this.mode = 'polygon';
     }
 
     private handleCircleClick = () => {
-        this.setState({mode: 'circle'});
+        this.mode = 'circle';
     }
 
     private handleRayClick = () => {
-        this.setState({mode: 'ray'});
+        this.mode = 'ray';
     }
 
     private handleEditClick = () => {
-        this.setState({mode: 'edit'});
+        this.mode = 'edit';
     }
 
     private handleDeleteClick = () => {
-        this.setState({mode: 'delete'});
+        this.mode = 'delete';
     }
 
     private handleUndoClick = () => {
@@ -892,46 +894,46 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     }
 
     private handleAddCuboid = () => {
-        this.setState({mode: 'cuboid'});
+        this.mode = 'cuboid';
     }
 
     private handleAddCylinder = () => {
-        this.setState({mode: 'cylinder'});
+        this.mode = 'cylinder';
     }
 
     private handleAddPrism = () => {
-        this.setState({mode: 'prism'});
+        this.mode = 'prism';
     }
 
     private handleAddPyramid = () => {
-        this.setState({mode: 'pyramid'});
+        this.mode = 'pyramid';
     }
 
     private handleAddSphere = () => {
-        this.setState({mode: 'sphere'});
+        this.mode = 'sphere';
     }
 
     private handleAddPlane = () => {
-        this.setState({mode: 'plane'});
+        this.mode = 'plane';
     }
 
     private handleAddCone = () => {
-        this.setState({mode: 'cone'});
+        this.mode = 'cone';
     }
 
     private handleMouseDown = (e: MouseEvent) => {
-        if (e.button === 0 && this.state.mode !== 'none') {
+        if (e.button === 0 && this.mode !== 'edit') {
             this.handleDrawing();
         }
     }
 
     private handleDrawing = () => {
-        let mode = this.state.mode
+        let mode = this.mode;
         if (mode === "sphere") {
             let coors = prompt('Enter the center radius');
             let regex = /^\(\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*\)$/
             if (!coors) {
-                this.setState({mode: 'none'});
+                this.mode = 'edit';
                 return;
             }
 
@@ -992,7 +994,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: []
                     })
 
-                    this.setState({mode: 'none'});
+                    this.mode = 'edit';
                 }
 
                 catch (error) {
@@ -1007,7 +1009,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const parts = expr.split('=');
             if (parts.length !== 2) {
                 alert('Invalid equation of a plane');
-                this.setState({mode: 'none'});
+                this.mode = 'edit';
                 return;
             }
 
@@ -1046,7 +1048,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
                 if (!isExact) {
                     alert('Invalid equation of a plane');
-                    this.setState({mode: 'none'});
+                    this.mode = 'edit';
                     return;
                 }
 
@@ -1068,7 +1070,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     while ((match = powerPattern.exec(polyStr)) !== null) {
                         if (parseInt(match[2]) > 1) {
                             alert('Invalid equation of a plane');
-                            this.setState({mode: 'none'});
+                            this.mode = 'edit';
                             return;
                         }
                     }
@@ -1076,7 +1078,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     // Check for non-linear operations like sin, cos, log, etc.
                     if (/sin|cos|tan|log|cot|sqrt/.test(polyStr)) {
                         alert('Invalid equation of a plane');
-                        this.setState({mode: 'none'});
+                        this.mode = 'edit';
                         return;
                     }
                 }
@@ -1127,7 +1129,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 let ast = math.parse(expanded.toString());
                 walk(ast);
                 if (Math.pow(result.A, 2) + Math.pow(result.B, 2) + Math.pow(result.C, 2) === 0) {
-                    this.setState({mode: 'none'});
+                    this.mode = 'edit';
                     alert('Invalid equation of a plane');
                     return;
                 }
@@ -1187,7 +1189,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: []
                 })
 
-                this.setState({mode: 'none'});
+                this.mode = 'edit';
             }
 
             catch(error) {
