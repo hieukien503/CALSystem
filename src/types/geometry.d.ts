@@ -23,7 +23,7 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
                         'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle';
 
 export interface Angle extends BaseShape {
-    vertex: Point;
+    vertex?: Point;
     startAngle: number;
     degrees: number;
 }
@@ -258,4 +258,5 @@ export interface GeometryState {
 
     /** Selected shapes */
     selectedShapes: Point[];
+    label_used: string[] = [];
 }

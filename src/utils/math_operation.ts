@@ -26,7 +26,7 @@ const mult_scalar = (x: number, y: number, z: number, scalar: number) => {
     }
 }
 
-const isColinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
+export const isColinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
     const AB = {
         x: B.x - A.x,
         y: B.y - A.y,

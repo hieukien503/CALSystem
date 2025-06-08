@@ -39,7 +39,7 @@ export class KonvaAxis {
         
         // Calculate visible area based on layer position and scale
         const visibleLeft = -layerPosition.x / scale;
-        const visibleRight = (width - layerPosition.x) / scale;
+        const visibleRight = (0.75 * width - layerPosition.x) / scale;
         const visibleTop = -layerPosition.y / scale;
         const visibleBottom = (height - layerPosition.y) / scale;
 
@@ -61,6 +61,7 @@ export class KonvaAxis {
             fill: axisColor,
             strokeScaleEnabled: false
         });
+
         group.add(xAxis);
 
         // Draw y-axis
@@ -75,6 +76,7 @@ export class KonvaAxis {
             fill: axisColor,
             strokeScaleEnabled: false,
         });
+
         group.add(yAxis);
 
         // Draw x-axis ticks and labels
@@ -106,7 +108,7 @@ export class KonvaAxis {
 
                 const label = new Konva.Text({
                     text: labelText,
-                    x: x_stage - tmpLabel.width() / 2 + LABEL_OFFSET,
+                    x: x_stage - tmpLabel.width() / 2 + (x === originX ? LABEL_OFFSET : 0),
                     y: y_stage + LABEL_OFFSET,
                     fontSize: FONT_CONFIG.fontSize,
                     fontFamily: FONT_CONFIG.fontFamily,
@@ -149,7 +151,7 @@ export class KonvaAxis {
                 const label = new Konva.Text({
                     text: labelText,
                     x: x_stage - LABEL_OFFSET - tmpLabel.width(), // Position LABEL_OFFSET pixels to the left of the axis
-                    y: y_stage - 2 * LABEL_OFFSET, // Center the label vertically at y_stage_center
+                    y: y_stage - LABEL_OFFSET, // Center the label vertically at y_stage_center
                     fontSize: FONT_CONFIG.fontSize,
                     fontFamily: FONT_CONFIG.fontFamily,
                     opacity: opacity,

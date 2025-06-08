@@ -141,6 +141,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             segmentIndex: 0,
             vectorIndex: 0,
             selectedShapes: [],
+            label_used: []
         }
 
         this.handleMouseDown = this.handleMouseDown.bind(this);
