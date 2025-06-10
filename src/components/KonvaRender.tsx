@@ -30,9 +30,6 @@ const BASE_SPACING = 60;
 // Constants for zoom level
 const ZOOM_FACTOR = 1.1;
 
-// Mutable variables
-let scale = 1;
-
 // Utility functions
 const convert2RGB = _.memoize((color: string): [number, number, number] => {
     const rgb = Konva.Util.getRGB(color)
@@ -71,7 +68,7 @@ const createLabelProps = (
     }
 }
 
-const createPointDefaultShapeProps = _.memoize((label: string, radius: number = 0.02, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+const createPointDefaultShapeProps = _.memoize((label: string, radius: number = 0.05, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -186,6 +183,35 @@ const snapToGrid = _.memoize((
     return finalMathPos;
 });
 
+const clone = (
+    state: GeometryState,
+    dag: Map<string, ShapeNode>,
+    selected: Point[],
+    label_used: string[]
+) => {
+    const copyState = structuredClone(state);
+    const copySelected = structuredClone(selected);
+    const copyLabelUsed = Array.from(label_used);
+    const copyDAG = new Map<string, ShapeNode>();
+    dag.forEach((node, key) => {
+        copyDAG.set(key, {
+            id: key,
+            type: node.type,
+            scaleFactor: node.scaleFactor,
+            rotationFactor: node.rotationFactor,
+            dependsOn: Array.from(node.dependsOn),
+            node: node.node.clone()
+        })
+    })
+
+    return {
+        state: copyState,
+        dag: copyDAG,
+        selected: copySelected,
+        label_used: copyLabelUsed
+    }
+}
+
 interface CanvasProps {
     width: number;
     height: number;
@@ -199,9 +225,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     private layerGridRef: RefObject<Konva.Layer | null>;
     private stageRef: RefObject<Konva.Stage | null>;
     private last_pointer: {x: number, y: number};
-    private historyStack: GeometryState[] = [];
-    private futureStack: GeometryState[] = [];
+    private historyStack: { state: GeometryState, dag: Map<string, ShapeNode>, selected: Point[], label_used: string[] }[] = [];
+    private futureStack: { state: GeometryState, dag: Map<string, ShapeNode>, selected: Point[], label_used: string[] }[] = [];
     private mode: string;
+    private DAG: Map<string, ShapeNode>;
+    private selectedShapes: Point[];
+    private label_used: string[] = [];
 
     constructor(props: CanvasProps) {
         super(props);
@@ -213,21 +242,13 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             numLoops: 0,
             axisTickInterval: 1,
             spacing: BASE_SPACING,
-            shapes: new Map<string, ShapeNode>(),
+            shapes: [],
             gridVisible: true,
             zoom_level: 1,
             axesVisible: true,
             panning: false,
             dummy: false,
-            pointIndex: 0,
-            circleIndex: 0,
-            lineIndex: 0,
             polygonIndex: 0,
-            rayIndex: 0,
-            segmentIndex: 0,
-            vectorIndex: 0,
-            selectedShapes: new Array<Point>(),
-            label_used: []
         }
 
         this.last_pointer = {x: 0, y: 0};
@@ -237,8 +258,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleMouseOver = this.handleMouseOver.bind(this);
         this.handleZoom = _.debounce(this.handleZoom.bind(this), 50);
-        this.historyStack.push(_.cloneDeep(this.state)); // Initialize history stack with the initial state
-        this.mode = 'edit'
+        this.mode = 'edit';
+        this.DAG = new Map<string, ShapeNode>();
+        this.selectedShapes = new Array<Point>();
+        this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used)); // Initialize history stack
     }
 
     componentDidMount(): void {
@@ -257,14 +280,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             prevState.panning !== this.state.panning ||
             prevState.dummy !== this.state.dummy ||
             prevState.shapes !== this.state.shapes ||
-            prevState.pointIndex !== this.state.pointIndex ||
-            prevState.lineIndex !== this.state.lineIndex ||
-            prevState.segmentIndex !== this.state.segmentIndex ||
-            prevState.vectorIndex !== this.state.vectorIndex ||
-            prevState.circleIndex !== this.state.circleIndex ||
-            prevState.polygonIndex !== this.state.polygonIndex ||
-            prevState.rayIndex !== this.state.rayIndex ||
-            prevState.selectedShapes !== this.state.selectedShapes
+            prevState.polygonIndex !== this.state.polygonIndex
         ) {
             this.drawShapes();
         }
@@ -313,7 +329,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         this.layerGridRef.current?.position(newPos);
         this.layerAxisRef.current?.position(newPos);
 
-        this.state.shapes.forEach((node, key) => {
+        this.DAG.forEach((node, key) => {
             if ('x' in node.type) {
                 ((node as ShapeNode).node as Konva.Circle).radius(node.type.props.radius * BASE_SPACING / newScale);
             }
@@ -493,7 +509,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 opacity: 0.5
             });
 
-            scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+            let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
             this.layerGridRef.current?.add(
                 grid.generateGrid(
                     this.layerGridRef.current.position(),
@@ -519,7 +535,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 opacity: 0.5
             });
 
-            scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+            let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
             this.layerAxisRef.current.add(
                 axes.generateAxis(
                     this.state.axisTickInterval,
@@ -532,7 +548,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     }
 
     private drawPoint = (point: Point, props: Shape['props']) => {
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         const c = new Konva.Circle({
             x: point.x,
             y: point.y,
@@ -547,6 +563,28 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             strokeScaleEnabled: false
         });
 
+        c.on('mouseover', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            c.shadowColor('gray');
+            c.shadowBlur(c.radius() * 2.5);
+            c.shadowOpacity(1.5);
+            c.getLayer()?.batchDraw();
+        })
+
+        c.on('mouseleave', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            c.shadowBlur(0);
+            c.getLayer()?.batchDraw();
+        })
+
         c.on('mousedown', (e) => {
             if (!["delete", "edit"].includes(this.mode)) {
                 return;
@@ -560,8 +598,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (this.mode === "delete") {
                 this.removeNode(c.id());
-                this.setState({dummy: !this.state.dummy});
-                this.historyStack.push(_.cloneDeep(this.state));
+                this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                if (this.historyStack.length >= 100) {
+                    this.historyStack.splice(0, 1);
+                }
+
                 this.futureStack = [];
             }
         })
@@ -637,7 +679,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         let strokeWidth = props.line_size / scale;
         
         const l = new Konva.Line({
@@ -657,6 +699,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             strokeScaleEnabled: false
         });
 
+        l.on('mouseover', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            l.strokeWidth(strokeWidth * 2);
+            l.getLayer()?.batchDraw();
+        })
+
+        l.on('mouseleave', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            l.strokeWidth(strokeWidth);
+            l.getLayer()?.batchDraw();
+        })
+
         l.on('mousedown', (e) => {
             if (!["delete", "edit"].includes(this.mode)) {
                 return;
@@ -670,8 +732,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (this.mode === "delete") {
                 this.removeNode(l.id());
-                this.setState({dummy: !this.state.dummy});
-                this.historyStack.push(_.cloneDeep(this.state));
+                this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                if (this.historyStack.length >= 100) {
+                    this.historyStack.splice(0, 1);
+                }
                 this.futureStack = [];
             }
         });
@@ -713,7 +778,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let dy = position.y - oldPos.y;
 
             let [id1, id2] = [line.startLine.props.id, line.endLine.props.id];
-            const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+            const [p1, p2] = [this.DAG.get(id1), this.DAG.get(id2)];
             if (!p1 || !p2) {
                 return;
             }
@@ -740,7 +805,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     };
 
     private drawSegment = (segment: Segment, props: Shape['props']) => {
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         let strokeWidth = props.line_size / scale;
         const s = new Konva.Line({
             points: [
@@ -759,6 +824,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             strokeScaleEnabled: false
         });
 
+        s.on('mouseover', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            s.strokeWidth(strokeWidth * 2);
+            s.getLayer()?.batchDraw();
+        })
+
+        s.on('mouseleave', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            s.strokeWidth(strokeWidth);
+            s.getLayer()?.batchDraw();
+        })
+
         s.on('mousedown', (e) => {
             if (!["delete", "edit"].includes(this.mode)) {
                 return;
@@ -772,8 +857,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (this.mode === "delete") {
                 this.removeNode(s.id());
-                this.setState({dummy: !this.state.dummy});
-                this.historyStack.push(_.cloneDeep(this.state));
+                this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                if (this.historyStack.length >= 100) {
+                    this.historyStack.splice(0, 1);
+                }
+
                 this.futureStack = [];
             }
         })
@@ -816,7 +905,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let dy = position.y - oldPos.y;
 
             let [id1, id2] = [segment.startSegment.props.id, segment.endSegment.props.id];
-            const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+            const [p1, p2] = [this.DAG.get(id1), this.DAG.get(id2)];
             if (!p1 || !p2) {
                 return;
             }
@@ -843,7 +932,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     };
 
     private drawVector = (vector: Vector, props: Shape['props']) => {
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         let strokeWidth = props.line_size / scale;
         const v = new Konva.Arrow({
             points: [
@@ -864,6 +953,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             fill: props.fill? props.color : 'none'
         });
 
+        v.on('mouseover', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            v.strokeWidth(strokeWidth * 2);
+            v.getLayer()?.batchDraw();
+        })
+
+        v.on('mouseleave', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            v.strokeWidth(strokeWidth);
+            v.getLayer()?.batchDraw();
+        })
+
         v.on('mousedown', (e) => {
             if (!["delete", "edit"].includes(this.mode)) {
                 return;
@@ -877,8 +986,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (this.mode === "delete") {
                 this.removeNode(v.id());
-                this.setState({dummy: !this.state.dummy});
-                this.historyStack.push(_.cloneDeep(this.state));
+                this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                if (this.historyStack.length >= 100) {
+                    this.historyStack.splice(0, 1);
+                }
+
                 this.futureStack = [];
             }
         })
@@ -920,7 +1033,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let dy = position.y - oldPos.y;
 
             let [id1, id2] = [vector.startVector.props.id, vector.endVector.props.id];
-            const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+            const [p1, p2] = [this.DAG.get(id1), this.DAG.get(id2)];
             if (!p1 || !p2) {
                 return;
             }
@@ -947,7 +1060,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     };
 
     private drawCircle = (circle: Circle, props: Shape['props']) => {
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         let strokeWidth = props.line_size / scale;
         const c = new Konva.Circle({
             x: circle.centerC.x,
@@ -977,6 +1090,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             ctx.fillStrokeShape(shape); // This applies the fill and stroke based on the shape's properties for hit detection
         });
 
+        c.on('mouseover', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            c.strokeWidth(strokeWidth * 2);
+            c.getLayer()?.batchDraw();
+        })
+
+        c.on('mouseleave', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            c.strokeWidth(strokeWidth);
+            c.getLayer()?.batchDraw();
+        })
+
         c.on('mousedown', (e) => {
             if (!["delete", "edit"].includes(this.mode)) {
                 return;
@@ -990,8 +1123,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (this.mode === "delete") {
                 this.removeNode(c.id());
-                this.setState({dummy: !this.state.dummy});
-                this.historyStack.push(_.cloneDeep(this.state));
+                this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                if (this.historyStack.length >= 100) {
+                    this.historyStack.splice(0, 1);
+                }
+
                 this.futureStack = [];
             }
         })
@@ -1033,7 +1170,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let dy = position.y - oldPos.y;
 
             let id = circle.centerC.props.id;
-            const p = this.state.shapes.get(id);
+            const p = this.DAG.get(id);
             if (!p) {
                 return;
             }
@@ -1057,7 +1194,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     };
 
     private drawPolygon = (polygon: Polygon, props: Shape['props']) => {
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         let strokeWidth = props.line_size / scale;
         const points = polygon.points.flatMap(point => [point.x, point.y]);
         const opacity = props.opacity ?? 0.1;
@@ -1076,6 +1213,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             draggable: true
         });
 
+        p.on('mouseover', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            p.strokeWidth(strokeWidth * 2);
+            p.getLayer()?.batchDraw();
+        })
+
+        p.on('mouseleave', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            p.strokeWidth(strokeWidth);
+            p.getLayer()?.batchDraw();
+        })
+
         p.on('mousedown', (e) => {
             if (!["delete", "edit"].includes(this.mode)) {
                 return;
@@ -1089,8 +1246,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (this.mode === "delete") {
                 this.removeNode(p.id());
-                this.setState({dummy: !this.state.dummy});
-                this.historyStack.push(_.cloneDeep(this.state));
+                this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                if (this.historyStack.length >= 100) {
+                    this.historyStack.splice(0, 1);
+                }
+
                 this.futureStack = [];
             }
         })
@@ -1139,7 +1300,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let shapeNode: ShapeNode[] = [];
             for (let i = 0; i < ids.length; i++) {
                 let id = ids[i];
-                let point = this.state.shapes.get(id);
+                let point = this.DAG.get(id);
                 if (!point) return;
                 shapeNode.push(point as ShapeNode);
             }
@@ -1171,7 +1332,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
         let length = 2 * Math.max(this.props.width, this.props.height) * Math.sqrt(dx * dx + dy * dy) / this.state.zoom_level;
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         let strokeWidth = props.line_size / scale;
         const r = new Konva.Line({
             points: [
@@ -1189,6 +1350,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             draggable: true
         });
 
+        r.on('mouseover', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            r.strokeWidth(strokeWidth * 2);
+            r.getLayer()?.batchDraw();
+        })
+
+        r.on('mouseleave', (e) => {
+            if (!["delete", "edit"].includes(this.mode)) {
+                return;
+            }
+
+            e.cancelBubble = true;
+            r.strokeWidth(strokeWidth);
+            r.getLayer()?.batchDraw();
+        })
+
         r.on('mousedown', (e) => {
             if (!["delete", "edit"].includes(this.mode)) {
                 return;
@@ -1202,8 +1383,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (this.mode === "delete") {
                 this.removeNode(r.id());
-                this.setState({dummy: !this.state.dummy});
-                this.historyStack.push(_.cloneDeep(this.state));
+                this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                if (this.historyStack.length >= 100) {
+                    this.historyStack.splice(0, 1);
+                }
+
                 this.futureStack = [];
             }
         })
@@ -1245,7 +1430,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let dy = position.y - oldPos.y;
 
             let [id1, id2] = [ray.startRay.props.id, ray.endRay.props.id];
-            const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+            const [p1, p2] = [this.DAG.get(id1), this.DAG.get(id2)];
             if (!p1 || !p2) {
                 return;
             }
@@ -1272,7 +1457,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     };
 
     private drawAngle = (shape: Angle, props: Shape['props']): Konva.Arc | undefined => {
-        scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
+        let scale = this.layerMathObjectRef.current?.getAbsoluteScale().x ?? 1;
         let strokeWidth = props.line_size / scale;
         if (shape.vertex) {
             let a = new Konva.Arc({
@@ -1290,6 +1475,26 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 id: props.id
             });
 
+            a.on('mouseover', (e) => {
+                if (!["delete", "edit"].includes(this.mode)) {
+                    return;
+                }
+
+                e.cancelBubble = true;
+                a.strokeWidth(strokeWidth * 2);
+                a.getLayer()?.batchDraw();
+            })
+
+            a.on('mouseleave', (e) => {
+                if (!["delete", "edit"].includes(this.mode)) {
+                    return;
+                }
+
+                e.cancelBubble = true;
+                a.strokeWidth(strokeWidth);
+                a.getLayer()?.batchDraw();
+            })
+
             a.on('mousedown', (e) => {
                 if (!["delete", "edit"].includes(this.mode)) {
                     return;
@@ -1298,8 +1503,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 e.cancelBubble = true;
                 if (this.mode === "delete") {
                     this.removeNode(a.id());
-                    this.setState({dummy: !this.state.dummy});
-                    this.historyStack.push(_.cloneDeep(this.state));
+                    this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+                    if (this.historyStack.length >= 100) {
+                        this.historyStack.splice(0, 1);
+                    }
+
                     this.futureStack = [];
                 }
             })
@@ -1316,7 +1525,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         if (shape.type === 'Circle') {
             let p1 = {
                 x: shapeNode.node.x(),
-                y: shapeNode.node.y() + (shapeNode.node as Konva.Circle).radius() * BASE_SPACING
+                y: shapeNode.node.y() + (shapeNode.node as Konva.Circle).radius()
             };
 
             let p2 = {
@@ -1330,7 +1539,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         else if (shape.type === 'Point') {
             x = shapeNode.node.x();
-            y = shapeNode.node.y();
+            y = shapeNode.node.y() + (shapeNode.node as Konva.Circle).radius();
         }
 
         else if (['Segment', 'Ray', 'Vector', 'Line'].includes(shape.type)) {
@@ -1392,13 +1601,49 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            const position = this.stageRef.current?.getPointerPosition();
-            if (!position) return;
-            let dx = position.x - x;
-            let dy = position.y - y;
+            let pointer = this.stageRef.current?.getPointerPosition();
+            if (!pointer) return;
+            const position = {
+                x: (pointer.x - this.layerMathObjectRef.current!.x()) / this.layerMathObjectRef.current!.scaleX(),
+                y: (pointer.y - this.layerMathObjectRef.current!.y()) / this.layerMathObjectRef.current!.scaleY(),
+            }
 
+            let shape = shapeNode.type;
+            let newX = 0, newY = 0;
+
+            if (shape.type === 'Circle') {
+                let r = (shapeNode.node as Konva.Circle).radius();
+                let cx = shapeNode.node.x();
+                let cy = shapeNode.node.y();
+                let angle = Math.PI / 6;
+                newX = cx + r * Math.cos(angle);
+                newY = cy - r * Math.sin(angle);
+            }
+            
+            else if (shape.type === 'Point') {
+                newX = shapeNode.node.x();
+                newY = shapeNode.node.y();
+            }
+            
+            else if (['Segment', 'Ray', 'Vector', 'Line'].includes(shape.type)) {
+                let pts = (shapeNode.node as Konva.Line).points();
+                newX = (pts[0] + pts[2]) / 2;
+                newY = (pts[1] + pts[3]) / 2;
+            }
+            
+            else {
+                let pts = (shapeNode.node as Konva.Line).points();
+                for (let i = 0; i < pts.length; i += 2) {
+                    newX += pts[i];
+                    newY += pts[i + 1];
+                }
+                newX /= pts.length;
+                newY /= pts.length;
+            }
+
+            let dx = position.x - newX;
+            let dy = position.y - newY;
             const length = Math.sqrt(dx * dx + dy * dy);
-
             if (length === 0) return;
 
             const scale = Math.min(length, 20) / length;
@@ -1406,25 +1651,92 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             const offsetY = dy * scale;
 
             text.position({
-                x: x + offsetX,
-                y: y + offsetY,
+                x: newX + offsetX,
+                y: newY + offsetY
             });
         });
 
-        text.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
+        text.on('dragend', (e) => {
+            if (this.mode !== 'edit') return;
+
+            // Compute new offset relative to shape center
+            let shape = shapeNode.type;
+            let shapeX = 0, shapeY = 0;
+
+            if (shape.type === 'Point') {
+                shapeX = shapeNode.node.x();
+                shapeY = shapeNode.node.y();
             }
+            
+            else if (['Segment', 'Line', 'Ray', 'Vector'].includes(shape.type)) {
+                const pts = (shapeNode.node as Konva.Line).points();
+                shapeX = (pts[0] + pts[2]) / 2;
+                shapeY = (pts[1] + pts[3]) / 2;
+            }
+            
+            else if (shape.type === 'Circle') {
+                shapeX = shapeNode.node.x();
+                shapeY = shapeNode.node.y();
+            }
+            
+            else {
+                const pts = (shapeNode.node as Konva.Line).points();
+                for (let i = 0; i < pts.length; i += 2) {
+                    shapeX += pts[i];
+                    shapeY += pts[i + 1];
+                }
+                shapeX /= pts.length;
+                shapeY /= pts.length;
+            }
+
+            const labelX = text.x();
+            const labelY = text.y();
+
+            // Save pixel offset
+            shape.props.labelXOffset = labelX - shapeX * this.state.zoom_level - (this.layerMathObjectRef.current?.position().x ?? 0);
+            shape.props.labelYOffset = labelY - shapeY * this.state.zoom_level - (this.layerMathObjectRef.current?.position().y ?? 0);
         });
 
         return text;
     }
 
+    private createKonvaShape = (shape: Shape) => {
+        let konvaShape: Konva.Shape;
+        switch (shape.type) {
+            case 'Point':
+                konvaShape = this.drawPoint(shape as Point, shape.props);
+                break;
+            
+            case 'Line':
+                konvaShape = this.drawLine(shape as Line, shape.props);
+                break;
+            
+            case 'Segment':
+                konvaShape = this.drawSegment(shape as Segment, shape.props);
+                break;
+            
+            case 'Vector':
+                konvaShape = this.drawVector(shape as Vector, shape.props);
+                break;
+            
+            case 'Ray':
+                konvaShape = this.drawRay(shape as Ray, shape.props);
+                break;
+            
+            case 'Polygon':
+                konvaShape = this.drawPolygon(shape as Polygon, shape.props);
+                break;
+            
+            default:
+                konvaShape = this.drawCircle(shape as Circle, shape.props);
+                break;
+        }
+
+        return konvaShape;
+    }
+
     private drawShapes = (): void => {
         if (!this.layerMathObjectRef.current) return;
-        const shapes = new Map(this.state.shapes);
 
         this.layerUnchangeVisualRef.current?.destroyChildren();
         this.layerAxisRef.current?.destroyChildren();
@@ -1477,29 +1789,27 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         };
 
         let shapeNode: ShapeNode[] = [];
-        let ids: string[] = [];
 
         const children = [...this.layerMathObjectRef.current.getChildren()];
 
         children.forEach((node, id) => {
-            if (!shapes.get(node.id())) {
+            if (!this.DAG.get(node.id())) {
                 node.destroy();
             }
             
             else {
                 const idx = node.id();
-                const n = this.state.shapes.get(idx);
-                ids.push(idx);
+                const n = this.DAG.get(idx);
                 node.setAttrs((n as ShapeNode).node.getAttrs());
             }
         });
 
-        shapes.forEach((node, key) => {
-            if (!ids.includes(key)) {
-                this.layerMathObjectRef.current?.add((node as ShapeNode).node);
-                shapeNode.push((node as ShapeNode));
+        this.DAG.forEach((node, key) => {
+            if (this.state.shapes.includes(key)) {
+                this.layerMathObjectRef.current?.add(node.node);
             }
 
+            shapeNode.push((node as ShapeNode));
             this.layerUnchangeVisualRef.current?.add(this.createLabel(node as ShapeNode));
         })
 
@@ -1509,7 +1819,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         shapeNode = sortShapesForZIndex(shapeNode);
         shapeNode.forEach((shape) => {
-            shape.node.moveToBottom();
+            shape.node.moveToTop();
         });
 
         this.layerMathObjectRef.current.draw();
@@ -1572,59 +1882,41 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private handleClearClick = () => {
         this.setState({
-            shapes: new Map<string, ShapeNode>(),
-            pointIndex: 0,
-            lineIndex: 0,
-            segmentIndex: 0,
-            vectorIndex: 0,
-            circleIndex: 0,
-            polygonIndex: 0,
-            rayIndex: 0,
-            selectedShapes: [],
-            label_used: []
+            shapes: [],
+            polygonIndex: 0
         });
 
+        this.selectedShapes = [];
+        this.DAG.clear();
         this.mode = 'edit';
+        this.label_used = [];
+        this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+        if (this.historyStack.length >= 100) {
+            this.historyStack.splice(0, 1);
+        }
+
+        this.futureStack = [];
     }
 
     private handleUndoClick = () => {
         if (this.historyStack.length > 1) {
             this.futureStack.push(this.historyStack.pop()!);
             const prevState = this.historyStack[this.historyStack.length - 1];
-            this.setState(_.cloneDeep(prevState));
-            this.mode = 'edit'
-        }
+            const copyState = clone(prevState.state, prevState.dag, prevState.selected, prevState.label_used);
 
-        else {
-            if (!this.layerMathObjectRef.current) return;
-            this.layerMathObjectRef.current.scale({x: 1, y: 1});
-            this.layerAxisRef.current?.scale({x: 1, y: 1});
-            this.layerGridRef.current?.scale({x: 1, y: 1});
-            
-            this.layerMathObjectRef.current?.position({x: 0, y: 0});
-            this.layerAxisRef.current?.position({x: 0, y: 0});
-            this.layerGridRef.current?.position({x: 0, y: 0});
+            this.layerMathObjectRef.current?.destroyChildren();
 
-            this.setState({
-                numLoops: 0,
-                axisTickInterval: 1,
-                spacing: BASE_SPACING,
-                shapes: new Map<string, ShapeNode>(),
-                gridVisible: true,
-                zoom_level: 1,
-                axesVisible: true,
-                panning: false,
-                dummy: false,
-                pointIndex: 0,
-                circleIndex: 0,
-                lineIndex: 0,
-                polygonIndex: 0,
-                rayIndex: 0,
-                segmentIndex: 0,
-                vectorIndex: 0,
-                selectedShapes: new Array<Point>(),
+            this.DAG = copyState.dag;
+            this.DAG.forEach((node, key) => {
+                node.node.destroy();
+                node.node = this.createKonvaShape(node.type);
+                this.layerMathObjectRef.current?.add(node.node);
             });
 
+            this.selectedShapes = copyState.selected;
+            this.label_used = copyState.label_used;
+            this.setState(copyState.state);
             this.mode = 'edit';
         }
     }
@@ -1632,9 +1924,25 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     private handleRedoClick = () => {
         if (this.futureStack.length > 0) {
             const nextState = this.futureStack.pop()!;
-            if (!nextState) return;
             this.historyStack.push(nextState);
-            this.setState(_.cloneDeep(nextState));
+            if (this.historyStack.length >= 100) {
+                this.historyStack.splice(0, 1);
+            }
+
+            const copyState = clone(nextState.state, nextState.dag, nextState.selected, nextState.label_used);
+
+            this.layerMathObjectRef.current?.destroyChildren();
+
+            this.DAG = copyState.dag;
+            this.DAG.forEach((node, key) => {
+                node.node.destroy();
+                node.node = this.createKonvaShape(node.type);
+                this.layerMathObjectRef.current?.add(node.node);
+            });
+
+            this.selectedShapes = copyState.selected;
+            this.label_used = copyState.label_used;
+            this.setState(copyState.state);
             this.mode = 'edit';
         }
     }
@@ -1644,23 +1952,171 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         const pointer = this.stageRef.current.getPointerPosition();
         if (!pointer) return;
 
-        const position = snapToGrid(
-            pointer,
-            BASE_SPACING,
-            this.state.axisTickInterval,
-            this.props.width / 2,
-            this.props.height / 2,
-            this.layerMathObjectRef.current
-        );
+        let position = {
+            x: (pointer.x - this.layerMathObjectRef.current.x()) / this.layerMathObjectRef.current.scaleX(),
+            y: (pointer.y - this.layerMathObjectRef.current.y()) / this.layerMathObjectRef.current.scaleY()
+        }
 
-        if (this.mode === 'point') {
-            let found = false;
-            this.state.shapes.forEach((node) => {
+        let shape = this.stageRef.current.getIntersection(position);
+        let scale: number | undefined = undefined;
+        let rotFactor: {degree: number, CCW: boolean} | undefined = undefined;
+        const snapToShape = (shape: Konva.Shape | null, pos: {x: number, y: number}): void => {
+            if (!shape) {
+                position = snapToGrid(
+                    pointer,
+                    BASE_SPACING,
+                    this.state.axisTickInterval,
+                    this.props.width / 2,
+                    this.props.height / 2,
+                    this.layerMathObjectRef.current!
+                )
+            }
+
+            else {
+                let shapeNode = this.DAG.get(shape.id());
+                if (shapeNode) {
+                    if (shapeNode.type.type === 'Circle') {
+                        const cx = (shapeNode as ShapeNode).node.x();
+                        const cy = (shapeNode as ShapeNode).node.y();
+                        const r = ((shapeNode as ShapeNode).node as Konva.Circle).radius();
+                        const dx = pos.x - cx;
+                        const dy = pos.y - cy;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist === 0) {
+                            position = {
+                                x: cx,
+                                y: cy
+                            };
+
+                            rotFactor = {
+                                degree: 0,
+                                CCW: true
+                            }
+                        }
+
+                        else {
+                            position = {
+                                x: cx + (dx / dist) * r,
+                                y: cy + (dy / dist) * r,
+                            };
+
+                            const angleFromXAxis = (v: {x: number, y: number}) => {
+                                return (Math.atan2(-v.y, v.x) * 180) / Math.PI;
+                            }
+
+                            rotFactor = {
+                                degree: angleFromXAxis({x: dx, y: dy}),
+                                CCW: true 
+                            }
+                        }
+                    }
+
+                    else if (['Segment', 'Line', 'Ray', 'Vector'].includes(shapeNode.type.type)) {
+                        let l = shapeNode.type.type === 'Vector' ? (shapeNode as ShapeNode).node as Konva.Arrow :
+                                                                    (shapeNode as ShapeNode).node as Konva.Line;
+                        
+                        const projectPointOntoLineSegment = (
+                            p: { x: number; y: number },
+                            a: { x: number; y: number },
+                            b: { x: number; y: number }
+                        ): { x: number; y: number } => {
+                            const ap = { x: p.x - a.x, y: p.y - a.y };
+                            const ab = { x: b.x - a.x, y: b.y - a.y };
+                            const abLengthSq = ab.x * ab.x + ab.y * ab.y;
+
+                            // Dot product of ap and ab
+                            let t = (ap.x * ab.x + ap.y * ab.y) / abLengthSq;
+                            // Clamp t to [0, 1] to stay within segment bounds
+                            t = Math.max(0, Math.min(1, t));
+                            scale = t;
+
+                            return {
+                                x: a.x + ab.x * t,
+                                y: a.y + ab.y * t,
+                            };
+                        };
+
+                        position = projectPointOntoLineSegment (
+                            pos, 
+                            { x: l.points()[0], y: l.points()[1] }, 
+                            { x: l.points()[2], y: l.points()[3] }
+                        );
+                    }
+
+                    else if (shapeNode.type.type === 'Polygon') {
+                        // Polygon
+                        // Only restricts in its segments
+                        let segmentDepends = shapeNode.dependsOn.slice((shapeNode.type as Polygon).points.length);
+                        for (let i = 0; i < segmentDepends.length; i++) {
+                            let s = this.DAG.get(segmentDepends[i]);
+                            if (!s) continue;
+                            if (!s.node.intersects(pos)) continue;
+                            const projectPointOntoLineSegment = (
+                                p: { x: number; y: number },
+                                a: { x: number; y: number },
+                                b: { x: number; y: number }
+                            ): number => {
+                                const ap = { x: p.x - a.x, y: p.y - a.y };
+                                const ab = { x: b.x - a.x, y: b.y - a.y };
+                                const abLengthSq = ab.x * ab.x + ab.y * ab.y;
+
+                                // Dot product of ap and ab
+                                let t = (ap.x * ab.x + ap.y * ab.y) / abLengthSq;
+                                // Clamp t to [0, 1] to stay within segment bounds
+                                t = Math.max(0, Math.min(1, t));
+                                return t;
+                            };
+
+                            let start = {
+                                x: (s.node as Konva.Line).points()[0],
+                                y: (s.node as Konva.Line).points()[1]
+                            }
+
+                            let end = {
+                                x: (s.node as Konva.Line).points()[2],
+                                y: (s.node as Konva.Line).points()[3]
+                            }
+
+                            scale = projectPointOntoLineSegment (
+                                pos, 
+                                start,
+                                end
+                            );
+
+                            position = {
+                                x: start.x + (end.x - start.x) * scale,
+                                y: start.y + (end.y - start.y) * scale
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                else {
+                    position = snapToGrid(
+                        pointer,
+                        BASE_SPACING,
+                        this.state.axisTickInterval,
+                        this.props.width / 2,
+                        this.props.height / 2,
+                        this.layerMathObjectRef.current!
+                    )
+                }
+            }
+        }
+
+        snapToShape(shape, position);
+        const createPoint = (): void => {
+            let found: boolean = false;
+            this.DAG.forEach((node) => {
                 if (node.type.type === 'Point') {
                     let p: Point = node.type as Point
                     // If the mouse is within 2 pixels of the point, don't create a new point
                     if (Math.sqrt(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 5) {
                         found = true;
+                        this.selectedShapes.push(p);
                         return;
                     }
                 }
@@ -1669,121 +2125,131 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             if (found) return;
             let label = this.getExcelLabel('A', 0);
             let index = 0;
-            while (this.state.label_used.includes(label)) {
+            while (this.label_used.includes(label)) {
                 index++;
                 label = this.getExcelLabel('A', index);
             }
 
-            this.state.label_used.push(label);
-            
-
-            const point: Point = Factory.createPoint(
-                createPointDefaultShapeProps(label, 0.02, 0, 10, 0),
+            this.label_used.push(label);
+            let point = Factory.createPoint(
+                createPointDefaultShapeProps(label),
                 position.x,
                 position.y
-            )
+            );
 
-            let node = this.drawPoint(point, point.props);
-            if (position.x === this.props.width / 2 && position.y === this.props.height / 2) {
-                node.draggable(false);
-                node.off('dragstart dragmove');
+            let pNode = this.createKonvaShape(point);
+            if (shape) {
+                pNode.off('dragmove');
+                pNode.on('dragmove', (e) => {
+                    if (this.mode !== 'edit' || !this.stageRef.current) {
+                        return;
+                    }
+
+                    e.cancelBubble = true;
+                    let stage = e.target.getStage();
+                    let pos = {
+                        x: 0,
+                        y: 0
+                    }
+
+                    if (stage) {
+                        stage.container().style.cursor = 'pointer';
+                        pos = stage.getPointerPosition() ?? pos;
+                    }
+
+                    const updateFn = (node: ShapeNode): ShapeNode => {
+                        snapToShape(shape, pos);
+                        node.node.position(position);
+                        point.x = position.x;
+                        point.y = position.y;
+
+                        if (this.layerUnchangeVisualRef.current) {
+                            this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
+                                let id = childNode.id();
+                                if (id === `label-${pNode.id()}`) {
+                                    childNode.setAttrs(this.createLabel(node).getAttrs());
+                                    return;
+                                }
+                            })
+                        }
+
+                        return node;
+                    };
+
+                    this.updateAndPropagate(pNode.id(), updateFn);
+                })
             }
-
-            this.state.shapes.set(point.props.id, {
-                id: point.props.id,
-                type: point,
-                node: node,
-                dependsOn: []
-            })
             
 
-            this.setState({pointIndex: Math.max(index + 1, this.state.pointIndex), dummy: !this.state.dummy});
+            if (!shape && position.x === this.props.width / 2 && position.y === this.props.height / 2) {
+                pNode.draggable(false);
+                pNode.off('dragstart dragmove');
+            }
+
+            this.DAG.set(point.props.id, {
+                id: point.props.id,
+                type: point,
+                node: pNode,
+                dependsOn: (!shape) ? [] : [shape.id()],
+                scaleFactor: scale,
+                rotationFactor: rotFactor
+            })
+
+            this.setState({
+                shapes: [...this.state.shapes, point.props.id]
+            });
+
+            this.selectedShapes.push(point);
+        };
+
+        if (this.mode === 'point') {
+            createPoint();
+            this.selectedShapes = [];
         }
 
         else if (['line', 'segment', 'vector', 'ray'].includes(this.mode)) {
-            let found = false;
-            this.state.shapes.forEach((node) => {
-                if (node.type.type === 'Point') {
-                    let p: Point = node.type as Point
-                    if (Math.sqrt(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 5) {
-                        this.state.selectedShapes.push(p);
-                        found = true;
-                        return;
-                    }
-                }
-            })
-
-            if (!found) {
-                let label = this.getExcelLabel('A', 0);
-                let index = 0;
-                while (this.state.label_used.includes(label)) {
-                    index++;
-                    label = this.getExcelLabel('A', index);
-                }
-
-                this.state.label_used.push(label);
-
-                const point: Point = Factory.createPoint(
-                    createPointDefaultShapeProps(label),
-                    position.x,
-                    position.y
-                )
-    
-                this.state.shapes.set(point.props.id, {
-                    id: point.props.id,
-                    type: point,
-                    node: this.drawPoint(point, point.props),
-                    dependsOn: []
-                });
-
-                this.setState({pointIndex: Math.max(index + 1, this.state.pointIndex), dummy: !this.state.dummy});
-                this.state.selectedShapes.push(point);
-            }
-
-            if (this.state.selectedShapes.length === 1) {
-                const p = this.state.selectedShapes[0];
-                if (Math.sqrt(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 5) {
-                    return;
-                }
+            createPoint();
+            if (this.selectedShapes.length === 1) {
+                return;
             }
 
             else {
-                const [p1, p2] = Array.from(this.state.selectedShapes);
-                if (this.mode === 'line') {
-                    let label = this.getExcelLabel('f', 0);
-                    let index = 0;
-                    while (this.state.label_used.includes(label)) {
-                        index++;
-                        label = this.getExcelLabel('f', index);
-                    }
+                const [p1, p2] = this.selectedShapes;
+                if (p1 === p2) {
+                    this.selectedShapes.pop();
+                    return;
+                }
 
-                    this.state.label_used.push(label);
+                let label = this.getExcelLabel(this.mode === 'vector' ? 'u' : 'f', 0);
+                let index = 0;
+                while (this.label_used.includes(label)) {
+                    index++;
+                    label = this.getExcelLabel(this.mode === 'vector' ? 'u' : 'f', index);
+                }
+
+                this.label_used.push(label);
+                if (this.mode === 'line') {
                     const line: Line = Factory.createLine(
                         createLineDefaultShapeProps(label),
                         p1,
                         p2
                     )
 
-                    this.state.shapes.set(line.props.id, {
+                    this.DAG.set(line.props.id, {
                         id: line.props.id,
                         type: line,
-                        node: this.drawLine(line, line.props),
+                        node: this.createKonvaShape(line),
                         dependsOn: [p1.props.id, p2.props.id]
                     });
 
-                    this.setState({lineIndex: Math.max(index + 1, this.state.lineIndex), dummy: !this.state.dummy});
-                    this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
+                    this.setState({
+                        shapes: [...this.state.shapes, line.props.id]
+                    });
+
+                    this.selectedShapes = [];
                 }
 
                 else if (this.mode === 'segment') {
-                    let label = this.getExcelLabel('f', 0);
-                    let index = 0;
-                    while (this.state.label_used.includes(label)) {
-                        index++;
-                        label = this.getExcelLabel('f', index);
-                    }
-
-                    this.state.label_used.push(label);
                     const segment: Segment = {
                         startSegment: p1,
                         endSegment: p2,
@@ -1791,26 +2257,21 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         type: 'Segment'
                     }
 
-                    this.state.shapes.set(segment.props.id, {
+                    this.DAG.set(segment.props.id, {
                         id: segment.props.id,
                         type: segment,
-                        node: this.drawSegment(segment, segment.props),
+                        node: this.createKonvaShape(segment),
                         dependsOn: [p1.props.id, p2.props.id]
                     });
 
-                    this.setState({segmentIndex: Math.max(index + 1, this.state.segmentIndex), dummy: !this.state.dummy});
-                    this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
+                    this.setState({
+                        shapes: [...this.state.shapes, segment.props.id]
+                    });
+
+                    this.selectedShapes = [];
                 }
 
                 else if (this.mode === 'vector') {
-                    let label = this.getExcelLabel('u', 0);
-                    let index = 0;
-                    while (this.state.label_used.includes(label)) {
-                        index++;
-                        label = this.getExcelLabel('u', index);
-                    }
-
-                    this.state.label_used.push(label);
                     const vector: Vector = {
                         startVector: p1,
                         endVector: p2,
@@ -1818,26 +2279,21 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         type: 'Vector'
                     }
 
-                    this.state.shapes.set(vector.props.id, {
+                    this.DAG.set(vector.props.id, {
                         id: vector.props.id,
                         type: vector,
-                        node: this.drawVector(vector, vector.props),
+                        node: this.createKonvaShape(vector),
                         dependsOn: [p1.props.id, p2.props.id]
                     });
 
-                    this.setState({vectorIndex: Math.max(index + 1, this.state.vectorIndex), dummy: !this.state.dummy});
-                    this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
+                    this.setState({
+                        shapes: [...this.state.shapes, vector.props.id],
+                    });
+
+                    this.selectedShapes = [];
                 }
 
                 else if (this.mode === 'ray') {
-                    let label = this.getExcelLabel('f', 0);
-                    let index = 0;
-                    while (this.state.label_used.includes(label)) {
-                        index++;
-                        label = this.getExcelLabel('f', index);
-                    }
-
-                    this.state.label_used.push(label);
                     const ray: Ray = {
                         startRay: p1,
                         endRay: p2,
@@ -1845,66 +2301,31 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         type: 'Ray'
                     }
 
-                    this.state.shapes.set(ray.props.id, {
+                    this.DAG.set(ray.props.id, {
                         id: ray.props.id,
                         type: ray,
-                        node: this.drawRay(ray, ray.props),
+                        node: this.createKonvaShape(ray),
                         dependsOn: [p1.props.id, p2.props.id]
                     });
 
-                    this.setState({rayIndex: Math.max(index + 1, this.state.rayIndex), dummy: !this.state.dummy});
-                    this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
+                    this.setState({
+                        shapes: [...this.state.shapes, ray.props.id],
+                    });
+
+                    this.selectedShapes = [];
                 }
             }
         }
 
         else if (this.mode === 'polygon') {
-            let found = false;
-            this.state.shapes.forEach((node) => {
-                if (node.type.type === 'Point') {
-                    let p: Point = node.type as Point
-                    if (Math.sqrt(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 5) {
-                        this.state.selectedShapes.push(p);
-                        found = true;
-                        return;
-                    }
-                }
-            })
-
-            if (!found) {
-                let label = this.getExcelLabel('A', 0);
-                let index = 0;
-                while (this.state.label_used.includes(label)) {
-                    index++;
-                    label = this.getExcelLabel('A', index);
-                }
-
-                this.state.label_used.push(label);
-
-                const point: Point = Factory.createPoint(
-                    createPointDefaultShapeProps(label),
-                    position.x,
-                    position.y
-                )
-    
-                this.state.shapes.set(point.props.id, {
-                    id: point.props.id,
-                    type: point,
-                    node: this.drawPoint(point, point.props),
-                    dependsOn: []
-                });
-
-                this.setState({pointIndex: Math.max(index + 1, this.state.pointIndex), dummy: !this.state.dummy});
-                this.state.selectedShapes.push(point);
-            }
-
-            if (this.state.selectedShapes.length < 4) {
-                let points = Array.from(this.state.selectedShapes);
+            createPoint();
+            if (this.selectedShapes.length < 4) {
+                let points = this.selectedShapes;
                 const lastPoint = points[points.length - 1];
                 for (let i = 0; i < points.length - 1; i++) {
                     if (points[i] === lastPoint) {
-                        this.state.selectedShapes.splice(i, 1);
-                        this.state.selectedShapes.pop();
+                        this.selectedShapes.splice(i, 1);
+                        this.selectedShapes.pop();
                         return;
                     }
                 }
@@ -1913,12 +2334,12 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             }
             
             else {
-                let points = Array.from(this.state.selectedShapes);
+                let points = this.selectedShapes;
                 if (points[0] !== points[points.length - 1]) {
                     for (let i = 1; i < points.length - 1; i++) {
                         if (points[i] === points[points.length - 1]) {
-                            this.state.selectedShapes.splice(i, 1);
-                            this.state.selectedShapes.pop();
+                            this.selectedShapes.splice(i, 1);
+                            this.selectedShapes.pop();
                             return;
                         }
                     }
@@ -1936,60 +2357,56 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
                     let dependencies: string[] = [];
                     dependencies = points.map(point => point.props.id);
+                    let shapes = this.state.shapes;
 
-                    this.state.shapes.set(polygon.props.id, {
+                    for (let i = 0; i < points.length; i++) {
+                        let p = points[i];
+                        let pNext = points[(i + 1) % points.length];
+                        let label = this.getExcelLabel('a', 0);
+                        let index = 0;
+                        while (this.label_used.includes(label)) {
+                            index++;
+                            label = this.getExcelLabel('a', index);
+                        }
+
+                        this.label_used.push(label);
+                        let segment = Factory.createSegment(
+                            createLineDefaultShapeProps(label),
+                            p,
+                            pNext
+                        );
+
+                        segment.props.color = polygon.props.color;
+
+                        this.DAG.set(segment.props.id, {
+                            id: segment.props.id,
+                            type: segment,
+                            node: this.createKonvaShape(segment),
+                            dependsOn: [p.props.id, pNext.props.id, polygon.props.id]
+                        });
+
+                        shapes = [...shapes, segment.props.id];
+                    }
+
+                    this.DAG.set(polygon.props.id, {
                         id: polygon.props.id,
                         type: polygon,
-                        node: this.drawPolygon(polygon, polygon.props),
+                        node: this.createKonvaShape(polygon),
                         dependsOn: dependencies
                     });
 
-                    this.setState({polygonIndex: this.state.polygonIndex + 1});
-                    this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
+                    this.setState({
+                        polygonIndex: this.state.polygonIndex + 1,
+                        shapes: [...shapes, polygon.props.id]
+                    });
+
+                    this.selectedShapes = [];
                 }
             }
         }
 
         else if (this.mode === 'circle') {
-            let found = false;
-            this.state.shapes.forEach((node) => {
-                if (node.type.type === 'Point') {
-                    let p: Point = node.type as Point
-                    if (Math.sqrt(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 5) {
-                        this.state.selectedShapes.push(p);
-                        found = true;
-                        return;
-                    }
-                }
-            })
-
-            if (!found) {
-                let label = this.getExcelLabel('A', 0);
-                let index = 0;
-                while (this.state.label_used.includes(label)) {
-                    index++;
-                    label = this.getExcelLabel('A', index);
-                }
-
-                this.state.label_used.push(label);
-
-                const point: Point = Factory.createPoint(
-                    createPointDefaultShapeProps(label),
-                    position.x,
-                    position.y
-                )
-
-                this.state.shapes.set(point.props.id, {
-                    id: point.props.id,
-                    type: point,
-                    node: this.drawPoint(point, point.props),
-                    dependsOn: []
-                })
-
-                this.setState({pointIndex: Math.max(index + 1, this.state.pointIndex), dummy: !this.state.dummy});
-                this.state.selectedShapes.push(point);
-            }
-
+            createPoint();
             let input = prompt('Enter the radius of the circle');
             if (!input) return;
             try {
@@ -1999,15 +2416,15 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     return;
                 }
 
-                const point = this.state.selectedShapes[0];
+                const point = this.selectedShapes[0];
                 let label = this.getExcelLabel('c', 0);
                 let index = 0;
-                while (this.state.label_used.includes(label)) {
+                while (this.label_used.includes(label)) {
                     index++;
                     label = this.getExcelLabel('c', index);
                 }
 
-                this.state.label_used.push(label);
+                this.label_used.push(label);
                 
                 const circle: Circle = Factory.createCircle(
                     createCircleDefaultShapeProps(label, radius, 0, 10, 0),
@@ -2015,15 +2432,18 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     radius
                 )  
 
-                this.state.shapes.set(circle.props.id, {
+                this.DAG.set(circle.props.id, {
                     id: circle.props.id,
                     type: circle,
-                    node: this.drawCircle(circle, circle.props),
+                    node: this.createKonvaShape(circle),
                     dependsOn: [point.props.id]
                 });
 
-                this.setState({circleIndex: Math.max(index + 1, this.state.circleIndex), dummy: !this.state.dummy});
-                this.state.selectedShapes.splice(0, this.state.selectedShapes.length);
+                this.setState({
+                    shapes: [...this.state.shapes, circle.props.id]
+                });
+
+                this.selectedShapes = [];
             }
 
             catch (error) {
@@ -2031,17 +2451,22 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             }
         }
 
-        this.historyStack.push(_.cloneDeep(this.state));
+        this.historyStack.push(clone(this.state, this.DAG, this.selectedShapes, this.label_used));
+
+        if (this.historyStack.length >= 100) {
+            this.historyStack.splice(0, 1);
+        }
+        
         this.futureStack = [];
     }
 
     private findChildren = (id: string): string[] => {
-        if (!this.state.shapes.get(id)) {
+        if (!this.DAG.get(id)) {
             return [];
         }
 
         let children: string[] = [];
-        this.state.shapes.forEach((value, key) => {
+        this.DAG.forEach((value, key) => {
             if (value.dependsOn.includes(id)) {
                 children.push(key)
             }
@@ -2051,7 +2476,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     } 
 
     private updateAndPropagate = (id: string, updateFn: (node: ShapeNode) => ShapeNode) => {
-        const node = this.state.shapes.get(id);
+        const node = this.DAG.get(id);
         if (!node) return;
 
         const visited = new Set<string>();
@@ -2067,13 +2492,13 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         topologicalSort(id);
         const updated = updateFn(node as ShapeNode);
-        this.state.shapes.set(id, updated);
+        this.DAG.set(id, updated);
 
         stack.reverse().forEach(nodeId => {
             if (nodeId !== id) { // Skip the initial node
-                const node = this.state.shapes.get(nodeId) as ShapeNode;
+                const node = this.DAG.get(nodeId) as ShapeNode;
                 if (node) {
-                    this.state.shapes.set(nodeId, this.computeUpdateFor(node));
+                    this.DAG.set(nodeId, this.computeUpdateFor(node));
                 }
             }
         });
@@ -2122,6 +2547,46 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     }
 
     private updatePoint = (node: ShapeNode): ShapeNode => {
+        if (node.dependsOn.length === 1) {
+            let shape = this.DAG.get(node.dependsOn[0]);
+            if (!shape) return { ...node };
+            if (node.scaleFactor) {
+                let l = ['Segment', 'Line', 'Ray'].includes(shape.type.type) ? shape.node as Konva.Line : shape.node as Konva.Arrow;
+                let d = {
+                    x: l.points()[2] - l.points()[0],
+                    y: l.points()[3] - l.points()[1]
+                }
+
+                node.node.position({x: l.points()[0] + node.scaleFactor * d.x, y: l.points()[1] + node.scaleFactor * d.y});
+            }
+
+            else if (node.rotationFactor) {
+                if (!(shape.type.type === 'SemiCircle')) {
+                    let c = shape.node as Konva.Circle;
+                    const cx = c.x();
+                    const cy = c.y();
+                    const r = c.radius();
+                    const angle = node.rotationFactor.degree * Math.PI / 180;
+
+                    const newX = cx + r * Math.cos(angle);
+                    const newY = cy + r * Math.sin(angle);
+                    node.node.position({ x: newX, y: newY });
+                }
+                
+                else {
+                    let c = shape.node as Konva.Arc;
+                    const cx = c.x();
+                    const cy = c.y();
+                    const r = c.outerRadius();
+                    const angle = node.rotationFactor.degree * Math.PI / 180;
+
+                    const newX = cx + r * Math.cos(angle);
+                    const newY = cy + r * Math.sin(angle);
+                    node.node.position({ x: newX, y: newY });
+                }
+            }
+        }
+
         if (this.layerUnchangeVisualRef.current) {
             this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
                 let id = childNode.id();
@@ -2139,8 +2604,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateSegment = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const p1 = this.state.shapes.get(id1);
-        const p2 = this.state.shapes.get(id2);
+        const p1 = this.DAG.get(id1);
+        const p2 = this.DAG.get(id2);
         if (!p1 || !p2) return { ...node };
 
         const posA = (p1 as ShapeNode).node.position();
@@ -2165,8 +2630,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateLine = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const p1 = this.state.shapes.get(id1);
-        const p2 = this.state.shapes.get(id2);
+        const p1 = this.DAG.get(id1);
+        const p2 = this.DAG.get(id2);
         if (!p1 || !p2) return { ...node };
 
         const posA = (p1 as ShapeNode).node.position();
@@ -2199,8 +2664,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateRay = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const p1 = this.state.shapes.get(id1);
-        const p2 = this.state.shapes.get(id2);
+        const p1 = this.DAG.get(id1);
+        const p2 = this.DAG.get(id2);
         if (!p1 || !p2) return { ...node };
 
         const posA = (p1 as ShapeNode).node.position();
@@ -2235,7 +2700,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         const pointIds = node.dependsOn;
         const points: number[] = [];
         for (const pid of pointIds) {
-            const pointNode = this.state.shapes.get(pid);
+            const pointNode = this.DAG.get(pid);
             if (!pointNode) {
                 return { ...node };
             }
@@ -2267,7 +2732,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateCircle = (node: ShapeNode): ShapeNode => {
         let id = node.dependsOn[0];
-        let centerNode = this.state.shapes.get(id);
+        let centerNode = this.DAG.get(id);
         if (!centerNode) {
             return { ...node };
         }
@@ -2291,7 +2756,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateVector = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [start, end] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!start || !end) {
             return { ...node };
         }
@@ -2319,7 +2784,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateMidpoint = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [start, end] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!start || !end) {
             return { ...node };
         }
@@ -2346,7 +2811,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateCentroid = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -2400,7 +2865,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateOrthocenter = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -2453,7 +2918,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateCircumcenter = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -2507,7 +2972,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateIncenter = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -2561,7 +3026,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateCircle2Point = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [start, end] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!start || !end) {
             return { ...node };
         }
@@ -2598,8 +3063,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateIntersection = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const shape1 = this.state.shapes.get(id1);
-        const shape2 = this.state.shapes.get(id2);
+        const shape1 = this.DAG.get(id1);
+        const shape2 = this.DAG.get(id2);
 
         if (!shape1 || !shape2) {
             return { ...node };
@@ -2655,9 +3120,9 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateMedian = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const shape1 = this.state.shapes.get(id1);
-        const shape2 = this.state.shapes.get(id2);
-        const shape3 = this.state.shapes.get(id3);
+        const shape1 = this.DAG.get(id1);
+        const shape2 = this.DAG.get(id2);
+        const shape3 = this.DAG.get(id3);
 
         if (!shape1 || !shape2 || !shape3) {
             return { ...node };
@@ -2714,7 +3179,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         let ids = node.dependsOn;
         if (ids.length === 3) {
             // Handle 3 points
-            let [shape1, shape2, shape3] = [this.state.shapes.get(ids[0]), this.state.shapes.get(ids[1]), this.state.shapes.get(ids[2])];
+            let [shape1, shape2, shape3] = [this.DAG.get(ids[0]), this.DAG.get(ids[1]), this.DAG.get(ids[2])];
             if (!shape1 || !shape2 || !shape3) {
                 return node;
             }
@@ -2758,7 +3223,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         else if (ids.length === 2) {
             // Handle 2 lines
-            let [shape1, shape2] = [this.state.shapes.get(ids[0]), this.state.shapes.get(ids[1])];
+            let [shape1, shape2] = [this.DAG.get(ids[0]), this.DAG.get(ids[1])];
             if (!shape1 || !shape2) {
                 return node;
             }
@@ -2817,7 +3282,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         let ids = node.dependsOn;
         if (ids.length === 3) {
             // Handle 3 points
-            let [shape1, shape2, shape3] = [this.state.shapes.get(ids[0]), this.state.shapes.get(ids[1]), this.state.shapes.get(ids[2])];
+            let [shape1, shape2, shape3] = [this.DAG.get(ids[0]), this.DAG.get(ids[1]), this.DAG.get(ids[2])];
             if (!shape1 || !shape2 || !shape3) {
                 return node;
             }
@@ -2886,7 +3351,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         else if (ids.length === 2) {
             // Handle 2 lines
-            let [shape1, shape2] = [this.state.shapes.get(ids[0]), this.state.shapes.get(ids[1])];
+            let [shape1, shape2] = [this.DAG.get(ids[0]), this.DAG.get(ids[1])];
             if (!shape1 || !shape2) {
                 return node;
             }
@@ -2956,7 +3421,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateCircle3Point = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -3019,7 +3484,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateIncircle3Point = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -3082,7 +3547,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateSemiCircle = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [start, end] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!start || !end) {
             return { ...node };
         }
@@ -3115,6 +3580,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         arc.position({x: M.x, y: M.y});
         arc.rotation(startAngle);
         arc.angle(180);
+        arc.outerRadius(Math.hypot(M.x - B.x, M.y - B.y));
                 
         if (this.layerUnchangeVisualRef.current) {
             this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
@@ -3135,8 +3601,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateReflection = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const shape1 = this.state.shapes.get(id1);
-        const shape2 = this.state.shapes.get(id2);
+        const shape1 = this.DAG.get(id1);
+        const shape2 = this.DAG.get(id2);
 
         if (!shape1 || !shape2) {
             return { ...node };
@@ -3255,8 +3721,8 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         }
 
         const [pointId, circleId] = node.dependsOn;
-        const point = this.state.shapes.get(pointId);
-        const circle = this.state.shapes.get(circleId);
+        const point = this.DAG.get(pointId);
+        const circle = this.DAG.get(circleId);
         if (!point || !circle) return { ...node };
 
         let [A, c] = [
@@ -3307,7 +3773,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     private updatePerpendicularBisector = (node: ShapeNode): ShapeNode => {
         // Only depends on segment ID or 2 points
         if (node.dependsOn.length === 1) {
-            const shape = this.state.shapes.get(node.dependsOn[0]);
+            const shape = this.DAG.get(node.dependsOn[0]);
             if (!shape) {
                 return { ...node };
             }
@@ -3332,7 +3798,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
         else if (node.dependsOn.length === 2) {
             const [id1, id2] = node.dependsOn;
-            const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+            const [start, end] = [this.DAG.get(id1), this.DAG.get(id2)];
             if (!start || !end) {
                 return { ...node };
             }
@@ -3364,7 +3830,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updatePerpendicularLine = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [start, end] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!start || !end) {
             return { ...node };
         }
@@ -3387,7 +3853,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateParallelLine = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [start, end] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!start || !end) {
             return { ...node };
         }
@@ -3410,7 +3876,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateProjection = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [shape1, shape2, shape3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [shape1, shape2, shape3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!shape1 || !shape2 || !shape3) {
             return { ...node };
         }
@@ -3428,7 +3894,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateExcircle = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -3491,7 +3957,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateExcenter = (node: ShapeNode): ShapeNode => {
         const [id1, id2, id3] = node.dependsOn;
-        const [p1, p2, p3] = [this.state.shapes.get(id1), this.state.shapes.get(id2), this.state.shapes.get(id3)];
+        const [p1, p2, p3] = [this.DAG.get(id1), this.DAG.get(id2), this.DAG.get(id3)];
         if (!p1 || !p2 || !p3) {
             return { ...node };
         }
@@ -3545,7 +4011,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateRotation = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [p1, p2] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!p1 || !p2) {
             return { ...node };
         }
@@ -3646,7 +4112,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
     private updateEnlarge = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [p1, p2] = [this.state.shapes.get(id1), this.state.shapes.get(id2)];
+        const [p1, p2] = [this.DAG.get(id1), this.DAG.get(id2)];
         if (!p1 || !p2) {
             return { ...node };
         }
@@ -3746,32 +4212,45 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         return { ...node };
     }
 
-    private removeNode = (id: string): void => {
-        const node = this.state.shapes.get(id);
+    private removeNodeBatch = (id: string, visited: Set<string>, state: {
+        shapes: string[]
+    }) => {
+        if (visited.has(id)) return;
+        const node = this.DAG.get(id);
         if (!node) return;
 
-        // Step 1: Find all nodes that depend on this node
-        const dependents: string[] = [];
-        this.state.shapes.forEach((value, key) => {
+        visited.add(id);
+        // 1. Find all dependent nodes and recursively remove them
+        this.DAG.forEach((value, key) => {
             if (value.dependsOn.includes(id)) {
-                dependents.push(key);
+                this.removeNodeBatch(key, visited, state);
             }
-        })
+        });
 
-        // Step 2: Recursively delete dependents
-        for (const dependent of dependents) {
-            this.removeNode(dependent);
-        }
+        // 2. Clean up
+        this.label_used = this.label_used.filter(
+            label => label !== node.type.props.label
+        );
 
-        // Step 3: Remove label from label_used
-        this.setState({ label_used: this.state.label_used.filter((label: string) => label !== node.type.props.label) });
-
-        // Step 4: Remove from Konva stage
         (node as ShapeNode).node.destroy();
+        this.DAG.delete(id);
 
-        // Step 5: Remove from DAG
-        this.state.shapes.delete(id);
-    }
+        // 3. Remove from shapes
+        state.shapes = state.shapes.filter(shapeId => shapeId !== id);
+    };
+
+    // Public method that does batch delete with single re-render
+    private removeNode = (id: string): void => {
+        const newShapes = [...this.state.shapes];
+        const set = new Set<string>();
+
+        this.removeNodeBatch(id, set, { shapes: newShapes });
+
+        // Only one render here
+        this.setState({
+            shapes: newShapes
+        });
+    };
 
     render(): React.ReactNode {
         const { width, height, background_color } = this.props;
@@ -3802,7 +4281,6 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     onMouseMove={this.handleMouseMove}
                     onMouseUp={this.handleMouseUp}
                     onMouseLeave={this.handleMouseUp}
-                    onMouseOver={this.handleMouseOver}
                 >
                     <Layer ref={this.layerMathObjectRef} />
                     <Layer ref={this.layerAxisRef} />

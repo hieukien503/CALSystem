@@ -221,7 +221,7 @@ export interface ShapeNode3D {
 // Geometry state
 export interface GeometryState {
     /** Array of shapes in the scene */
-    shapes: Map<string, ShapeNode | ShapeNode3D>;
+    shapes: string[];
     
     /** Whether the grid is visible */
     gridVisible: boolean;
@@ -248,15 +248,5 @@ export interface GeometryState {
     dummy: boolean;
 
     /** Index for buttons */
-    pointIndex: number;
-    lineIndex: number;
-    circleIndex: number;
     polygonIndex: number;
-    rayIndex: number;
-    segmentIndex: number;
-    vectorIndex: number;
-
-    /** Selected shapes */
-    selectedShapes: Point[];
-    label_used: string[] = [];
 }
