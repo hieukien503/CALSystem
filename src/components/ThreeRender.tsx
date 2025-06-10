@@ -114,6 +114,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private canvasRef: RefObject<HTMLCanvasElement | null>;
     private labelRenderer: RefObject<CSS2DRenderer | null>;
     private mode: string;
+    private DAG: Map<string, ShapeNode3D>;
+    private selectedShapes: Point[];
 
     constructor(props: ThreeDCanvasProps) {
         super(props);
@@ -127,25 +129,19 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             numLoops: 0,
             spacing: 20,
             axisTickInterval: 1,
-            shapes: new Map<string, ShapeNode3D>(),
+            shapes: [],
             gridVisible: true,
             axesVisible: true,
             zoom_level: 1,
             panning: false,
             dummy: false,
-            pointIndex: 0,
-            lineIndex: 0,
-            circleIndex: 0,
-            polygonIndex: 0,
-            rayIndex: 0,
-            segmentIndex: 0,
-            vectorIndex: 0,
-            selectedShapes: [],
-            label_used: []
+            polygonIndex: 0
         }
 
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.mode = 'edit';
+        this.DAG = new Map<string, ShapeNode3D>();
+        this.selectedShapes = new Array<Point>();
     }
 
     componentDidMount(): void {
@@ -826,7 +822,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         });
 
         // Add new shapes
-        this.state.shapes.forEach(shape => {
+        this.DAG.forEach(shape => {
             const mesh = this.createShape(shape.type);
             if (mesh) {
                 this.sceneRef.current!.add(mesh);
@@ -836,17 +832,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     private handleClearClick = () => {
         this.setState({
-            shapes: new Map<string, ShapeNode3D>(),
-            pointIndex: 0,
-            lineIndex: 0,
-            circleIndex: 0,
-            polygonIndex: 0,
-            rayIndex: 0,
-            segmentIndex: 0,
-            vectorIndex: 0,
-            selectedShapes: [],
+            shapes: [],
+            polygonIndex: 0
         });
 
+        this.selectedShapes = [];
         this.mode = 'edit';
     }
 
@@ -989,7 +979,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         }
                     }
 
-                    this.state.shapes.set(s.props.id, {
+                    this.DAG.set(s.props.id, {
                         id: s.props.id,
                         type: s,
                         dependsOn: []
@@ -1184,7 +1174,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
                 p.props.color = 'blue';
                 p.props.opacity = 1
-                this.state.shapes.set(p.props.id, {
+                this.DAG.set(p.props.id, {
                     id: p.props.id,
                     type: p,
                     dependsOn: []

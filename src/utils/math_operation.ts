@@ -61,7 +61,7 @@ const distance = (base: GeometryShape.Polygon, point: GeometryShape.Point) => {
     return height;
 }
 
-const getStartAndEnd = (shape: GeometryShape.Shape) => {
+export const getStartAndEnd = (shape: GeometryShape.Shape) => {
     if ((shape.type === 'Line') || (shape.type === 'Ray') || (shape.type === 'Segment')) {
         let start = {
             x: ((shape.type === 'Line') ? (shape as GeometryShape.Line).startLine.x : 

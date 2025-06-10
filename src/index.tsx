@@ -1,11 +1,8 @@
-import 'core-js/es/number/is-integer';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from "./App";
 import './index.css';
-import KonvaCanvas from './components/KonvaRender';
-// import ThreeDCanvas from './components/ThreeRender';
-// import { Point, Circle  } from './types/geometry';
+
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(
@@ -15,7 +12,9 @@ const root = ReactDOM.createRoot(
 root.render(
     //<KonvaCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' />
     // <ThreeDCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' shapes={shapes} />
-    <App />
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
