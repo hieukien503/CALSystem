@@ -1,7 +1,7 @@
 import * as GeometryShape from '../types/geometry'
 import { getArea } from './math_operation';
 
-export const createPoint = (props: GeometryShape.ShapeProps, x: number, y: number, z: number = 0): GeometryShape.Point => {
+export const createPoint = (props: GeometryShape.ShapeProps, x: number, y: number, z?: number): GeometryShape.Point => {
     let p: GeometryShape.Point = {
         x: x,
         y: y,
@@ -187,4 +187,16 @@ export const createCone = (
     }
 
     return p;
+}
+
+export const createAngle = (props: GeometryShape.ShapeProps, vertex?: GeometryShape.Point, startAngle?: number, degree?: number): GeometryShape.Angle => {
+    let s: GeometryShape.Angle = {
+        vertex: vertex,
+        startAngle: startAngle ?? 0,
+        degree: degree ?? 0,
+        props: props,
+        type: 'Angle'
+    }
+
+    return s;
 }

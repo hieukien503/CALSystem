@@ -3,8 +3,6 @@ import { Point } from "../types/geometry";
 
 interface ButtonProps {
     label: string;
-    requiredPoints: number;
-    selectedPoints: Point[];
     onClick: () => void;
 };
 
@@ -30,6 +28,7 @@ interface GeometryToolProps {
     onClearClick: () => void;
     onUndoClick: () => void;
     onRedoClick: () => void;
+    onAngleClick: () => void;
 }
 
 interface GeometryTool3DProps extends GeometryToolProps {
@@ -43,7 +42,6 @@ interface GeometryTool3DProps extends GeometryToolProps {
 }
 
 interface GeometryToolState {
-    selectedPointsMap: Record<string, Point[]>;
     activeButton: string | null;
 }
 
@@ -51,15 +49,6 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
     constructor(props: GeometryToolProps) {
         super(props);
         this.state = {
-            selectedPointsMap: {
-                "point": [],
-                "line": [],
-                "segment": [],
-                "vector": [],
-                "polygon": [],
-                "circle": [],
-                "ray": []
-            },
             activeButton: null
         }
     }
@@ -113,6 +102,10 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
         else if (toolKey === "redo") {
             this.props.onRedoClick();
         }
+
+        else if (toolKey === "angle") {
+            this.props.onAngleClick();
+        }
     }
 
     render(): React.ReactNode {
@@ -120,74 +113,67 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             {
                 key: "point",
                 label: "Create Point",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("point")
             },
             {
                 key: "line",
                 label: "Create Line",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("line")
             },
             {
                 key: "segment",
                 label: "Create Segment",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("segment")
             },
             {
                 key: "vector",
                 label: "Create Vector",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("vector")
             },
             {   
                 key: "polygon", 
                 label: "Create Polygon",
-                requiredPoints: 3,
                 onClick: () => this.setActiveTool("polygon")
             },
             {
                 key: "circle",
                 label: "Create Circle",
-                requiredPoints: 1,
                 onClick: () => this.setActiveTool("circle")
             },
             {
                 key: "ray",
                 label: "Create Ray",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("ray")
             },
             {
                 key: "edit",
                 label: "Edit Shape",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("edit")
             },
             {
                 key: "delete",
                 label: "Delete Shape",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("delete")
             },
             {
                 key: "clear",
                 label: "Clear All",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("clear")
             },
             {
                 key: "undo",
                 label: "Undo",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("undo")
             },
             {
                 key: "redo",
                 label: "Redo",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("redo")
+            },
+            {
+                key: "angle",
+                label: "Measure angle",
+                onClick: () => this.setActiveTool("angle")
             }
         ]
 
@@ -217,8 +203,6 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     <Button
                         key={tool.key}
                         label={tool.label}
-                        requiredPoints={tool.requiredPoints}
-                        selectedPoints={this.state.selectedPointsMap[tool.key]}
                         onClick={tool.onClick}
                     />
                 ))}
@@ -232,15 +216,6 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
     constructor(props: GeometryTool3DProps) {
         super(props);
         this.state = {
-            selectedPointsMap: {
-                "point": [],
-                "line": [],
-                "segment": [],
-                "vector": [],
-                "polygon": [],
-                "circle": [],
-                "ray": []
-            },
             activeButton: null
         }
     }
@@ -322,6 +297,10 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
         else if (toolKey === "cylinder") {
             this.props.onAddCylinder();
         }
+
+        else if (toolKey === "angle") {
+            this.props.onAngleClick();
+        }
     }
 
     render(): React.ReactNode {
@@ -329,116 +308,102 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
             {
                 key: "point",
                 label: "Create Point",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("point")
             },
             {
                 key: "line",
                 label: "Create Line",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("line")
             },
             {
                 key: "segment",
                 label: "Create Segment",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("segment")
             },
             {
                 key: "vector",
                 label: "Create Vector",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("vector")
             },
             {   
                 key: "polygon", 
                 label: "Create Polygon",
-                requiredPoints: 3,
                 onClick: () => this.setActiveTool("polygon")
             },
             {
                 key: "circle",
                 label: "Create Circle",
-                requiredPoints: 1,
                 onClick: () => this.setActiveTool("circle")
             },
             {
                 key: "ray",
                 label: "Create Ray",
-                requiredPoints: 2,
                 onClick: () => this.setActiveTool("ray")
             },
             {
                 key: "cuboid",
                 label: "Add Cuboid",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("cuboid")
             },
             {
                 key: "cone",
                 label: "Add Cone",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("cone")
             },
             {
                 key: "prism",
                 label: "Add Prism",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("prism")
             },
             {
                 key: "pyramid",
                 label: "Add Pyramid",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("pyramid")
             },
             {
                 key: "sphere",
                 label: "Add Sphere",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("sphere")
             },
             {
                 key: "plane",
                 label: "Add Plane",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("plane")
             },
             {
                 key: "cylinder",
                 label: "Add Cylinder",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("cylinder")
             },
             {
                 key: "edit",
                 label: "Edit Shape",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("edit")
             },
             {
                 key: "delete",
                 label: "Delete Shape",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("delete")
             },
             {
                 key: "clear",
                 label: "Clear All",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("clear")
             },
             {
                 key: "undo",
                 label: "Undo",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("undo")
             },
             {
                 key: "redo",
                 label: "Redo",
-                requiredPoints: 0,
                 onClick: () => this.setActiveTool("redo")
+            },
+            {
+                key: "angle",
+                label: "Measure angle",
+                onClick: () => this.setActiveTool("angle")
             }
         ]
 
@@ -468,8 +433,6 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                     <Button
                         key={tool.key}
                         label={tool.label}
-                        requiredPoints={tool.requiredPoints}
-                        selectedPoints={this.state.selectedPointsMap[tool.key]}
                         onClick={tool.onClick}
                     />
                 ))}
