@@ -38,7 +38,7 @@ const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THREE.Mesh 
         color: props.color,
         dashSize: props.line_style.dash_size, // Length of the dash
         gapSize: props.line_style.gap_size,   // Length of the gap
-        linewidth: props.line_size || 1
+        linewidth: props.line_size
     });
 
     // Create line instead of mesh
@@ -50,9 +50,9 @@ const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THREE.Mesh 
         // Create a second line for dots
         const dotMaterial = new THREE.LineDashedMaterial({
             color: props.color,
-            dashSize: props.line_style.dot_size || 0.1, // Very small dash for dots
+            dashSize: props.line_style.dot_size ?? 0.1, // Very small dash for dots
             gapSize: props.line_style.gap_size,     // Larger gap for dots
-            linewidth: props.line_size || 1
+            linewidth: props.line_size
         });
 
         const dotLine = new THREE.Line(geometry.clone(), dotMaterial);
@@ -364,7 +364,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             let pl: Plane = shape as Plane;
             geometry = new THREE.PlaneGeometry(5, 5);
             mesh = new THREE.Mesh(geometry, material);
-            let point = convertToVector3(pl.point.x, pl.point.y, pl.point.z || 0);
+            let point = convertToVector3(pl.point.x, pl.point.y, pl.point.z ?? 0);
             let norm = convertToVector3(
                 pl.norm.endVector.x - pl.norm.startVector.x,
                 pl.norm.endVector.y - pl.norm.startVector.y,
@@ -380,8 +380,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         
         else if (shape.type === 'Cylinder') {
             let cy: Cylinder = shape as Cylinder;
-            const start = convertToVector3(cy.centerBase1.x, cy.centerBase1.y, cy.centerBase1.z || 0);
-            const end = convertToVector3(cy.centerBase2.x, cy.centerBase2.y, cy.centerBase2.z || 0);
+            const start = convertToVector3(cy.centerBase1.x, cy.centerBase1.y, cy.centerBase1.z ?? 0);
+            const end = convertToVector3(cy.centerBase2.x, cy.centerBase2.y, cy.centerBase2.z ?? 0);
             const direction = new THREE.Vector3().subVectors(end, start);
             const length = direction.length();
             const radius = cy.radius;
@@ -397,8 +397,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         
         else if (shape.type === 'Cone') {
             let co: Cone = shape as Cone;
-            const center = convertToVector3(co.center.x, co.center.y, co.center.z || 0);
-            const apex = convertToVector3(co.apex.x, co.apex.y, co.apex.z || 0);
+            const center = convertToVector3(co.center.x, co.center.y, co.center.z ?? 0);
+            const apex = convertToVector3(co.apex.x, co.apex.y, co.apex.z ?? 0);
             const direction = new THREE.Vector3().subVectors(apex, center);
             const height = direction.length();
             const radius = co.radius
@@ -416,7 +416,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             let sp:  Sphere = shape as Sphere;
             geometry = new THREE.SphereGeometry(sp.radius, 32, 32);
             mesh = new THREE.Mesh(geometry, material);
-            let center = convertToVector3(sp.centerS.x, sp.centerS.y, sp.centerS.z || 0)
+            let center = convertToVector3(sp.centerS.x, sp.centerS.y, sp.centerS.z ?? 0)
             mesh.position.set(center.x, center.y, center.z);
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, sp.radius + 0.5, 0));
         }
@@ -468,14 +468,14 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             let cube: Cuboid = shape as Cuboid
             const width = Math.abs(cube.bottomRightFront.x - cube.topLeftBack.x);
             const height = Math.abs(cube.bottomRightFront.y - cube.topLeftBack.y);
-            const depth = Math.abs((cube.bottomRightFront.z || 0) - (cube.topLeftBack.z || 0));
+            const depth = Math.abs((cube.bottomRightFront.z ?? 0) - (cube.topLeftBack.z ?? 0));
 
             geometry = new THREE.BoxGeometry(width, height, depth);
             mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(
                 (cube.topLeftBack.x + cube.bottomRightFront.x) / 2,
                 (cube.topLeftBack.y + cube.bottomRightFront.y) / 2,
-                ((cube.topLeftBack.z || 0) + (cube.bottomRightFront.z || 0)) / 2
+                ((cube.topLeftBack.z ?? 0) + (cube.bottomRightFront.z ?? 0)) / 2
             );
 
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, height / 2 + 0.5, 0));
@@ -566,12 +566,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const start = new THREE.Vector3(
                 v.startVector.x,
                 v.startVector.y,
-                v.startVector.z || 0
+                v.startVector.z ?? 0
             );
             const end = new THREE.Vector3(
                 v.endVector.x,
                 v.endVector.y,
-                v.endVector.z || 0
+                v.endVector.z ?? 0
             );
             const direction = new THREE.Vector3().subVectors(end, start);
             const length = direction.length();
@@ -608,9 +608,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const label = this.createLabel(
                 shape.props.label, 
                 labelPosition,
-                shape.props.labelXOffset || 0,
-                shape.props.labelYOffset || 0,
-                shape.props.labelZOffset || 0
+                shape.props.labelXOffset ?? 0,
+                shape.props.labelYOffset ?? 0,
+                shape.props.labelZOffset ?? 0
             );
             group.add(label);
         }
@@ -651,7 +651,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             let normalVec = c.normal? new THREE.Vector3(
                 c.normal.endVector.x - c.normal.startVector.x,
-                (c.normal.endVector.z || 0) - (c.normal.startVector.z || 0),
+                (c.normal.endVector.z ?? 0) - (c.normal.startVector.z ?? 0),
                 c.normal.endVector.y - c.normal.startVector.y
             ).normalize() : new THREE.Vector3(0, 1, 0);
             let defaultNorm = new THREE.Vector3(0, 1, 0);
@@ -664,7 +664,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             for (let p of points) {
-                p.add(convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z || 0));
+                p.add(convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0));
             }
 
             mesh = createDashLine(points, c.props);
@@ -683,8 +683,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (shape.type === 'Line') {
             let l: Line = shape as Line;
             let points = []
-            let start_point = convertToVector3(l.startLine.x, l.startLine.y, l.startLine.z || 0)
-            let end_point = convertToVector3(l.endLine.x, l.endLine.y, l.endLine.z || 0)
+            let start_point = convertToVector3(l.startLine.x, l.startLine.y, l.startLine.z ?? 0)
+            let end_point = convertToVector3(l.endLine.x, l.endLine.y, l.endLine.z ?? 0)
             let direction = new THREE.Vector3().subVectors(end_point, start_point)
             const P1 = new THREE.Vector3().copy(start_point).sub(direction.clone().multiplyScalar(LINE_EXTENSION))
             const P2 = new THREE.Vector3().copy(end_point).add(direction.clone().multiplyScalar(LINE_EXTENSION))
@@ -699,8 +699,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (shape.type === 'Ray') {
             let r: Ray = shape as Ray;
             let points = [];
-            const P1 = convertToVector3(r.startRay.x, r.startRay.y, r.startRay.z || 0);
-            const P2 = convertToVector3(r.endRay.x, r.endRay.y, r.endRay.z || 0);
+            const P1 = convertToVector3(r.startRay.x, r.startRay.y, r.startRay.z ?? 0);
+            const P2 = convertToVector3(r.endRay.x, r.endRay.y, r.endRay.z ?? 0);
             const direction = new THREE.Vector3().subVectors(P2, P1);
             const P3 = new THREE.Vector3().copy(P2).add(direction.clone().multiplyScalar(LINE_EXTENSION));
 
@@ -714,8 +714,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (shape.type === 'Segment') {
             let s: Segment = shape as Segment;
             let points = []
-            const P1 = convertToVector3(s.startSegment.x, s.startSegment.y, s.startSegment.z || 0)
-            const P2 = convertToVector3(s.endSegment.x, s.endSegment.y, s.endSegment.z || 0)
+            const P1 = convertToVector3(s.startSegment.x, s.startSegment.y, s.startSegment.z ?? 0)
+            const P2 = convertToVector3(s.endSegment.x, s.endSegment.y, s.endSegment.z ?? 0)
             
             points.push(P1)
             points.push(P2)
@@ -727,7 +727,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (shape.type === 'Polygon') {
             // Create a polygon from the points
             let poly: Polygon = shape as Polygon;
-            const points = poly.points.map(point => new THREE.Vector3(point.x, point.y, point.z || 0));
+            const points = poly.points.map(point => new THREE.Vector3(point.x, point.y, point.z ?? 0));
             
             // Create a shape from the points
             const shapeGeometry = new THREE.Shape();
@@ -787,9 +787,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const label = this.createLabel(
                 shape.props.label, 
                 labelPosition,
-                shape.props.labelXOffset || 0,
-                shape.props.labelYOffset || 0,
-                shape.props.labelZOffset || 0
+                shape.props.labelXOffset ?? 0,
+                shape.props.labelYOffset ?? 0,
+                shape.props.labelZOffset ?? 0
             );
             
             group.add(label);
@@ -1214,6 +1214,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     onAddPrism={this.handleAddPrism}
                     onAddPyramid={this.handleAddPyramid}
                     onAddSphere={this.handleAddSphere}
+                    onAngleClick={this.handleAddSphere}
                 />
 
                 <canvas

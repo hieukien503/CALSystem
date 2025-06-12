@@ -30,13 +30,12 @@ export class KonvaAxis {
 
     generateAxis(
         axisTickInterval: number,
-        layerPosition: {x: number, y: number},
+        layer: Konva.Layer,
         scale: number,
         layerText: Konva.Layer
-    ): Konva.Group {
+    ): void {
         const { width, height, axisColor, axisWidth, pointerWidth, pointerLength, xTickSpacing, originX, originY, opacity } = this.props;
-        const group = new Konva.Group();
-        
+        let layerPosition = layer.position();
         // Calculate visible area based on layer position and scale
         const visibleLeft = -layerPosition.x / scale;
         const visibleRight = (0.75 * width - layerPosition.x) / scale;
@@ -57,12 +56,22 @@ export class KonvaAxis {
             pointerWidth: scaledPointerWidth,
             pointerLength: scaledPointerLength,
             opacity: opacity,
-            listening: false,
             fill: axisColor,
-            strokeScaleEnabled: false
+            listening: true,
+            strokeScaleEnabled: false,
+            hitStrokeWidth: 2,
+            id: 'x-axis'
         });
 
-        group.add(xAxis);
+        xAxis.on('mouseover', (e) => {
+            e.cancelBubble = true;
+            let stage = e.target.getStage();
+            if (stage) {
+                stage.container().style.cursor = 'default';
+            }
+        })
+
+        layer.add(xAxis);
 
         // Draw y-axis
         const yAxis = new Konva.Arrow({
@@ -72,12 +81,22 @@ export class KonvaAxis {
             pointerWidth: scaledPointerWidth,
             pointerLength: scaledPointerLength,
             opacity: opacity,
-            listening: false,
+            listening: true,
             fill: axisColor,
             strokeScaleEnabled: false,
+            hitStrokeWidth: 2,
+            id: 'y-axis'
         });
 
-        group.add(yAxis);
+        yAxis.on('mouseover', (e) => {
+            e.cancelBubble = true;
+            let stage = e.target.getStage();
+            if (stage) {
+                stage.container().style.cursor = 'default';
+            }
+        })
+
+        layer.add(yAxis);
 
         // Draw x-axis ticks and labels
         const drawXTicks = (start: number, end: number, step: number, forward: boolean) => {
@@ -175,7 +194,5 @@ export class KonvaAxis {
         drawXTicks(originX - scaledTickSpacing, visibleLeft, scaledTickSpacing, false);
         drawYTicks(originY, visibleBottom, scaledTickSpacing, true);
         drawYTicks(originY - scaledTickSpacing, visibleTop, scaledTickSpacing, false);
-
-        return group;
     }
 }

@@ -15,7 +15,7 @@ const dot = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: num
 }
 
 const L2_norm = (x: number, y: number, z: number) => {
-    return Math.hypot(x, y, z);
+    return math.parse('sqrt(x^2 + y^2 + z^2)').evaluate({x: x, y: y, z: z});
 }
 
 const mult_scalar = (x: number, y: number, z: number, scalar: number) => {
@@ -69,7 +69,7 @@ export const getStartAndEnd = (shape: GeometryShape.Shape) => {
             y: ((shape.type === 'Line') ? (shape as GeometryShape.Line).startLine.y : 
                 (shape.type === 'Ray') ? (shape as GeometryShape.Ray).startRay.y : (shape as GeometryShape.Segment).startSegment.y),
             z: ((shape.type === 'Line') ? (shape as GeometryShape.Line).startLine.z : 
-                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).startRay.z : (shape as GeometryShape.Segment).startSegment.z) ?? 0
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).startRay.z : (shape as GeometryShape.Segment).startSegment.z)
         }
 
         let end = {
@@ -78,7 +78,7 @@ export const getStartAndEnd = (shape: GeometryShape.Shape) => {
             y: ((shape.type === 'Line') ? (shape as GeometryShape.Line).endLine.y : 
                 (shape.type === 'Ray') ? (shape as GeometryShape.Ray).endRay.y : (shape as GeometryShape.Segment).endSegment.y),
             z: ((shape.type === 'Line') ? (shape as GeometryShape.Line).endLine.z : 
-                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).endRay.z : (shape as GeometryShape.Segment).endSegment.z) ?? 0
+                (shape.type === 'Ray') ? (shape as GeometryShape.Ray).endRay.z : (shape as GeometryShape.Segment).endSegment.z)
         }
 
         return [start, end]
@@ -116,10 +116,10 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
         if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment')) {
             let [start2, end2] = getStartAndEnd(shape2);
             let A = math.intersect(
-                [start.x, start.y, start.z],
-                [end.x, end.y, end.z],
-                [start2.x, start2.y, start2.z],
-                [end2.x, end2.y, end2.z]
+                [start.x, start.y, (start.z ?? 0)],
+                [end.x, end.y, (end.z ?? 0)],
+                [start2.x, start2.y, (start2.z ?? 0)],
+                [end2.x, end2.y, (end2.z ?? 0)]
             )
 
             if (A === null) {
@@ -129,13 +129,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             let v = {
                 x: A[0] - start.x,
                 y: A[1] - start.y,
-                z: (A.length === 2 ? 0 : A[2]) - start.z
+                z: (A.length === 2 ? 0 : A[2]) - (start.z ?? 0)
             }
 
             let crossProduct = cross(
                 end.x - start.x,
                 end.y - start.y,
-                end.z - start.z,
+                (end.z ?? 0) - (start.z ?? 0),
                 v.x,
                 v.y,
                 v.z
@@ -149,13 +149,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 let v1 = {
                     x: A[0] - start2.x,
                     y: A[1] - start2.y,
-                    z: (A.length === 2 ? 0 : A[2]) - start2.z
+                    z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
                 }
 
                 let crossProduct2 = cross(
                     end2.x - start2.x,
                     end2.y - start2.y,
-                    end2.z - start2.z,
+                    (end2.z ?? 0) - (start2.z ?? 0),
                     v1.x,
                     v1.y,
                     v1.z
@@ -172,7 +172,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [];
                     }
 
-                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, end2.z - start2.z)) {
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, (end2.z ?? 0) - (start2.z ?? 0))) {
                         return [];
                     }
                 }
@@ -191,20 +191,20 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [];
                 }
 
-                if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, end.z - start.z)) {
+                if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0))) {
                     return [];
                 }
 
                 let v1 = {
                     x: A[0] - start2.x,
                     y: A[1] - start2.y,
-                    z: (A.length === 2 ? 0 : A[2]) - start2.z
+                    z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
                 }
 
                 let crossProduct2 = cross(
                     end2.x - start2.x,
                     end2.y - start2.y,
-                    end2.z - start2.z,
+                    (end2.z ?? 0) - (start2.z ?? 0),
                     v1.x,
                     v1.y,
                     v1.z
@@ -221,7 +221,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [];
                     }
 
-                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, end2.z - start2.z)) {
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, (end2.z ?? 0) - (start2.z ?? 0))) {
                         return [];
                     }
                 }
@@ -239,13 +239,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 let v1 = {
                     x: A[0] - start2.x,
                     y: A[1] - start2.y,
-                    z: (A.length === 2 ? 0 : A[2]) - start2.z
+                    z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
                 }
 
                 let crossProduct = cross(
                     end2.x - start2.x,
                     end2.y - start2.y,
-                    end2.z - start2.z,
+                    (end2.z ?? 0) - (start2.z ?? 0),
                     v1.x,
                     v1.y,
                     v1.z
@@ -262,7 +262,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [];
                     }
 
-                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, end2.z - start2.z)) {
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, (end2.z ?? 0) - (start2.z ?? 0))) {
                         return [];
                     }
                 }
@@ -282,13 +282,13 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             let u = {
                 x: end.x - start.x,
                 y: end.y - start.y,
-                z: end.z - start.z
+                z: (end.z ?? 0) - (start.z ?? 0)
             }
 
             let u1 = {
                 x: circle.centerC.x - start.x,
                 y: circle.centerC.y - start.y,
-                z: (circle.centerC.z ?? 0) - start.z
+                z: (circle.centerC.z ?? 0) - (start.z ?? 0)
             }
 
             // Solve ||u1 - u * t||^2 = r^2
@@ -420,7 +420,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 let v = {
                     x: end.x - start.x,
                     y: end.y - start.y,
-                    z: end.z - start.z
+                    z: (end.z ?? 0) - (start.z ?? 0)
                 }
 
                 let A = 
@@ -710,8 +710,8 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             let A = math.intersect(
-                [start.x, start.y, start.z],
-                [end.x, end.y, end.z],
+                [start.x, start.y, (start.z ?? 0)],
+                [end.x, end.y, (end.z ?? 0)],
                 [n.x, n.y, n.z, n.x * pl.point.x, n.y * pl.point.y, n.z * (pl.point.z ?? 0)]
             )
 
@@ -722,13 +722,13 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             let v = {
                 x: A[0] - start.x,
                 y: A[1] - start.y,
-                z: (A.length === 2 ? 0 : A[2]) - start.z
+                z: (A.length === 2 ? 0 : A[2]) - (start.z ?? 0)
             }
 
             let crossProduct = cross(
                 end.x - start.x,
                 end.y - start.y,
-                end.z - start.z,
+                (end.z ?? 0) - (start.z ?? 0),
                 v.x,
                 v.y,
                 v.z
@@ -745,7 +745,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [];
                 }
 
-                if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, end.z - start.z)) {
+                if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0))) {
                     return [];
                 }
             }
@@ -1299,14 +1299,22 @@ export const angleBetween3Points = (A: GeometryShape.Point, B: GeometryShape.Poi
         // Handle 2D points
         const BA = { x: A.x - B.x, y: A.y - B.y };
         const BC = { x: C.x - B.x, y: C.y - B.y };
-        const angleA = Math.atan2(BA.y, BA.x);
-        const angleC = Math.atan2(BC.y, BC.x);
-        let angle = angleC - angleA;
+        // Normalize
+        const norm1 = L2_norm(BA.x, BA.y, 0);
+        const norm2 = L2_norm(BC.x, BC.y, 0)
+        BA.x /= norm1;
+        BA.y /= norm1;
+        BC.x /= norm2;
+        BC.y /= norm2;
+        
+        const angleA = math.parse('atan2(y, x)').evaluate({x: BA.x, y: BA.y});
+        const angleC = math.parse('atan2(y, x)').evaluate({x: BC.x, y: BC.y});
+        let angle = angleA - angleC;
         if (angle < 0) {
             angle += 2 * Math.PI;
         }
 
-        return angle * (180 / Math.PI); // Convert to degrees
+        return angle * (180 / Math.PI);
     }
 
     // Handle 3D points
@@ -1318,44 +1326,63 @@ export const angleBetween3Points = (A: GeometryShape.Point, B: GeometryShape.Poi
     const cosTheta = dotProduct / (normBA * normBC);
     const clampedCosTheta = Math.max(-1, Math.min(1, cosTheta)); // Clamp to avoid NaN due to floating point precision issues
     const angle = Math.acos(clampedCosTheta); // Angle in radians
-    return angle * (180 / Math.PI); // Convert to degrees
+    return angle * (180 / Math.PI);
 }
 
-export const angleBetweenLines = (line1: GeometryShape.Line, line2: GeometryShape.Line) => {
-    if (line1.startLine.z === undefined || line1.endLine.z === undefined || 
-        line2.startLine.z === undefined || line2.endLine.z === undefined) {
+export const angleBetweenLines = (line1: GeometryShape.Shape, line2: GeometryShape.Shape) => {
+    if (!(['Segment', 'Ray', 'Line'].includes(line1.type))) {
+        throw new Error('Cannot calculate angle');
+    }
+
+    if (!(['Segment', 'Ray', 'Line'].includes(line2.type))) {
+        throw new Error('Cannot calculate angle');
+    }
+
+    let [start1, end1] = getStartAndEnd(line1);
+    let [start2, end2] = getStartAndEnd(line2);
+
+    if (start1.z === undefined || end1.z === undefined || 
+        start2.z === undefined || end2.z === undefined) {
         // Handle 2D lines
         const v1 = {
-            x: line1.endLine.x - line1.startLine.x,
-            y: line1.endLine.y - line1.startLine.y
+            x: end1.x - start1.x,
+            y: end1.y - start1.y
         }
 
         const v2 = {
-            x: line2.endLine.x - line2.startLine.x,
-            y: line2.endLine.y - line2.startLine.y
+            x: end2.x - start2.x,
+            y: end2.y - start2.y
         }
 
-        const angle1 = Math.atan2(v1.y, v1.x);
-        const angle2 = Math.atan2(v2.y, v2.x);
-        let angle = angle2 - angle1;
+        // Normalize
+        const norm1 = L2_norm(v1.x, v1.y, 0);
+        const norm2 = L2_norm(v2.x, v2.y, 0)
+        v1.x /= norm1;
+        v1.y /= norm1;
+        v2.x /= norm2;
+        v2.y /= norm2;
+
+        const angle1 = math.parse('atan2(y, x)').evaluate({x: v1.x, y: v1.y});
+        const angle2 = math.parse('atan2(y, x)').evaluate({x: v2.x, y: v2.y});
+        let angle = angle1 - angle2;
         if (angle < 0) {
             angle += 2 * Math.PI;
         }
 
-        return angle * (180 / Math.PI); // Convert to degrees
+        return angle * (180 / Math.PI);
     }
 
     // Handle 3D lines
     const v1 = {
-        x: line1.endLine.x - line1.startLine.x,
-        y: line1.endLine.y - line1.startLine.y,
-        z: (line1.endLine.z ?? 0) - (line1.startLine.z ?? 0)
+        x: end1.x - start1.x,
+        y: end1.y - start1.y,
+        z: (end1.z ?? 0) - (start1.z ?? 0)
     }
 
     const v2 = {
-        x: line2.endLine.x - line2.startLine.x,
-        y: line2.endLine.y - line2.startLine.y,
-        z: (line2.endLine.z ?? 0) - (line2.startLine.z ?? 0)
+        x: end2.x - start2.x,
+        y: end2.y - start2.y,
+        z: (end2.z ?? 0) - (start2.z ?? 0)
     }
 
     const dotProduct = dot(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
@@ -1364,7 +1391,7 @@ export const angleBetweenLines = (line1: GeometryShape.Line, line2: GeometryShap
     const cosTheta = Math.abs(dotProduct) / (normV1 * normV2);
     const clampedCosTheta = Math.max(-1, Math.min(1, cosTheta)); // Clamp to avoid NaN due to floating point precision issues
     const angle = Math.acos(clampedCosTheta); // Angle in radians
-    return angle * (180 / Math.PI); // Convert to degrees
+    return angle * (180 / Math.PI);
 }
 
 export const dihedralAngle = (A: GeometryShape.Point, d: GeometryShape.Line, B: GeometryShape.Point) => {
@@ -1403,7 +1430,7 @@ export const dihedralAngle = (A: GeometryShape.Point, d: GeometryShape.Line, B: 
     const cosTheta = dotProduct / (normN1 * normN2);
     const clampedCosTheta = Math.max(-1, Math.min(1, cosTheta)); // Clamp to avoid NaN due to floating point precision issues
     const angle = Math.acos(clampedCosTheta); // Angle in radians
-    return angle * (180 / Math.PI); // Convert to degrees
+    return angle
 }
 
 export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
@@ -1606,13 +1633,13 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             let d = {
                 x: end.x - start.x,
                 y: end.y - start.y,
-                z: end.z - start.z
+                z: (end.z ?? 0) - (start.z ?? 0)
             }
 
             let v = {
                 x: start.x - p.x,
                 y: start.y - p.y,
-                z: start.z - (p.z ?? 0)
+                z: (start.z ?? 0) - (p.z ?? 0)
             }
 
             let cross_uv = cross(
@@ -1639,7 +1666,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             let foot = {
                 x: start.x + v1.x,
                 y: start.y + v1.y,
-                z: start.z + v1.z
+                z: (start.z ?? 0) + v1.z
             }
 
             return Factory.createPoint(
@@ -1726,12 +1753,12 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
                 o2.props,
                 start2.x,
                 start2.y,
-                start2.z
+                (start2.z ?? 0)
             ), o2) as GeometryShape.Point, reflection(Factory.createPoint(
                 o2.props,
                 end2.x,
                 end2.y,
-                end2.z
+                (end2.z ?? 0)
             ), o2) as GeometryShape.Point
         ]
 
@@ -1834,7 +1861,7 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
         let d = {
             x: end.x - start.x,
             y: end.y - start.y,
-            z: end.z - start.z
+            z: (end.z ?? 0) - (start.z ?? 0)
         }
 
         let crossProd = cross(
@@ -1850,7 +1877,7 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
             let v = {
                 x: start.x - o1.x,
                 y: start.y - o1.y,
-                z: start.z - (o1.z ?? 0)
+                z: (start.z ?? 0) - (o1.z ?? 0)
             }
 
             let cross_uv = cross(
@@ -1879,7 +1906,7 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
                 let foot = {
                     x: start.x + v1.x,
                     y: start.y + v1.y,
-                    z: start.z + v1.z
+                    z: (start.z ?? 0) + v1.z
                 }
 
                 return Factory.createPoint(
@@ -1899,8 +1926,8 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
             let A = math.intersect(
                 [o1.x, o1.y, o1.z ?? 0],
                 [o1.x + dir.x, o1.y + dir.y, o1.z, dir.z],
-                [start.x, start.y, start.z],
-                [end.x, end.y, end.z]
+                [start.x, start.y, (start.z ?? 0)],
+                [end.x, end.y, (end.z ?? 0)]
             )
 
             return Factory.createPoint(
@@ -2079,7 +2106,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         let v = {
             x: end.x - start.x,
             y: end.y - start.y,
-            z: end.z - start.z
+            z: (end.z ?? 0) - (start.z ?? 0)
         }
         
         if (o1.type === 'Point') {
@@ -2087,7 +2114,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             let u = {
                 x: p.x - start.x,
                 y: p.y - start.y,
-                z: (p.z ?? 0) - start.z
+                z: (p.z ?? 0) - (start.z ?? 0)
             }
 
             let crossProd = cross(v.x, v.y, v.z, u.x, u.y, u.z);
@@ -2097,7 +2124,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 p.props,
                 start.x + u.x * Math.cos(radian) + Math.sin(radian) * crossProd.x + (1 - Math.cos(radian)) * dot_uv * v.x,
                 start.y + u.y * Math.cos(radian) + Math.sin(radian) * crossProd.y + (1 - Math.cos(radian)) * dot_uv * v.y,
-                start.z + u.z * Math.cos(radian) + Math.sin(radian) * crossProd.z + (1 - Math.cos(radian)) * dot_uv * v.z
+                (start.z ?? 0) + u.z * Math.cos(radian) + Math.sin(radian) * crossProd.z + (1 - Math.cos(radian)) * dot_uv * v.z
             )
         }
 
@@ -2256,12 +2283,12 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
                 o2.props,
                 start2.x,
                 start2.y,
-                start2.z
+                (start2.z ?? 0)
             ), o2, k) as GeometryShape.Point, enlarge(Factory.createPoint(
                 o2.props,
                 end2.x,
                 end2.y,
-                end2.z
+                (end2.z ?? 0)
             ), o2, k) as GeometryShape.Point
         ]
 

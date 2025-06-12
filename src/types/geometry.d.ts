@@ -23,9 +23,10 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
                         'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle';
 
 export interface Angle extends BaseShape {
+    // Use degree for angle
     vertex?: Point;
     startAngle: number;
-    degrees: number;
+    degree: number;
 }
 
 export interface Enlarge extends BaseShape {
@@ -37,7 +38,7 @@ export interface Enlarge extends BaseShape {
 export interface Rotation extends BaseShape {
     object: Shape;
     center: Line | Segment | Ray | Point;
-    degree: number;
+    radian: number;
     CCW: boolean;
 }
 
