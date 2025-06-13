@@ -3672,14 +3672,58 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             }
 
             let startAngle = angleFromXAxis(BA);
-            
-            let a = node.node;
-            a.setAttrs({
-                angle: angle,
-                startAngle: startAngle
-            });
+            let parent = node.node.getParent();
+            if (parent) {
+                let s = (angle !== 90) ? new Konva.Shape({
+                    sceneFunc: ((context, shape) => {
+                        const r = shape.attrs.radius;
+                        const x = 0;
+                        const y = 0;
+                        const start = Konva.getAngle(shape.attrs.startAngle); // radians
+                        const end = Konva.getAngle(shape.attrs.startAngle - shape.attrs.angle); // radians
 
-            a.position({x: B.x, y: B.y});
+                        context.beginPath();
+                        context.moveTo(0, 0);
+
+                        context.arc(x, y, r, start, end, true);
+                        context.closePath();
+                        context.fillStrokeShape(shape);
+                    }),
+                    x: B.x,
+                    y: B.y,
+                    radius: 10,
+                    startAngle: startAngle,
+                    angle: angle,
+                    fill: node.node.fill(),
+                    stroke: node.node.stroke(),
+                    strokeWidth: node.node.strokeWidth(),
+                    hitStrokeWidth: 2,
+                    id: node.node.id()
+                }) : new Konva.Line({
+                    x: B.x,
+                    y: B.y,
+                    points: [
+                        0, 0,
+                        10, 0,
+                        10, -10,
+                        0, -10
+                    ],
+
+                    fill: node.node.fill(),
+                    stroke: node.node.stroke(),
+                    strokeWidth: node.node.strokeWidth(),
+                    hitStrokeWidth: 2,
+                    rotation: startAngle,
+                    closed: true,
+                    draggable: false,
+                    id: node.node.id()
+                });
+
+                node.node.destroy();
+                node.node = s;
+                parent.add(s);
+            }
+
             if (angle === 0) {
                 if (this.layerUnchangeVisualRef.current) {
                     this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
@@ -3722,7 +3766,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let [start2, end2] = operation.getStartAndEnd(shape2.type);
 
             const tmpShape1 = Factory.createLine(
-                this.selectedShapes[0].props,
+                shape1.type.props,
                 Factory.createPoint(
                     createPointDefaultShapeProps(''),
                     start1.x,
@@ -3738,7 +3782,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             );
 
             const tmpShape2 = Factory.createLine(
-                this.selectedShapes[0].props,
+                shape2.type.props,
                 Factory.createPoint(
                     createPointDefaultShapeProps(''),
                     start2.x,
@@ -3764,12 +3808,6 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             }
 
             let startAngle = angleFromXAxis(start);
-            let a = node.node;
-            a.setAttrs({
-                angle: angle,
-                startAngle: startAngle
-            });
-
             let intersection = operation.getIntersections2D(shape1.type as Line, shape2.type as Line);
             let vertex: Point | undefined = intersection.length === 0 ? undefined : 
                                             Factory.createPoint(
@@ -3778,7 +3816,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                                                 intersection[0].y,
                                                 intersection[0].z
                                             )
-            if (angle === 0) {
+            if (angle === 0 || !vertex) {
                 if (this.layerUnchangeVisualRef.current) {
                     this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
                         let id = childNode.id();
@@ -3788,10 +3826,63 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         }
                     })
                 }
+
+                node.node.hide();
             }
             
             else {
-                a.position({x: intersection[0].x, y: intersection[0].y});
+                let parent = node.node.getParent();
+                if (parent) {
+                    let s = (angle !== 90) ? new Konva.Shape({
+                        sceneFunc: ((context, shape) => {
+                            const r = shape.attrs.radius;
+                            const x = 0;
+                            const y = 0;
+                            const start = Konva.getAngle(shape.attrs.startAngle); // radians
+                            const end = Konva.getAngle(shape.attrs.startAngle - shape.attrs.angle); // radians
+
+                            context.beginPath();
+                            context.moveTo(0, 0);
+
+                            context.arc(x, y, r, start, end, true);
+                            context.closePath();
+                            context.fillStrokeShape(shape);
+                        }),
+                        x: intersection[0].x,
+                        y: intersection[0].y,
+                        radius: 10,
+                        startAngle: startAngle,
+                        angle: angle,
+                        fill: node.node.fill(),
+                        stroke: node.node.stroke(),
+                        strokeWidth: node.node.strokeWidth(),
+                        hitStrokeWidth: 2,
+                        id: node.node.id()
+                    }) : new Konva.Line({
+                        x: intersection[0].x,
+                        y: intersection[0].y,
+                        points: [
+                            0, 0,
+                            10, 0,
+                            10, -10,
+                            0, -10
+                        ],
+
+                        fill: node.node.fill(),
+                        stroke: node.node.stroke(),
+                        strokeWidth: node.node.strokeWidth(),
+                        hitStrokeWidth: 2,
+                        rotation: startAngle,
+                        closed: true,
+                        draggable: false,
+                        id: node.node.id()
+                    });
+
+                    node.node.destroy();
+                    node.node = s;
+                    parent.add(s);
+                }
+
                 if (this.layerUnchangeVisualRef.current) {
                     this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
                         let id = childNode.id();
