@@ -2,6 +2,8 @@ import * as GeometryShape from '../types/geometry';
 import * as Factory from './Factory'
 const math = require('mathjs');
 
+const epsilon = 1e-12;
+
 const cross = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
     return {
         x: y1 * z2 - z1 * y2,
@@ -26,6 +28,22 @@ const mult_scalar = (x: number, y: number, z: number, scalar: number) => {
     }
 }
 
+const symbolicSqrt = (num: number): number => {
+    return math.parse('sqrt(x)').evaluate({x: num});
+}
+
+const symbolicSin = (num: number): number => {
+    return math.parse('sin(x)').evaluate({x: num});
+}
+
+const symbolicCos = (num: number): number => {
+    return math.parse('cos(x)').evaluate({x: num});
+}
+
+const symbolicACos = (num: number): number => {
+    return math.parse('acos(x)').evaluate({x: num});
+}
+
 export const isColinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
     const AB = {
         x: B.x - A.x,
@@ -40,7 +58,7 @@ export const isColinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: Ge
     }
     
     let cross_product = cross(AB.x, AB.y, AB.z, AC.x, AC.y, AC.z);
-    return L2_norm(cross_product.x, cross_product.y, cross_product.z) === 0;
+    return L2_norm(cross_product.x, cross_product.y, cross_product.z) < epsilon;
 }
 
 const distance = (base: GeometryShape.Polygon, point: GeometryShape.Point) => {
@@ -88,7 +106,7 @@ export const getStartAndEnd = (shape: GeometryShape.Shape) => {
 }
 
 export const getDistance = (shape1: GeometryShape.Point, shape2: GeometryShape.Point) => {
-    return Math.sqrt((shape1.x - shape2.x) ** 2 + (shape1.y - shape2.y) ** 2 + ((shape1.z ?? 0) - (shape2.z ?? 0)) ** 2);
+    return symbolicSqrt((shape1.x - shape2.x) ** 2 + (shape1.y - shape2.y) ** 2 + ((shape1.z ?? 0) - (shape2.z ?? 0)) ** 2);
 }
 
 const getPerimeter = (shape: GeometryShape.Polygon) => {
@@ -296,7 +314,11 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             const a = dot(u.x, u.y, u.z, u.x, u.y, u.z);
             const b = -2 * dot(u1.x, u1.y, u1.z, u.x, u.y, u.z);
             const c = dot(u1.x, u1.y, u1.z, u1.x, u1.y, u1.z) - r * r;
-            const discriminant = b * b - 4 * a * c;
+            let discriminant = b * b - 4 * a * c;
+            if (Math.abs(discriminant) < epsilon) {
+                discriminant = 0;
+            }
+
             if (discriminant < 0) {
                 return []; // No intersection
             }
@@ -317,8 +339,8 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             else {
-                const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-                const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                const t1 = (-b + symbolicSqrt(discriminant)) / (2 * a);
+                const t2 = (-b - symbolicSqrt(discriminant)) / (2 * a);
                 if (shape1.type === 'Ray') {
                     if (t1 < 0 && t2 < 0) {
                         return []; // No intersection
@@ -490,11 +512,11 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             let circle2: GeometryShape.Circle = shape2 as GeometryShape.Circle
             // Two circles intersection
             let d = getDistance(circle1.centerC, circle2.centerC);
-            if (d === 0 && circle1.radius === circle2.radius) {
+            if (d < epsilon && circle1.radius === circle2.radius) {
                 throw new Error('The circles are coincident');
             }
 
-            if (d === 0) {
+            if (d < epsilon) {
                 return []; // No intersection, circles are concentric
             }
             
@@ -503,14 +525,14 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             let a = (circle1.radius ** 2 - circle2.radius ** 2 + d ** 2) / (2 * d);
-            let h = Math.sqrt(circle1.radius ** 2 - a ** 2);
+            let h = symbolicSqrt(circle1.radius ** 2 - a ** 2);
             let p = {
                 x: circle1.centerC.x + a * (circle2.centerC.x - circle1.centerC.x) / d,
                 y: circle1.centerC.y + a * (circle2.centerC.y - circle1.centerC.y) / d,
                 z: (circle1.centerC.z ?? 0) + a * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
             };
 
-            if (h === 0) {
+            if (h < epsilon) {
                 return [p]; // One intersection point
             }
 
@@ -551,7 +573,11 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 const a = dot(u.x, u.y, u.z, u.x, u.y, u.z);
                 const b = -2 * dot(v.x, v.y, v.z, u.x, u.y, u.z);
                 const c = dot(v.x, v.y, v.z, v.x, v.y, v.z) - r * r;
-                const discriminant = b * b - 4 * a * c;
+                let discriminant = b * b - 4 * a * c;
+                if (Math.abs(discriminant) < epsilon) {
+                    discriminant = 0;
+                }
+
                 if (discriminant < 0) {
                     continue; // No intersection
                 }
@@ -570,8 +596,8 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 else {
-                    const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-                    const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                    const t1 = (-b + symbolicSqrt(discriminant)) / (2 * a);
+                    const t2 = (-b - symbolicSqrt(discriminant)) / (2 * a);
                     if (t1 >= 0 && t1 <= 1) {
                         intersections.push({
                             x: point1.x + u.x * t1,
@@ -773,7 +799,11 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             const a = dot(u.x, u.y, u.z, u.x, u.y, u.z);
             const b = -2 * dot(u1.x, u1.y, u1.z, u.x, u.y, u.z);
             const c = dot(u1.x, u1.y, u1.z, u1.x, u1.y, u1.z) - r * r;
-            const discriminant = b * b - 4 * a * c;
+            let discriminant = b * b - 4 * a * c;
+            if (Math.abs(discriminant) < epsilon) {
+                discriminant = 0;
+            }
+
             if (discriminant < 0) {
                 return []; // No intersection
             }
@@ -794,8 +824,8 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             else {
-                const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-                const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                const t1 = (-b + symbolicSqrt(discriminant)) / (2 * a);
+                const t2 = (-b - symbolicSqrt(discriminant)) / (2 * a);
                 if (shape1.type === 'Ray') {
                     if (t1 < 0 && t2 < 0) {
                         return []; // No intersection
@@ -895,7 +925,7 @@ export const planeIntersection = (shape1: GeometryShape.Plane, shape2: GeometryS
     }
 
     const crossProduct = cross(n1.x, n1.y, n1.z, n2.x, n2.y, n2.z);
-    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) === 0) {
+    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) < epsilon) {
         // The planes are parallel or coincident
         return undefined;
     }
@@ -943,7 +973,7 @@ export const planeIntersectionSphere = (shape1: GeometryShape.Plane, shape2: Geo
         return undefined; // No intersection
     }
 
-    if (d === shape2.radius) {
+    if (Math.abs(d - shape2.radius) < epsilon) {
         // The plane is tangent to the sphere
         let t = (n.x * shape1.point.x + n.y * shape1.point.y + (n.z ?? 0) * (shape1.point.z ?? 0) - (n.x * shape2.centerS.x + n.y * shape2.centerS.y + n.z * (shape2.centerS.z ?? 0))) / dot(n.x, n.y, n.z, n.x, n.y, n.z);
         return {
@@ -961,7 +991,7 @@ export const planeIntersectionSphere = (shape1: GeometryShape.Plane, shape2: Geo
         z: (shape2.centerS.z ?? 0) + n.z * t
     }
 
-    let radius = Math.sqrt(shape2.radius ** 2 - d ** 2);
+    let radius = symbolicSqrt(shape2.radius ** 2 - d ** 2);
     return {
         centerC: center,
         radius: radius,
@@ -975,23 +1005,23 @@ export const SphereIntersectionSphere = (shape1: GeometryShape.Sphere, shape2: G
         return undefined; // No intersection
     }
 
-    if (d === 0 && shape1.radius === shape2.radius) {
+    if (d < epsilon && shape1.radius === shape2.radius) {
         throw new Error('The spheres are coincident');
     }
 
-    if (d === 0) {
+    if (d < epsilon) {
         return undefined;
     }
 
     let a = (shape1.radius ** 2 - shape2.radius ** 2 + d ** 2) / (2 * d);
-    let h = Math.sqrt(shape1.radius ** 2 - a ** 2);
+    let h = symbolicSqrt(shape1.radius ** 2 - a ** 2);
     let P = {
         x: shape1.centerS.x + a * (shape2.centerS.x - shape1.centerS.x) / d,
         y: shape1.centerS.y + a * (shape2.centerS.y - shape1.centerS.y) / d,
         z: (shape1.centerS.z ?? 0) + a * ((shape2.centerS.z ?? 0) - (shape1.centerS.z ?? 0)) / d
     }
 
-    if (h === 0) {
+    if (h < epsilon) {
         return P; // One intersection point
     }
 
@@ -1147,7 +1177,7 @@ export const circumradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: 
     let BC = L2_norm(C.x - B.x, C.y - B.y, (C.z ?? 0) - (B.z ?? 0));
 
     let p = (AB + AC + BC) / 2;
-    let area = Math.sqrt(p * (p - AB) * (p - AC) * (p - BC));
+    let area = symbolicSqrt(p * (p - AB) * (p - AC) * (p - BC));
 
     return AB * AC * BC / (4 * area);
 }
@@ -1162,7 +1192,7 @@ export const inradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
     let BC = L2_norm(C.x - B.x, C.y - B.y, (C.z ?? 0) - (B.z ?? 0));
     
     let p = (AB + AC + BC) / 2;
-    let area = Math.sqrt(p * (p - AB) * (p - AC) * (p - BC));
+    let area = symbolicSqrt(p * (p - AB) * (p - AC) * (p - BC));
 
     return area / p;
 }
@@ -1265,7 +1295,7 @@ export const surface_area = (shape: GeometryShape.Shape) => {
         let co: GeometryShape.Cone = shape as GeometryShape.Cone;
         let height = getDistance(co.center, co.apex);
         let base_area = Math.PI * Math.pow(co.radius, 2);
-        let slant_height = Math.sqrt(Math.pow(co.radius, 2) + Math.pow(height, 2));
+        let slant_height = symbolicSqrt(Math.pow(co.radius, 2) + Math.pow(height, 2));
         return Math.PI * co.radius * slant_height + base_area;
     }
     
@@ -1314,7 +1344,7 @@ export const angleBetween3Points = (A: GeometryShape.Point, B: GeometryShape.Poi
             angle += 2 * Math.PI;
         }
 
-        return angle * (180 / Math.PI);
+        return angle * 180 / Math.PI;
     }
 
     // Handle 3D points
@@ -1325,8 +1355,8 @@ export const angleBetween3Points = (A: GeometryShape.Point, B: GeometryShape.Poi
     const normBC = L2_norm(BC.x, BC.y, BC.z);
     const cosTheta = dotProduct / (normBA * normBC);
     const clampedCosTheta = Math.max(-1, Math.min(1, cosTheta)); // Clamp to avoid NaN due to floating point precision issues
-    const angle = Math.acos(clampedCosTheta); // Angle in radians
-    return angle * (180 / Math.PI);
+    const angle = symbolicACos(clampedCosTheta); // Angle in radians
+    return angle * 180 / Math.PI;
 }
 
 export const angleBetweenLines = (line1: GeometryShape.Shape, line2: GeometryShape.Shape) => {
@@ -1369,7 +1399,7 @@ export const angleBetweenLines = (line1: GeometryShape.Shape, line2: GeometrySha
             angle += 2 * Math.PI;
         }
 
-        return angle * (180 / Math.PI);
+        return angle * 180 / Math.PI;
     }
 
     // Handle 3D lines
@@ -1390,8 +1420,8 @@ export const angleBetweenLines = (line1: GeometryShape.Shape, line2: GeometrySha
     const normV2 = L2_norm(v2.x, v2.y, v2.z);
     const cosTheta = Math.abs(dotProduct) / (normV1 * normV2);
     const clampedCosTheta = Math.max(-1, Math.min(1, cosTheta)); // Clamp to avoid NaN due to floating point precision issues
-    const angle = Math.acos(clampedCosTheta); // Angle in radians
-    return angle * (180 / Math.PI);
+    const angle = symbolicACos(clampedCosTheta); // Angle in radians
+    return angle * 180 / Math.PI;
 }
 
 export const dihedralAngle = (A: GeometryShape.Point, d: GeometryShape.Line, B: GeometryShape.Point) => {
@@ -1429,7 +1459,7 @@ export const dihedralAngle = (A: GeometryShape.Point, d: GeometryShape.Line, B: 
     const normN2 = L2_norm(n2.x, n2.y, n2.z);
     const cosTheta = dotProduct / (normN1 * normN2);
     const clampedCosTheta = Math.max(-1, Math.min(1, cosTheta)); // Clamp to avoid NaN due to floating point precision issues
-    const angle = Math.acos(clampedCosTheta); // Angle in radians
+    const angle = symbolicACos(clampedCosTheta); // Angle in radians
     return angle
 }
 
@@ -1647,7 +1677,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
                 d.x, d.y, d.z
             )
 
-            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) === 0) {
+            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
                 return o1
             }
 
@@ -1869,11 +1899,11 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
             d.x, d.y, d.z
         )
 
-        if (L2_norm(crossProd.x, crossProd.y, crossProd.z) === 0) {
+        if (L2_norm(crossProd.x, crossProd.y, crossProd.z) < epsilon) {
             throw new Error('Cannot perform projection');
         }
 
-        if (dot(dir.x, dir.y, dir.z, d.x, d.y, d.z) === 0) {
+        if (Math.abs(dot(dir.x, dir.y, dir.z, d.x, d.y, d.z)) < epsilon) {
             let v = {
                 x: start.x - o1.x,
                 y: start.y - o1.y,
@@ -1885,7 +1915,7 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
                 d.x, d.y, d.z
             )
 
-            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) === 0) {
+            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
                 return o1
             }
 
@@ -1984,8 +2014,8 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         if (o1.type === 'Point') {
             let p1: GeometryShape.Point = o1 as GeometryShape.Point;
             let rotated_point = {
-                x: (p1.x - p2.x) * Math.cos(radian) - (p1.y - p2.y) * Math.sin(radian) + p2.x,
-                y: (p1.x - p2.x) * Math.sin(radian) + (p1.y - p2.y) * Math.cos(radian) + p2.y
+                x: (p1.x - p2.x) * symbolicCos(radian) - (p1.y - p2.y) * symbolicSin(radian) + p2.x,
+                y: (p1.x - p2.x) * symbolicSin(radian) + (p1.y - p2.y) * symbolicCos(radian) + p2.y
             }
 
             return Factory.createPoint(
@@ -2122,9 +2152,9 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 
             return Factory.createPoint(
                 p.props,
-                start.x + u.x * Math.cos(radian) + Math.sin(radian) * crossProd.x + (1 - Math.cos(radian)) * dot_uv * v.x,
-                start.y + u.y * Math.cos(radian) + Math.sin(radian) * crossProd.y + (1 - Math.cos(radian)) * dot_uv * v.y,
-                (start.z ?? 0) + u.z * Math.cos(radian) + Math.sin(radian) * crossProd.z + (1 - Math.cos(radian)) * dot_uv * v.z
+                start.x + u.x * symbolicCos(radian) + symbolicSin(radian) * crossProd.x + (1 - symbolicCos(radian)) * dot_uv * v.x,
+                start.y + u.y * symbolicCos(radian) + symbolicSin(radian) * crossProd.y + (1 - symbolicCos(radian)) * dot_uv * v.y,
+                (start.z ?? 0) + u.z * symbolicCos(radian) + symbolicSin(radian) * crossProd.z + (1 - symbolicCos(radian)) * dot_uv * v.z
             )
         }
 
@@ -2212,7 +2242,7 @@ export const exradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
     let AB = L2_norm(A.x - B.x, A.y - B.y, (A.z ?? 0) - (B.z ?? 0));
 
     let s = (AB + BC + CA) / 2;
-    return Math.sqrt(s * (s - AB) * (s - BC) * (s - CA)) / (s - CA);
+    return symbolicSqrt(s * (s - AB) * (s - BC) * (s - CA)) / (s - CA);
 }
 
 export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: number): GeometryShape.Shape => {

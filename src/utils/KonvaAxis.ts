@@ -15,8 +15,8 @@ interface AxisProps {
 
 // Constants for font and styling
 const FONT_CONFIG = {
-    fontSize: 10,
-    fontFamily: 'Arial'
+    fontSize: 0.625 * parseFloat(getComputedStyle(document.documentElement).fontSize),
+    fontFamily: 'sans-serif'
 };
 
 const LABEL_OFFSET = 5;
