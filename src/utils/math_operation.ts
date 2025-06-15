@@ -2,7 +2,7 @@ import * as GeometryShape from '../types/geometry';
 import * as Factory from './Factory'
 const math = require('mathjs');
 
-const epsilon = 1e-12;
+const epsilon = 1e-10;
 
 const cross = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
     return {
@@ -1340,7 +1340,7 @@ export const angleBetween3Points = (A: GeometryShape.Point, B: GeometryShape.Poi
         const angleA = math.parse('atan2(y, x)').evaluate({x: BA.x, y: BA.y});
         const angleC = math.parse('atan2(y, x)').evaluate({x: BC.x, y: BC.y});
         let angle = angleA - angleC;
-        if (angle < 0) {
+        if (Math.abs(angle) > epsilon && angle < 0) {
             angle += 2 * Math.PI;
         }
 
@@ -1395,7 +1395,7 @@ export const angleBetweenLines = (line1: GeometryShape.Shape, line2: GeometrySha
         const angle1 = math.parse('atan2(y, x)').evaluate({x: v1.x, y: v1.y});
         const angle2 = math.parse('atan2(y, x)').evaluate({x: v2.x, y: v2.y});
         let angle = angle1 - angle2;
-        if (angle < 0) {
+        if (Math.abs(angle) > epsilon && angle < 0) {
             angle += 2 * Math.PI;
         }
 
