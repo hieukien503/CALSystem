@@ -30,6 +30,9 @@ const BASE_SPACING = 60;
 // Constants for zoom level
 const ZOOM_FACTOR = 1.1;
 
+// Constants for epsilon
+const EPSILON = 1e-10;
+
 // Utility functions
 const convert2RGB = _.memoize((color: string): [number, number, number] => {
     const rgb = Konva.Util.getRGB(color)
@@ -209,7 +212,7 @@ const clone = (
 ) => {
     const copyState = structuredClone(state);
     const copySelectedPoints = structuredClone(selectedPoints);
-    const copySelectedShapes = structuredClone(selectedPoints);
+    const copySelectedShapes = structuredClone(selectedShapes);
     const copyLabelUsed = Array.from(label_used);
     const copyDAG = new Map<string, ShapeNode>();
     dag.forEach((node, key) => {
@@ -230,6 +233,11 @@ const clone = (
         selectedShapes: copySelectedShapes,
         label_used: copyLabelUsed
     }
+}
+
+const cleanAngle = (angle: number): number => {
+    const nearestAngle = Math.round(angle);
+    return Math.abs(nearestAngle - angle) < EPSILON ? nearestAngle : angle;
 }
 
 const projectPointOntoLineSegment = (
@@ -279,6 +287,14 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     private selectedPoints: Point[];
     private label_used: string[] = [];
     private selectedShapes: Shape[] = [];
+    private moveFrameId: number | null = null;
+    private hoverFrameId: number | null = null;
+    private zoomFrameId: number | null = null;
+    private lastFailedState: {
+        selectedShapes: Shape[];
+        selectedPoints: Point[];
+    } | null = null;
+    private currentlyHoveredNodeIds: Set<string> = new Set();
 
     constructor(props: CanvasProps) {
         super(props);
@@ -302,10 +318,10 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         this.last_pointer = {x: 0, y: 0};
         this.stageRef = React.createRef<Konva.Stage>();
         this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.handleMouseMove = _.throttle(this.handleMouseMove.bind(this), 16);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleMouseOver = this.handleMouseOver.bind(this);
-        this.handleZoom = _.debounce(this.handleZoom.bind(this), 50);
+        this.handleZoom = this.handleZoom.bind(this);
         this.mode = 'edit';
         this.DAG = new Map<string, ShapeNode>();
         this.selectedPoints = new Array<Point>();
@@ -343,157 +359,184 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         e.evt.preventDefault();
         const stage = this.stageRef.current;
         const layer = this.layerMathObjectRef.current;
-        if (!stage || !layer) return;
-
-        const oldScale = layer.scaleX();
-        const pointer = stage.getPointerPosition();
-        if (!pointer) return;
-
-        const event = e.evt as WheelEvent;
-        let newScale = oldScale * (event.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
-
-        if (newScale >= 1000 || newScale <= 0.002) {
-            newScale = oldScale;
+        if (this.zoomFrameId) {
+            cancelAnimationFrame(this.zoomFrameId);
         }
 
-        // Calculate the mouse position relative to the layer
-        const mousePointTo = {
-            x: (pointer.x - layer.x()) / oldScale,
-            y: (pointer.y - layer.y()) / oldScale
-        };
+        this.zoomFrameId = requestAnimationFrame(() => {
+            if (!stage || !layer) return null;
 
-        // Calculate the new position to keep the mouse point fixed
-        const newPos = {
-            x: pointer.x - mousePointTo.x * newScale,
-            y: pointer.y - mousePointTo.y * newScale
-        };
+            const oldScale = layer.scaleX();
+            const pointer = stage.getPointerPosition();
+            if (!pointer) return null;
 
-        // Apply the new scale
-        layer.scale({ x: newScale, y: newScale });
-        this.layerGridRef.current?.scale({ x: newScale, y: newScale });
-        this.layerAxisRef.current?.scale({ x: newScale, y: newScale });
+            const event = e.evt as WheelEvent;
+            let newScale = oldScale * (event.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
 
-        // Update all layers' positions
-        layer.position(newPos);
-        this.layerGridRef.current?.position(newPos);
-        this.layerAxisRef.current?.position(newPos);
-
-        this.DAG.forEach((node, key) => {
-            if ('x' in node.type) {
-                ((node as ShapeNode).node as Konva.Circle).radius(node.type.props.radius * BASE_SPACING / newScale);
+            if (newScale >= 1000 || newScale <= 0.002) {
+                newScale = oldScale;
             }
+
+            // Calculate the mouse position relative to the layer
+            const mousePointTo = {
+                x: (pointer.x - layer.x()) / oldScale,
+                y: (pointer.y - layer.y()) / oldScale
+            };
+
+            // Calculate the new position to keep the mouse point fixed
+            const newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale
+            };
+
+            // Apply the new scale
+            layer.scale({ x: newScale, y: newScale });
+            this.layerGridRef.current?.scale({ x: newScale, y: newScale });
+            this.layerAxisRef.current?.scale({ x: newScale, y: newScale });
+
+            // Update all layers' positions
+            layer.position(newPos);
+            this.layerGridRef.current?.position(newPos);
+            this.layerAxisRef.current?.position(newPos);
+
+            this.DAG.forEach((node, key) => {
+                if ('x' in node.type) {
+                    (node.node as Konva.Circle).radius(node.type.props.radius * BASE_SPACING / newScale);
+                }
+
+                node.node.strokeWidth(node.type.props.line_size / newScale);
+                node.node.hitStrokeWidth(2 / newScale);
+                node.node.dash(createDashArray({
+                    dash_size: node.type.props.line_style.dash_size / newScale,
+                    dot_size: node.type.props.line_style.dot_size ?? 0 / newScale,
+                    gap_size: node.type.props.line_style.gap_size / newScale
+                }))
+            })
+
+            // Batch draw all layers
+            layer.batchDraw();
+            this.layerGridRef.current?.batchDraw();
+            this.layerAxisRef.current?.batchDraw();
+            this.layerUnchangeVisualRef.current?.batchDraw();
+
+            let numLoops = this.state.numLoops + (newScale > oldScale ? -1 : (newScale < oldScale ? 1 : 0));
+            let calcNextInterval = (interval: number, forward: boolean) => {
+                let multiplier = [2, 2.5, 2];
+                let base = 1;
+                if (interval >= base) {
+                    let current = base;
+                    let i = 0;
+                    while (current < interval) {
+                        current *= multiplier[i];
+                        i = (i + 1) % multiplier.length;
+                    }
+                    
+                    return (forward ? current * multiplier[i] : current / multiplier[(i - 1 + multiplier.length) % multiplier.length]);
+                }
+
+                else {
+                    let current = base;
+                    let i = 2;
+                    while (current > interval) {
+                        current /= multiplier[i];
+                        i = ((i - 1) % multiplier.length + multiplier.length) % multiplier.length;
+                    }
+
+                    return (forward ? current * multiplier[(i + 1) % multiplier.length] : current / multiplier[i]);
+                }
+            }
+
+            let axisTickInterval = this.state.axisTickInterval;
+            if (numLoops === 8 || numLoops === -8) {
+                axisTickInterval = calcNextInterval(axisTickInterval, numLoops > 0);
+                numLoops = 0;
+            }
+
+            this.setState({
+                numLoops: numLoops,
+                axisTickInterval: axisTickInterval,
+                zoom_level: newScale,
+                spacing: BASE_SPACING,
+            });
         })
-
-        // Batch draw all layers
-        layer.batchDraw();
-        this.layerGridRef.current?.batchDraw();
-        this.layerAxisRef.current?.batchDraw();
-        this.layerUnchangeVisualRef.current?.batchDraw();
-
-        let numLoops = this.state.numLoops + (newScale > oldScale ? -1 : (newScale < oldScale ? 1 : 0));
-        let calcNextInterval = (interval: number, forward: boolean) => {
-            let multiplier = [2, 2.5, 2];
-            let base = 1;
-            if (interval >= base) {
-                let current = base;
-                let i = 0;
-                while (current < interval) {
-                    current *= multiplier[i];
-                    i = (i + 1) % multiplier.length;
-                }
-                
-                return (forward ? current * multiplier[i] : current / multiplier[(i - 1 + multiplier.length) % multiplier.length]);
-            }
-
-            else {
-                let current = base;
-                let i = 2;
-                while (current > interval) {
-                    current /= multiplier[i];
-                    i = ((i - 1) % multiplier.length + multiplier.length) % multiplier.length;
-                }
-
-                return (forward ? current * multiplier[(i + 1) % multiplier.length] : current / multiplier[i]);
-            }
-        }
-
-        let axisTickInterval = this.state.axisTickInterval;
-        if (numLoops === 8 || numLoops === -8) {
-            axisTickInterval = calcNextInterval(axisTickInterval, numLoops > 0);
-            numLoops = 0;
-        }
-
-        this.setState({
-            numLoops: numLoops,
-            axisTickInterval: axisTickInterval,
-            zoom_level: newScale,
-            spacing: BASE_SPACING,
-        });
+        
     }
 
     private handleMouseOver = (e: Konva.KonvaEventObject<MouseEvent>) => {
-        if (!this.stageRef.current || !this.layerMathObjectRef.current) return;
-
-        const pos = this.stageRef.current.getPointerPosition();
-        const shapeUnderCursor = pos ? this.stageRef.current.getAllIntersections(pos) : null;
-
-        if (shapeUnderCursor && shapeUnderCursor.length > 0) {
-            this.stageRef.current.container().style.cursor = 'default';
-            this.DAG.forEach((node, key) => {
-                if (shapeUnderCursor.find(node => node.id() === key)) {
-                    if (key.includes('point-')) {
-                        node.node.shadowColor('gray');
-                        node.node.shadowBlur((node.node as Konva.Circle).radius() * 2.5);
-                        node.node.shadowOpacity(1.5);
-                    }
-                    
-                    else {
-                        const strokeWidth = node.type.props.line_size / this.state.zoom_level;
-                        node.node.strokeWidth(strokeWidth * 2);
-                    }
-                }
-
-                else {
-                    if (key.includes('point-')) {
-                        node.node.shadowBlur(0);
-                    }
-                    
-                    else {
-                        const strokeWidth = node.type.props.line_size / this.state.zoom_level;
-                        node.node.strokeWidth(strokeWidth);
-                    }
-                }
-
-                node.node.getLayer()?.batchDraw();
-            });
+        // Cancel any pending hover animation frame
+        if (this.hoverFrameId) {
+            cancelAnimationFrame(this.hoverFrameId);
         }
-        
-        else {
-            this.DAG.forEach((node, key) => {
-                if (key.includes('point-')) {
-                    node.node.shadowBlur(0);
-                }
-                
-                else {
-                    const strokeWidth = node.type.props.line_size / this.state.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
-                }
 
-                node.node.getLayer()?.batchDraw();
-            });
-
-            this.stageRef.current.container().style.cursor = 'crosshair';
-        }
+        this.hoverFrameId = requestAnimationFrame(() => {
+            if (!this.stageRef.current || !this.layerMathObjectRef.current) return;
+            const pos = this.stageRef.current.getPointerPosition();
+            if (!pos) return;
+            if (this.stageRef.current.getIntersection(pos) !== null) {
+                this.stageRef.current.container().style.cursor = 'pointer';
+            }
+            
+            else {
+                this.stageRef.current.container().style.cursor = 'crosshair';
+            }
+        });
     }
 
     private handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
         if (e.evt.button !== 0) return; // Only handle left mouse button clicks
+        if (!this.stageRef.current || !this.layerMathObjectRef.current) return;
         if (this.mode !== 'edit') {
+            const pointer = this.stageRef.current.getPointerPosition();
+            if (!pointer) return;
+            let position = {
+                x: (pointer.x - this.layerMathObjectRef.current.x()) / this.layerMathObjectRef.current.scaleX(),
+                y: (pointer.y - this.layerMathObjectRef.current.y()) / this.layerMathObjectRef.current.scaleY()
+            }
+
+            position = snapToGrid(
+                pointer,
+                BASE_SPACING,
+                this.state.axisTickInterval,
+                this.props.width / 2,
+                this.props.height / 2,
+                this.layerMathObjectRef.current!
+            )
+
+            let shapes = this.stageRef.current.getAllIntersections(pointer);
+            let children = shapes.filter(node => node.getLayer() === this.layerMathObjectRef.current || node.getLayer() === this.layerAxisRef.current);
+            let shape = children.length > 0 ? children[children.length - 1] : undefined;
+            this.createPoint(position, children);
+
+            if (shape) {
+                let pNode = this.DAG.get(shape.id());
+                if (!pNode) {
+                    let l: Line = Factory.createLine(
+                        createLineDefaultShapeProps(shape.id()),
+                        Factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            this.props.width / 2,
+                            this.props.height / 2
+                        ),
+
+                        Factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            this.props.width / 2 + (shape.id().includes('x-axis') ? 1 : 0),
+                            this.props.height / 2 + (shape.id().includes('y-axis') ? 1 : 0)
+                        ),
+                    )
+
+                    this.selectedShapes.push(l);
+                }
+                
+                else {
+                    this.selectedShapes.push(pNode.type);
+                }
+            }
+
             this.handleDrawing();
             return;
         }
 
-        if (!this.stageRef.current) return;
         this.stageRef.current.container().style.cursor = 'grabbing';
 
         if (e.target === this.stageRef.current || e.target instanceof Konva.Stage) {
@@ -512,64 +555,103 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
     }
 
     private handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-        if (!this.stageRef.current) return;
-        const pos = this.stageRef.current.getPointerPosition();
-        const shapeUnderCursor = pos ? this.stageRef.current.getIntersection(pos) : null;
-
-        if (shapeUnderCursor !== null) {
-            this.stageRef.current.container().style.cursor = 'default';
+        if (this.moveFrameId) {
+            cancelAnimationFrame(this.moveFrameId);
         }
-        
-        else {
-            this.stageRef.current.container().style.cursor = this.state.panning ? 'grabbing' : 'crosshair';
-        }
-        
-        if (this.mode !== 'edit') {
-            return;
-        }
-        
-        if (!this.state.panning) return;
 
-        if (e.target === this.stageRef.current || e.target instanceof Konva.Stage) {
-            const layer = this.layerMathObjectRef.current;
-            const stage = this.stageRef.current;
-            if (!layer || !stage) return;
+        this.moveFrameId = requestAnimationFrame(() => {
+            if (!this.stageRef.current) return null;
+            const pos = this.stageRef.current.getPointerPosition();
+            const shapesUnderCursor = pos ? this.stageRef.current.getAllIntersections(pos) : [];
+            const shapes = shapesUnderCursor.filter(node => node.getLayer() === this.layerMathObjectRef.current);
 
-            const pointer = stage.getPointerPosition();
-            if (!pointer) return;
+            if (shapesUnderCursor.length > 0) {
+                this.stageRef.current.container().style.cursor = 'default';
+            }
             
-            const dx = pointer.x - this.last_pointer.x;
-            const dy = pointer.y - this.last_pointer.y;
+            else {
+                this.stageRef.current.container().style.cursor = this.state.panning ? 'grabbing' : 'crosshair';
+            }
 
-            // Update positions for all layers
-            const updatePosition = (layer: Konva.Layer | null) => {
-                if (layer) {
-                    layer.position({
-                        x: layer.x() + dx,
-                        y: layer.y() + dy
-                    });
-                }
-            };
-
-            updatePosition(layer);
-            updatePosition(this.layerAxisRef.current);
-            updatePosition(this.layerGridRef.current);
-
-            this.last_pointer = {
-                x: pointer.x,
-                y: pointer.y
-            };
-
-            // Batch draw all layers
-            layer.batchDraw();
-            this.layerAxisRef.current?.batchDraw();
-            this.layerGridRef.current?.batchDraw();
-            this.layerUnchangeVisualRef.current?.batchDraw();
-
-            this.setState({
-                dummy: !this.state.dummy
+            const ids: string[] = [];
+            shapes.forEach(node => {
+                ids.push(node.id());
             });
-        }
+
+            this.DAG.forEach((node, key) => {
+                if (ids.includes(node.id)) {
+                    if (node.id.includes('point-')) {
+                        (node.node as Konva.Circle).shadowColor('gray');
+                        (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
+                        (node.node as Konva.Circle).shadowOpacity(1.5);
+                    }
+                    
+                    else {
+                        const strokeWidth = node.type.props.line_size / this.state.zoom_level;
+                        node.node.strokeWidth(strokeWidth * 2);
+                    }
+                }
+
+                else {
+                    if (node.id.includes('point-')) {
+                        (node.node as Konva.Circle).shadowBlur(0);
+                        (node.node as Konva.Circle).shadowOpacity(0);
+                    }
+                    
+                    else {
+                        const strokeWidth = node.type.props.line_size / this.state.zoom_level;
+                        node.node.strokeWidth(strokeWidth);
+                    }
+                }
+            })
+            
+            if (this.mode !== 'edit') {
+                return;
+            }
+            
+            if (!this.state.panning) return;
+
+            if (e.target === this.stageRef.current || e.target instanceof Konva.Stage) {
+                const layer = this.layerMathObjectRef.current;
+                const stage = this.stageRef.current;
+                if (!layer || !stage) return;
+
+                const pointer = stage.getPointerPosition();
+                if (!pointer) return;
+                
+                const dx = pointer.x - this.last_pointer.x;
+                const dy = pointer.y - this.last_pointer.y;
+
+                // Update positions for all layers
+                const updatePosition = (layer: Konva.Layer | null) => {
+                    if (layer) {
+                        layer.position({
+                            x: layer.x() + dx,
+                            y: layer.y() + dy
+                        });
+                    }
+                };
+
+                updatePosition(layer);
+                updatePosition(this.layerAxisRef.current);
+                updatePosition(this.layerGridRef.current);
+
+                this.last_pointer = {
+                    x: pointer.x,
+                    y: pointer.y
+                };
+
+                // Batch draw all layers
+                layer.batchDraw();
+                this.layerAxisRef.current?.batchDraw();
+                this.layerGridRef.current?.batchDraw();
+                this.layerUnchangeVisualRef.current?.batchDraw();
+
+                this.setState({
+                    dummy: !this.state.dummy
+                });
+            }
+        })
     }
 
     private handleMouseUp = () => {
@@ -1510,13 +1592,13 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         let shape = shapeNode.type;
         if (shape.type === 'Circle') {
             let p1 = {
-                x: shapeNode.node.x(),
-                y: shapeNode.node.y() + (shapeNode.node as Konva.Circle).radius()
+                x: shapeNode.node.getAbsolutePosition().x,
+                y: shapeNode.node.getAbsolutePosition().y + (shapeNode.node as Konva.Circle).radius()
             };
 
             let p2 = {
-                x: shapeNode.node.x(),
-                y: shapeNode.node.y()
+                x: shapeNode.node.getAbsolutePosition().x,
+                y: shapeNode.node.getAbsolutePosition().y
             };
 
             x = (p1.x - p2.x) * Math.cos(Math.PI / 6) - (p1.y - p2.y) * Math.sin(Math.PI / 6) + p2.x
@@ -1524,36 +1606,37 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         }
 
         else if (['Intersection', 'Point'].includes(shape.type)) {
-            x = shapeNode.node.x();
-            y = shapeNode.node.y() + (shapeNode.node as Konva.Circle).radius();
+            x = shapeNode.node.getAbsolutePosition().x;
+            y = shapeNode.node.getAbsolutePosition().y + (shapeNode.node as Konva.Circle).radius();
         }
 
         else if (['Segment', 'Ray', 'Vector', 'Line'].includes(shape.type)) {
             let [p1_x, p1_y] = [(shapeNode.node as Konva.Line).points()[0], (shapeNode.node as Konva.Line).points()[1]];
             let [p2_x, p2_y] = [(shapeNode.node as Konva.Line).points()[2], (shapeNode.node as Konva.Line).points()[3]];
 
-            x = (p1_x + p2_x) / 2;
-            y = (p1_y + p2_y) / 2;
+            let abs1 = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: p1_x, y: p1_y});
+            let abs2 = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: p2_x, y: p2_y});
+
+            x = (abs1.x + abs2.x) / 2;
+            y = (abs1.y + abs2.y) / 2;
         }
 
         else if (shape.type === 'Polygon') {
-            (shapeNode.node as Konva.Line).points().forEach((coor, idx) => {
-                if (idx % 2 === 0) {
-                    x += coor;
-                }
-
-                else {
-                    y += coor;
-                }
-            })
+            let points = (shapeNode.node as Konva.Line).points();
+            for (let i = 0; i < points.length; i += 2) {
+                let xP = points[i], yP = points[i + 1];
+                let abs = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: xP, y: yP});
+                x += abs.x;
+                y += abs.y
+            }
 
             x /= (shape as Polygon).points.length;
             y /= (shape as Polygon).points.length;
         }
 
         else if (shape.type === 'Angle') {
-            x = shapeNode.node.x();
-            y = shapeNode.node.y();
+            x = shapeNode.node.getAbsolutePosition().x;
+            y = shapeNode.node.getAbsolutePosition().y;
         }
 
         let text = new Konva.Text(
@@ -1613,37 +1696,45 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
             if (shape.type === 'Circle') {
                 let r = (shapeNode.node as Konva.Circle).radius();
-                let cx = shapeNode.node.x();
-                let cy = shapeNode.node.y();
+                let cx = shapeNode.node.getAbsolutePosition().x;
+                let cy = shapeNode.node.getAbsolutePosition().y;
                 let angle = Math.PI / 6;
                 newX = cx + r * Math.cos(angle);
                 newY = cy - r * Math.sin(angle);
             }
             
-            else if (shape.type === 'Point') {
-                newX = shapeNode.node.x();
-                newY = shapeNode.node.y();
+            else if (['Intersection', 'Point'].includes(shape.type)) {
+                newX = shapeNode.node.getAbsolutePosition().x;
+                newY = shapeNode.node.getAbsolutePosition().y;
             }
             
             else if (['Segment', 'Ray', 'Vector', 'Line'].includes(shape.type)) {
-                let pts = (shapeNode.node as Konva.Line).points();
-                newX = (pts[0] + pts[2]) / 2;
-                newY = (pts[1] + pts[3]) / 2;
+                let [p1_x, p1_y] = [(shapeNode.node as Konva.Line).points()[0], (shapeNode.node as Konva.Line).points()[1]];
+                let [p2_x, p2_y] = [(shapeNode.node as Konva.Line).points()[2], (shapeNode.node as Konva.Line).points()[3]];
+
+                let abs1 = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: p1_x, y: p1_y});
+                let abs2 = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: p2_x, y: p2_y});
+
+                newX = (abs1.x + abs2.x) / 2;
+                newY = (abs1.y + abs2.y) / 2;
             }
             
             else if (shape.type === 'Polygon') {
                 let pts = (shapeNode.node as Konva.Line).points();
                 for (let i = 0; i < pts.length; i += 2) {
-                    newX += pts[i];
-                    newY += pts[i + 1];
+                    let xP = pts[i], yP = pts[i + 1];
+                    let abs = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: xP, y: yP});
+                    newX += abs.x;
+                    newY += abs.y
                 }
+
                 newX /= pts.length / 2;
                 newY /= pts.length / 2;
             }
 
             else if (shape.type === 'Angle') {
-                newX = shapeNode.node.x();
-                newY = shapeNode.node.y();
+                newX = shapeNode.node.getAbsolutePosition().x;
+                newY = shapeNode.node.getAbsolutePosition().y;
             }
 
             let dx = position.x - newX;
@@ -1668,35 +1759,48 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             let shape = shapeNode.type;
             let shapeX = 0, shapeY = 0;
 
-            if (shape.type === 'Point') {
-                shapeX = shapeNode.node.x();
-                shapeY = shapeNode.node.y();
+            if (['Intersection', 'Point'].includes(shape.type)) {
+                shapeX = shapeNode.node.getAbsolutePosition().x;
+                shapeY = shapeNode.node.getAbsolutePosition().y;
             }
             
-            else if (['Segment', 'Line', 'Ray', 'Vector'].includes(shape.type)) {
-                const pts = (shapeNode.node as Konva.Line).points();
-                shapeX = (pts[0] + pts[2]) / 2;
-                shapeY = (pts[1] + pts[3]) / 2;
+            if (shape.type === 'Circle') {
+                shapeX = shapeNode.node.getAbsolutePosition().x;
+                shapeY = shapeNode.node.getAbsolutePosition().y;
             }
             
-            else if (shape.type === 'Circle') {
-                shapeX = shapeNode.node.x();
-                shapeY = shapeNode.node.y();
+            else if (['Intersection', 'Point'].includes(shape.type)) {
+                shapeX = shapeNode.node.getAbsolutePosition().x;
+                shapeY = shapeNode.node.getAbsolutePosition().y;
             }
             
-            else if (shapeNode.type.type === 'Polygon') {
-                const pts = (shapeNode.node as Konva.Line).points();
+            else if (['Segment', 'Ray', 'Vector', 'Line'].includes(shape.type)) {
+                let [p1_x, p1_y] = [(shapeNode.node as Konva.Line).points()[0], (shapeNode.node as Konva.Line).points()[1]];
+                let [p2_x, p2_y] = [(shapeNode.node as Konva.Line).points()[2], (shapeNode.node as Konva.Line).points()[3]];
+
+                let abs1 = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: p1_x, y: p1_y});
+                let abs2 = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: p2_x, y: p2_y});
+
+                shapeX = (abs1.x + abs2.x) / 2;
+                shapeY = (abs1.y + abs2.y) / 2;
+            }
+            
+            else if (shape.type === 'Polygon') {
+                let pts = (shapeNode.node as Konva.Line).points();
                 for (let i = 0; i < pts.length; i += 2) {
-                    shapeX += pts[i];
-                    shapeY += pts[i + 1];
+                    let xP = pts[i], yP = pts[i + 1];
+                    let abs = (shapeNode.node as Konva.Line).getAbsoluteTransform().copy().point({x: xP, y: yP});
+                    shapeX += abs.x;
+                    shapeY += abs.y
                 }
-                shapeX /= pts.length;
-                shapeY /= pts.length;
+
+                shapeX /= pts.length / 2;
+                shapeY /= pts.length / 2;
             }
 
             else if (shape.type === 'Angle') {
-                shapeX = shapeNode.node.x();
-                shapeY = shapeNode.node.y();
+                shapeX = shapeNode.node.getAbsolutePosition().x;
+                shapeY = shapeNode.node.getAbsolutePosition().y;
             }
 
             const labelX = text.x();
@@ -1874,176 +1978,11 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         return base + sub;
     }
 
-    private handlePointClick = () => {
-        this.mode = 'point';
-    }
-
-    private handleLineClick = () => {
-        this.mode = 'line';
-    }
-
-    private handleSegmentClick = () => {
-        this.mode = 'segment';
-    }
-
-    private handleVectorClick = () => {
-        this.mode = 'vector';
-    }
-
-    private handlePolygonClick = () => {
-        this.mode = 'polygon';
-    }
-
-    private handleCircleClick = () => {
-        this.mode = 'circle';
-    }
-
-    private handleRayClick = () => {
-        this.mode = 'ray';
-    }
-
-    private handleEditClick = () => {
-        this.mode = 'edit';
-    }
-
-    private handleDeleteClick = () => {
-        this.mode = 'delete';
-    }
-
-    private handleAngleClick = () => {
-        this.mode = 'angle';
-    }
-
-    private handleClearClick = () => {
-        this.setState({
-            shapes: [],
-            polygonIndex: 0
-        });
-
-        this.selectedPoints = [];
-        this.selectedShapes = [];
-        this.DAG.clear();
-        this.mode = 'edit';
-        this.label_used = [];
-        this.historyStack.push(clone(this.state, this.DAG, this.selectedPoints, this.selectedShapes, this.label_used));
-
-        if (this.historyStack.length >= 100) {
-            this.historyStack.splice(0, 1);
-        }
-
-        this.futureStack = [];
-    }
-
-    private handleUndoClick = () => {
-        if (this.historyStack.length > 1) {
-            this.futureStack.push(this.historyStack.pop()!);
-            const prevState = this.historyStack[this.historyStack.length - 1];
-            const copyState = clone(prevState.state, prevState.dag, prevState.selectedPoints, prevState.selectedShapes, prevState.label_used);
-
-            this.layerMathObjectRef.current?.destroyChildren();
-
-            this.DAG = copyState.dag;
-            this.DAG.forEach((node, key) => {
-                node.node.destroy();
-                let tmpNode = this.createKonvaShape(node.type);
-                if (tmpNode) {
-                    node.node = tmpNode;
-                    this.layerMathObjectRef.current?.add(node.node);
-                }
-            });
-
-            this.selectedPoints = copyState.selectedPoints;
-            this.selectedShapes = copyState.selectedShapes;
-            this.label_used = copyState.label_used;
-            this.setState(copyState.state);
-            this.mode = 'edit';
-        }
-
-        else {
-            const prevState = this.historyStack[0];
-            const copyState = clone(prevState.state, prevState.dag, prevState.selectedPoints, prevState.selectedShapes, prevState.label_used);
-
-            this.layerMathObjectRef.current?.destroyChildren();
-
-            this.DAG = copyState.dag;
-            this.DAG.forEach((node, key) => {
-                node.node.destroy();
-                let tmpNode = this.createKonvaShape(node.type);
-                if (tmpNode) {
-                    node.node = tmpNode;
-                    this.layerMathObjectRef.current?.add(node.node);
-                }
-            });
-
-            this.selectedPoints = copyState.selectedPoints;
-            this.selectedShapes = copyState.selectedShapes;
-            this.label_used = copyState.label_used;
-            this.setState(copyState.state);
-            this.mode = 'edit';
-        }
-    }
-
-    private handleRedoClick = () => {
-        if (this.futureStack.length > 0) {
-            const nextState = this.futureStack.pop()!;
-            this.historyStack.push(nextState);
-            if (this.historyStack.length >= 100) {
-                this.historyStack.splice(0, 1);
-            }
-
-            const copyState = clone(nextState.state, nextState.dag, nextState.selectedPoints, nextState.selectedShapes, nextState.label_used);
-
-            this.layerMathObjectRef.current?.destroyChildren();
-
-            this.DAG = copyState.dag;
-            this.DAG.forEach((node, key) => {
-                node.node.destroy();
-                let tmpNode = this.createKonvaShape(node.type);
-                if (tmpNode) {
-                    node.node = tmpNode;
-                    this.layerMathObjectRef.current?.add(node.node);
-                }
-            });
-
-            this.selectedPoints = copyState.selectedPoints;
-            this.selectedShapes = copyState.selectedShapes;
-            this.label_used = copyState.label_used;
-            this.setState(copyState.state);
-            this.mode = 'edit';
-        }
-    }
-
-    private handleDrawing = () => {
-        if (!this.stageRef.current || !this.layerMathObjectRef.current) return;
-        const pointer = this.stageRef.current.getPointerPosition();
-        if (!pointer) return;
-
-        let position = {
-            x: (pointer.x - this.layerMathObjectRef.current.x()) / this.layerMathObjectRef.current.scaleX(),
-            y: (pointer.y - this.layerMathObjectRef.current.y()) / this.layerMathObjectRef.current.scaleY()
-        }
-
-        position = snapToGrid(
-            pointer,
-            BASE_SPACING,
-            this.state.axisTickInterval,
-            this.props.width / 2,
-            this.props.height / 2,
-            this.layerMathObjectRef.current!
-        )
-
-        let shapes = this.stageRef.current.getAllIntersections(pointer);
-        let children = shapes.filter(node => node.getLayer() === this.layerMathObjectRef.current || node.getLayer() === this.layerAxisRef.current);
-        let shape = children.length > 0 ? children[children.length - 1] : undefined
-        if (['angle'].includes(this.mode) && (shape && shape.id().includes('point-'))) {
-            // Remove the mouseover handler
-            this.DAG.forEach((node, key) => {
-                if (!key.includes('point-')) {
-                    node.node.off('mouseover');
-                }
-            })
-        }
-
+    private createPoint = (
+        position: {x: number, y: number},
+        children: Konva.Shape[]
+    ): void => {
+        let shape = children.length > 0 ? children[children.length - 1] : undefined;
         let scale: number | undefined = undefined;
         let rotFactor: {degree: number, CCW: boolean} | undefined = undefined;
         const snapToShape = (shape: Konva.Shape | undefined, pos: {x: number, y: number}): void => {
@@ -2085,7 +2024,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                             }
 
                             rotFactor = {
-                                degree: angleFromXAxis({x: dx, y: dy}),
+                                degree: cleanAngle(angleFromXAxis({x: dx, y: dy})),
                                 CCW: true 
                             }
                         }
@@ -2197,168 +2136,292 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
         }
 
         children.reverse().slice(-2).forEach(s => snapToShape(s, position));
-        const createPoint = (): void => {
-            let found: boolean = false;
-            this.DAG.forEach((node) => {
-                if (node.type.type === 'Point') {
-                    let p: Point = node.type as Point
-                    // If the mouse is within 2 pixels of the point, don't create a new point
-                    if (Math.sqrt(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 5) {
-                        found = true;
-                        this.selectedPoints.push(p);
-                        return;
-                    }
+        let found: boolean = false;
+        this.DAG.forEach((node) => {
+            if (node.type.type === 'Point') {
+                let p: Point = node.type as Point
+                // If the mouse is within 2 pixels of the point, don't create a new point
+                if (Math.sqrt(Math.pow(p.x - position.x, 2) + Math.pow(p.y - position.y, 2)) <= 5) {
+                    found = true;
+                    this.selectedPoints.push(p);
+                    return;
                 }
-            })
-
-            if (found) return;
-            let label = this.getExcelLabel('A', 0);
-            let index = 0;
-            while (this.label_used.includes(label)) {
-                index++;
-                label = this.getExcelLabel('A', index);
             }
+        })
 
-            this.label_used.push(label);
-            let point = Factory.createPoint(
-                createPointDefaultShapeProps(label),
-                position.x,
-                position.y
-            );
-
-            let pNode = this.createKonvaShape(point);
-            if (children.length > 1) {
-                pNode.draggable(false);
-                point.type = 'Intersection';
-            }
-
-            else if (shape) {
-                pNode.off('dragmove');
-                pNode.on('dragmove', (e) => {
-                    if (this.mode !== 'edit' || !this.stageRef.current) {
-                        return;
-                    }
-
-                    e.cancelBubble = true;
-                    let stage = e.target.getStage();
-                    let pos = {
-                        x: 0,
-                        y: 0
-                    }
-
-                    if (stage) {
-                        stage.container().style.cursor = 'pointer';
-                        pos = stage.getPointerPosition() ?? pos;
-                    }
-
-                    const updateFn = (node: ShapeNode): ShapeNode => {
-                        snapToShape(shape, pos);
-                        node.node.position(position);
-                        point.x = position.x;
-                        point.y = position.y;
-
-                        if (this.layerUnchangeVisualRef.current) {
-                            this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
-                                let id = childNode.id();
-                                if (id === `label-${pNode.id()}`) {
-                                    childNode.setAttrs(this.createLabel(node).getAttrs());
-                                    return;
-                                }
-                            })
-                        }
-
-                        return node;
-                    };
-
-                    this.updateAndPropagate(pNode.id(), updateFn);
-                })
-            }
-
-            this.DAG.set(point.props.id, {
-                id: point.props.id,
-                type: point,
-                node: pNode,
-                dependsOn: children.slice(-2).reverse().map(node => node.id()),
-                scaleFactor: scale,
-                rotationFactor: rotFactor
-            });
-
-            this.selectedPoints.push(point);
-            this.setState({
-                shapes: [...this.state.shapes, point.props.id]
-            })
-        };
-
-        if (this.mode === 'point') {
-            createPoint();
-            this.selectedPoints = [];
+        if (found) return;
+        let label = this.getExcelLabel('A', 0);
+        let index = 0;
+        while (this.label_used.includes(label)) {
+            index++;
+            label = this.getExcelLabel('A', index);
         }
 
-        else if (['line', 'segment', 'vector', 'ray'].includes(this.mode)) {
-            createPoint();
+        this.label_used.push(label);
+        let point = Factory.createPoint(
+            createPointDefaultShapeProps(label),
+            position.x,
+            position.y
+        );
+
+        let pNode = this.createKonvaShape(point);
+        if (children.length > 1) {
+            pNode.draggable(false);
+            point.type = 'Intersection';
+        }
+
+        else if (shape) {
+            pNode.off('dragmove');
+            pNode.on('dragmove', (e) => {
+                if (this.mode !== 'edit' || !this.stageRef.current) {
+                    return;
+                }
+
+                e.cancelBubble = true;
+                let stage = e.target.getStage();
+                let pos = {
+                    x: 0,
+                    y: 0
+                }
+
+                if (stage) {
+                    stage.container().style.cursor = 'pointer';
+                    pos = stage.getPointerPosition() ?? pos;
+                }
+
+                const updateFn = (node: ShapeNode): ShapeNode => {
+                    snapToShape(shape, pos);
+                    node.node.position(position);
+                    point.x = position.x;
+                    point.y = position.y;
+
+                    if (this.layerUnchangeVisualRef.current) {
+                        this.layerUnchangeVisualRef.current.getChildren().forEach((childNode, idx) => {
+                            let id = childNode.id();
+                            if (id === `label-${pNode.id()}`) {
+                                childNode.setAttrs(this.createLabel(node).getAttrs());
+                                return;
+                            }
+                        })
+                    }
+
+                    return node;
+                };
+
+                this.updateAndPropagate(pNode.id(), updateFn);
+            })
+        }
+
+        this.DAG.set(point.props.id, {
+            id: point.props.id,
+            type: point,
+            node: pNode,
+            dependsOn: children.slice(-2).reverse().map(node => node.id()),
+            scaleFactor: scale,
+            rotationFactor: rotFactor
+        });
+
+        this.selectedPoints.push(point);
+        this.selectedShapes.push(point);
+        this.lastFailedState = {
+            selectedPoints: [...this.selectedPoints],
+            selectedShapes: [...this.selectedShapes]
+        }
+
+        this.setState({
+            shapes: [...this.state.shapes, point.props.id]
+        })
+    }
+
+    private handlePointClick = () => {
+        this.mode = 'point';
+    }
+
+    private handleLineClick = () => {
+        this.mode = 'line';
+    }
+
+    private handleSegmentClick = () => {
+        this.mode = 'segment';
+    }
+
+    private handleVectorClick = () => {
+        this.mode = 'vector';
+    }
+
+    private handlePolygonClick = () => {
+        this.mode = 'polygon';
+    }
+
+    private handleCircleClick = () => {
+        this.mode = 'circle';
+    }
+
+    private handleRayClick = () => {
+        this.mode = 'ray';
+    }
+
+    private handleEditClick = () => {
+        this.mode = 'edit';
+    }
+
+    private handleDeleteClick = () => {
+        this.mode = 'delete';
+    }
+
+    private handleAngleClick = () => {
+        this.mode = 'angle';
+    }
+
+    private handleClearClick = () => {
+        this.setState({
+            shapes: [],
+            polygonIndex: 0
+        });
+
+        this.selectedPoints = [];
+        this.selectedShapes = [];
+        this.DAG.clear();
+        this.mode = 'edit';
+        this.label_used = [];
+        this.historyStack.push(clone(this.state, this.DAG, this.selectedPoints, this.selectedShapes, this.label_used));
+
+        if (this.historyStack.length >= 100) {
+            this.historyStack.splice(0, 1);
+        }
+
+        this.futureStack = [];
+    }
+
+    private handleUndoClick = () => {
+        if (this.lastFailedState) {
+            const dag = new Map(this.DAG);
+            let label_list: string[] = [];
+            dag.forEach((node, key) => {
+                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key) ||
+                    this.lastFailedState?.selectedShapes.find(point => point.props.id === key)
+                ) {
+                    label_list.push(`label-${node.type.props.id}`)
+                    node.node.destroy();
+                    this.DAG.delete(key);
+                }
+            });
+
+            this.layerMathObjectRef.current?.batchDraw();
+            const child = this.layerUnchangeVisualRef.current?.getChildren() ? [...this.layerUnchangeVisualRef.current?.getChildren()] : [];
+            child.forEach((node) => {
+                if (label_list.includes(node.id())) {
+                    node.destroy();
+                } 
+            })
+
+            this.lastFailedState = null;
+            return;
+        }
+
+        if (this.historyStack.length > 1) {
+            this.futureStack.push(this.historyStack.pop()!);
+            const prevState = this.historyStack[this.historyStack.length - 1];
+            const copyState = clone(prevState.state, prevState.dag, prevState.selectedPoints, prevState.selectedShapes, prevState.label_used);
+
+            this.layerMathObjectRef.current?.destroyChildren();
+
+            this.DAG = copyState.dag;
+            this.DAG.forEach((node, key) => {
+                node.node.destroy();
+                let tmpNode = this.createKonvaShape(node.type);
+                node.node = tmpNode;
+                this.layerMathObjectRef.current?.add(node.node);
+            });
+
+            this.selectedPoints = copyState.selectedPoints;
+            this.selectedShapes = copyState.selectedShapes;
+            this.label_used = copyState.label_used;
+            this.setState(copyState.state);
+            this.mode = 'edit';
+        }
+
+        else {
+            const prevState = this.historyStack[0];
+            const copyState = clone(prevState.state, prevState.dag, prevState.selectedPoints, prevState.selectedShapes, prevState.label_used);
+
+            this.layerMathObjectRef.current?.destroyChildren();
+
+            this.DAG = copyState.dag;
+            this.DAG.forEach((node, key) => {
+                node.node.destroy();
+                let tmpNode = this.createKonvaShape(node.type);
+                if (tmpNode) {
+                    node.node = tmpNode;
+                    this.layerMathObjectRef.current?.add(node.node);
+                }
+            });
+
+            this.selectedPoints = copyState.selectedPoints;
+            this.selectedShapes = copyState.selectedShapes;
+            this.label_used = copyState.label_used;
+            this.setState(copyState.state);
+            this.mode = 'edit';
+        }
+    }
+
+    private handleRedoClick = () => {
+        if (this.futureStack.length > 0) {
+            const nextState = this.futureStack.pop()!;
+            this.historyStack.push(nextState);
+            if (this.historyStack.length >= 100) {
+                this.historyStack.splice(0, 1);
+            }
+
+            const copyState = clone(nextState.state, nextState.dag, nextState.selectedPoints, nextState.selectedShapes, nextState.label_used);
+
+            this.layerMathObjectRef.current?.destroyChildren();
+
+            this.DAG = copyState.dag;
+            this.DAG.forEach((node, key) => {
+                node.node.destroy();
+                let tmpNode = this.createKonvaShape(node.type);
+                if (tmpNode) {
+                    node.node = tmpNode;
+                    this.layerMathObjectRef.current?.add(node.node);
+                }
+            });
+
+            this.selectedPoints = copyState.selectedPoints;
+            this.selectedShapes = copyState.selectedShapes;
+            this.label_used = copyState.label_used;
+            this.setState(copyState.state);
+            this.mode = 'edit';
+        }
+    }
+
+    private handleDrawing = (): void => {
+        if (this.mode === 'point') {
+            this.selectedPoints = [];
+            this.selectedShapes = [];
+        }
+
+        else if (['segment', 'line', 'ray', 'vector'].includes(this.mode)) {
             if (this.selectedPoints.length === 1) {
                 return;
             }
 
-            else {
-                const [p1, p2] = this.selectedPoints;
-                if (p1 === p2) {
-                    this.selectedPoints.pop();
-                    return;
-                }
+            const [p1, p2] = this.selectedPoints;
+            if (p1 === p2) {
+                this.selectedPoints.pop();
+                return;
+            }
 
-                let label = this.getExcelLabel(this.mode === 'vector' ? 'u' : 'f', 0);
-                let index = 0;
-                while (this.label_used.includes(label)) {
-                    index++;
-                    label = this.getExcelLabel(this.mode === 'vector' ? 'u' : 'f', index);
-                }
+            let label = this.getExcelLabel(this.mode === 'vector' ? 'u' : 'f', 0);
+            let index = 0;
+            while (this.label_used.includes(label)) {
+                index++;
+                label = this.getExcelLabel(this.mode === 'vector' ? 'u' : 'f', index);
+            }
 
-                this.label_used.push(label);
-                if (this.mode === 'line') {
-                    const line: Line = Factory.createLine(
-                        createLineDefaultShapeProps(label),
-                        p1,
-                        p2
-                    )
-
-                    this.DAG.set(line.props.id, {
-                        id: line.props.id,
-                        type: line,
-                        node: this.createKonvaShape(line)!,
-                        dependsOn: [p1.props.id, p2.props.id]
-                    });
-
-                    this.setState({
-                        shapes: [...this.state.shapes, line.props.id]
-                    });
-
-                    this.selectedPoints = [];
-                }
-
-                else if (this.mode === 'segment') {
-                    const segment: Segment = {
-                        startSegment: p1,
-                        endSegment: p2,
-                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0),
-                        type: 'Segment'
-                    }
-
-                    this.DAG.set(segment.props.id, {
-                        id: segment.props.id,
-                        type: segment,
-                        node: this.createKonvaShape(segment)!,
-                        dependsOn: [p1.props.id, p2.props.id]
-                    });
-
-                    this.setState({
-                        shapes: [...this.state.shapes, segment.props.id]
-                    });
-
-                    this.selectedPoints = [];
-                }
-
-                else if (this.mode === 'vector') {
+            this.label_used.push(label);
+            switch (this.mode) {
+                case 'vector':
                     const vector: Vector = {
                         startVector: p1,
                         endVector: p2,
@@ -2377,10 +2440,29 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         shapes: [...this.state.shapes, vector.props.id],
                     });
 
-                    this.selectedPoints = [];
-                }
+                    break;
+                
+                case 'line':
+                    const line: Line = Factory.createLine(
+                        createLineDefaultShapeProps(label),
+                        p1,
+                        p2
+                    )
 
-                else if (this.mode === 'ray') {
+                    this.DAG.set(line.props.id, {
+                        id: line.props.id,
+                        type: line,
+                        node: this.createKonvaShape(line)!,
+                        dependsOn: [p1.props.id, p2.props.id]
+                    });
+
+                    this.setState({
+                        shapes: [...this.state.shapes, line.props.id]
+                    });
+
+                    break;
+                
+                case 'ray':
                     const ray: Ray = {
                         startRay: p1,
                         endRay: p2,
@@ -2399,13 +2481,83 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                         shapes: [...this.state.shapes, ray.props.id],
                     });
 
-                    this.selectedPoints = [];
+                    break;
+                
+                default:
+                    const segment: Segment = {
+                        startSegment: p1,
+                        endSegment: p2,
+                        props: createLineDefaultShapeProps(label, 0, 0, 10, 0),
+                        type: 'Segment'
+                    }
+
+                    this.DAG.set(segment.props.id, {
+                        id: segment.props.id,
+                        type: segment,
+                        node: this.createKonvaShape(segment)!,
+                        dependsOn: [p1.props.id, p2.props.id]
+                    });
+
+                    this.setState({
+                        shapes: [...this.state.shapes, segment.props.id]
+                    });
+                
+                this.selectedPoints = [];
+                this.selectedShapes = [];
+            }
+        }
+
+        else if (this.mode === 'circle') {
+            const point = this.selectedPoints[0];
+            let pNode = this.DAG.get(point.props.id);
+            pNode?.node.draggable(false);
+            let input = prompt('Enter the radius of the circle');
+            if (!input) return;
+            try {
+                const radius = math.evaluate(input);
+                if (typeof radius !== 'number' || radius <= 0) {
+                    alert('Invalid radius');
+                    pNode?.node.draggable(true);
+                    return;
                 }
+
+                let label = this.getExcelLabel('c', 0);
+                let index = 0;
+                while (this.label_used.includes(label)) {
+                    index++;
+                    label = this.getExcelLabel('c', index);
+                }
+
+                this.label_used.push(label);
+                
+                const circle: Circle = Factory.createCircle(
+                    createCircleDefaultShapeProps(label, radius, 0, 10, 0),
+                    point,
+                    radius
+                )  
+
+                this.DAG.set(circle.props.id, {
+                    id: circle.props.id,
+                    type: circle,
+                    node: this.createKonvaShape(circle)!,
+                    dependsOn: [point.props.id]
+                });
+
+                this.setState({
+                    shapes: [...this.state.shapes, circle.props.id]
+                });
+
+                this.selectedPoints = [];
+                this.selectedShapes = [];
+            }
+
+            catch (error) {
+                pNode?.node.draggable(true);
+                alert('Invalid expression for radius');
             }
         }
 
         else if (this.mode === 'polygon') {
-            createPoint();
             if (this.selectedPoints.length < 4) {
                 let points = this.selectedPoints;
                 const lastPoint = points[points.length - 1];
@@ -2488,261 +2640,77 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     });
 
                     this.selectedPoints = [];
+                    this.selectedShapes = [];
                 }
-            }
-        }
-
-        else if (this.mode === 'circle') {
-            createPoint();
-            const point = this.selectedPoints[0];
-            let pNode = this.DAG.get(point.props.id);
-            pNode?.node.draggable(false);
-            let input = prompt('Enter the radius of the circle');
-            if (!input) return;
-            try {
-                const radius = math.evaluate(input);
-                if (typeof radius !== 'number' || radius <= 0) {
-                    alert('Invalid radius');
-                    pNode?.node.draggable(true);
-                    return;
-                }
-
-                let label = this.getExcelLabel('c', 0);
-                let index = 0;
-                while (this.label_used.includes(label)) {
-                    index++;
-                    label = this.getExcelLabel('c', index);
-                }
-
-                this.label_used.push(label);
-                
-                const circle: Circle = Factory.createCircle(
-                    createCircleDefaultShapeProps(label, radius, 0, 10, 0),
-                    point,
-                    radius
-                )  
-
-                this.DAG.set(circle.props.id, {
-                    id: circle.props.id,
-                    type: circle,
-                    node: this.createKonvaShape(circle)!,
-                    dependsOn: [point.props.id]
-                });
-
-                this.setState({
-                    shapes: [...this.state.shapes, circle.props.id]
-                });
-
-                this.selectedPoints = [];
-            }
-
-            catch (error) {
-                pNode?.node.draggable(true);
-                alert('Invalid expression for radius');
             }
         }
 
         else if (this.mode === 'angle') {
-            if (!shape || (shape && shape.id().includes('point-'))) {
-                createPoint();
-                let p = this.selectedPoints.pop()!;
-                let pNode = this.DAG.get(p.props.id);
-                if (!pNode) return;
-                this.selectedShapes = this.selectedShapes.filter(item => item.props.id.includes('point-'));
-                this.selectedShapes.push(pNode.type);
-            }
+            if (this.selectedPoints.length === 0) {
+                if (this.selectedShapes.length !== 2) return;
+                // 2 lines
+                // convert them to Line
+                let [start1, end1] = operation.getStartAndEnd(this.selectedShapes[0]);
+                let [start2, end2] = operation.getStartAndEnd(this.selectedShapes[1]);
 
-            else {
-                if (this.selectedShapes.length === 0) {
-                    let pNode = this.DAG.get(shape.id());
-                    if (!pNode) {
-                        let l: Line = Factory.createLine(
-                            createLineDefaultShapeProps(shape.id()),
-                            Factory.createPoint(
-                                createPointDefaultShapeProps(''),
-                                this.props.width / 2,
-                                this.props.height / 2
-                            ),
-
-                            Factory.createPoint(
-                                createPointDefaultShapeProps(''),
-                                this.props.width / 2 + (shape.id().includes('x-axis') ? 1 : 0),
-                                this.props.height / 2 + (shape.id().includes('y-axis') ? 1 : 0)
-                            ),
-                        )
-
-                        this.selectedShapes.push(l);
-                    }
-                    
-                    else {
-                        this.selectedShapes.push(pNode.type);
-                    }
-                }
-
-                else {
-                    let tempSelected = this.selectedShapes.filter(item => item.props.id.includes('point-'));
-                    if (tempSelected.length > 0) {
-                        return;
-                    }
-
-                    else {
-                        let pNode = this.DAG.get(shape.id());
-                        if (!pNode) {
-                            // Handle Axis Arrows:
-                            let l: Line = Factory.createLine(
-                                createLineDefaultShapeProps(shape.id()),
-                                Factory.createPoint(
-                                    createPointDefaultShapeProps(''),
-                                    (shape as Konva.Arrow).points()[0],
-                                    (shape as Konva.Arrow).points()[1]
-                                ),
-
-                                Factory.createPoint(
-                                    createPointDefaultShapeProps(''),
-                                    (shape as Konva.Arrow).points()[2],
-                                    (shape as Konva.Arrow).points()[3]
-                                ),
-                            )
-
-                            this.selectedShapes.push(l);
-                        }
-
-                        else {
-                            this.selectedShapes.push(pNode.type);
-                        }
-                    }
-                }
-            }
-
-            if (this.selectedShapes.length === 2) {
-                if (this.selectedShapes[0].props.id.includes('point-')) {
-                    // All points selected
-                    if (this.selectedShapes[1] === this.selectedShapes[0]) {
-                        // Click the same point
-                        this.selectedShapes = [];
-                    }
-
-                    return;
-                }
-
-                else {
-                    // 2 lines
-                    // convert them to Line
-                    let [start1, end1] = operation.getStartAndEnd(this.selectedShapes[0]);
-                    let [start2, end2] = operation.getStartAndEnd(this.selectedShapes[1]);
-
-                    this.selectedShapes = [
-                        Factory.createLine(
-                            this.selectedShapes[0].props,
-                            Factory.createPoint(
-                                createPointDefaultShapeProps(''),
-                                start1.x,
-                                start1.y,
-                                start1.z
-                            ),
-                            Factory.createPoint(
-                                createPointDefaultShapeProps(''),
-                                end1.x,
-                                end1.y,
-                                end1.z
-                            ),
+                this.selectedShapes = [
+                    Factory.createLine(
+                        this.selectedShapes[0].props,
+                        Factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            start1.x,
+                            start1.y,
+                            start1.z
                         ),
-                        Factory.createLine(
-                            this.selectedShapes[1].props,
-                            Factory.createPoint(
-                                createPointDefaultShapeProps(''),
-                                start2.x,
-                                start2.y,
-                                start2.z
-                            ),
-                            Factory.createPoint(
-                                createPointDefaultShapeProps(''),
-                                end2.x,
-                                end2.y,
-                                end2.z
-                            ),
-                        )
-                    ]
-                    
-                    let vertex = operation.getIntersections2D(
-                        this.selectedShapes[0],
-                        this.selectedShapes[1]
+                        Factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            end1.x,
+                            end1.y,
+                            end1.z
+                        ),
+                    ),
+                    Factory.createLine(
+                        this.selectedShapes[1].props,
+                        Factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            start2.x,
+                            start2.y,
+                            start2.z
+                        ),
+                        Factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            end2.x,
+                            end2.y,
+                            end2.z
+                        ),
                     )
-
-                    let tmpVertex = Factory.createPoint(
-                        createPointDefaultShapeProps(''),
-                        vertex.length > 0? vertex[0].x : 0,
-                        vertex.length > 0? vertex[0].y : 0,
-                        vertex.length > 0? vertex[0].z : 0
-                    )
-
-                    const angleFromXAxis = (v: {x: number, y: number}) => {
-                        return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
-                    }
-
-                    let startAngle = angleFromXAxis({
-                        x: (end1.x - vertex[0].x) / math.parse('sqrt(x^2 + y^2)').evaluate({x: end1.x - vertex[0].x, y: end1.y - vertex[0].y}),
-                        y: (end1.y - vertex[0].y) / math.parse('sqrt(x^2 + y^2)').evaluate({x: end1.x - vertex[0].x, y: end1.y - vertex[0].y}),
-                    });
-
-                    let degree = operation.angleBetweenLines(
-                        this.selectedShapes[0],
-                        this.selectedShapes[1]
-                    );
-
-                    let label = this.getAngleLabel(0);
-                    let idx = 0;
-                    while (this.label_used.includes(label)) {
-                        idx++;
-                        label = this.getAngleLabel(idx);
-                    }
-
-                    this.label_used.push(label);
-
-                    let a = Factory.createAngle(
-                        createAngleDefaultShapeProps(`${label}`),
-                        tmpVertex,
-                        startAngle,
-                        degree
-                    )
-
-                    if (vertex.length === 0) {
-                        
-                    }
-
-                    this.DAG.set(a.props.id, {
-                        id: a.props.id,
-                        dependsOn: [this.selectedShapes[0].props.id, this.selectedShapes[1].props.id],
-                        type: a,
-                        node: this.drawAngle(a, a.props)!
-                    });
-
-                    this.selectedShapes = [];
-                    this.selectedPoints = [];
-
-                    this.setState({
-                        shapes: [...this.state.shapes, a.props.id]
-                    })
-                }
-            }
-
-            else if (this.selectedShapes.length === 3) {
-                let [point1, point2, point3] = [
-                    this.selectedShapes[0] as Point,
-                    this.selectedShapes[1] as Point,
-                    this.selectedShapes[2] as Point,
                 ]
+                
+                let vertex = operation.getIntersections2D(
+                    this.selectedShapes[0],
+                    this.selectedShapes[1]
+                )
+
+                let tmpVertex = Factory.createPoint(
+                    createPointDefaultShapeProps(''),
+                    vertex.length > 0? vertex[0].x : 0,
+                    vertex.length > 0? vertex[0].y : 0,
+                    vertex.length > 0? vertex[0].z : 0
+                )
 
                 const angleFromXAxis = (v: {x: number, y: number}) => {
                     return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
                 }
 
-                let startAngle = angleFromXAxis({
-                    x: (point1.x - point2.x) / math.parse('sqrt(x^2 + y^2)').evaluate({x: point1.x - point2.x, y: point1.y - point2.y}),
-                    y: (point1.y - point2.y) / math.parse('sqrt(x^2 + y^2)').evaluate({x: point1.x - point2.x, y: point1.y - point2.y}),
-                });
+                let startAngle = cleanAngle(angleFromXAxis({
+                    x: (end1.x - vertex[0].x) / math.parse('sqrt(x^2 + y^2)').evaluate({x: end1.x - vertex[0].x, y: end1.y - vertex[0].y}),
+                    y: (end1.y - vertex[0].y) / math.parse('sqrt(x^2 + y^2)').evaluate({x: end1.x - vertex[0].x, y: end1.y - vertex[0].y}),
+                }));
 
-                let angle = operation.angleBetween3Points(point1, point2, point3);
+                let degree = cleanAngle(operation.angleBetweenLines(
+                    this.selectedShapes[0],
+                    this.selectedShapes[1]
+                ));
 
                 let label = this.getAngleLabel(0);
                 let idx = 0;
@@ -2755,16 +2723,16 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
 
                 let a = Factory.createAngle(
                     createAngleDefaultShapeProps(`${label}`),
-                    point2,
+                    tmpVertex,
                     startAngle,
-                    angle
+                    degree
                 )
 
                 this.DAG.set(a.props.id, {
                     id: a.props.id,
-                    dependsOn: [this.selectedShapes[0].props.id, this.selectedShapes[1].props.id, this.selectedShapes[2].props.id],
+                    dependsOn: [this.selectedShapes[0].props.id, this.selectedShapes[1].props.id],
                     type: a,
-                    node: this.drawAngle(a, a.props)!
+                    node: this.drawAngle(a, a.props)
                 });
 
                 this.selectedShapes = [];
@@ -2774,6 +2742,97 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                     shapes: [...this.state.shapes, a.props.id]
                 })
             }
+
+            else {
+                if (this.selectedPoints.length === this.selectedShapes.length) {
+                    if (this.selectedPoints.length !== 3) return;
+
+                    let [point1, point2, point3] = [
+                        this.selectedShapes[0] as Point,
+                        this.selectedShapes[1] as Point,
+                        this.selectedShapes[2] as Point,
+                    ]
+
+                    if (point3 === point1) {
+                        this.lastFailedState = {
+                            selectedPoints: [...this.selectedPoints],
+                            selectedShapes: [...this.selectedShapes]
+                        }
+
+                        this.selectedPoints.splice(0, 1);
+                        this.selectedShapes.splice(0, 1);
+                        this.selectedPoints.pop();
+                        this.selectedShapes.pop();
+                        return;
+                    }
+
+                    else if (point3 === point2) {
+                        this.lastFailedState = {
+                            selectedPoints: [...this.selectedPoints],
+                            selectedShapes: [...this.selectedShapes]
+                        }
+
+                        this.selectedPoints.splice(1, 1);
+                        this.selectedShapes.splice(1, 1);
+                        this.selectedPoints.pop();
+                        this.selectedShapes.pop();
+                        return;
+                    }
+
+                    const angleFromXAxis = (v: {x: number, y: number}) => {
+                        return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
+                    }
+
+                    let startAngle = cleanAngle(angleFromXAxis({
+                        x: (point1.x - point2.x) / math.parse('sqrt(x^2 + y^2)').evaluate({x: point1.x - point2.x, y: point1.y - point2.y}),
+                        y: (point1.y - point2.y) / math.parse('sqrt(x^2 + y^2)').evaluate({x: point1.x - point2.x, y: point1.y - point2.y}),
+                    }));
+
+                    let angle = cleanAngle(operation.angleBetween3Points(point1, point2, point3));
+
+                    let label = this.getAngleLabel(0);
+                    let idx = 0;
+                    while (this.label_used.includes(label)) {
+                        idx++;
+                        label = this.getAngleLabel(idx);
+                    }
+
+                    this.label_used.push(label);
+
+                    let a = Factory.createAngle(
+                        createAngleDefaultShapeProps(`${label}`),
+                        point2,
+                        startAngle,
+                        angle
+                    )
+
+                    this.DAG.set(a.props.id, {
+                        id: a.props.id,
+                        dependsOn: [this.selectedShapes[0].props.id, this.selectedShapes[1].props.id, this.selectedShapes[2].props.id],
+                        type: a,
+                        node: this.drawAngle(a, a.props)
+                    });
+
+                    this.selectedShapes = [];
+                    this.selectedPoints = [];
+
+                    this.setState({
+                        shapes: [...this.state.shapes, a.props.id]
+                    })
+                }
+
+                else {
+                    if (this.selectedShapes[0].props.id.includes('point-')) {
+                        this.selectedShapes = this.selectedShapes.filter(id => id.props.id.includes('point-'));
+                        return;
+                    } 
+
+                    else {
+                        this.selectedShapes = this.selectedShapes.filter(id => !id.props.id.includes('point-'));
+                        return;
+                    }
+                }
+            }
         }
 
         this.historyStack.push(clone(this.state, this.DAG, this.selectedPoints, this.selectedShapes, this.label_used));
@@ -2782,6 +2841,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             this.historyStack.splice(0, 1);
         }
         
+        this.lastFailedState = null;
         this.futureStack = [];
     }
 
@@ -3622,7 +3682,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 Factory.createPoint(node.type.props, posC.x, posC.y)
             ]
 
-            let angle = operation.angleBetween3Points(A, B, C);
+            let angle = cleanAngle(operation.angleBetween3Points(A, B, C));
             let BA = {
                 x: A.x - B.x,
                 y: A.y - B.y
@@ -3632,7 +3692,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
             }
 
-            let startAngle = angleFromXAxis(BA);
+            let startAngle = cleanAngle(angleFromXAxis(BA));
             let parent = node.node.getParent();
             if (parent) {
                 let s = (angle !== 90) ? new Konva.Shape({
@@ -3758,7 +3818,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 ),
             )
 
-            let angle = operation.angleBetweenLines(tmpShape1, tmpShape2);
+            let angle = cleanAngle(operation.angleBetweenLines(tmpShape1, tmpShape2));
             let start = {
                 x: tmpShape1.endLine.x - tmpShape1.startLine.x,
                 y: tmpShape1.endLine.y - tmpShape1.startLine.y
@@ -3768,7 +3828,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
                 return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
             }
 
-            let startAngle = angleFromXAxis(start);
+            let startAngle = cleanAngle(angleFromXAxis(start));
             let intersection = operation.getIntersections2D(shape1.type as Line, shape2.type as Line);
             let vertex: Point | undefined = intersection.length === 0 ? undefined : 
                                             Factory.createPoint(
@@ -4016,7 +4076,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
         }
 
-        let startAngle = angleFromXAxis(MB);
+        let startAngle = cleanAngle(angleFromXAxis(MB));
 
         let arc = node.node;
         arc.position({x: M.x, y: M.y});
@@ -4701,6 +4761,7 @@ class KonvaCanvas extends React.Component<CanvasProps, GeometryState> {
             <div className="flex flex-row h-full">
                 <GeometryTool
                     width={width * 0.25}
+                    height={height * 0.74}
                     onPointClick={this.handlePointClick}
                     onLineClick={this.handleLineClick}
                     onSegmentClick={this.handleSegmentClick}

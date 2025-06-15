@@ -1195,6 +1195,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             <div className="flex flex-row h-full">
                 <GeometryTool3D 
                     width={width * 0.3}
+                    height={height * 0.74}
                     onPointClick={this.handlePointClick}
                     onLineClick={this.handleLineClick}
                     onSegmentClick={this.handleSegmentClick}
