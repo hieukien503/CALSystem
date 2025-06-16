@@ -19,7 +19,7 @@ const Header = () => {
                         3D Geometry
                     </h1>
                     <main className="outer-main">
-                        <div className="inner-main text-center text-gray-600 text-xl">
+                        <div className="inner-main text-center text-gray-600 text-xl flex-grow">
                             <ThreeDCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' />
                         </div>
                     </main>
@@ -34,7 +34,7 @@ const Header = () => {
                         2D Geometry
                     </h1>
                     <main className="outer-main">
-                        <div className="inner-main text-center text-gray-600 text-xl">
+                        <div className="inner-main text-center text-gray-600 text-xl flex-grow">
                             <KonvaCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' />
                         </div>
                     </main>

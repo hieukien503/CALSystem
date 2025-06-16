@@ -135,7 +135,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             zoom_level: 1,
             panning: false,
             dummy: false,
-            polygonIndex: 0
+            polygonIndex: 0,
+            isResize: false,
+            toolWidth: 280
         }
 
         this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -1201,7 +1203,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     onSegmentClick={this.handleSegmentClick}
                     onVectorClick={this.handleVectorClick}
                     onPolygonClick={this.handlePolygonClick}
-                    onCircleClick={this.handleCircleClick}
+                    onCircleRadiusClick={this.handleCircleClick}
+                    onLengthClick={this.handleClearClick}
+                    onAreaClick={this.handleClearClick}
                     onRayClick={this.handleRayClick}
                     onEditClick={this.handleEditClick}
                     onDeleteClick={this.handleDeleteClick}

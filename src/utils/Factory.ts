@@ -66,6 +66,7 @@ export const createCircle = (props: GeometryShape.ShapeProps, center: GeometrySh
         type: 'Circle'
     }
 
+    c.area = Math.pow(radius, 2) * Math.PI;
     return c;
 }
 

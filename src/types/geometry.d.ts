@@ -18,28 +18,15 @@ export interface Shape3D extends BaseShape {
 export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
                         'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'InternalAngleBisector' |
                         'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' | 'Median' |
-                        'ParallelLine' | 'Circle3Point' | 'Incircle3Point' | 'SemiCircle' | 'Circle2Point' | 'Angle' |
+                        'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' | 'Circle2Point' | 'Angle' |
                         'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' |
-                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle';
+                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' | 'RegularPolygon';
 
 export interface Angle extends BaseShape {
     // Use degree for angle
     vertex?: Point;
     startAngle: number;
     degree: number;
-}
-
-export interface Enlarge extends BaseShape {
-    object: Shape;
-    center: Point;
-    scaleFactor: number;
-}
-
-export interface Rotation extends BaseShape {
-    object: Shape;
-    center: Line | Segment | Ray | Point;
-    radian: number;
-    CCW: boolean;
 }
 
 export interface SemiCircle extends BaseShape {
@@ -85,6 +72,7 @@ export interface Circle extends Shape2D {
     centerC: Point;
     radius: number;
     normal?: Vector;
+    area?: number;
 }
 
 // 3D Shapes
@@ -250,4 +238,10 @@ export interface GeometryState {
 
     /** Index for buttons */
     polygonIndex: number;
+
+    /** Tool resizes or not */
+    isResize: boolean;
+
+    /** Tool width */
+    toolWidth: number;
 }
