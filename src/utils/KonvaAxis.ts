@@ -38,7 +38,7 @@ export class KonvaAxis {
         let layerPosition = layer.position();
         // Calculate visible area based on layer position and scale
         const visibleLeft = -layerPosition.x / scale;
-        const visibleRight = (0.75 * width - layerPosition.x) / scale;
+        const visibleRight = (width - layerPosition.x) / scale;
         const visibleTop = -layerPosition.y / scale;
         const visibleBottom = (height - layerPosition.y) / scale;
 

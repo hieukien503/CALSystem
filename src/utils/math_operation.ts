@@ -44,7 +44,7 @@ const symbolicACos = (num: number): number => {
     return math.parse('acos(x)').evaluate({x: num});
 }
 
-export const isColinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
+export const isCollinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
     const AB = {
         x: B.x - A.x,
         y: B.y - A.y,
@@ -1045,7 +1045,7 @@ export const midPoint = (shape1: GeometryShape.Point, shape2: GeometryShape.Poin
 }
 
 export const centroid = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('The points are collinear');
     }
 
@@ -1068,7 +1068,7 @@ export const getArea = (shape: GeometryShape.Polygon) => {
 }
 
 export const orthocenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('The points are collinear');
     }
     const AB = {
@@ -1115,7 +1115,7 @@ export const orthocenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: G
 }
 
 export const circumcenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('The points are collinear');
     }
 
@@ -1152,7 +1152,7 @@ export const circumcenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: 
 }
 
 export const incenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('The points are collinear');
     }
 
@@ -1168,7 +1168,7 @@ export const incenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
 }
 
 export const circumradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('The points are collinear');
     }
     
@@ -1183,7 +1183,7 @@ export const circumradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: 
 }
 
 export const inradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('The points are collinear');
     }
 
@@ -1464,7 +1464,7 @@ export const dihedralAngle = (A: GeometryShape.Point, d: GeometryShape.Line, B: 
 }
 
 export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         if (A.z === undefined || B.z === undefined || C.z === undefined) {
             return {
                 point: {
@@ -2216,7 +2216,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 }
 
 export const excenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point): GeometryShape.Point => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('Cannot find the excenter of 3 colinear points');
     }
 
@@ -2233,7 +2233,7 @@ export const excenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
 }
 
 export const exradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point): number => {
-    if (isColinear(A, B, C)) {
+    if (isCollinear(A, B, C)) {
         throw new Error('Cannot find the exradius of 3 colinear points');
     }
 
@@ -2411,5 +2411,28 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
 
     else {
         throw new Error('Cannot perform reflection');
+    }
+}
+
+export const getLength = (shape: GeometryShape.Segment | GeometryShape.Polygon | GeometryShape.Circle | GeometryShape.SemiCircle): number => {
+    if ('startSegment' in shape) {
+        return getDistance(shape.startSegment, shape.endSegment);
+    }
+
+    else if ('points' in shape) {
+        let perimeter = 0;
+        for (let i = 0; i < shape.points.length; i++) {
+            perimeter += getDistance(shape.points[i], shape.points[(i + 1) % shape.points.length]);
+        }
+
+        return perimeter;
+    }
+
+    else if ('radius' in shape) {
+        return 2 * shape.radius * Math.PI;
+    }
+
+    else {
+        return getDistance(shape.start, shape.end) * Math.PI / 2;
     }
 }
