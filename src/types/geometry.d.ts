@@ -20,7 +20,7 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
                         'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' | 'Median' |
                         'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' | 'Circle2Point' | 'Angle' |
                         'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' |
-                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' | 'RegularPolygon';
+                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' | 'RegularPolygon'
 
 export interface Angle extends BaseShape {
     // Use degree for angle
@@ -123,8 +123,6 @@ export type Shape =
     | Circle 
     | Ray
     | Angle
-    | Enlarge
-    | Rotation
     | SemiCircle
     | Sphere 
     | Plane 
@@ -187,6 +185,10 @@ export interface ShapeNode {
     type: Shape;
     /** Konva node for the shape */
     node: Konva.Shape;
+    /** For undefined shape */
+    defined: boolean;
+    /** For infinity intersections */
+    ambiguous: boolean;
     /** IDs of other ShapeNodes this one depends on */
     dependsOn: string[];
     /** For enlarge */
@@ -195,7 +197,7 @@ export interface ShapeNode {
     rotationFactor?: {
         degree: number;
         CCW: boolean;
-    }
+    };
 }
 
 export interface ShapeNode3D {
@@ -233,15 +235,20 @@ export interface GeometryState {
     /** Whether a panning event is happening */
     panning: boolean;
 
-    /** Dummy variable to force re-render */
-    dummy: boolean;
-
     /** Index for buttons */
     polygonIndex: number;
-
-    /** Tool resizes or not */
-    isResize: boolean;
-
-    /** Tool width */
-    toolWidth: number;
 }
+
+/** Drawing mode */
+type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
+                   'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'show_label' | 'show_object' | 'intersection' |
+                   'circle_2_points' | 'parallel' | 'perpendicular';
+
+/** History */
+interface HistoryEntry {
+    state: GeometryState,
+    dag: Map<string, ShapeNode>,
+    selectedPoints: Point[],
+    selectedShapes: Shape[],
+    label_used: string[]
+};
