@@ -12,7 +12,7 @@ class Button extends React.Component<ButtonProps> {
         return (
             <button 
                 type="button"
-                className={`toolButton ${this.props.selected ? "selected" : ""}`}
+                className={`toolButton${this.props.selected ? " selected" : ""}`}
                 onClick={this.props.onClick}
                 title={this.props.title}
             >
@@ -38,12 +38,13 @@ interface GeometryToolProps {
     onUndoClick: () => void;
     onRedoClick: () => void;
     onAngleClick: () => void;
-    // onHideLabelClick: () => void;
-    // onHideObjectClick: () => void;
+    onHideLabelClick: () => void;
+    onHideObjectClick: () => void;
     // onMidPointClick: () => void;
     // onCircumcenterClick: () => void;
     // onIncenterClick: () => void;
     // onExcenterClick: () => void;
+    // onOrthocenterClick: () => void;
     onLengthClick: () => void;
     // onPerpenLineClick: () => void;
     // onPerpenBisecClick: () => void;
@@ -53,8 +54,9 @@ interface GeometryToolProps {
     // onCircumcircleClick: () => void;
     // onIncircleClick: () => void;
     // onExcircleClick: () => void;
-    // onCircle2PointClick: () => void;
+    onCircle2PointClick: () => void;
     // onSegmentLengthClick: () => void;
+    // onMedianClick: () => void;
     // onSemiClick: () => void;
     // onRegularPolygonClick: () => void;
     // onTranslationClick: () => void;
@@ -62,7 +64,7 @@ interface GeometryToolProps {
     // onReflectionClick: () => void;
     // onProjectionClick: () => void;
     // onScalingClick: () => void;
-    // onIntersectionClick: () => void;
+    onIntersectionClick: () => void;
     onAreaClick: () => void;
 }
 
@@ -142,16 +144,20 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onAngleClick();
         }
 
-        // else if (toolKey === "show_label") {
-        //     this.props.onHideLabelClick();
-        // }
+        else if (toolKey === "show_label") {
+            this.props.onHideLabelClick();
+        }
 
-        // else if (toolKey === "show_object") {
-        //     this.props.onHideObjectClick();
-        // }
+        else if (toolKey === "show_object") {
+            this.props.onHideObjectClick();
+        }
 
         // else if (toolKey === "midpoint") {
         //     this.props.onMidPointClick();
+        // }
+
+        // else if (toolKey === "median") {
+        //     this.props.onMedianClick();
         // }
 
         // else if (toolKey === "perpendicular") {
@@ -174,9 +180,9 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
         //     this.props.onTangentLineClick();
         // }
 
-        // else if (toolKey === "intersection") {
-        //     this.props.onIntersectionClick();
-        // }
+        else if (toolKey === "intersection") {
+            this.props.onIntersectionClick();
+        }
 
         // else if (toolKey === "circumcenter") {
         //     this.props.onCircumcenterClick();
@@ -188,6 +194,10 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
 
         // else if (toolKey === "excenter") {
         //     this.props.onExcenterClick();
+        // }
+
+        // else if (toolKey === "orthocenter") {
+        //     this.props.onOrthocenterClick();
         // }
 
         else if (toolKey === "length") {
@@ -202,9 +212,9 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
         //     this.props.onSegmentLengthClick();
         // }
 
-        // else if (toolKey === "circle_2_points") {
-        //     this.props.onCircle2PointClick();
-        // }
+        else if (toolKey === "circle_2_points") {
+            this.props.onCircle2PointClick();
+        }
 
         // else if (toolKey === "circumcircle") {
         //     this.props.onCircumcircleClick();
@@ -280,6 +290,7 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     { key: "parallel", label: "Parallel Line", onClick: () => this.setActiveTool("parallel"), title: "Select parallel line and point" },
                     { key: "angle_bisector", label: "Angle Bisector", onClick: () => this.setActiveTool("angle_bisector"), title: "Select parallel line and point" },
                     { key: "tangent", label: "Tangents", onClick: () => this.setActiveTool("tangent"), title: "Select point, then circle" },
+                    { key: "median", label: "Median of Triangle", onClick: () => this.setActiveTool("median"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
                 ]
             },
             {
@@ -287,9 +298,10 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                 tools: [
                     { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object" },
                     { key: "intersection", label: "Intersect", onClick: () => this.setActiveTool("intersection"), title: "Select intersection or 2 objects" },
-                    { key: "circumcenter", label: "Circumcenter of Triangle", onClick: () => this.setActiveTool("circumcenter"), title: "Select 3 non-collinear points" },
+                    { key: "circumcenter", label: "Circumcenter of Triangle", onClick: () => this.setActiveTool("circumcenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
                     { key: "incenter", label: "Incenter of Triangle", onClick: () => this.setActiveTool("incenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
                     { key: "excenter", label: "Excenter of Triangle", onClick: () => this.setActiveTool("circumcenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
+                    { key: "orthocenter", label: "Orthocenter of Triangle", onClick: () => this.setActiveTool("orthocenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" }
                 ]
             },
             {
@@ -364,7 +376,7 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                 >
                 {toolCategories.map((category) => (
                     <div key={category.name}>
-                        <div className="catLabel">{category.name}</div>
+                        <div className="catLabel text-neutral-900">{category.name}</div>
                         <div
                             className="categoryPanel"
                         >

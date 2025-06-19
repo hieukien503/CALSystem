@@ -456,7 +456,6 @@ form {
     line-height: 24px;
     font-size: 16px;
     margin: 8px 0px;
-    color: #1c1c1f;
     text-align: left;
 }
 
@@ -506,4 +505,151 @@ button {
     background-color: #f9f9f9;
     box-shadow: 0.25px 0px 0px;
     cursor: ew-resize;
+}
+
+.cursor_hit {
+    cursor: default !important;
+}
+
+.cursor_drag {
+    cursor: pointer !important;
+}
+
+.cursor_grabbing {
+    cursor: grabbing !important;
+}
+
+.dialogComponent {
+    padding: 0px;
+    z-index: 501;
+    background-color: #fff;
+    border-radius: 2px;
+    box-shadow: 0 9px 46px 8px rgba(0, 0, 0, .14), 0 11px 15px -7px rgba(0, 0, 0, .12), 0 24px 38px 3px rgba(0, 0, 0, .2);
+}
+
+.dialogComponent .popupContent {
+    height: 100%;
+}
+
+.dialogComponent .dialogMainPanel {
+    padding-top: 20px;
+    height: calc(100% - 20px);
+    overflow: hidden;
+}
+
+.dialogComponent .dialogMainPanel .dialogTitle {
+    min-height: 20px;
+    font-size: 125%;
+    margin-bottom: 20px;
+    margin-left: 24px;
+}
+
+.GeoGebraFrame .dialogComponent .dialogMainPanel .dialogContent {
+    height: calc(100% - 92px);
+    padding: 0px 24px;
+    overflow-y: auto;
+}
+
+.inputDialogComponent .inputTextField {
+    max-width: 456px;
+    width: 100%;
+}
+
+.inputTextField {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    display: inline-block;
+    min-height: 68px;
+}
+
+.inputTextField .inputLabel {
+    font-size: 75%;
+    height: 12px;
+    line-height: 100%;
+    display: block;
+}
+
+.inputTextField .textField {
+    margin-top: 8px;
+}
+
+.inputDialogComponent .inputTextField .AutoCompleteTextFieldW {
+    margin-right: 0px;
+}
+
+.inputTextField .TextFieldW {
+    margin-right: 0px;
+    margin-bottom: 7px;
+    border-radius: 0px;
+    border: none;
+    border-bottom: 1px solid #b4b3ba;
+}
+
+.TextFieldW {
+    box-sizing: border-box;
+    position: relative;
+}
+
+.inputTextField .TextFieldW input[type=text] {
+    border: none !important;
+    box-shadow: none !important;
+    height: 28px;
+    margin: 0px;
+    padding: 0px 0px 8px 0px;
+}
+
+.GeoGebraFrame .dialogComponent input[type=text] {
+    border-radius: 0px;
+}
+
+input[type=text].TextField {
+    padding: 2px;
+    width: 100%;
+}
+
+.TextFieldW .TextField {
+    display: inline-block;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.dialogComponent .dialogMainPanel .dialogButtonPanel {
+    display: inline-flex;
+    padding: 8px 8px 8px 24px;
+    position: relative;
+    float: right;
+}
+
+.cancelButton {
+    color: #6e6d73;
+}
+
+.okButton {
+    padding: 0px 16px;
+    background-color: #a7d3d2;
+    color: #fff;
+    transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+}
+
+.cancelButton, .okButton {
+    display: inline-block;
+    min-width: 64px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0);
+    font-size: 90%;
+    letter-spacing: .04em;
+    line-height: 36px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.inputTextField.hoverState {
+    color: #46443f;
+}
+
+.inputTextField.focusState {
+    color: #a7d3d2;
 }

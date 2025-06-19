@@ -106,7 +106,7 @@ export const getStartAndEnd = (shape: GeometryShape.Shape) => {
 }
 
 export const getDistance = (shape1: GeometryShape.Point, shape2: GeometryShape.Point) => {
-    return symbolicSqrt((shape1.x - shape2.x) ** 2 + (shape1.y - shape2.y) ** 2 + ((shape1.z ?? 0) - (shape2.z ?? 0)) ** 2);
+    return symbolicSqrt(Math.pow(shape1.x - shape2.x, 2) + Math.pow(shape1.y - shape2.y, 2) + Math.pow((shape1.z ?? 0) - (shape2.z ?? 0), 2));
 }
 
 const getPerimeter = (shape: GeometryShape.Polygon) => {
@@ -119,7 +119,7 @@ const getPerimeter = (shape: GeometryShape.Polygon) => {
     return perimeter;
 }
 
-export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {x: number, y: number, z: number}[] => {
+export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {coors: {x: number, y: number, z: number} | undefined, ambiguous: boolean}[] => {
     if (!(['Segment', 'Line', 'Ray', 'Polygon', 'Circle'].includes(shape1.type))) {
         throw new Error('Shape1 must be a valid shape for intersection');
     }
@@ -141,7 +141,39 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             )
 
             if (A === null) {
-                return []
+                let crossProduct1 = cross(
+                    end.x - start.x,
+                    end.y - start.y,
+                    (end.z ?? 0) - (start.z ?? 0),
+                    end2.x - start2.x,
+                    end2.y - start2.y,
+                    (end2.z ?? 0) - (start2.z ?? 0)
+                )
+
+                let crossProduct2 = cross(
+                    end.x - start.x,
+                    end.y - start.y,
+                    (end.z ?? 0) - (start.z ?? 0),
+                    start2.x - start.x,
+                    start2.y - start.y,
+                    (start2.z ?? 0) - (start.z ?? 0)
+                )
+
+                if (L2_norm(crossProduct1.x, crossProduct1.y, crossProduct1.z) > epsilon || (L2_norm(crossProduct1.x, crossProduct1.y, crossProduct1.z) < epsilon && L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) > epsilon)) {
+                    return [
+                        {
+                            coors: undefined,
+                            ambiguous: false
+                        }
+                    ]
+                }
+
+                return [
+                    {
+                        coors: undefined,
+                        ambiguous: true
+                    }
+                ]
             }
 
             let v = {
@@ -150,18 +182,21 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 z: (A.length === 2 ? 0 : A[2]) - (start.z ?? 0)
             }
 
-            let crossProduct = cross(
-                end.x - start.x,
-                end.y - start.y,
-                (end.z ?? 0) - (start.z ?? 0),
-                v.x,
-                v.y,
-                v.z
-            )
+            let dotProduct = dot(v.x, v.y, v.z, end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0));
 
             if (shape1.type === 'Ray') {
-                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
-                    return [];
+                if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                    return [
+                        {
+                            coors: {
+                                x: A[0],
+                                y: A[1],
+                                z: A.length === 2 ? A[2] : 0
+                            },
+
+                            ambiguous: true
+                        }
+                    ]
                 }
 
                 let v1 = {
@@ -170,7 +205,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
                 }
 
-                let crossProduct2 = cross(
+                let dotProduct2 = dot(
                     end2.x - start2.x,
                     end2.y - start2.y,
                     (end2.z ?? 0) - (start2.z ?? 0),
@@ -180,37 +215,91 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 )
 
                 if (shape2.type === 'Ray') {
-                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
-                        return [];
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
                 }
 
                 else if (shape2.type === 'Segment') {
-                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
-                        return [];
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
 
                     if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, (end2.z ?? 0) - (start2.z ?? 0))) {
-                        return [];
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
                 }
 
                 return [
                     {
-                        x: A[0],
-                        y: A[1],
-                        z: (A.length === 2 ? 0 : A[2])
+                        coors: {
+                            x: A[0],
+                            y: A[1],
+                            z: A.length === 2 ? A[2] : 0
+                        },
+
+                        ambiguous: false
                     }
                 ]
             }
 
             else if (shape1.type === 'Segment') {
-                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
-                    return [];
+                if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                    return [
+                        {
+                            coors: {
+                                x: A[0],
+                                y: A[1],
+                                z: A.length === 2 ? A[2] : 0
+                            },
+
+                            ambiguous: true
+                        }
+                    ]
                 }
 
                 if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0))) {
-                    return [];
+                    return [
+                        {
+                            coors: {
+                                x: A[0],
+                                y: A[1],
+                                z: A.length === 2 ? A[2] : 0
+                            },
+
+                            ambiguous: true
+                        }
+                    ]
                 }
 
                 let v1 = {
@@ -219,7 +308,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
                 }
 
-                let crossProduct2 = cross(
+                let dotProduct2 = dot(
                     end2.x - start2.x,
                     end2.y - start2.y,
                     (end2.z ?? 0) - (start2.z ?? 0),
@@ -229,26 +318,60 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 )
 
                 if (shape2.type === 'Ray') {
-                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
-                        return [];
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
                 }
 
                 else if (shape2.type === 'Segment') {
-                    if (L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) !== 0) {
-                        return [];
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
 
                     if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, (end2.z ?? 0) - (start2.z ?? 0))) {
-                        return [];
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
                 }
 
                 return [
                     {
-                        x: A[0],
-                        y: A[1],
-                        z: (A.length === 2 ? 0 : A[2])
+                        coors: {
+                            x: A[0],
+                            y: A[1],
+                            z: A.length === 2 ? A[2] : 0
+                        },
+
+                        ambiguous: false
                     }
                 ]
             }
@@ -260,7 +383,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
                 }
 
-                let crossProduct = cross(
+                let dotProduct2 = dot(
                     end2.x - start2.x,
                     end2.y - start2.y,
                     (end2.z ?? 0) - (start2.z ?? 0),
@@ -270,26 +393,60 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 )
 
                 if (shape2.type === 'Ray') {
-                    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
-                        return [];
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
                 }
 
                 else if (shape2.type === 'Segment') {
-                    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
-                        return [];
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
 
                     if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(end2.x - start2.x, end2.y - start2.y, (end2.z ?? 0) - (start2.z ?? 0))) {
-                        return [];
+                        return [
+                            {
+                                coors: {
+                                    x: A[0],
+                                    y: A[1],
+                                    z: A.length === 2 ? A[2] : 0
+                                },
+
+                                ambiguous: true
+                            }
+                        ]
                     }
                 }
 
                 return [
                     {
-                        x: A[0],
-                        y: A[1],
-                        z: (A.length === 2 ? 0 : A[2])
+                        coors: {
+                            x: A[0],
+                            y: A[1],
+                            z: A.length === 2 ? A[2] : 0
+                        },
+
+                        ambiguous: false
                     }
                 ]
             }
@@ -320,7 +477,12 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             if (discriminant < 0) {
-                return []; // No intersection
+                return [
+                    {
+                        coors: undefined,
+                        ambiguous: false
+                    }
+                ]
             }
 
             else if (discriminant === 0) {
@@ -329,98 +491,99 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     (shape1.type === 'Ray' && t < 0) ||
                     (shape1.type === 'Segment' && (t < 0 || t > 1))
                 ) {
-                    return []; // No intersection
-                }
-                return [{
-                    x: start.x + u.x * t,
-                    y: start.y + u.y * t,
-                    z: (start.z ?? 0) + u.z * t
-                }]
-            }
-
-            else {
-                const t1 = (-b + symbolicSqrt(discriminant)) / (2 * a);
-                const t2 = (-b - symbolicSqrt(discriminant)) / (2 * a);
-                if (shape1.type === 'Ray') {
-                    if (t1 < 0 && t2 < 0) {
-                        return []; // No intersection
-                    }
-
-                    if (t1 < 0) {
-                        return [{
-                            x: start.x + u.x * t2,
-                            y: start.y + u.y * t2,
-                            z: (start.z ?? 0) + u.z * t2
-                        }]
-                    }
-
-                    if (t2 < 0) {
-                        return [{
-                            x: start.x + u.x * t1,
-                            y: start.y + u.y * t1,
-                            z: (start.z ?? 0) + u.z * t1
-                        }]
-                    }
-
                     return [
                         {
-                            x: start.x + u.x * t1,
-                            y: start.y + u.y * t1,
-                            z: (start.z ?? 0) + u.z * t1
-                        },
-                        {
-                            x: start.x + u.x * t2,
-                            y: start.y + u.y * t2,
-                            z: (start.z ?? 0) + u.z * t2
-                        }
-                    ]
-                }
+                            coors: {
+                                x: start.x + u.x * t,
+                                y: start.y + u.y * t,
+                                z: (start.z ?? 0) + u.z * t
+                            },
 
-                else if (shape1.type === 'Segment') {
-                    if ((t1 < 0 || t1 > 1) && (t2 < 0 || t2 > 1)) {
-                        return []; // No intersection
-                    }
-
-                    if (t1 < 0 || t1 > 1) {
-                        return [{
-                            x: start.x + u.x * t2,
-                            y: start.y + u.y * t2,
-                            z: (start.z ?? 0) + u.z * t2
-                        }]
-                    }
-
-                    if (t2 < 0 || t2 > 1) {
-                        return [{
-                            x: start.x + u.x * t1,
-                            y: start.y + u.y * t1,
-                            z: (start.z ?? 0) + u.z * t1
-                        }]
-                    }
-
-                    return [
-                        {
-                            x: start.x + u.x * t1,
-                            y: start.y + u.y * t1,
-                            z: (start.z ?? 0) + u.z * t1
-                        },
-                        {
-                            x: start.x + u.x * t2,
-                            y: start.y + u.y * t2,
-                            z: (start.z ?? 0) + u.z * t2
+                            ambiguous: true
                         }
                     ]
                 }
 
                 return [
                     {
-                        x: start.x + u.x * t1,
-                        y: start.y + u.y * t1,
-                        z: (start.z ?? 0) + u.z * t1
+                        coors: {
+                            x: start.x + u.x * t,
+                            y: start.y + u.y * t,
+                            z: (start.z ?? 0) + u.z * t
+                        },
+
+                        ambiguous: false
+                    }
+                ]
+            }
+
+            else {
+                const t1 = (-b + symbolicSqrt(discriminant)) / (2 * a);
+                const t2 = (-b - symbolicSqrt(discriminant)) / (2 * a);
+                if (shape1.type === 'Ray') {
+                    return [
+                        {
+                            coors: {
+                                x: start.x + u.x * t1,
+                                y: start.y + u.y * t1,
+                                z: (start.z ?? 0) + u.z * t1
+                            },
+
+                            ambiguous: t1 < 0 && Math.abs(t1) > epsilon
+                        },
+                        {
+                            coors: {
+                                x: start.x + u.x * t2,
+                                y: start.y + u.y * t2,
+                                z: (start.z ?? 0) + u.z * t2
+                            },
+
+                            ambiguous: t2 < 0 && Math.abs(t2) > epsilon
+                        }
+                    ]
+                }
+
+                else if (shape1.type === 'Segment') {
+                    return [
+                        {
+                            coors: {
+                                x: start.x + u.x * t1,
+                                y: start.y + u.y * t1,
+                                z: (start.z ?? 0) + u.z * t1
+                            },
+
+                            ambiguous: (t1 < 0 && Math.abs(t1) > epsilon) || (t1 > 1 && Math.abs(t1 - 1) > epsilon)
+                        },
+                        {
+                            coors: {
+                                x: start.x + u.x * t2,
+                                y: start.y + u.y * t2,
+                                z: (start.z ?? 0) + u.z * t2
+                            },
+
+                            ambiguous: (t2 < 0 && Math.abs(t2) > epsilon)  || (t2 > 1 && Math.abs(t2 - 1) > epsilon)
+                        }
+                    ]
+                }
+
+                return [
+                    {
+                        coors: {
+                            x: start.x + u.x * t1,
+                            y: start.y + u.y * t1,
+                            z: (start.z ?? 0) + u.z * t1
+                        },
+
+                        ambiguous: false
                     },
                     {
-                        x: start.x + u.x * t2,
-                        y: start.y + u.y * t2,
-                        z: (start.z ?? 0) + u.z * t2
+                        coors: {
+                            x: start.x + u.x * t2,
+                            y: start.y + u.y * t2,
+                            z: (start.z ?? 0) + u.z * t2
+                        },
+
+                        ambiguous: false
                     }
                 ]
             }
@@ -428,7 +591,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
 
         else if (shape2.type === 'Polygon') {
             let poly: GeometryShape.Polygon = shape2 as GeometryShape.Polygon;
-            let intersections = [];
+            let intersections: {coors: {x: number, y: number, z: number} | undefined, ambiguous: boolean}[] = [];
             for (let i = 0; i < poly.points.length; i++) {
                 let point1 = poly.points[i];
                 let point2 = poly.points[(i + 1) % poly.points.length];
@@ -463,32 +626,36 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 const augmentedMatrix = math.concat(matrixA, math.matrix(b), 1);
                 const rankAug = math.rank(augmentedMatrix);
                 if (rankA < rankAug) {
-                    continue; // The line does not intersect this edge
+                    continue;
                 }
 
                 else if (rankA < math.size(matrixA)[1]) {
-                    continue; // The line is coincident with this edge
+                    continue;
                 }
 
                 else {
                     const A_pinv = math.pinv(A);
                     const solutions = math.multiply(A_pinv, b);
                     if (
-                        (shape1.type === 'Ray' && solutions.get([0, 0]) < 0) ||
-                        (shape1.type === 'Segment' && (solutions.get([0, 0]) < 0 || solutions.get([0, 0]) > 1))
+                        (shape1.type === 'Ray' && (solutions.get([0, 0]) < 0 && Math.abs(solutions.get([0, 0])) > epsilon)) ||
+                        (shape1.type === 'Segment' && ((solutions.get([0, 0]) < 0 && Math.abs(solutions.get([0, 0])) > epsilon) || (solutions.get([0, 0]) > 1 && Math.abs(solutions.get([0, 0]) - 1) > epsilon)))
                     ) {
                         continue; // The intersection point is not valid
                     }
 
-                    if (solutions.get([0, 1]) < 0 || solutions.get([0, 1]) > 1) {
+                    if ((solutions.get([0, 1]) < 0 && Math.abs(solutions.get([0, 1])) > epsilon) || (solutions.get([0, 1]) > 1 && Math.abs(solutions.get([0, 1]) - 1) > epsilon)) {
                         continue; // The intersection point is not valid
                     }
 
                     // If we reach here, the intersection point is valid
                     intersections.push({
-                        x: start.x + v.x * solutions.get([0, 0]),
-                        y: start.y + v.y * solutions.get([0, 0]),
-                        z: (start.z ?? 0) + v.z * solutions.get([0, 0])
+                        coors: {
+                            x: start.x + v.x * solutions.get([0, 0]),
+                            y: start.y + v.y * solutions.get([0, 0]),
+                            z: (start.z ?? 0) + v.z * solutions.get([0, 0])
+                        },
+                        
+                        ambiguous: false
                     });
                 }
             }
@@ -513,15 +680,30 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             // Two circles intersection
             let d = getDistance(circle1.centerC, circle2.centerC);
             if (d < epsilon && circle1.radius === circle2.radius) {
-                throw new Error('The circles are coincident');
+                return [
+                    {
+                        coors: undefined,
+                        ambiguous: true
+                    }
+                ]
             }
 
             if (d < epsilon) {
-                return []; // No intersection, circles are concentric
+                return [
+                    {
+                        coors: undefined,
+                        ambiguous: false
+                    }
+                ]
             }
             
             if (d > circle1.radius + circle2.radius || d < Math.abs(circle1.radius - circle2.radius)) {
-                return []; // No intersection
+                return [
+                    {
+                        coors: undefined,
+                        ambiguous: false
+                    }
+                ]
             }
 
             let a = (circle1.radius ** 2 - circle2.radius ** 2 + d ** 2) / (2 * d);
@@ -533,90 +715,32 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             };
 
             if (h < epsilon) {
-                return [p]; // One intersection point
+                return [
+                    {
+                        coors: p,
+                        ambiguous: false
+                    }
+                ]
             }
 
             return [
                 {
-                    x: p.x + h * (circle2.centerC.y - circle1.centerC.y) / d,
-                    y: p.y - h * (circle2.centerC.x - circle1.centerC.x) / d,
-                    z: (p.z ?? 0) + h * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
+                    coors: {
+                        x: p.x + h * (circle2.centerC.y - circle1.centerC.y) / d,
+                        y: p.y - h * (circle2.centerC.x - circle1.centerC.x) / d,
+                        z: (p.z ?? 0) + h * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
+                    },
+                    ambiguous: false
                 },
                 {
-                    x: p.x - h * (circle2.centerC.y - circle1.centerC.y) / d,
-                    y: p.y + h * (circle2.centerC.x - circle1.centerC.x) / d,
-                    z: (p.z ?? 0) - h * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
+                    coors: {
+                        x: p.x - h * (circle2.centerC.y - circle1.centerC.y) / d,
+                        y: p.y + h * (circle2.centerC.x - circle1.centerC.x) / d,
+                        z: (p.z ?? 0) - h * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
+                    },
+                    ambiguous: false
                 }
             ];
-        }
-
-        else if (shape2.type === 'Polygon') {
-            let poly: GeometryShape.Polygon = shape2 as GeometryShape.Polygon;
-            let intersections = [];
-            for (let i = 0; i < poly.points.length; i++) {
-                let point1 = poly.points[i];
-                let point2 = poly.points[(i + 1) % poly.points.length];
-                let u = {
-                    x: point2.x - point1.x,
-                    y: point2.y - point1.y,
-                    z: (point2.z ?? 0) - (point1.z ?? 0)
-                }
-
-                let v = {
-                    x: circle1.centerC.x - point1.x,
-                    y: circle1.centerC.y - point1.y,
-                    z: (circle1.centerC.z ?? 0) - (point1.z ?? 0)
-                }
-
-                // Solve ||v - u * t||^2 = r^2
-                const r = circle1.radius;
-                const a = dot(u.x, u.y, u.z, u.x, u.y, u.z);
-                const b = -2 * dot(v.x, v.y, v.z, u.x, u.y, u.z);
-                const c = dot(v.x, v.y, v.z, v.x, v.y, v.z) - r * r;
-                let discriminant = b * b - 4 * a * c;
-                if (Math.abs(discriminant) < epsilon) {
-                    discriminant = 0;
-                }
-
-                if (discriminant < 0) {
-                    continue; // No intersection
-                }
-
-                if (discriminant === 0) {
-                    let t = -b / (2 * a);
-                    if (t < 0 || t > 1) {
-                        continue; // No intersection
-                    }
-
-                    intersections.push({
-                        x: point1.x + u.x * t,
-                        y: point1.y + u.y * t,
-                        z: (point1.z ?? 0) + u.z * t
-                    });
-                }
-
-                else {
-                    const t1 = (-b + symbolicSqrt(discriminant)) / (2 * a);
-                    const t2 = (-b - symbolicSqrt(discriminant)) / (2 * a);
-                    if (t1 >= 0 && t1 <= 1) {
-                        intersections.push({
-                            x: point1.x + u.x * t1,
-                            y: point1.y + u.y * t1,
-                            z: (point1.z ?? 0) + u.z * t1
-                        });
-                    }
-
-                    if (t2 >= 0 && t2 <= 1) {
-                        intersections.push({
-                            x: point1.x + u.x * t2,
-                            y: point1.y + u.y * t2,
-                            z: (point1.z ?? 0) + u.z * t2
-                        });
-                    }
-                }
-            }
-
-            return intersections;
         }
 
         else {
@@ -625,74 +749,8 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
     }
 
     else if (shape1.type === 'Polygon') {
-        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment') || (shape2.type === 'Circle')) {
+        if ((shape2.type === 'Line') || (shape2.type === 'Ray') || (shape2.type === 'Segment')) {
             return getIntersections2D(shape2, shape1);
-        }
-
-        else if (shape2.type === 'Polygon') {
-            let poly1: GeometryShape.Polygon = shape1 as GeometryShape.Polygon;
-            let poly2: GeometryShape.Polygon = shape2 as GeometryShape.Polygon;
-            let intersections = [];
-            for (let i = 0; i < poly1.points.length; i++) {
-                let point1 = poly1.points[i];
-                let point2 = poly1.points[(i + 1) % poly1.points.length];
-                let u = {
-                    x: point2.x - point1.x,
-                    y: point2.y - point1.y,
-                    z: (point2.z ?? 0) - (point1.z ?? 0)
-                }
-
-                for (let j = 0; j < poly2.points.length; j++) {
-                    let point3 = poly2.points[j];
-                    let point4 = poly2.points[(j + 1) % poly2.points.length];
-                    let v = {
-                        x: point4.x - point3.x,
-                        y: point4.y - point3.y,
-                        z: (point4.z ?? 0) - (point3.z ?? 0)
-                    }
-
-                    let A = 
-                    [
-                        [u.x, -v.x, 0],
-                        [u.y, -v.y, 0],
-                        [u.z, -v.z, 0]
-                    ]
-
-                    let b = 
-                    [
-                        [point3.x - point1.x],
-                        [point3.y - point1.y],
-                        [(point3.z ?? 0) - (point1.z ?? 0)]
-                    ]
-
-                    let matrixA = math.matrix(A);
-                    const rankA = math.rank(matrixA);
-                    const augmentedMatrix = math.concat(matrixA, math.matrix(b), 1);
-                    const rankAug = math.rank(augmentedMatrix);
-                    if (rankA < rankAug) {
-                        continue; // The segments do not intersect
-                    }
-
-                    if (rankA < math.size(matrixA)[1]) {
-                        continue; // The segments are coincident
-                    }
-
-                    const A_pinv = math.pinv(A);
-                    const solutions = math.multiply(A_pinv, b);
-                    if (solutions.get([0, 0]) < 0 || solutions.get([0, 0]) > 1 || solutions.get([0, 1]) < 0 || solutions.get([0, 1]) > 1) {
-                        continue; // The intersection point is not valid
-                    }
-
-                    // If we reach here, the intersection point is valid
-                    intersections.push({
-                        x: point1.x + u.x * solutions.get([0, 0]),
-                        y: point1.y + u.y * solutions.get([0, 0]),
-                        z: (point1.z ?? 0) + u.z * solutions.get([0, 0])
-                    });
-                }
-            }
-
-            return intersections;
         }
 
         else {
@@ -705,7 +763,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
     }
 }
 
-export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {x: number, y: number, z?: number}[] => {
+export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: GeometryShape.Shape): {coors: {x: number, y: number, z: number} | undefined, ambiguous: boolean}[] => {
     if (!(['Segment', 'Line', 'Ray', 'Plane', 'Sphere'].includes(shape1.type))) {
         throw new Error('Shape1 must be a valid shape for intersection');
     }
@@ -742,7 +800,21 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             )
 
             if (A === null) {
-                return [];
+                if (Math.abs(n.x * (pl.point.x - start.x) + n.y * (pl.point.y - start.y) + n.z * ((pl.point.z ?? 0 - (start.z ?? 0)))) < epsilon) {
+                    return [
+                        {
+                            coors: undefined,
+                            ambiguous: true
+                        }
+                    ]
+                }
+
+                return [
+                    {
+                        coors: undefined,
+                        ambiguous: false
+                    }
+                ]
             }
 
             let v = {
@@ -751,7 +823,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                 z: (A.length === 2 ? 0 : A[2]) - (start.z ?? 0)
             }
 
-            let crossProduct = cross(
+            let dotProduct2 = dot(
                 end.x - start.x,
                 end.y - start.y,
                 (end.z ?? 0) - (start.z ?? 0),
@@ -761,26 +833,60 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             )
 
             if (shape1.type === 'Ray') {
-                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
-                    return [];
+                if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    return [
+                        {
+                            coors: {
+                                x: A[0],
+                                y: A[1],
+                                z: A.length === 2 ? A[2] : 0
+                            },
+
+                            ambiguous: true
+                        }
+                    ]
                 }
             }
 
             else if (shape1.type === 'Segment') {
-                if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) !== 0) {
-                    return [];
+                if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    return [
+                        {
+                            coors: {
+                                x: A[0],
+                                y: A[1],
+                                z: A.length === 2 ? A[2] : 0
+                            },
+
+                            ambiguous: true
+                        }
+                    ]
                 }
 
                 if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0))) {
-                    return [];
+                    return [
+                        {
+                            coors: {
+                                x: A[0],
+                                y: A[1],
+                                z: A.length === 2 ? A[2] : 0
+                            },
+
+                            ambiguous: true
+                        }
+                    ]
                 }
             }
 
             return [
                 {
-                    x: A[0],
-                    y: A[1],
-                    z: (A.length === 2 ? 0 : A[2])
+                    coors: {
+                        x: A[0],
+                        y: A[1],
+                        z: A.length === 2 ? A[2] : 0
+                    },
+
+                    ambiguous: false
                 }
             ]
         }
@@ -805,7 +911,12 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             if (discriminant < 0) {
-                return []; // No intersection
+                return [
+                    {
+                        coors: undefined,
+                        ambiguous: false
+                    }
+                ]
             }
 
             else if (discriminant === 0) {
@@ -814,72 +925,99 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                     (shape1.type === 'Ray' && t < 0) ||
                     (shape1.type === 'Segment' && (t < 0 || t > 1))
                 ) {
-                    return []; // No intersection
+                    return [
+                        {
+                            coors: {
+                                x: start.x + u.x * t,
+                                y: start.y + u.y * t,
+                                z: (start.z ?? 0) + u.z * t
+                            },
+
+                            ambiguous: true
+                        }
+                    ]
                 }
-                return [{
-                    x: start.x + u.x * t,
-                    y: start.y + u.y * t,
-                    z: (start.z ?? 0) + u.z * t
-                }];
+
+                return [
+                    {
+                        coors: {
+                            x: start.x + u.x * t,
+                            y: start.y + u.y * t,
+                            z: (start.z ?? 0) + u.z * t
+                        },
+
+                        ambiguous: false
+                    }
+                ]
             }
 
             else {
                 const t1 = (-b + symbolicSqrt(discriminant)) / (2 * a);
                 const t2 = (-b - symbolicSqrt(discriminant)) / (2 * a);
                 if (shape1.type === 'Ray') {
-                    if (t1 < 0 && t2 < 0) {
-                        return []; // No intersection
-                    }
+                    return [
+                        {
+                            coors: {
+                                x: start.x + u.x * t1,
+                                y: start.y + u.y * t1,
+                                z: (start.z ?? 0) + u.z * t1
+                            },
 
-                    if (t1 < 0) {
-                        return [{
-                            x: start.x + u.x * t2,
-                            y: start.y + u.y * t2,
-                            z: (start.z ?? 0) + u.z * t2
-                        }];
-                    }
+                            ambiguous: t1 < 0 && Math.abs(t1) > epsilon
+                        },
+                        {
+                            coors: {
+                                x: start.x + u.x * t2,
+                                y: start.y + u.y * t2,
+                                z: (start.z ?? 0) + u.z * t2
+                            },
 
-                    if (t2 < 0) {
-                        return [{
-                            x: start.x + u.x * t1,
-                            y: start.y + u.y * t1,
-                            z: (start.z ?? 0) + u.z * t1
-                        }];
-                    }
+                            ambiguous: t2 < 0 && Math.abs(t2) > epsilon
+                        }
+                    ]
                 }
 
                 else if (shape1.type === 'Segment') {
-                    if ((t1 < 0 || t1 > 1) && (t2 < 0 || t2 > 1)) {
-                        return []; // No intersection
-                    }
+                    return [
+                        {
+                            coors: {
+                                x: start.x + u.x * t1,
+                                y: start.y + u.y * t1,
+                                z: (start.z ?? 0) + u.z * t1
+                            },
 
-                    if (t1 < 0 || t1 > 1) {
-                        return [{
-                            x: start.x + u.x * t2,
-                            y: start.y + u.y * t2,
-                            z: (start.z ?? 0) + u.z * t2
-                        }];
-                    }
+                            ambiguous: (t1 < 0 && Math.abs(t1) > epsilon) || (t1 > 1 && Math.abs(t1 - 1) > epsilon)
+                        },
+                        {
+                            coors: {
+                                x: start.x + u.x * t2,
+                                y: start.y + u.y * t2,
+                                z: (start.z ?? 0) + u.z * t2
+                            },
 
-                    if (t2 < 0 || t2 > 1) {
-                        return [{
-                            x: start.x + u.x * t1,
-                            y: start.y + u.y * t1,
-                            z: (start.z ?? 0) + u.z * t1
-                        }];
-                    }
+                            ambiguous: (t2 < 0 && Math.abs(t2) > epsilon)  || (t2 > 1 && Math.abs(t2 - 1) > epsilon)
+                        }
+                    ]
                 }
 
                 return [
                     {
-                        x: start.x + u.x * t1,
-                        y: start.y + u.y * t1,
-                        z: (start.z ?? 0) + u.z * t1
+                        coors: {
+                            x: start.x + u.x * t1,
+                            y: start.y + u.y * t1,
+                            z: (start.z ?? 0) + u.z * t1
+                        },
+
+                        ambiguous: false
                     },
                     {
-                        x: start.x + u.x * t2,
-                        y: start.y + u.y * t2,
-                        z: (start.z ?? 0) + u.z * t2
+                        coors: {
+                            x: start.x + u.x * t2,
+                            y: start.y + u.y * t2,
+                            z: (start.z ?? 0) + u.z * t2
+                        },
+
+                        ambiguous: false
                     }
                 ]
             }
@@ -1513,7 +1651,7 @@ export const bisector_angle_line1 = (A: GeometryShape.Point, B: GeometryShape.Po
 
 export const bisector_angle_line2 = (d1: GeometryShape.Line, d2: GeometryShape.Line) => {
     let A = getIntersections2D(d1, d2);
-    if (A.length === 0) {
+    if (A.length === 0 || (A.length === 1 && A[0].coors === undefined)) {
         throw new Error('Cannot construct bisector angle line from 2 parallel or coincident lines');
     }
 
@@ -1530,9 +1668,9 @@ export const bisector_angle_line2 = (d1: GeometryShape.Line, d2: GeometryShape.L
     }
 
     let B = {
-        x: A[0].x,
-        y: A[0].y,
-        z: A[0].z
+        x: A[0].coors!.x,
+        y: A[0].coors!.y,
+        z: A[0].coors!.z
     }
 
     return [
@@ -1558,7 +1696,7 @@ export const bisector_angle_line2 = (d1: GeometryShape.Line, d2: GeometryShape.L
 
 export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle) => {
     let d = getDistance(p, c.centerC);
-    if (d < c.radius) {
+    if (d < c.radius && Math.abs(d - c.radius) > epsilon) {
         return [];
     }
 
@@ -1572,11 +1710,11 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle) => 
         z: 1
     } 
 
-    if (n.x * p.x + n.y * p.y + n.z * (p.z ?? 0) !== (n.x * c.centerC.x + n.y * c.centerC.y + n.z * (c.centerC.z ?? 0))) {
+    if (Math.abs(n.x * p.x + n.y * p.y + n.z * (p.z ?? 0) - (n.x * c.centerC.x + n.y * c.centerC.y + n.z * (c.centerC.z ?? 0))) > epsilon) {
         return [];
     }
 
-    if (d === c.radius) {
+    if (Math.abs(d - c.radius) < epsilon) {
         let v = {
             x: c.centerC.x - p.x,
             y: c.centerC.y - p.y,
@@ -1621,9 +1759,9 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle) => 
                     z: p.z ?? 0
                 },
                 direction: {
-                    x: intersections[0].x - p.x,
-                    y: intersections[0].y - p.y,
-                    z: intersections[0].z - (p.z ?? 0),
+                    x: intersections[0].coors!.x - p.x,
+                    y: intersections[0].coors!.y - p.y,
+                    z: intersections[0].coors!.z - (p.z ?? 0),
                 }
             },
             {
@@ -1633,9 +1771,9 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle) => 
                     z: p.z ?? 0
                 },
                 direction: {
-                    x: intersections[1].x - p.x,
-                    y: intersections[1].y - p.y,
-                    z: intersections[1].z - (p.z ?? 0),
+                    x: intersections[1].coors!.x - p.x,
+                    y: intersections[1].coors!.y - p.y,
+                    z: intersections[1].coors!.z - (p.z ?? 0),
                 }
             }
         ]
@@ -1875,15 +2013,9 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     }
 }
 
-export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shape, project_line: GeometryShape.Line): GeometryShape.Point => {
+export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shape): GeometryShape.Point => {
     if (!(['Segment', 'Ray', 'Line', 'Plane'].includes(o2.type))) {
         throw new Error('Cannot perform projection');
-    }
-
-    let dir = {
-        x: project_line.endLine.x - project_line.startLine.x,
-        y: project_line.endLine.y - project_line.startLine.y,
-        z: (project_line.endLine.z ?? 0) - (project_line.startLine.z ?? 0),
     }
 
     if ((['Segment', 'Ray', 'Line'].includes(o2.type))) {
@@ -1894,78 +2026,51 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
             z: (end.z ?? 0) - (start.z ?? 0)
         }
 
-        let crossProd = cross(
-            dir.x, dir.y, dir.z,
+        let v = {
+            x: start.x - o1.x,
+            y: start.y - o1.y,
+            z: (start.z ?? 0) - (o1.z ?? 0)
+        }
+
+        let cross_uv = cross(
+            v.x, v.y, v.z,
             d.x, d.y, d.z
         )
 
-        if (L2_norm(crossProd.x, crossProd.y, crossProd.z) < epsilon) {
-            throw new Error('Cannot perform projection');
+        if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
+            return o1
         }
 
-        if (Math.abs(dot(dir.x, dir.y, dir.z, d.x, d.y, d.z)) < epsilon) {
-            let v = {
-                x: start.x - o1.x,
-                y: start.y - o1.y,
-                z: (start.z ?? 0) - (o1.z ?? 0)
+        let dot_uv = dot(
+            v.x, v.y, v.z,
+            d.x, d.y, d.z
+        )
+
+        let denom = dot(d.x, d.y, d.z, d.x, d.y, d.z);
+        let t = dot_uv / denom;
+        if ((o2.type === 'Segment' && ((t >= 0 && Math.abs(t) < epsilon) && (t <= 1 && Math.abs(t - 1) < epsilon))) || (o2.type === 'Ray' && (t >= 0 && Math.abs(t) < epsilon)) || (o2.type === 'Line')) {
+            let v1 = {
+                x: d.x * t,
+                y: d.y * t,
+                z: d.z * t
             }
 
-            let cross_uv = cross(
-                v.x, v.y, v.z,
-                d.x, d.y, d.z
-            )
-
-            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
-                return o1
+            let foot = {
+                x: start.x + v1.x,
+                y: start.y + v1.y,
+                z: (start.z ?? 0) + v1.z
             }
-
-            let dot_uv = dot(
-                v.x, v.y, v.z,
-                d.x, d.y, d.z
-            )
-
-            let denom = dot(d.x, d.y, d.z, d.x, d.y, d.z);
-            let t = dot_uv / denom;
-            if ((o2.type === 'Segment' && (t >= 0 && t <= 1)) || (o2.type === 'Ray' && t >= 0) || (o2.type === 'Line')) {
-                let v1 = {
-                    x: d.x * t,
-                    y: d.y * t,
-                    z: d.z * t
-                }
-
-                let foot = {
-                    x: start.x + v1.x,
-                    y: start.y + v1.y,
-                    z: (start.z ?? 0) + v1.z
-                }
-
-                return Factory.createPoint(
-                    o1.props,
-                    foot.x,
-                    foot.y,
-                    foot.z
-                )
-            }
-            
-            else {
-                throw new Error('Reflected point out of bound');
-            }
-        }
-
-        else {
-            let A = math.intersect(
-                [o1.x, o1.y, o1.z ?? 0],
-                [o1.x + dir.x, o1.y + dir.y, o1.z, dir.z],
-                [start.x, start.y, (start.z ?? 0)],
-                [end.x, end.y, (end.z ?? 0)]
-            )
 
             return Factory.createPoint(
                 o1.props,
-                A[0],
-                A[1],
-                A.length === 2 ? 0 : A[2]
+                foot.x,
+                foot.y,
+                foot.z
             )
+        }
+        
+        else {
+            throw new Error('Projected point out of bound');
         }
     }
 
@@ -1979,7 +2084,7 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
 
         let A = math.intersect(
             [o1.x, o1.y, o1.z ?? 0],
-            [o1.x + dir.x, o1.y + dir.y, (o1.z ?? 0) + dir.z],
+            [o1.x + n.x, o1.y + n.y, (o1.z ?? 0) + n.z],
             [n.x, n.y, n.z, n.x * pl.point.x, n.y * pl.point.y, n.z * (pl.point.z ?? 0)]
         )
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import KonvaCanvas from './KonvaRender';
+import Project2D from './Project2D';
 import ThreeDCanvas from './ThreeRender';
+import { v4 as uuidv4 } from 'uuid'
 
 const Header = () => {
     const [selectedTool, setSelectedTool] = useState<string>('basic');
@@ -35,7 +36,23 @@ const Header = () => {
                     </h1>
                     <main className="outer-main">
                         <div className="inner-main text-center text-gray-600 text-xl flex-grow">
-                            <KonvaCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' />
+                            <Project2D 
+                                width={window.innerWidth}
+                                height={window.innerHeight * 0.74}
+                                id={uuidv4()}
+                                title={'2D Geometry'}
+                                description={'Test Geometry'}
+                                sharing={'public'}
+                                projectVersion={{
+                                    versionName: 'alpha',
+                                    versionNumber: '1.0',
+                                    createdAt: new Date().toString(),
+                                    updatedAt: new Date().toString(),
+                                    updatedBy: 'Kien'
+                                }}
+                                ownedBy='Kien'
+                                collaborators={[]}
+                            />
                         </div>
                     </main>
                 </div>
