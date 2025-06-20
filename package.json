@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.1.2",
     "@pixi-essentials/svg": "^3.0.0",
     "@react-three/fiber": "^9.1.2",
     "@testing-library/dom": "^10.4.0",
@@ -18,7 +21,7 @@
     "core-js": "^3.41.0",
     "konva": "^9.3.20",
     "lodash": "^4.17.21",
-    "mathjs": "^14.4.0",
+    "mathjs": "^14.5.2",
     "numeral": "^2.0.6",
     "pixi.js": "^8.9.1",
     "react": "^19.1.0",

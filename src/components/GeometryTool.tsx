@@ -41,19 +41,20 @@ interface GeometryToolProps {
     onHideLabelClick: () => void;
     onHideObjectClick: () => void;
     // onMidPointClick: () => void;
-    // onCircumcenterClick: () => void;
-    // onIncenterClick: () => void;
-    // onExcenterClick: () => void;
-    // onOrthocenterClick: () => void;
+    onCircumcenterClick: () => void;
+    onIncenterClick: () => void;
+    onExcenterClick: () => void;
+    onOrthocenterClick: () => void;
+    onCentroidClick: () => void;
     onLengthClick: () => void;
     // onPerpenLineClick: () => void;
     // onPerpenBisecClick: () => void;
     // onParaLineClick: () => void;
     // onAngleBisecClick: () => void;
     // onTangentLineClick: () => void;
-    // onCircumcircleClick: () => void;
-    // onIncircleClick: () => void;
-    // onExcircleClick: () => void;
+    onCircumcircleClick: () => void;
+    onIncircleClick: () => void;
+    onExcircleClick: () => void;
     onCircle2PointClick: () => void;
     // onSegmentLengthClick: () => void;
     // onMedianClick: () => void;
@@ -184,21 +185,25 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onIntersectionClick();
         }
 
-        // else if (toolKey === "circumcenter") {
-        //     this.props.onCircumcenterClick();
-        // }
+        else if (toolKey === "circumcenter") {
+            this.props.onCircumcenterClick();
+        }
 
-        // else if (toolKey === "incenter") {
-        //     this.props.onIncenterClick();
-        // }
+        else if (toolKey === "incenter") {
+            this.props.onIncenterClick();
+        }
 
-        // else if (toolKey === "excenter") {
-        //     this.props.onExcenterClick();
-        // }
+        else if (toolKey === "excenter") {
+            this.props.onExcenterClick();
+        }
 
-        // else if (toolKey === "orthocenter") {
-        //     this.props.onOrthocenterClick();
-        // }
+        else if (toolKey === "orthocenter") {
+            this.props.onOrthocenterClick();
+        }
+
+        else if (toolKey === "centroid") {
+            this.props.onCentroidClick();
+        }
 
         else if (toolKey === "length") {
             this.props.onLengthClick();
@@ -216,17 +221,17 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onCircle2PointClick();
         }
 
-        // else if (toolKey === "circumcircle") {
-        //     this.props.onCircumcircleClick();
-        // }
+        else if (toolKey === "circumcircle") {
+            this.props.onCircumcircleClick();
+        }
 
-        // else if (toolKey === "incircle") {
-        //     this.props.onIncircleClick();
-        // }
+        else if (toolKey === "incircle") {
+            this.props.onIncircleClick();
+        }
 
-        // else if (toolKey === "excircle") {
-        //     this.props.onExcircleClick();
-        // }
+        else if (toolKey === "excircle") {
+            this.props.onExcircleClick();
+        }
 
         // else if (toolKey === "semicircle") {
         //     this.props.onSemiClick();
@@ -300,8 +305,9 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     { key: "intersection", label: "Intersect", onClick: () => this.setActiveTool("intersection"), title: "Select intersection or 2 objects" },
                     { key: "circumcenter", label: "Circumcenter of Triangle", onClick: () => this.setActiveTool("circumcenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
                     { key: "incenter", label: "Incenter of Triangle", onClick: () => this.setActiveTool("incenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
-                    { key: "excenter", label: "Excenter of Triangle", onClick: () => this.setActiveTool("circumcenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
-                    { key: "orthocenter", label: "Orthocenter of Triangle", onClick: () => this.setActiveTool("orthocenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" }
+                    { key: "excenter", label: "Excenter of Triangle", onClick: () => this.setActiveTool("excenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
+                    { key: "orthocenter", label: "Orthocenter of Triangle", onClick: () => this.setActiveTool("orthocenter"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
+                    { key: "centroid", label: "Centroid of Triangle", onClick: () => this.setActiveTool("centroid"), title: "Select 3 non-collinear points or polygon with 3 vertices" }
                 ]
             },
             {
@@ -330,7 +336,7 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     { key: "circumcircle", label: "Circle through 3 points", onClick: () => this.setActiveTool("circumcircle"), title: "Select 3 points on the circle" },
                     { key: "semicircle", label: "Semicircle", onClick: () => this.setActiveTool("semicircle"), title: "Select 2 end points" },
                     { key: "incircle", label: "Incircle of Triangle", onClick: () => this.setActiveTool("incircle"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
-                    { key: "excircle", label: "Circle through 3 points", onClick: () => this.setActiveTool("excircle"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
+                    { key: "excircle", label: "Excircle of Triangle", onClick: () => this.setActiveTool("excircle"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
                 ]
             },
             {

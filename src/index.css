@@ -469,7 +469,7 @@ form {
 }
 
 button {
-    font-family: geogebra-sans-serif, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 16px;
 }
 
@@ -544,7 +544,7 @@ button {
     margin-left: 24px;
 }
 
-.GeoGebraFrame .dialogComponent .dialogMainPanel .dialogContent {
+.dialogComponent .dialogMainPanel .dialogContent {
     height: calc(100% - 92px);
     padding: 0px 24px;
     overflow-y: auto;
@@ -598,7 +598,7 @@ button {
     padding: 0px 0px 8px 0px;
 }
 
-.GeoGebraFrame .dialogComponent input[type=text] {
+.dialogComponent input[type=text] {
     border-radius: 0px;
 }
 
@@ -652,4 +652,60 @@ input[type=text].TextField {
 
 .inputTextField.focusState {
     color: #a7d3d2;
+}
+
+.PopupPanel {
+    background-color: #fff;
+    padding: 8px 0 8px 0;
+    border-radius: 12px;
+    font: 100px, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    box-shadow: 0px 2px 24px -1px rgba(133, 132, 138, .14), 0px 2px 8px 0px rgba(133, 132, 138, .04);
+    z-index: 501;
+    will-change: transform;
+}
+
+.MenuBar {
+    cursor: default;
+}
+
+.PopupPanel .listMenuItem {
+    box-sizing: border-box;
+    min-width: 190px;
+    height: 32px;
+    line-height: 32px;
+    padding: 0 16px 0 16px;
+    border-radius: 2px;
+}
+
+.MenuItem {
+    cursor: pointer;
+    white-space: nowrap;
+    list-style: none;
+}
+
+.PopupPanel .listMenuItem .checkMarkMenuItem {
+    display: flex;
+    align-items: center;   /* vertical alignment */
+    width: 100%;
+}
+
+.PopupPanel .listMenuItem .ItemText {
+    display: block;
+    flex-grow: 1;
+    text-align: left;
+    line-height: 32px;
+}
+
+.ItemText {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.MenuItem.listMenuItem.keyboardFocus.selectedItem {
+    background-color: #ddd;
+}
+
+.PopupPanel .listMenuItem .checkIcon{
+    display: flex;
+    justify-items: end;
 }

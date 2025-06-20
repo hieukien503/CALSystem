@@ -242,7 +242,8 @@ export interface GeometryState {
 /** Drawing mode */
 type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
                    'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'show_label' | 'show_object' | 'intersection' |
-                   'circle_2_points' | 'parallel' | 'perpendicular';
+                   'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
+                   'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle';
 
 /** History */
 interface HistoryEntry {

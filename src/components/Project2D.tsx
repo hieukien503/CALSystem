@@ -5,6 +5,7 @@ import Dialogbox from "./Dialogbox";
 import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../types/geometry'
 import * as constants from '../types/constants'
 import * as utils from '../utils/utilities'
+import MenuItem from "./MenuItem";
 
 type SharingMode = 'public' | 'private' | 'organization-wide';
 
@@ -37,6 +38,13 @@ interface Project2DState {
     isResize: boolean;
     /** Tool width */
     toolWidth: number;
+    /** Menu when right click */
+    isMenuRightClick: {
+        x: number
+        y: number
+    } | undefined
+    /** Checked for SnapToGrid */
+    snapToGridEnabled: boolean;
 }
 
 class Project2D extends React.Component<ProjectProps, Project2DState> {
@@ -60,15 +68,17 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 zoom_level: 1,
                 axesVisible: true,
                 panning: false,
-                polygonIndex: 0,
+                polygonIndex: 0
             },
             mode: 'edit',
             dag: new Map<string, ShapeNode>(),
             selectedPoints: new Array<Point>(),
             selectedShapes: new Array<Shape>(),
+            snapToGridEnabled: false,
             isSnapToGrid: false,
             isResize: false,
             toolWidth: 280,
+            isMenuRightClick: undefined
         }
 
         this.lastFailedState = null;
@@ -81,6 +91,10 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         )); // Initialize history stack
         
         this.futureStack = new Array<HistoryEntry>();
+    }
+
+    private setRightMenuClick = (pos?: {x: number, y: number}): void => {
+        this.setState({isMenuRightClick: pos});
     }
 
     private handleUndoClick = () => {
@@ -99,7 +113,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             this.setState({
                 dag: dag,
                 selectedPoints: [],
-                selectedShapes: []
+                selectedShapes: [],
+                isMenuRightClick: undefined
             });
 
             return;
@@ -125,7 +140,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             selectedPoints: copyState.selectedPoints,
             selectedShapes: copyState.selectedShapes,
             mode: 'edit',
-            dag: DAG
+            dag: DAG,
+            isMenuRightClick: undefined
         });
     }
 
@@ -148,7 +164,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 selectedPoints: copyState.selectedPoints,
                 selectedShapes: copyState.selectedShapes,
                 mode: 'edit',
-                dag: DAG
+                dag: DAG,
+                isMenuRightClick: undefined
             });
         }
     }
@@ -157,7 +174,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         e.stopPropagation();
         document.addEventListener("mousemove", this.handleMouseMoveResize);
         document.addEventListener("mouseup", this.handleMouseUpResize);
-        this.setState({ isResize: true });
+        this.setState({ isResize: true, isMenuRightClick: undefined });
     }
 
     private handleMouseMoveResize = (e: MouseEvent) => {
@@ -189,12 +206,20 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
 
     private handleClearCanvas = () => {
         this.labelUsed.length = 0;
-
         this.setState({
             geometryState: {...this.state.geometryState, shapes: []},
             selectedPoints: new Array<Point>(),
             selectedShapes: new Array<Shape>(),
-            dag: new Map<string, ShapeNode>()
+            dag: new Map<string, ShapeNode>(),
+            isMenuRightClick: undefined
+        }, () => {
+            this.pushHistory(utils.clone(
+                this.state.geometryState,
+                this.state.dag,
+                this.state.selectedPoints,
+                this.state.selectedShapes,
+                this.labelUsed
+            ))
         })
     }
 
@@ -241,25 +266,33 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 <GeometryTool
                     width={this.state.toolWidth}
                     height={this.props.height}
-                    onPointClick={() => this.setState({mode: 'point'})}
-                    onLineClick={() => this.setState({mode: 'line'})}
-                    onSegmentClick={() => this.setState({mode: 'segment'})}
-                    onVectorClick={() => this.setState({mode: 'vector'})}
-                    onPolygonClick={() => this.setState({mode: 'polygon'})}
-                    onCircleRadiusClick={() => this.setState({mode: 'circle'})}
-                    onRayClick={() => this.setState({mode: 'ray'})}
-                    onEditClick={() => this.setState({mode: 'edit'})}
-                    onDeleteClick={() => this.setState({mode: 'delete'})}
+                    onPointClick={() => this.setState({mode: 'point', isMenuRightClick: undefined})}
+                    onLineClick={() => this.setState({mode: 'line', isMenuRightClick: undefined})}
+                    onSegmentClick={() => this.setState({mode: 'segment', isMenuRightClick: undefined})}
+                    onVectorClick={() => this.setState({mode: 'vector', isMenuRightClick: undefined})}
+                    onPolygonClick={() => this.setState({mode: 'polygon', isMenuRightClick: undefined})}
+                    onCircleRadiusClick={() => this.setState({mode: 'circle', isMenuRightClick: undefined})}
+                    onRayClick={() => this.setState({mode: 'ray', isMenuRightClick: undefined})}
+                    onEditClick={() => this.setState({mode: 'edit', isMenuRightClick: undefined})}
+                    onDeleteClick={() => this.setState({mode: 'delete', isMenuRightClick: undefined})}
                     onClearClick={this.handleClearCanvas}
                     onUndoClick={this.handleUndoClick}
                     onRedoClick={this.handleRedoClick}
-                    onAngleClick={() => this.setState({mode: 'angle'})}
-                    onLengthClick={() => this.setState({mode: 'length'})}
-                    onAreaClick={() => this.setState({mode: 'area'})}
-                    onHideLabelClick={() => this.setState({mode: 'show_label'})}
-                    onHideObjectClick={() => this.setState({mode: 'show_object'})}
-                    onIntersectionClick={() => this.setState({mode: 'intersection'})}
-                    onCircle2PointClick={() => this.setState({mode: 'circle_2_points'})}
+                    onAngleClick={() => this.setState({mode: 'angle', isMenuRightClick: undefined})}
+                    onLengthClick={() => this.setState({mode: 'length', isMenuRightClick: undefined})}
+                    onAreaClick={() => this.setState({mode: 'area', isMenuRightClick: undefined})}
+                    onHideLabelClick={() => this.setState({mode: 'show_label', isMenuRightClick: undefined})}
+                    onHideObjectClick={() => this.setState({mode: 'show_object', isMenuRightClick: undefined})}
+                    onIntersectionClick={() => this.setState({mode: 'intersection', isMenuRightClick: undefined})}
+                    onCircle2PointClick={() => this.setState({mode: 'circle_2_points', isMenuRightClick: undefined})}
+                    onCentroidClick={() => this.setState({mode: 'centroid', isMenuRightClick: undefined})}
+                    onCircumcenterClick={() => this.setState({mode: 'circumcenter', isMenuRightClick: undefined})}
+                    onOrthocenterClick={() => this.setState({mode: 'orthocenter', isMenuRightClick: undefined})}
+                    onIncenterClick={() => this.setState({mode: 'incenter', isMenuRightClick: undefined})}
+                    onCircumcircleClick={() => this.setState({mode: 'circumcircle', isMenuRightClick: undefined})}
+                    onIncircleClick={() => this.setState({mode: 'incircle', isMenuRightClick: undefined})}
+                    onExcenterClick={() => this.setState({mode: 'excenter', isMenuRightClick: undefined})}
+                    onExcircleClick={() => this.setState({mode: 'excircle', isMenuRightClick: undefined})}
                 />
                 <div 
                     className="resizer flex justify-center items-center"
@@ -300,6 +333,26 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                             this.labelUsed
                         )
                     }}
+                    onRenderMenuRightClick={this.setRightMenuClick}
+                    
+                />}
+                {this.state.isMenuRightClick && <MenuItem 
+                    isSnapToGrid={this.state.snapToGridEnabled}
+                    gridVisible={this.state.geometryState.gridVisible}
+                    axisVisible={this.state.geometryState.axesVisible}
+                    left={this.state.isMenuRightClick.x}
+                    top={this.state.isMenuRightClick.y}
+                    onSetAxisVisible={() => this.setState({geometryState: {...this.state.geometryState, axesVisible: !this.state.geometryState.axesVisible}, isMenuRightClick: undefined})}
+                    onSetGridVisible={() => this.setState({geometryState: {...this.state.geometryState, gridVisible: !this.state.geometryState.gridVisible}, isMenuRightClick: undefined})}
+                    onIsSnapToGrid={() => this.setState((prevState) => {
+                        const newSnapToGridEnabled = !prevState.snapToGridEnabled;
+                        const newIsSnapToGrid = prevState.geometryState.gridVisible && newSnapToGridEnabled;
+                        return {
+                            snapToGridEnabled: newSnapToGridEnabled,
+                            isSnapToGrid: newIsSnapToGrid,
+                            isMenuRightClick: undefined
+                        }
+                    })}
                 />}
             </div>
         )

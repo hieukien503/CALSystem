@@ -20,14 +20,6 @@ const L2_norm = (x: number, y: number, z: number) => {
     return math.parse('sqrt(x^2 + y^2 + z^2)').evaluate({x: x, y: y, z: z});
 }
 
-const mult_scalar = (x: number, y: number, z: number, scalar: number) => {
-    return {
-        x: x * scalar,
-        y: y * scalar,
-        z: z * scalar
-    }
-}
-
 const symbolicSqrt = (num: number): number => {
     return math.parse('sqrt(x)').evaluate({x: num});
 }
@@ -177,9 +169,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             let v = {
-                x: A[0] - start.x,
-                y: A[1] - start.y,
-                z: (A.length === 2 ? 0 : A[2]) - (start.z ?? 0)
+                x: A[0].valueOf() as number - start.x,
+                y: A[1].valueOf() as number - start.y,
+                z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (start.z ?? 0)
             }
 
             let dotProduct = dot(v.x, v.y, v.z, end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0));
@@ -189,9 +181,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [
                         {
                             coors: {
-                                x: A[0],
-                                y: A[1],
-                                z: A.length === 2 ? A[2] : 0
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
                             },
 
                             ambiguous: true
@@ -200,9 +192,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 let v1 = {
-                    x: A[0] - start2.x,
-                    y: A[1] - start2.y,
-                    z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
+                    x: A[0].valueOf() as number - start2.x,
+                    y: A[1].valueOf() as number - start2.y,
+                    z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (start2.z ?? 0)
                 }
 
                 let dotProduct2 = dot(
@@ -219,9 +211,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -235,9 +227,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -249,9 +241,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -263,9 +255,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 return [
                     {
                         coors: {
-                            x: A[0],
-                            y: A[1],
-                            z: A.length === 2 ? A[2] : 0
+                            x: A[0].valueOf() as number,
+                            y: A[1].valueOf() as number,
+                            z: A.length === 2 ? A[2].valueOf() as number : 0
                         },
 
                         ambiguous: false
@@ -278,9 +270,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [
                         {
                             coors: {
-                                x: A[0],
-                                y: A[1],
-                                z: A.length === 2 ? A[2] : 0
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
                             },
 
                             ambiguous: true
@@ -292,9 +284,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [
                         {
                             coors: {
-                                x: A[0],
-                                y: A[1],
-                                z: A.length === 2 ? A[2] : 0
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
                             },
 
                             ambiguous: true
@@ -303,9 +295,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 let v1 = {
-                    x: A[0] - start2.x,
-                    y: A[1] - start2.y,
-                    z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
+                    x: A[0].valueOf() as number - start2.x,
+                    y: A[1].valueOf() as number - start2.y,
+                    z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (start2.z ?? 0)
                 }
 
                 let dotProduct2 = dot(
@@ -322,9 +314,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -338,9 +330,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -352,9 +344,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -366,9 +358,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 return [
                     {
                         coors: {
-                            x: A[0],
-                            y: A[1],
-                            z: A.length === 2 ? A[2] : 0
+                            x: A[0].valueOf() as number,
+                            y: A[1].valueOf() as number,
+                            z: A.length === 2 ? A[2].valueOf() as number : 0
                         },
 
                         ambiguous: false
@@ -378,9 +370,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
 
             else {
                 let v1 = {
-                    x: A[0] - start2.x,
-                    y: A[1] - start2.y,
-                    z: (A.length === 2 ? 0 : A[2]) - (start2.z ?? 0)
+                    x: A[0].valueOf() as number - start2.x,
+                    y: A[1].valueOf() as number - start2.y,
+                    z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (start2.z ?? 0)
                 }
 
                 let dotProduct2 = dot(
@@ -397,9 +389,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -413,9 +405,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -427,9 +419,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         return [
                             {
                                 coors: {
-                                    x: A[0],
-                                    y: A[1],
-                                    z: A.length === 2 ? A[2] : 0
+                                    x: A[0].valueOf() as number,
+                                    y: A[1].valueOf() as number,
+                                    z: A.length === 2 ? A[2].valueOf() as number : 0
                                 },
 
                                 ambiguous: true
@@ -441,9 +433,9 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 return [
                     {
                         coors: {
-                            x: A[0],
-                            y: A[1],
-                            z: A.length === 2 ? A[2] : 0
+                            x: A[0].valueOf() as number,
+                            y: A[1].valueOf() as number,
+                            z: A.length === 2 ? A[2].valueOf() as number : 0
                         },
 
                         ambiguous: false
@@ -596,67 +588,142 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 let point1 = poly.points[i];
                 let point2 = poly.points[(i + 1) % poly.points.length];
 
-                let u = {
-                    x: point2.x - point1.x,
-                    y: point2.y - point1.y,
-                    z: (point2.z ?? 0) - (point1.z ?? 0)
-                }
+                let A = math.intersect(
+                    [point1.x, point1.y, point1.z ?? 0],
+                    [point2.x, point2.y, point2.z ?? 0],
+                    [start.x, start.y, start.z ?? 0],
+                    [end.x, end.y, end.z ?? 0]
+                )
 
+                if (A === null) continue;
                 let v = {
-                    x: end.x - start.x,
-                    y: end.y - start.y,
-                    z: (end.z ?? 0) - (start.z ?? 0)
+                    x: A[0].valueOf() as number - start.x,
+                    y: A[1].valueOf() as number - start.y,
+                    z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (start.z ?? 0)
                 }
 
-                let A = 
-                [
-                    [u.x, -v.x, 0],
-                    [u.y, -v.y, 0],
-                    [u.z, -v.z, 0]
-                ]
+                let dotProduct = dot(v.x, v.y, v.z, end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0));
+                if (shape1.type === 'Ray') {
+                    if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                        continue;
+                    }
 
-                let b = [
-                    [start.x - point1.x],
-                    [start.y - point1.y],
-                    [(start.z ?? 0) - (point1.z ?? 0)]
-                ];
+                    let v1 = {
+                        x: A[0].valueOf() as number - point1.x,
+                        y: A[1].valueOf() as number - point1.y,
+                        z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (point1.z ?? 0)
+                    }
 
-                let matrixA = math.matrix(A);
-                const rankA = math.rank(matrixA);
-                const augmentedMatrix = math.concat(matrixA, math.matrix(b), 1);
-                const rankAug = math.rank(augmentedMatrix);
-                if (rankA < rankAug) {
-                    continue;
+                    let dotProduct2 = dot(
+                        point2.x - point1.x,
+                        point2.y - point1.y,
+                        (point2.z ?? 0) - (point1.z ?? 0),
+                        v1.x,
+                        v1.y,
+                        v1.z
+                    )
+
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        continue;
+                    }
+
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(point2.x - point1.x, point2.y - point1.y, (point2.z ?? 0) - (point1.z ?? 0))) {
+                        continue;
+                    }
+
+                    intersections.push(
+                        {
+                            coors: {
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
+                            },
+
+                            ambiguous: false
+                        }
+                    )
                 }
 
-                else if (rankA < math.size(matrixA)[1]) {
-                    continue;
+                else if (shape1.type === 'Segment') {
+                    if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                        continue;
+                    }
+
+                    if (L2_norm(v.x, v.y, v.z) > L2_norm(end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0))) {
+                        continue;
+                    }
+
+                    let v1 = {
+                        x: A[0].valueOf() as number - point1.x,
+                        y: A[1].valueOf() as number - point1.y,
+                        z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (point1.z ?? 0)
+                    }
+
+                    let dotProduct2 = dot(
+                        point2.x - point1.x,
+                        point2.y - point1.y,
+                        (point2.z ?? 0) - (point1.z ?? 0),
+                        v1.x,
+                        v1.y,
+                        v1.z
+                    )
+
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        continue;
+                    }
+
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(point2.x - point1.x, point2.y - point1.y, (point2.z ?? 0) - (point1.z ?? 0))) {
+                        continue;
+                    }
+
+                    intersections.push(
+                        {
+                            coors: {
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
+                            },
+
+                            ambiguous: false
+                        }
+                    )
                 }
 
                 else {
-                    const A_pinv = math.pinv(A);
-                    const solutions = math.multiply(A_pinv, b);
-                    if (
-                        (shape1.type === 'Ray' && (solutions.get([0, 0]) < 0 && Math.abs(solutions.get([0, 0])) > epsilon)) ||
-                        (shape1.type === 'Segment' && ((solutions.get([0, 0]) < 0 && Math.abs(solutions.get([0, 0])) > epsilon) || (solutions.get([0, 0]) > 1 && Math.abs(solutions.get([0, 0]) - 1) > epsilon)))
-                    ) {
-                        continue; // The intersection point is not valid
+                    let v1 = {
+                        x: A[0].valueOf() as number - point1.x,
+                        y: A[1].valueOf() as number - point1.y,
+                        z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (point1.z ?? 0)
                     }
 
-                    if ((solutions.get([0, 1]) < 0 && Math.abs(solutions.get([0, 1])) > epsilon) || (solutions.get([0, 1]) > 1 && Math.abs(solutions.get([0, 1]) - 1) > epsilon)) {
-                        continue; // The intersection point is not valid
+                    let dotProduct2 = dot(
+                        point2.x - point1.x,
+                        point2.y - point1.y,
+                        (point2.z ?? 0) - (point1.z ?? 0),
+                        v1.x,
+                        v1.y,
+                        v1.z
+                    )
+
+                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                        continue;
                     }
 
-                    // If we reach here, the intersection point is valid
-                    intersections.push({
-                        coors: {
-                            x: start.x + v.x * solutions.get([0, 0]),
-                            y: start.y + v.y * solutions.get([0, 0]),
-                            z: (start.z ?? 0) + v.z * solutions.get([0, 0])
-                        },
-                        
-                        ambiguous: false
-                    });
+                    if (L2_norm(v1.x, v1.y, v1.z) > L2_norm(point2.x - point1.x, point2.y - point1.y, (point2.z ?? 0) - (point1.z ?? 0))) {
+                        continue;
+                    }
+
+                    intersections.push(
+                        {
+                            coors: {
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
+                            },
+
+                            ambiguous: false
+                        }
+                    )
                 }
             }
 
@@ -818,9 +885,9 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             let v = {
-                x: A[0] - start.x,
-                y: A[1] - start.y,
-                z: (A.length === 2 ? 0 : A[2]) - (start.z ?? 0)
+                x: A[0].valueOf() as number - start.x,
+                y: A[1].valueOf() as number - start.y,
+                z: (A.length === 2 ? 0 : A[2].valueOf() as number) - (start.z ?? 0)
             }
 
             let dotProduct2 = dot(
@@ -837,9 +904,9 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [
                         {
                             coors: {
-                                x: A[0],
-                                y: A[1],
-                                z: A.length === 2 ? A[2] : 0
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
                             },
 
                             ambiguous: true
@@ -853,9 +920,9 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [
                         {
                             coors: {
-                                x: A[0],
-                                y: A[1],
-                                z: A.length === 2 ? A[2] : 0
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
                             },
 
                             ambiguous: true
@@ -867,9 +934,9 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
                     return [
                         {
                             coors: {
-                                x: A[0],
-                                y: A[1],
-                                z: A.length === 2 ? A[2] : 0
+                                x: A[0].valueOf() as number,
+                                y: A[1].valueOf() as number,
+                                z: A.length === 2 ? A[2].valueOf() as number : 0
                             },
 
                             ambiguous: true
@@ -881,9 +948,9 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             return [
                 {
                     coors: {
-                        x: A[0],
-                        y: A[1],
-                        z: A.length === 2 ? A[2] : 0
+                        x: A[0].valueOf() as number,
+                        y: A[1].valueOf() as number,
+                        z: A.length === 2 ? A[2].valueOf() as number : 0
                     },
 
                     ambiguous: false
@@ -1084,9 +1151,9 @@ export const planeIntersection = (shape1: GeometryShape.Plane, shape2: GeometryS
     const A_pinv = math.pinv(A);
     const solutions = math.multiply(A_pinv, b);
     const pointOnLine = {
-        x: solutions.get([0, 0]),
-        y: solutions.get([1, 0]),
-        z: solutions.get([2, 0]) ?? 0
+        x: solutions[0][0],
+        y: solutions[1][0],
+        z: solutions[2][0] ?? 0
     };
 
     return {
@@ -1209,6 +1276,7 @@ export const orthocenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: G
     if (isCollinear(A, B, C)) {
         throw new Error('The points are collinear');
     }
+
     const AB = {
         x: B.x - A.x,
         y: B.y - A.y,
@@ -1243,12 +1311,14 @@ export const orthocenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: G
         BC.x * A.x + BC.y * A.y + (BC.z ?? 0) * (A.z ?? 0),
     ]
 
+    console.log(matrix, b);
+
     const solution = math.lusolve(matrix, b);
 
     return {
-        x: solution[0],
-        y: solution[1],
-        z: solution[2]
+        x: solution[0].valueOf() as number,
+        y: solution[1].valueOf() as number,
+        z: solution[2].valueOf() as number
     }
 }
 
@@ -1257,35 +1327,62 @@ export const circumcenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: 
         throw new Error('The points are collinear');
     }
 
-    const AB = {
-        x: B.x - A.x,
-        y: B.y - A.y,
-        z: (B.z ?? 0) - (A.z ?? 0)
+    if (A.z === undefined || B.z === undefined || C.z === undefined) {
+        const D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+        const Ux = (
+            ((A.x ** 2 + A.y ** 2) * (B.y - C.y) +
+            (B.x ** 2 + B.y ** 2) * (C.y - A.y) +
+            (C.x ** 2 + C.y ** 2) * (A.y - B.y)) / D
+        );
+
+        const Uy = (
+            ((A.x ** 2 + A.y ** 2) * (C.x - B.x) +
+            (B.x ** 2 + B.y ** 2) * (A.x - C.x) +
+            (C.x ** 2 + C.y ** 2) * (B.x - A.x)) / D
+        );
+
+        return { x: Ux, y: Uy };
     }
 
-    const AC = {
-        x: C.x - A.x,
-        y: C.y - A.y,
-        z: (C.z ?? 0) - (A.z ?? 0)
-    }
+    else {
+        const vec = (p1: GeometryShape.Point, p2: GeometryShape.Point) => ({
+            x: p2.x - p1.x,
+            y: p2.y - p1.y,
+            z: (p2.z ?? 0) - (p1.z ?? 0),
+        });
 
-    const ab = cross(AB.x, AB.y, AB.z, AC.x, AC.y, AC.z);
-    const denominator = 2 * Math.pow(L2_norm(ab.x, ab.y, ab.z), 2);
-    const first = mult_scalar(ab.x, ab.y, ab.z, Math.pow(L2_norm(AC.x, AC.y, AC.z), 2));
-    const second = mult_scalar(ab.x, ab.y, ab.z, Math.pow(L2_norm(AB.x, AB.y, AB.z), 2));
-    const third = cross(first.x, first.y, first.z, AB.x, AB.y, AB.z);
-    const fourth = cross(second.x, second.y, second.z, AC.x, AC.y, AC.z);
+        const mid = (p1: GeometryShape.Point, p2: GeometryShape.Point) => ({
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2,
+            z: ((p1.z ?? 0) + (p2.z ?? 0)) / 2,
+        });
 
-    const numerator = {
-        x: third.x + fourth.x,
-        y: third.y + fourth.y,
-        z: third.z + fourth.z
-    };
+        // Triangle side vectors and triangle normal
+        const AB = vec(A, B);
+        const AC = vec(A, C);
+        const N = cross(AB.x, AB.y, AB.z, AC.x, AC.y, AC.z); // triangle's plane normal
 
-    return {
-        x: A.x + numerator.x / denominator,
-        y: A.y + numerator.y / denominator,
-        z: (A.z ?? 0) + numerator.z / denominator
+        // Perpendicular bisectors directions (in-plane, perpendicular to sides)
+        const D1 = cross(N.x, N.y, N.z, AB.x, AB.y, AB.z); // direction perpendicular to AB in the triangle plane
+        const D2 = cross(N.x, N.y, N.z, AC.x, AC.y, AC.z); // direction perpendicular to AC in the triangle plane
+
+        const M1 = mid(A, B); // midpoint of AB
+        const M2 = mid(A, C); // midpoint of AC
+
+        // Solve for intersection point of two lines:
+        // P = M1 + t * D1
+        // Q = M2 + s * D2
+        // => M1 + t * D1 = M2 + s * D2 => solve for t and s
+        const sol = math.intersect(
+            [M1.x, M1.y, M1.z], [M1.x + D1.x, M1.y + D1.y, M1.z + D1.z],
+            [M2.x, M2.y, M2.z], [M2.x + D2.x, M2.y + D2.y, M2.z + D2.z]
+        );
+
+        return {
+            x: sol[0].valueOf() as number,
+            y: sol[1].valueOf() as number,
+            z: sol[2].valueOf() as number
+        };
     }
 }
 
@@ -2013,7 +2110,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     }
 }
 
-export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shape): GeometryShape.Point => {
+export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shape) => {
     if (!(['Segment', 'Ray', 'Line', 'Plane'].includes(o2.type))) {
         throw new Error('Cannot perform projection');
     }
@@ -2061,12 +2158,11 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
                 z: (start.z ?? 0) + v1.z
             }
 
-            return Factory.createPoint(
-                o1.props,
-                foot.x,
-                foot.y,
-                foot.z
-            )
+            return {
+                x: foot.x,
+                y: foot.y,
+                z: foot.z
+            }
         }
         
         else {
@@ -2092,12 +2188,11 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
             throw new Error('Cannot perform projection');
         }
 
-        return Factory.createPoint(
-            o1.props,
-            A[0],
-            A[1],
-            A.length === 2 ? 0 : A[2]
-        )
+        return {
+            x: A[0].valueOf() as number,
+            y: A[1].valueOf() as number,
+            z: A.length === 2 ? 0 : A[2].valueOf() as number
+        }
     }
 }
 
@@ -2320,7 +2415,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
     }
 }
 
-export const excenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point): GeometryShape.Point => {
+export const excenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
     if (isCollinear(A, B, C)) {
         throw new Error('Cannot find the excenter of 3 colinear points');
     }
@@ -2329,15 +2424,26 @@ export const excenter = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
     let CA = L2_norm(C.x - A.x, C.y - A.y, (C.z ?? 0) - (A.z ?? 0));
     let AB = L2_norm(A.x - B.x, A.y - B.y, (A.z ?? 0) - (B.z ?? 0));
 
-    return Factory.createPoint(
-        A.props,
-        (-BC * A.x + CA * B.x - AB * C.x) / (AB + BC + CA),
-        (-BC * A.y + CA * B.y - AB * C.y) / (AB + BC + CA),
-        (-BC * (A.z ?? 0) + CA * (B.z ?? 0) - AB * (C.z ?? 0)) / (AB + BC + CA),
-    )
+    return [
+        {
+            x: (-BC * A.x + CA * B.x + AB * C.x) / (-BC + CA + AB),
+            y: (-BC * A.y + CA * B.y + AB * C.y) / (-BC + CA + AB),
+            z: (-BC * (A.z ?? 0) + CA * (B.z ?? 0) + AB * (C.z ?? 0)) / (-BC + CA + AB)
+        },
+        {
+            x: (BC * A.x - CA * B.x + AB * C.x) / (BC - CA + AB),
+            y: (BC * A.y - CA * B.y + AB * C.y) / (BC - CA + AB),
+            z: (BC * (A.z ?? 0) - CA * (B.z ?? 0) + AB * (C.z ?? 0)) / (BC - CA + AB)
+        },
+        {
+            x: (BC * A.x + CA * B.x - AB * C.x) / (BC + CA - AB),
+            y: (BC * A.y + CA * B.y - AB * C.y) / (BC + CA - AB),
+            z: (BC * (A.z ?? 0) + CA * (B.z ?? 0) - AB * (C.z ?? 0)) / (BC + CA - AB)
+        }
+    ]
 }
 
-export const exradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point): number => {
+export const exradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: GeometryShape.Point) => {
     if (isCollinear(A, B, C)) {
         throw new Error('Cannot find the exradius of 3 colinear points');
     }
@@ -2347,7 +2453,11 @@ export const exradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
     let AB = L2_norm(A.x - B.x, A.y - B.y, (A.z ?? 0) - (B.z ?? 0));
 
     let s = (AB + BC + CA) / 2;
-    return symbolicSqrt(s * (s - AB) * (s - BC) * (s - CA)) / (s - CA);
+    return [
+        symbolicSqrt(s * (s - AB) * (s - BC) * (s - CA)) / (s - BC),
+        symbolicSqrt(s * (s - AB) * (s - BC) * (s - CA)) / (s - CA),
+        symbolicSqrt(s * (s - AB) * (s - BC) * (s - CA)) / (s - AB)
+    ]
 }
 
 export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: number): GeometryShape.Shape => {
