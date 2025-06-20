@@ -1221,6 +1221,14 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     onHideObjectClick={this.handleClearClick}
                     onIntersectionClick={this.handleClearClick}
                     onCircle2PointClick={this.handleClearClick}
+                    onCentroidClick={this.handleClearClick}
+                    onCircumcenterClick={this.handleClearClick}
+                    onOrthocenterClick={this.handleClearClick}
+                    onIncenterClick={this.handleClearClick}
+                    onCircumcircleClick={this.handleClearClick}
+                    onIncircleClick={this.handleClearClick}
+                    onExcenterClick={this.handleClearClick}
+                    onExcircleClick={this.handleClearClick}
                 />
 
                 <canvas

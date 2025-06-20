@@ -10,8 +10,6 @@ const root = ReactDOM.createRoot(
 );
 
 root.render(
-    //<KonvaCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' />
-    // <ThreeDCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' shapes={shapes} />
     <React.StrictMode>
         <App />
     </React.StrictMode>
