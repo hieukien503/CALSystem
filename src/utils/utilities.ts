@@ -197,7 +197,8 @@ export const clone = (
             dependsOn: Array.from(node.dependsOn),
             node: node.node.clone(),
             defined: node.defined,
-            ambiguous: node.ambiguous
+            ambiguous: node.ambiguous,
+            isSelected: node.isSelected
         })
     })
 
@@ -458,7 +459,8 @@ export const cloneDAG = (dag: Map<string, ShapeNode>): Map<string, ShapeNode> =>
             dependsOn: Array.from(node.dependsOn),
             node: node.node,
             defined: node.defined,
-            ambiguous: node.ambiguous
+            ambiguous: node.ambiguous,
+            isSelected: node.isSelected
         })
     })
 

@@ -17,7 +17,7 @@ export interface Shape3D extends BaseShape {
 
 export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
                         'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'InternalAngleBisector' |
-                        'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' | 'Median' |
+                        'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' |
                         'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' | 'Circle2Point' | 'Angle' |
                         'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' |
                         'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' | 'RegularPolygon'
@@ -198,6 +198,8 @@ export interface ShapeNode {
         degree: number;
         CCW: boolean;
     };
+    /** Selected or not */
+    isSelected: boolean;
 }
 
 export interface ShapeNode3D {

@@ -7,8 +7,10 @@ interface AlgebraToolProps {
     dag: Map<string, ShapeNode>;
 }
 
-class AlgebraTool extends React.Component<{}, {}> {
-
+class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
+    constructor(props: AlgebraToolProps) {
+        super(props);
+    }
 };
 
 export default AlgebraTool;

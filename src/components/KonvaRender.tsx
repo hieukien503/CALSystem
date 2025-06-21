@@ -44,6 +44,7 @@ interface CanvasProps {
         selectedPoints: Point[]
     }) => void;
     onRenderMenuRightClick: (pos?: {x: number, y: number}) => void;
+    onRemoveNode: (id: string) => void;
 }
 
 class KonvaCanvas extends React.Component<CanvasProps, {}> {
@@ -221,8 +222,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             let shapes = this.stageRef.current.getAllIntersections(pointer);
             let children = shapes.filter(node => (node.getLayer() === this.layerMathObjectRef.current) || node.getLayer() === this.layerAxisRef.current);
-            let shape = children.length > 0 ? children[0] : undefined;
-
+            let shape = children.length > 0 ? children[children.length - 1] : undefined;
             if (this.props.mode === 'intersection' && children.length > 1) {
                 this.createPoint(position, children);
                 return;
@@ -231,20 +231,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             if (!shape || (shape && !shape.id().includes('point-'))) {
                 if (!['length', 'area'].includes(this.props.mode) && 
                     !(shape && shape.id().includes('polygon-') && ['orthocenter', 'centroid', 'circumcenter', 'incenter', 'excenter', 'circumcircle', 'incircle', 'excircle'].includes(this.props.mode)) &&
-                    !(this.props.mode === 'intersection')
+                    !(this.props.mode === 'intersection') &&
+                    !(shape && (shape.id().includes('circle-') || shape.id().includes('line-')) && this.props.mode === 'midpoint')
                 ) {
                     this.createPoint(position, children);
                 }
-            }
-
-            else if (shape && shape.id().includes('point-')) {
-                let shapeNode = this.props.dag.get(shape.id());
-                this.props.onUpdateLastFailedState({
-                    selectedPoints: [...this.props.selectedPoints, shapeNode!.type as Point],
-                    selectedShapes: [...this.props.selectedShapes]
-                })
-
-                this.props.onSelectedPointsChange([...this.props.selectedPoints, shapeNode!.type as Point]);
             }
 
             else if (['show_label', 'show_object'].includes(this.props.mode)) {
@@ -295,11 +286,20 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     const newSelected = [...this.props.selectedShapes, l];
                     this.props.onSelectedShapesChange(newSelected);
                 }
-                
+            
                 else {
-                    if (!shape.id().includes(pNode.type.type)) {
+                    if (!shape.id().includes('point-')) {
                         const newSelected = [...this.props.selectedShapes, pNode.type];
                         this.props.onSelectedShapesChange(newSelected);
+                    }
+
+                    else {
+                        this.props.onUpdateLastFailedState({
+                            selectedPoints: [...this.props.selectedPoints, pNode.type as Point],
+                            selectedShapes: [...this.props.selectedShapes]
+                        })
+
+                        this.props.onSelectedPointsChange([...this.props.selectedPoints, pNode.type as Point]);
                     }
                 }
             }
@@ -308,17 +308,43 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             return;
         }
 
-        this.stageRef.current.container().className = this.stageRef.current.getIntersection(pointer) ? "cursor_drag" : "cursor_grabbing"
-        if (e.target === this.stageRef.current || e.target instanceof Konva.Stage) {
-            this.last_pointer = {
-                x: pointer.x,
-                y: pointer.y
+        console.log(this.props.mode);
+        this.stageRef.current.container().className = this.stageRef.current.getIntersection(pointer) ? "cursor_drag" : "cursor_grabbing";
+        let shapes = this.stageRef.current.getAllIntersections(pointer);
+        let children = shapes.filter(node => (node.getLayer() === this.layerMathObjectRef.current));
+        let shape = children.length > 0 ? children[children.length - 1] : undefined;
+        console.log(shapes);
+        if (shape) {
+            let pNode = this.props.dag.get(shape.id());
+            if (!shape.id().includes('point-')) {
+                const newSelected = [...this.props.selectedShapes, pNode!.type];
+                this.props.onSelectedShapesChange(newSelected);
             }
 
-            this.props.onGeometryStateChange({
-                ...this.props.geometryState,
-                panning: true
-            });
+            else {
+                this.props.onUpdateLastFailedState({
+                    selectedPoints: [...this.props.selectedPoints, pNode!.type as Point],
+                    selectedShapes: [...this.props.selectedShapes]
+                })
+
+                this.props.onSelectedPointsChange([...this.props.selectedPoints, pNode!.type as Point]);
+            }
+        }
+
+        else {
+            if (e.target === this.stageRef.current || e.target instanceof Konva.Stage) {
+                this.last_pointer = {
+                    x: pointer.x,
+                    y: pointer.y
+                }
+
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState, panning: true},
+                    dag: this.props.dag,
+                    selectedShapes: [],
+                    selectedPoints: []
+                })
+            }
         }
     }
 
@@ -362,15 +388,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
 
                 else {
-                    if (node.id.includes('point-')) {
-                        (node.node as Konva.Circle).shadowBlur(0);
-                        (node.node as Konva.Circle).shadowOpacity(0);
+                    if (!node.isSelected) {
+                        if (node.id.includes('point-')) {
+                            (node.node as Konva.Circle).shadowBlur(0);
+                            (node.node as Konva.Circle).shadowOpacity(0);
+                        }
+                        
+                        else {
+                            const strokeWidth = node.type.props.line_size / this.props.geometryState.zoom_level;
+                            node.node.strokeWidth(strokeWidth);
+                        }
                     }
                     
-                    else {
-                        const strokeWidth = node.type.props.line_size / this.props.geometryState.zoom_level;
-                        node.node.strokeWidth(strokeWidth);
-                    }
                 }
             })
             
@@ -511,30 +540,29 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             'Segment': 11,
             'Vector': 12,
             'TangentLine': 13,
-            'Median': 14,
-            'PerpendicularLine': 15,
-            'PerpendicularBisector': 16,
+            'PerpendicularLine': 14,
+            'PerpendicularBisector': 15,
 
-            'InternalAngleBisector': 17,
-            'ExternalAngleBisector': 18,
+            'InternalAngleBisector': 16,
+            'ExternalAngleBisector': 17,
 
-            'Centroid': 19,
-            'Orthocenter': 20,
-            'Circumcenter': 21,
-            'Incenter': 22,
-            'Excenter': 23,
-            'Midpoint': 24,
-            'Intersection': 25,
-            'Projection': 26,
+            'Centroid': 18,
+            'Orthocenter': 19,
+            'Circumcenter': 20,
+            'Incenter': 21,
+            'Excenter': 22,
+            'Midpoint': 23,
+            'Intersection': 24,
+            'Projection': 25,
 
-            'Reflection': 27,
-            'Rotation': 28,
-            'Enlarge': 29,
-            'Translation': 30,
+            'Reflection': 26,
+            'Rotation': 27,
+            'Enlarge': 28,
+            'Translation': 29,
 
-            'Angle': 31,
+            'Angle': 30,
 
-            'Point': 32
+            'Point': 31
         };
 
         let shapeNode: ShapeNode[] = [];
@@ -598,26 +626,20 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             id: props.id,
             draggable: true,
             strokeWidth: scaledStrokeWidth,
+            perfectDrawEnabled: false,
             hitStrokeWidth: 2
         });
 
         c.visible(props.visible.shape);
 
         c.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'pointer';
-            }
-
-            if (this.props.mode === "delete") {
-                this.removeNode(c.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(c.id());
+            this.props.pushHistory(this.props.getSnapshot());
         })
 
         c.on('dragstart', (e) => {
@@ -677,14 +699,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             });
         })
 
-        c.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
-            }
-        })
-
         return c;
     };
 
@@ -719,20 +733,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         l.visible(props.visible.shape);
 
         l.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'pointer';
-            }
-
-            if (this.props.mode === "delete") {
-                this.removeNode(l.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(l.id());
+            this.props.pushHistory(this.props.getSnapshot());
         });
 
         let oldPos = {
@@ -787,14 +794,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         })
 
-        l.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
-            }
-        })
-
         return l;
     };
 
@@ -823,20 +822,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         s.visible(props.visible.shape);
 
         s.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'pointer';
-            }
-
-            if (this.props.mode === "delete") {
-                this.removeNode(s.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(s.id());
+            this.props.pushHistory(this.props.getSnapshot());
         })
 
         let oldPos = {
@@ -892,14 +884,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         })
 
-        s.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
-            }
-        })
-
         return s;
     };
 
@@ -931,20 +915,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         v.visible(props.visible.shape);
 
         v.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'pointer';
-            }
-
-            if (this.props.mode === "delete") {
-                this.removeNode(v.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(v.id());
+            this.props.pushHistory(this.props.getSnapshot());
         })
 
         let oldPos = {
@@ -999,14 +976,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         })
 
-        v.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
-            }
-        })
-
         return v;
     };
 
@@ -1047,20 +1016,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         });
 
         c.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'pointer';
-            }
-
-            if (this.props.mode === "delete") {
-                this.removeNode(c.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(c.id());
+            this.props.pushHistory(this.props.getSnapshot());
         })
 
         let oldPos = {
@@ -1112,14 +1074,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updateAndPropagate(p.id, this.computeUpdateFor);
         })
 
-        c.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
-            }
-        })
-
         return c;
     };
 
@@ -1148,20 +1102,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         p.visible(props.visible.shape);
 
         p.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'pointer';
-            }
-
-            if (this.props.mode === "delete") {
-                this.removeNode(p.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(p.id());
+            this.props.pushHistory(this.props.getSnapshot());
         })
 
         let oldPos = {
@@ -1222,14 +1169,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             })
         })
 
-        p.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
-            }
-        })
-
         return p;
     };
 
@@ -1264,20 +1203,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         r.visible(props.visible.shape);
 
         r.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'pointer';
-            }
-
-            if (this.props.mode === "delete") {
-                this.removeNode(r.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(r.id());
+            this.props.pushHistory(this.props.getSnapshot());
         })
 
         let oldPos = {
@@ -1330,14 +1262,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             node2.position({x: node2.x() + dx, y: node2.y() + dy});
             this.updateAndPropagate(p1.id, this.computeUpdateFor);
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
-        })
-
-        r.on('mouseup', (e) => {
-            e.cancelBubble = true;
-            let stage = e.target.getStage();
-            if (stage) {
-                stage.container().style.cursor = 'default';
-            }
         })
 
         return r;
@@ -1398,15 +1322,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         a.visible(props.visible.shape && shape.degree !== 0);
 
         a.on('mousedown', (e) => {
-            if (!["delete", "edit"].includes(this.props.mode)) {
+            if (this.props.mode !== 'delete') {
                 return;
             }
 
             e.cancelBubble = true;
-            if (this.props.mode === "delete") {
-                this.removeNode(a.id());
-                this.props.pushHistory(this.props.getSnapshot());
-            }
+            this.props.onRemoveNode(a.id());
+            this.props.pushHistory(this.props.getSnapshot());
         })
 
         return a;
@@ -1683,7 +1605,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         node: this.createKonvaShape(vector),
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        ambiguous: false
+                        ambiguous: false,
+                        isSelected: false
                     }
 
             
@@ -1713,7 +1636,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         node: this.createKonvaShape(line),
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        ambiguous: false
+                        ambiguous: false,
+                        isSelected: false
                     };
 
             
@@ -1744,7 +1668,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         node: this.createKonvaShape(ray),
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        ambiguous: false
+                        ambiguous: false,
+                        isSelected: false
                     };
 
             
@@ -1774,7 +1699,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         node: this.createKonvaShape(segment),
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        ambiguous: false
+                        ambiguous: false,
+                        isSelected: false
                     };
 
             
@@ -1828,7 +1754,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     node: this.createKonvaShape(circle),
                     dependsOn: [point.props.id],
                     defined: true,
-                    ambiguous: false
+                    ambiguous: false,
+                    isSelected: false
                 }
 
         
@@ -1918,7 +1845,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             node: this.createKonvaShape(segment),
                             dependsOn: [p.props.id, pNext.props.id, polygon.props.id],
                             defined: true,
-                            ambiguous: false
+                            ambiguous: false,
+                            isSelected: false
                         }
 
                         DAG.set(segment.props.id, shapeNode);
@@ -1931,7 +1859,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         node: this.createKonvaShape(polygon),
                         dependsOn: dependencies,
                         defined: true,
-                        ambiguous: false
+                        ambiguous: false,
+                        isSelected: false
                     }
             
                     DAG.set(polygon.props.id, shapeNode);
@@ -2035,7 +1964,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     type: a,
                     node: this.createKonvaShape(a),
                     defined: vertex[0].coors !== undefined && vertex[0].ambiguous === false,
-                    ambiguous: vertex[0].ambiguous
+                    ambiguous: vertex[0].ambiguous,
+                    isSelected: false
                 }
 
         
@@ -2130,7 +2060,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     type: a,
                     node: this.createKonvaShape(a),
                     defined: true,
-                    ambiguous: false
+                    ambiguous: false,
+                    isSelected: false
                 };
 
         
@@ -2236,6 +2167,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 type: tmpPoint,
                 defined: true,
                 ambiguous: false,
+                isSelected: false,
                 scaleFactor: tmpSegment === undefined ? undefined : 0.5
             }
 
@@ -2250,7 +2182,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     node: this.createKonvaShape(tmpSegment),
                     type: tmpSegment,
                     defined: true,
-                    ambiguous: false
+                    ambiguous: false,
+                    isSelected: false
                 });
 
                 DAG.get(tmpSegment.props.id)!.node.hide();
@@ -2287,7 +2220,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 node: this.createKonvaShape(tmpPoint),
                 type: tmpPoint,
                 defined: true,
-                ambiguous: false
+                ambiguous: false,
+                isSelected: false
             }
 
             tmpShapeNode.node.hide();
@@ -2333,7 +2267,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
                     node: pNode,
                     defined: intersect.coors !== undefined && !intersect.ambiguous,
-                    ambiguous: intersect.ambiguous
+                    ambiguous: intersect.ambiguous,
+                    isSelected: false
                 }
 
                 DAG.set(point.props.id, shapeNode);
@@ -2380,6 +2315,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id],
                 defined: true,
                 ambiguous: false,
+                isSelected: false,
             }
 
             circle.type = 'Circle2Point';
@@ -2431,6 +2367,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: point.props.id,
                         defined: true,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
                         dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
@@ -2459,6 +2396,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: point.props.id,
                         defined: false,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
                         dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
@@ -2509,6 +2447,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: point.props.id,
                         defined: true,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
                         dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
@@ -2537,6 +2476,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: point.props.id,
                         defined: false,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
                         dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
@@ -2593,6 +2533,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: circle.props.id,
                         defined: true,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
                         dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
@@ -2625,6 +2566,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: circle.props.id,
                         defined: false,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
                         dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
@@ -2676,6 +2618,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: circle.props.id,
                         defined: true,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
                         dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
@@ -2708,6 +2651,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: circle.props.id,
                         defined: false,
                         ambiguous: false,
+                        isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
                         dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
@@ -2763,6 +2707,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: circle.props.id,
                             defined: true,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
                             dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
@@ -2811,6 +2756,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: circle.props.id,
                             defined: false,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
                             dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
@@ -2865,6 +2811,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: circle.props.id,
                             defined: true,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
                             dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
@@ -2913,6 +2860,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: circle.props.id,
                             defined: false,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
                             dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
@@ -2967,6 +2915,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: point.props.id,
                             defined: true,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(point),
                             type: point,
                             dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
@@ -3010,6 +2959,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: point.props.id,
                             defined: false,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(point),
                             type: point,
                             dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
@@ -3059,6 +3009,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: point.props.id,
                             defined: true,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(point),
                             type: point,
                             dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
@@ -3102,6 +3053,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             id: point.props.id,
                             defined: false,
                             ambiguous: false,
+                            isSelected: false,
                             node: this.createKonvaShape(point),
                             type: point,
                             dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
@@ -3118,6 +3070,114 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
                         gs: {...this.props.geometryState, shapes: shapes},
+                        dag: DAG,
+                        selectedPoints: [],
+                        selectedShapes: []
+                    });
+                }
+            }
+        }
+
+        else if (this.props.mode === 'midpoint') {
+            const selectedShapes = [...this.props.selectedShapes];
+            const selectedPoints = [...this.props.selectedPoints];
+            if (selectedShapes.length === 0) {
+                if (selectedPoints.length !== 2) return;
+                let label = utils.getExcelLabel('A', 0);
+                let index = 0;
+                while (this.props.labelUsed.includes(label)) {
+                    index++;
+                    label = utils.getExcelLabel('A', index);
+                }
+
+                this.props.onLabelUsed([...this.props.labelUsed, label]);
+                const midpoint = Factory.createPoint(
+                    utils.createLineDefaultShapeProps(label),
+                    (selectedPoints[0].x + selectedPoints[0].y) / 2,
+                    (selectedPoints[1].x + selectedPoints[1].y) / 2
+                )
+                
+                const DAG = utils.cloneDAG(this.props.dag);
+                DAG.set(midpoint.props.id, {
+                    id: midpoint.props.id,
+                    dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id],
+                    defined: true,
+                    ambiguous: false,
+                    isSelected: false,
+                    type: midpoint,
+                    node: this.createKonvaShape(midpoint)
+                });
+
+                midpoint.type = 'Midpoint';
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, midpoint.props.id]},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+
+            else {
+                if (selectedShapes.length !== 1) return;
+                if (!selectedShapes[0].props.id.includes('segment-') && !selectedShapes[0].props.id.includes('circle-')) return;
+                let label = utils.getExcelLabel('A', 0);
+                let index = 0;
+                while (this.props.labelUsed.includes(label)) {
+                    index++;
+                    label = utils.getExcelLabel('A', index);
+                }
+
+                this.props.onLabelUsed([...this.props.labelUsed, label]);
+                if (selectedShapes[0].props.id.includes('segment-')) {
+                    const midpoint = Factory.createPoint(
+                        utils.createPointDefaultShapeProps(label),
+                        ((selectedShapes[0] as Segment).startSegment.x + (selectedShapes[0] as Segment).endSegment.x) / 2,
+                        ((selectedShapes[0] as Segment).startSegment.y + (selectedShapes[0] as Segment).endSegment.y) / 2
+                    )
+                    
+                    const DAG = utils.cloneDAG(this.props.dag);
+                    DAG.set(midpoint.props.id, {
+                        id: midpoint.props.id,
+                        dependsOn: [selectedShapes[0].props.id],
+                        defined: true,
+                        ambiguous: false,
+                        isSelected: false,
+                        type: midpoint,
+                        node: this.createKonvaShape(midpoint)
+                    });
+
+                    midpoint.type = 'Midpoint';
+                    this.props.onUpdateLastFailedState();
+                    this.props.onUpdateAll({
+                        gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, midpoint.props.id]},
+                        dag: DAG,
+                        selectedPoints: [],
+                        selectedShapes: []
+                    });
+                }
+
+                else {
+                    const midpoint = Factory.createPoint(
+                        utils.createPointDefaultShapeProps(label),
+                        (selectedShapes[0] as Circle).centerC.x,
+                        (selectedShapes[0] as Circle).centerC.y
+                    )
+                    
+                    const DAG = utils.cloneDAG(this.props.dag);
+                    DAG.set(midpoint.props.id, {
+                        id: midpoint.props.id,
+                        dependsOn: [selectedShapes[0].props.id],
+                        defined: true,
+                        ambiguous: false,
+                        isSelected: false,
+                        type: midpoint,
+                        node: this.createKonvaShape(midpoint)
+                    });
+
+                    this.props.onUpdateLastFailedState();
+                    this.props.onUpdateAll({
+                        gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, midpoint.props.id]},
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -5058,52 +5118,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         return { ...node };
     }
 
-    private removeNodeBatch = (id: string, visited: Set<string>, state: {
-        shapes: string[],
-        labelUsed: string[],
-        dag: Map<string, ShapeNode>
-    }) => {
-        if (visited.has(id)) return;
-        const node = state.dag.get(id);
-        if (!node) return;
-
-        visited.add(id);
-        // 1. Find all dependent nodes and recursively remove them
-        state.dag.forEach((value, key) => {
-            if (value.dependsOn.includes(id)) {
-                this.removeNodeBatch(key, visited, state);
-            }
-        });
-
-        // 2. Clean up
-        this.props.onLabelUsed(state.labelUsed.filter(
-            label => label !== node.type.props.label
-        ));
-
-        (node as ShapeNode).node.destroy();
-        state.dag.delete(id);
-
-        // 3. Remove from shapes
-        state.shapes = state.shapes.filter(shapeId => shapeId !== id);
-    };
-
-    // Public method that does batch delete with single re-render
-    private removeNode = (id: string): void => {
-        const newShapes = [...this.props.geometryState.shapes];
-        const dag = utils.cloneDAG(this.props.dag);
-        const set = new Set<string>();
-
-        this.removeNodeBatch(id, set, { shapes: newShapes, labelUsed: this.props.labelUsed, dag: dag });
-
-        // Only one render here
-        this.props.onUpdateAll({
-            gs: this.props.geometryState,
-            dag: dag,
-            selectedPoints: this.props.selectedPoints,
-            selectedShapes: this.props.selectedShapes
-        })
-    };
-
     private createPoint = (
         position: {x: number, y: number},
         children: Konva.Shape[]
@@ -5200,7 +5214,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             scaleFactor: scaleFactor,
             rotationFactor: rotFactor,
             defined: true,
-            ambiguous: false
+            ambiguous: false,
+            isSelected: true
         }
 
         DAG.set(point.props.id, shapeNode);
