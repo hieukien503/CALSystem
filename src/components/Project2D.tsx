@@ -6,6 +6,7 @@ import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } fro
 import * as constants from '../types/constants'
 import * as utils from '../utils/utilities'
 import MenuItem from "./MenuItem";
+import Konva from "konva";
 
 type SharingMode = 'public' | 'private' | 'organization-wide';
 
@@ -229,9 +230,24 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         selectedShapes: Shape[],
         selectedPoints: Point[]
     }) => {
+        state.dag.forEach((node, key) => {
+            if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
+                node.isSelected = false;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            }
+        });
+
         this.setState({
             geometryState: {...state.gs},
-            dag: utils.cloneDAG(state.dag),
+            dag: state.dag,
             selectedPoints: [...state.selectedPoints],
             selectedShapes: [...state.selectedShapes]
         }, () => {
@@ -260,39 +276,228 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         this.labelUsed = [...labelUsed];
     }
 
+    private onSelectedPointsChange = (selectedPoints: Point[]): void => {
+        const DAG = utils.cloneDAG(this.state.dag);
+        DAG.forEach((node, key) => {
+            if (!selectedPoints.find(value => value.props.id === key)) {
+                node.isSelected = false;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            }
+
+            else {
+                node.isSelected = true;
+                (node.node as Konva.Circle).shadowColor('gray');
+                (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
+                (node.node as Konva.Circle).shadowOpacity(1.5);
+            }
+        });
+
+        this.setState({
+            dag: DAG,
+            selectedPoints: [...selectedPoints]
+        })
+    }
+
+    private onSelectedShapesChange = (selectedShapes: Shape[]): void => {
+        const DAG = utils.cloneDAG(this.state.dag);
+        DAG.forEach((node, key) => {
+            if (!selectedShapes.find(value => value.props.id === key)) {
+                node.isSelected = false;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            }
+
+            else {
+                node.isSelected = true;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowColor('gray');
+                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
+                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth * 2);
+                }
+            }
+        });
+
+        this.setState({
+            dag: DAG,
+            selectedShapes: [...selectedShapes]
+        })
+    }
+
+    private onSelectedChange = (state: {selectedShapes: Shape[], selectedPoints: Point[]}): void => {
+        const DAG = utils.cloneDAG(this.state.dag);
+        DAG.forEach((node, key) => {
+            if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
+                node.isSelected = false;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            }
+
+            else {
+                node.isSelected = true;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowColor('gray');
+                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
+                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth * 2);
+                }
+            }
+        });
+
+        this.setState({
+            dag: DAG,
+            selectedPoints: [...state.selectedPoints],
+            selectedShapes: [...state.selectedShapes]
+        })
+    }
+
+    private removeNodeBatch = (id: string, visited: Set<string>, state: {
+        shapes: string[],
+        labelUsed: string[],
+        dag: Map<string, ShapeNode>
+    }) => {
+        if (visited.has(id)) return;
+        const node = state.dag.get(id);
+        if (!node) return;
+
+        visited.add(id);
+        // 1. Find all dependent nodes and recursively remove them
+        state.dag.forEach((value, key) => {
+            if (value.dependsOn.includes(id)) {
+                this.removeNodeBatch(key, visited, state);
+            }
+        });
+
+        // 2. Clean up
+        state.labelUsed = state.labelUsed.filter(
+            label => label !== node.type.props.label
+        );
+
+        (node as ShapeNode).node.destroy();
+        state.dag.delete(id);
+
+        // 3. Remove from shapes
+        state.shapes = state.shapes.filter(shapeId => shapeId !== id);
+    };
+
+    // Public method that does batch delete with single re-render
+    private removeNode = (id: string): void => {
+        const newShapes = [...this.state.geometryState.shapes];
+        const dag = utils.cloneDAG(this.state.dag);
+        const set = new Set<string>();
+
+        this.removeNodeBatch(id, set, { shapes: newShapes, labelUsed: this.labelUsed, dag: dag });
+
+        // Only one render here
+        this.setState({
+            geometryState: this.state.geometryState,
+            dag: dag,
+            selectedPoints: this.state.selectedPoints,
+            selectedShapes: this.state.selectedShapes
+        })
+    };
+
+    private setMode = (mode: DrawingMode) => {
+        const DAG = utils.cloneDAG(this.state.dag);
+        if (mode === 'delete') {
+            let selected: string[] = [];
+            DAG.forEach((node, key) => {
+                if (node.isSelected) {
+                    selected.push(key);
+                }
+            });
+
+            selected.forEach(id => this.removeNode(id));
+        }
+
+        else {
+            DAG.forEach((node, key) => {
+                node.isSelected = false;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            });
+        }
+        
+        this.setState({
+            dag: DAG,
+            mode: mode,
+            selectedPoints: [],
+            selectedShapes: [],
+            isMenuRightClick: undefined
+        })
+    }
+
     render(): React.ReactNode {
         return (
             <div className="flex justify-start flex-row">
                 <GeometryTool
                     width={this.state.toolWidth}
                     height={this.props.height}
-                    onPointClick={() => this.setState({mode: 'point', isMenuRightClick: undefined})}
-                    onLineClick={() => this.setState({mode: 'line', isMenuRightClick: undefined})}
-                    onSegmentClick={() => this.setState({mode: 'segment', isMenuRightClick: undefined})}
-                    onVectorClick={() => this.setState({mode: 'vector', isMenuRightClick: undefined})}
-                    onPolygonClick={() => this.setState({mode: 'polygon', isMenuRightClick: undefined})}
-                    onCircleRadiusClick={() => this.setState({mode: 'circle', isMenuRightClick: undefined})}
-                    onRayClick={() => this.setState({mode: 'ray', isMenuRightClick: undefined})}
-                    onEditClick={() => this.setState({mode: 'edit', isMenuRightClick: undefined})}
-                    onDeleteClick={() => this.setState({mode: 'delete', isMenuRightClick: undefined})}
+                    onPointClick={() => this.setMode('point')}
+                    onLineClick={() => this.setMode('line')}
+                    onSegmentClick={() => this.setMode('segment')}
+                    onVectorClick={() => this.setMode('vector')}
+                    onPolygonClick={() => this.setMode('polygon')}
+                    onCircleRadiusClick={() => this.setMode('circle')}
+                    onRayClick={() => this.setMode('ray')}
+                    onEditClick={() => this.setMode('edit')}
+                    onDeleteClick={() => this.setMode('delete')}
                     onClearClick={this.handleClearCanvas}
                     onUndoClick={this.handleUndoClick}
                     onRedoClick={this.handleRedoClick}
-                    onAngleClick={() => this.setState({mode: 'angle', isMenuRightClick: undefined})}
-                    onLengthClick={() => this.setState({mode: 'length', isMenuRightClick: undefined})}
-                    onAreaClick={() => this.setState({mode: 'area', isMenuRightClick: undefined})}
-                    onHideLabelClick={() => this.setState({mode: 'show_label', isMenuRightClick: undefined})}
-                    onHideObjectClick={() => this.setState({mode: 'show_object', isMenuRightClick: undefined})}
-                    onIntersectionClick={() => this.setState({mode: 'intersection', isMenuRightClick: undefined})}
-                    onCircle2PointClick={() => this.setState({mode: 'circle_2_points', isMenuRightClick: undefined})}
-                    onCentroidClick={() => this.setState({mode: 'centroid', isMenuRightClick: undefined})}
-                    onCircumcenterClick={() => this.setState({mode: 'circumcenter', isMenuRightClick: undefined})}
-                    onOrthocenterClick={() => this.setState({mode: 'orthocenter', isMenuRightClick: undefined})}
-                    onIncenterClick={() => this.setState({mode: 'incenter', isMenuRightClick: undefined})}
-                    onCircumcircleClick={() => this.setState({mode: 'circumcircle', isMenuRightClick: undefined})}
-                    onIncircleClick={() => this.setState({mode: 'incircle', isMenuRightClick: undefined})}
-                    onExcenterClick={() => this.setState({mode: 'excenter', isMenuRightClick: undefined})}
-                    onExcircleClick={() => this.setState({mode: 'excircle', isMenuRightClick: undefined})}
+                    onAngleClick={() => this.setMode('angle')}
+                    onLengthClick={() => this.setMode('length')}
+                    onAreaClick={() => this.setMode('area')}
+                    onHideLabelClick={() => this.setMode('show_label')}
+                    onHideObjectClick={() => this.setMode('show_object')}
+                    onIntersectionClick={() => this.setMode('intersection')}
+                    onCircle2PointClick={() => this.setMode('circle_2_points')}
+                    onCentroidClick={() => this.setMode('centroid')}
+                    onCircumcenterClick={() => this.setMode('circumcenter')}
+                    onOrthocenterClick={() => this.setMode('orthocenter')}
+                    onIncenterClick={() => this.setMode('incenter')}
+                    onCircumcircleClick={() => this.setMode('circumcircle')}
+                    onIncircleClick={() => this.setMode('incircle')}
+                    onExcenterClick={() => this.setMode('excenter')}
+                    onExcircleClick={() => this.setMode('excircle')}
+                    onMidPointClick={() => this.setMode('midpoint')}
                 />
                 <div 
                     className="resizer flex justify-center items-center"
@@ -309,10 +514,10 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     dag={this.state.dag}
                     onChangeMode={(mode: DrawingMode) => this.setState({mode: mode})}
                     onClearCanvas={this.handleClearCanvas}
-                    onSelectedShapesChange={(s) => this.setState({selectedShapes: [...s]})}
-                    onSelectedPointsChange={(s) => this.setState({selectedPoints: [...s]})}
+                    onSelectedShapesChange={this.onSelectedShapesChange}
+                    onSelectedPointsChange={this.onSelectedPointsChange}
                     onGeometryStateChange={(s) => this.setState({geometryState: s})}
-                    onSelectedChange = {(s) => this.setState({selectedPoints: s.selectedPoints, selectedShapes: s.selectedShapes})}
+                    onSelectedChange = {this.onSelectedChange}
                     mode={this.state.mode}
                     isSnapToGrid={this.state.isSnapToGrid}
                     selectedPoints={this.state.selectedPoints}
@@ -334,7 +539,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                         )
                     }}
                     onRenderMenuRightClick={this.setRightMenuClick}
-                    
+                    onRemoveNode={this.removeNode}
                 />}
                 {this.state.isMenuRightClick && <MenuItem 
                     isSnapToGrid={this.state.snapToGridEnabled}

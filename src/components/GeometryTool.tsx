@@ -40,7 +40,7 @@ interface GeometryToolProps {
     onAngleClick: () => void;
     onHideLabelClick: () => void;
     onHideObjectClick: () => void;
-    // onMidPointClick: () => void;
+    onMidPointClick: () => void;
     onCircumcenterClick: () => void;
     onIncenterClick: () => void;
     onExcenterClick: () => void;
@@ -57,7 +57,6 @@ interface GeometryToolProps {
     onExcircleClick: () => void;
     onCircle2PointClick: () => void;
     // onSegmentLengthClick: () => void;
-    // onMedianClick: () => void;
     // onSemiClick: () => void;
     // onRegularPolygonClick: () => void;
     // onTranslationClick: () => void;
@@ -153,13 +152,9 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onHideObjectClick();
         }
 
-        // else if (toolKey === "midpoint") {
-        //     this.props.onMidPointClick();
-        // }
-
-        // else if (toolKey === "median") {
-        //     this.props.onMedianClick();
-        // }
+        else if (toolKey === "midpoint") {
+            this.props.onMidPointClick();
+        }
 
         // else if (toolKey === "perpendicular") {
         //     this.props.onPerpenLineClick();
@@ -295,7 +290,6 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     { key: "parallel", label: "Parallel Line", onClick: () => this.setActiveTool("parallel"), title: "Select parallel line and point" },
                     { key: "angle_bisector", label: "Angle Bisector", onClick: () => this.setActiveTool("angle_bisector"), title: "Select parallel line and point" },
                     { key: "tangent", label: "Tangents", onClick: () => this.setActiveTool("tangent"), title: "Select point, then circle" },
-                    { key: "median", label: "Median of Triangle", onClick: () => this.setActiveTool("median"), title: "Select 3 non-collinear points or polygon with 3 vertices" },
                 ]
             },
             {

@@ -39,14 +39,14 @@ header {
     position: relative;
 }
 
-    header #search {
-        flex: 1;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        width: 100%;
-        padding: 8px;
-        font-size: 16px;
-    }
+header #search {
+    flex: 1;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+}
 
 
 /* Flexbox Layout */

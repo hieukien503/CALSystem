@@ -4,7 +4,7 @@ import ThreeDCanvas from './ThreeRender';
 import { v4 as uuidv4 } from 'uuid'
 
 const Header = () => {
-    const [selectedTool, setSelectedTool] = useState<string>('basic');
+    const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
 
     // Handle dropdown change with explicit typing
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -60,9 +60,6 @@ const Header = () => {
         }
     }
     return (
-        // <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'>
-        // <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-        // Replace Contact with option
         <div className="flex flex-col min-h-screen">
             <header className="flex items-center">
                 <div className="logo">
