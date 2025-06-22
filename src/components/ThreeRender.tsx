@@ -1230,6 +1230,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     onExcenterClick={this.handleClearClick}
                     onExcircleClick={this.handleClearClick}
                     onMidPointClick={this.handleClearClick}
+                    onParaLineClick={this.handleClearClick}
+                    onPerpenLineClick={this.handleClearClick}
+                    onSegmentLengthClick={this.handleClearClick}
                 />
 
                 <canvas

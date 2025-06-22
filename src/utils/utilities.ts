@@ -269,9 +269,9 @@ export const snapToShape = (
         let shapeNode = dag.get(shape.id());
         if (shapeNode) {
             if (shapeNode.type.type === 'Circle') {
-                const cx = (shapeNode as ShapeNode).node.x();
-                const cy = (shapeNode as ShapeNode).node.y();
-                const r = ((shapeNode as ShapeNode).node as Konva.Circle).radius();
+                const cx = shapeNode.node.x();
+                const cy = shapeNode.node.y();
+                const r = (shapeNode.node as Konva.Circle).radius();
                 const dx = pos.x - cx;
                 const dy = pos.y - cy;
                 const dist = Math.sqrt(dx * dx + dy * dy);

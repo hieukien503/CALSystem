@@ -20,7 +20,7 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
                         'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' |
                         'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' | 'Circle2Point' | 'Angle' |
                         'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' |
-                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' | 'RegularPolygon'
+                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' | 'RegularPolygon';
 
 export interface Angle extends BaseShape {
     // Use degree for angle
@@ -245,7 +245,7 @@ export interface GeometryState {
 type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
                    'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'show_label' | 'show_object' | 'intersection' |
                    'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
-                   'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle';
+                   'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length';
 
 /** History */
 interface HistoryEntry {

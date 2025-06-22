@@ -47,16 +47,16 @@ interface GeometryToolProps {
     onOrthocenterClick: () => void;
     onCentroidClick: () => void;
     onLengthClick: () => void;
-    // onPerpenLineClick: () => void;
+    onPerpenLineClick: () => void;
     // onPerpenBisecClick: () => void;
-    // onParaLineClick: () => void;
+    onParaLineClick: () => void;
     // onAngleBisecClick: () => void;
     // onTangentLineClick: () => void;
     onCircumcircleClick: () => void;
     onIncircleClick: () => void;
     onExcircleClick: () => void;
     onCircle2PointClick: () => void;
-    // onSegmentLengthClick: () => void;
+    onSegmentLengthClick: () => void;
     // onSemiClick: () => void;
     // onRegularPolygonClick: () => void;
     // onTranslationClick: () => void;
@@ -156,17 +156,17 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onMidPointClick();
         }
 
-        // else if (toolKey === "perpendicular") {
-        //     this.props.onPerpenLineClick();
-        // }
+        else if (toolKey === "perpendicular") {
+            this.props.onPerpenLineClick();
+        }
 
         // else if (toolKey === "perpendicular_bisector") {
         //     this.props.onPerpenBisecClick();
         // }
 
-        // else if (toolKey === "parallel") {
-        //     this.props.onParaLineClick();
-        // }
+        else if (toolKey === "parallel") {
+            this.props.onParaLineClick();
+        }
 
         // else if (toolKey === "angle_bisector") {
         //     this.props.onAngleBisecClick();
@@ -208,9 +208,9 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onAreaClick();
         }
 
-        // else if (toolKey === "segment_length") {
-        //     this.props.onSegmentLengthClick();
-        // }
+        else if (toolKey === "segment_length") {
+            this.props.onSegmentLengthClick();
+        }
 
         else if (toolKey === "circle_2_points") {
             this.props.onCircle2PointClick();

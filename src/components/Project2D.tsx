@@ -498,6 +498,9 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     onExcenterClick={() => this.setMode('excenter')}
                     onExcircleClick={() => this.setMode('excircle')}
                     onMidPointClick={() => this.setMode('midpoint')}
+                    onParaLineClick={() => this.setMode('parallel')}
+                    onPerpenLineClick={() => this.setMode('perpendicular')}
+                    onSegmentLengthClick={() => this.setMode('segment_length')}
                 />
                 <div 
                     className="resizer flex justify-center items-center"
