@@ -17,4 +17,4 @@ export const BASE_SPACING = 60;
 export const ZOOM_FACTOR = 1.1;
 
 // Constants for epsilon
-export const EPSILON = 1e-10;
+export const EPSILON = 1e-5;

@@ -16,11 +16,11 @@ export interface Shape3D extends BaseShape {
 }
 
 export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
-                        'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'InternalAngleBisector' |
-                        'ExternalAngleBisector' | 'PerpendicularBisector' | 'PerpendicularLine' | 'TangentLine' |
-                        'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' | 'Circle2Point' | 'Angle' |
-                        'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' | 'Reflection' | 'Rotation' |
-                        'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' | 'RegularPolygon';
+                        'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'AngleBisector' | 'PerpendicularBisector' |
+                        'PerpendicularLine' | 'TangentLine' | 'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' |
+                        'Circle2Point' | 'Angle' | 'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
+                        'Reflection' | 'Rotation' | 'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' |
+                        'RegularPolygon';
 
 export interface Angle extends BaseShape {
     // Use degree for angle
@@ -104,8 +104,12 @@ export interface Pyramid extends Shape3D {
 }
 
 export interface Cuboid extends Shape3D {
-    topLeftBack: Point;
-    bottomRightFront: Point;
+    origin: Point;
+    axisX: Vector;
+    axisY: Vector;
+    width: number;
+    height: number;
+    depth: number;
 }
 
 export interface Prism extends Shape3D {
@@ -198,6 +202,8 @@ export interface ShapeNode {
         degree: number;
         CCW: boolean;
     };
+    /** For tangent line and angle bisector */
+    side? : 0 | 1;
     /** Selected or not */
     isSelected: boolean;
 }
@@ -245,7 +251,9 @@ export interface GeometryState {
 type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
                    'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'show_label' | 'show_object' | 'intersection' |
                    'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
-                   'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length';
+                   'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length' | 'perpendicular_bisector' |
+                   'semicircle' | 'reflection' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
+                   'angle_bisector';
 
 /** History */
 interface HistoryEntry {

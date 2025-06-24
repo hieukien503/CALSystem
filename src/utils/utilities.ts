@@ -76,6 +76,22 @@ export const createLineDefaultShapeProps = _.memoize((label: string, radius: num
     }
 })
 
+export const createVectorDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,
+        label: label,
+        visible: {shape: true, label: false},
+        fill: true,
+        color: 'black',
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        id: `vector-${label}`
+    }
+})
+
 export const createCircleDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
@@ -89,6 +105,22 @@ export const createCircleDefaultShapeProps = _.memoize((label: string, radius: n
         visible: {shape: true, label: false},
         fill: true,
         id: `circle-${label}`
+    }
+})
+
+export const createSemiCircleDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,
+        color: 'black',
+        visible: {shape: true, label: false},
+        fill: true,
+        id: `semi-${label}`
     }
 })
 
@@ -198,7 +230,8 @@ export const clone = (
             node: node.node.clone(),
             defined: node.defined,
             ambiguous: node.ambiguous,
-            isSelected: node.isSelected
+            isSelected: node.isSelected,
+            side: node.side
         })
     })
 
@@ -460,7 +493,8 @@ export const cloneDAG = (dag: Map<string, ShapeNode>): Map<string, ShapeNode> =>
             node: node.node,
             defined: node.defined,
             ambiguous: node.ambiguous,
-            isSelected: node.isSelected
+            isSelected: node.isSelected,
+            side: node.side
         })
     })
 

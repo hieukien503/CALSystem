@@ -465,16 +465,16 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         
         else if (shape.type === 'Cuboid') {
             let cube: Cuboid = shape as Cuboid
-            const width = Math.abs(cube.bottomRightFront.x - cube.topLeftBack.x);
-            const height = Math.abs(cube.bottomRightFront.y - cube.topLeftBack.y);
-            const depth = Math.abs((cube.bottomRightFront.z ?? 0) - (cube.topLeftBack.z ?? 0));
+            const width = cube.width;
+            const height = cube.height;
+            const depth = cube.depth;
 
             geometry = new THREE.BoxGeometry(width, height, depth);
             mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(
-                (cube.topLeftBack.x + cube.bottomRightFront.x) / 2,
-                (cube.topLeftBack.y + cube.bottomRightFront.y) / 2,
-                ((cube.topLeftBack.z ?? 0) + (cube.bottomRightFront.z ?? 0)) / 2
+                0,
+                0,
+                0
             );
 
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, height / 2 + 0.5, 0));
@@ -1233,6 +1233,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     onParaLineClick={this.handleClearClick}
                     onPerpenLineClick={this.handleClearClick}
                     onSegmentLengthClick={this.handleClearClick}
+                    onPerpenBisecClick={this.handleClearClick}
+                    onSemiClick={this.handleClearClick}
+                    onAngleBisecClick={this.handleClearClick}
+                    onRegularPolygonClick={this.handleClearClick}
+                    onTangentLineClick={this.handleClearClick}
                 />
 
                 <canvas
