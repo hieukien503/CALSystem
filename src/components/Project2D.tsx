@@ -246,10 +246,10 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         });
 
         this.setState({
-            geometryState: {...state.gs},
+            geometryState: state.gs,
             dag: state.dag,
-            selectedPoints: [...state.selectedPoints],
-            selectedShapes: [...state.selectedShapes]
+            selectedPoints: state.selectedPoints,
+            selectedShapes: state.selectedShapes
         }, () => {
             if (!this.lastFailedState) {
                 this.pushHistory(utils.clone(
@@ -501,6 +501,11 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     onParaLineClick={() => this.setMode('parallel')}
                     onPerpenLineClick={() => this.setMode('perpendicular')}
                     onSegmentLengthClick={() => this.setMode('segment_length')}
+                    onPerpenBisecClick={() => this.setMode('perpendicular_bisector')}
+                    onSemiClick={() => this.setMode('semicircle')}
+                    onAngleBisecClick={() => this.setMode('angle_bisector')}
+                    onRegularPolygonClick={() => this.setMode('regular_polygon')}
+                    onTangentLineClick={() => this.setMode('tangent_line')}
                 />
                 <div 
                     className="resizer flex justify-center items-center"

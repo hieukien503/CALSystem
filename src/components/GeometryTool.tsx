@@ -48,17 +48,17 @@ interface GeometryToolProps {
     onCentroidClick: () => void;
     onLengthClick: () => void;
     onPerpenLineClick: () => void;
-    // onPerpenBisecClick: () => void;
+    onPerpenBisecClick: () => void;
     onParaLineClick: () => void;
-    // onAngleBisecClick: () => void;
-    // onTangentLineClick: () => void;
+    onAngleBisecClick: () => void;
+    onTangentLineClick: () => void;
     onCircumcircleClick: () => void;
     onIncircleClick: () => void;
     onExcircleClick: () => void;
     onCircle2PointClick: () => void;
     onSegmentLengthClick: () => void;
-    // onSemiClick: () => void;
-    // onRegularPolygonClick: () => void;
+    onSemiClick: () => void;
+    onRegularPolygonClick: () => void;
     // onTranslationClick: () => void;
     // onRotationClick: () => void;
     // onReflectionClick: () => void;
@@ -160,21 +160,21 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onPerpenLineClick();
         }
 
-        // else if (toolKey === "perpendicular_bisector") {
-        //     this.props.onPerpenBisecClick();
-        // }
+        else if (toolKey === "perpendicular_bisector") {
+            this.props.onPerpenBisecClick();
+        }
 
         else if (toolKey === "parallel") {
             this.props.onParaLineClick();
         }
 
-        // else if (toolKey === "angle_bisector") {
-        //     this.props.onAngleBisecClick();
-        // }
+        else if (toolKey === "angle_bisector") {
+            this.props.onAngleBisecClick();
+        }
 
-        // else if (toolKey === "tangent") {
-        //     this.props.onTangentLineClick();
-        // }
+        else if (toolKey === "tangent") {
+            this.props.onTangentLineClick();
+        }
 
         else if (toolKey === "intersection") {
             this.props.onIntersectionClick();
@@ -228,9 +228,9 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onExcircleClick();
         }
 
-        // else if (toolKey === "semicircle") {
-        //     this.props.onSemiClick();
-        // }
+        else if (toolKey === "semicircle") {
+            this.props.onSemiClick();
+        }
 
         // else if (toolKey === "reg_polygon") {
         //     this.props.onRegularPolygonClick();
