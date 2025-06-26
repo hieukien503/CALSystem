@@ -1,4 +1,4 @@
-import React from "react";
+import React, { createRef, RefObject } from "react";
 import KonvaCanvas from "./KonvaRender";
 import { GeometryTool } from "./GeometryTool";
 import Dialogbox from "./Dialogbox";
@@ -7,6 +7,8 @@ import * as constants from '../types/constants'
 import * as utils from '../utils/utilities'
 import MenuItem from "./MenuItem";
 import Konva from "konva";
+import ErrorDialogbox from "./ErrorDialogbox";
+const math = require('mathjs');
 
 type SharingMode = 'public' | 'private' | 'organization-wide';
 
@@ -43,7 +45,38 @@ interface Project2DState {
     isMenuRightClick: {
         x: number
         y: number
-    } | undefined
+    } | undefined;
+    /** For dialogBox */
+    isDialogBox: {
+        title: string,
+        input_label: string;
+        angleMode: boolean;
+    } | undefined;
+    /** For user input */
+    data: {
+        radius: number | undefined;
+        vertices: number | undefined;
+        rotation: {
+            degree: number;
+            CCW: boolean;
+        } | undefined;
+    };
+    /** For error */
+    error: {
+        label: string; // for dialogbox error
+        message: string; // for error dialogbox
+    }
+    /** For position */
+    position: {
+        dialogPos: {
+            x: number;
+            y: number;
+        } | undefined;
+        errorDialogPos: {
+            x: number;
+            y: number;
+        } | undefined
+    }
     /** Checked for SnapToGrid */
     snapToGridEnabled: boolean;
 }
@@ -56,6 +89,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         selectedPoints: Point[];
         selectedShapes: Shape[];
     } | null;
+    private dialogRef: RefObject<Dialogbox | null>;
+    private errorDialogRef: RefObject<ErrorDialogbox | null>;
     constructor(props: ProjectProps) {
         super(props);
         this.labelUsed = [];
@@ -79,7 +114,21 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             isSnapToGrid: false,
             isResize: false,
             toolWidth: 280,
-            isMenuRightClick: undefined
+            isMenuRightClick: undefined,
+            isDialogBox: undefined,
+            data: {
+                radius: undefined,
+                vertices: undefined,
+                rotation: undefined
+            },
+            error: {
+                label: '',
+                message: ''
+            },
+            position: {
+                dialogPos: undefined,
+                errorDialogPos: undefined
+            }
         }
 
         this.lastFailedState = null;
@@ -92,10 +141,41 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         )); // Initialize history stack
         
         this.futureStack = new Array<HistoryEntry>();
+        this.dialogRef = createRef<Dialogbox | null>();
+        this.errorDialogRef = createRef<ErrorDialogbox | null>();
+    }
+
+    componentDidUpdate(prevProps: Readonly<ProjectProps>, prevState: Readonly<Project2DState>, snapshot?: any): void {
+        if (
+            !prevState.isDialogBox &&
+            this.state.isDialogBox &&
+            this.state.position.dialogPos === undefined &&
+            this.state.position.errorDialogPos === undefined 
+        ) {
+            setTimeout(() => {
+                const domRect = this.dialogRef.current?.getBoundingClientRect?.();
+                if (domRect) {
+                    const x = (window.innerWidth - domRect.width) / 2;
+                    const y = (window.innerHeight - domRect.height) / 2;
+                    this.setState({position: {dialogPos: {x: x, y: y}, errorDialogPos: this.state.position.errorDialogPos}});
+                }
+            }, 0);
+        }
+
+        if (!(prevState.error.message.length > 0)  && this.state.error.message.length > 0) {
+            setTimeout(() => {
+                const domRect = this.errorDialogRef.current?.getBoundingClientRect?.();
+                if (domRect) {
+                    const x = (window.innerWidth - domRect.width) / 2;
+                    const y = (window.innerHeight - domRect.height) / 2;
+                    this.setState({position: {errorDialogPos: {x: x, y: y}, dialogPos: this.state.position.dialogPos}});
+                }
+            }, 0);
+        }
     }
 
     private setRightMenuClick = (pos?: {x: number, y: number}): void => {
-        this.setState({isMenuRightClick: pos});
+        this.setState({isMenuRightClick: pos, isDialogBox: undefined});
     }
 
     private handleUndoClick = () => {
@@ -249,7 +329,17 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             geometryState: state.gs,
             dag: state.dag,
             selectedPoints: state.selectedPoints,
-            selectedShapes: state.selectedShapes
+            selectedShapes: state.selectedShapes,
+            isDialogBox: undefined,
+            data: {
+                radius: undefined,
+                vertices: undefined,
+                rotation: undefined
+            },
+            error: {
+                label: '',
+                message: ''
+            }
         }, () => {
             if (!this.lastFailedState) {
                 this.pushHistory(utils.clone(
@@ -464,6 +554,95 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         })
     }
 
+    private setDialogbox = (mode: DrawingMode): void => {
+        if (mode === 'circle') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Circle: Center & Radius',
+                    input_label: 'Radius',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'regular_polygon') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Regular Polygon',
+                    input_label: 'Vertices',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'rotation') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Rotate around Point',
+                    input_label: 'Angle',
+                    angleMode: true
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'segment_length') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Segment with Given Length',
+                    input_label: 'Length',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        } 
+
+        else {
+            throw new Error('Invalid mode');
+        }
+    }
+
+    private receiveData = (value: string, CCW?: boolean): void => {
+        if (['segment_length', 'circle'].includes(this.state.mode)) {
+            try {
+                const radius = math.evaluate(value);
+                if (typeof radius !== 'number' || radius <= 0) {
+                    this.setState({
+                        error: {
+                            label: 'Number expected',
+                            message: ''
+                        }
+                    })
+                }
+
+                this.setState({
+                    data: {
+                        radius: radius,
+                        vertices: undefined,
+                        rotation: undefined
+                    },
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                console.log('Hi');
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for ${this.state.mode === 'circle' ? 'radius' : 'length'}`
+                    }
+                })
+            }
+        }
+    }
+
     render(): React.ReactNode {
         return (
             <div className="flex justify-start flex-row">
@@ -548,8 +727,26 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     }}
                     onRenderMenuRightClick={this.setRightMenuClick}
                     onRemoveNode={this.removeNode}
+                    onRenderDialogbox={this.setDialogbox}
+                    data={this.state.data}
                 />}
-                {this.state.isMenuRightClick && <MenuItem 
+                {this.state.isDialogBox && (<Dialogbox 
+                    title={this.state.isDialogBox.title}
+                    input_label={this.state.isDialogBox.input_label}
+                    angleMode={this.state.isDialogBox.angleMode}
+                    onSubmitClick={this.receiveData}
+                    inputError={this.state.error}
+                    onCancelClick={() => this.setState({isDialogBox: undefined})}
+                    position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
+                    ref={this.dialogRef}
+                />)}
+                {this.state.error.message.length > 0 && <ErrorDialogbox 
+                    position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}
+                    error={{message: this.state.error.message}}
+                    onCancelClick={() => this.setState({error: {label: this.state.error.label, message: ''}})}
+                    ref={this.errorDialogRef}
+                />}
+                {this.state.isMenuRightClick && !this.state.isDialogBox && (<MenuItem 
                     isSnapToGrid={this.state.snapToGridEnabled}
                     gridVisible={this.state.geometryState.gridVisible}
                     axisVisible={this.state.geometryState.axesVisible}
@@ -566,7 +763,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                             isMenuRightClick: undefined
                         }
                     })}
-                />}
+                />)}
             </div>
         )
     }
