@@ -232,9 +232,9 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onSemiClick();
         }
 
-        // else if (toolKey === "reg_polygon") {
-        //     this.props.onRegularPolygonClick();
-        // }
+        else if (toolKey === "reg_polygon") {
+            this.props.onRegularPolygonClick();
+        }
 
         // else if (toolKey === "translation") {
         //     this.props.onTranslationClick();

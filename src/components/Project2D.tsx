@@ -632,11 +632,46 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             }
 
             catch(error) {
-                console.log('Hi');
                 this.setState({
                     error: {
                         label: 'Number expected',
                         message: `Invalid expression for ${this.state.mode === 'circle' ? 'radius' : 'length'}`
+                    }
+                })
+            }
+        }
+
+        else if (this.state.mode === 'regular_polygon') {
+            try {
+                const vertices = math.evaluate(value);
+                if (typeof vertices !== 'number' || (Number.isInteger(vertices) && vertices <= 2)) {
+                    this.setState({
+                        error: {
+                            label: 'Expected: number of vertices > 2',
+                            message: ''
+                        }
+                    })
+                }
+
+                this.setState({
+                    data: {
+                        radius: undefined,
+                        vertices: vertices,
+                        rotation: undefined
+                    },
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for number of vertices`
                     }
                 })
             }
