@@ -2863,8 +2863,8 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         if ('x' in o1 && 'y' in o1) {
             let p1: GeometryShape.Point = o1 as GeometryShape.Point;
             let rotated_point = {
-                x: (p1.x - p2.x) * symbolicCos(radian) - (p1.y - p2.y) * symbolicSin(radian) + p2.x,
-                y: (p1.x - p2.x) * symbolicSin(radian) + (p1.y - p2.y) * symbolicCos(radian) + p2.y
+                x: (p2.x - p1.x) * symbolicCos(radian) - (p2.y - p1.y) * symbolicSin(radian) + p2.x,
+                y: (p2.x - p1.x) * symbolicSin(radian) + (p2.y - p1.y) * symbolicCos(radian) + p2.y
             }
 
             return Factory.createPoint(

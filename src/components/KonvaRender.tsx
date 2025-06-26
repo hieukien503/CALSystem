@@ -94,6 +94,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.handleDrawing(); // ✅ call same function again
         }
 
+        else if (
+            (this.props.mode === 'regular_polygon') &&
+            this.props.data.vertices !== prevProps.data.vertices &&
+            typeof this.props.data.vertices === 'number'
+        ) {
+            this.handleDrawing(); // ✅ call same function again
+        }
+
         if (
             prevProps.geometryState !== this.props.geometryState ||
             prevProps.dag !== this.props.dag
@@ -303,7 +311,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     !(shape && shape.id().includes('polygon-') && this.props.selectedPoints.length === 0 && ['orthocenter', 'centroid', 'circumcenter', 'incenter', 'excenter', 'circumcircle', 'incircle', 'excircle'].includes(this.props.mode)) &&
                     !(this.props.mode === 'intersection' && shape && !shape.id().includes('point-')) &&
                     !(shape && (shape.id().includes('circle-') || 
-                               (shape.id().includes('line-') && this.props.dag.has(shape.id()) && 'startSegment' in this.props.dag.get(shape.id())!.type)) && this.props.mode === 'midpoint')
+                               (shape.id().includes('line-') && this.props.dag.has(shape.id()) && 'startSegment' in this.props.dag.get(shape.id())!.type)) && this.props.mode === 'midpoint') &&
+                    !(shape && (shape.id().includes('point-') || (shape.id().includes('line-') && this.props.dag.has(shape.id()) && 'startSegment' in this.props.dag.get(shape.id())!.type)) && this.props.mode === 'regular_polygon')
                 ) {
                     this.createPoint(position, children);
                 }
@@ -1534,7 +1543,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             y = (p1_y + p2_y) / 2;
         }
 
-        else if (shape.type === 'Polygon') {
+        else if (['Polygon', 'RegularPolygon'].includes(shape.type)) {
             let points = (shapeNode.node as Konva.Line).points();
             for (let i = 0; i < points.length; i += 2) {
                 let xP = points[i], yP = points[i + 1];
@@ -1614,7 +1623,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 shapeY = (pts[1] + pts[3]) / 2;
             }
             
-            else if (shape.type === 'Polygon') {
+            else if (['Polygon', 'RegularPolygon'].includes(shape.type)) {
                 const pts = (shapeNode.node as Konva.Line).points();
                 for (let i = 0; i < pts.length; i += 2) {
                     shapeX += pts[i];
@@ -1666,7 +1675,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 shapeY = (pts[1] + pts[3]) / 2;
             }
             
-            else if (shape.type === 'Polygon') {
+            else if (['Polygon', 'RegularPolygon'].includes(shape.type)) {
                 const pts = (shapeNode.node as Konva.Line).points();
                 for (let i = 0; i < pts.length; i += 2) {
                     shapeX += pts[i];
@@ -1966,7 +1975,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     selectedPoints.pop();
                     let label = `poly${this.props.geometryState.polygonIndex + 1}`;
                     const polygon: Polygon = Factory.createPolygon(
-                        utils.createPolygonDefaultShapeProps(label, 0, 0, 10, 0),
+                        utils.createPolygonDefaultShapeProps(label),
                         selectedPoints
                     )
 
@@ -2020,9 +2029,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             
                     DAG.set(polygon.props.id, shapeNode);
                     this.props.onLabelUsed(labelUsed);
+                    shapes.push(polygon.props.id);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, polygon.props.id]},
+                        gs: {...this.props.geometryState, shapes: shapes},
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -4051,6 +4061,137 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 })
             }
         }
+
+        else if (this.props.mode === 'regular_polygon') {
+            const selectedPoints = [...this.props.selectedPoints];
+            const selectedShapes = [...this.props.selectedShapes];
+
+            if (selectedShapes.length === 1) {
+                if (selectedPoints.length !== 0 || !('startSegment' in selectedShapes[0])) {
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    });
+
+                    return;
+                }
+
+                const vertices = this.props.data.vertices;
+                if (!vertices) {
+                    this.props.onRenderDialogbox(this.props.mode);
+                    return;
+                }
+
+                const segment = selectedShapes[0] as Segment;
+                let [start, end] = [segment.startSegment, segment.endSegment];
+                let angle = (vertices - 2) * 180 / vertices;
+                let points: Point[] = [];
+                const labelUsed = [...this.props.labelUsed];
+                for (let i = 2; i < vertices; i++) {
+                    let label = utils.getExcelLabel('A', 0);
+                    let index = 0;
+                    while (labelUsed.includes(label)) {
+                        index++;
+                        label = utils.getExcelLabel('A', index);
+                    }
+
+                    labelUsed.push(label);
+                    let newEnd = operation.rotation(start, end, 180 - angle, false) as Point;
+                    newEnd.props = utils.createPointDefaultShapeProps(label);
+                    start = end;
+                    end = newEnd;
+                    points.push(newEnd);
+                }
+
+                let poly_label = `poly${this.props.geometryState.polygonIndex + 1}`;
+                const polygonPoints = [segment.startSegment, segment.endSegment, ...points];
+                let props = utils.createPolygonDefaultShapeProps(poly_label);
+                props.color = segment.props.color;
+                const polygon: Polygon = Factory.createPolygon(
+                    props,
+                    polygonPoints
+                )
+
+                DAG.get(segment.props.id)!.dependsOn.push(polygon.props.id);
+
+                points.forEach(point => {
+                    let pNode = this.createKonvaShape(point);
+                    pNode.draggable(false);
+                    DAG.set(point.props.id, {
+                        id: point.props.id,
+                        type: point,
+                        node: pNode,
+                        dependsOn: [],
+                        isSelected: false,
+                        defined: true,
+                        ambiguous: false
+                    });
+                });
+
+                let shapes = this.props.geometryState.shapes;
+
+                for (let i = 0; i < polygonPoints.length; i++) {
+                    if (i === 0) continue;
+                    let p = polygonPoints[i];
+                    let pNext = polygonPoints[(i + 1) % polygonPoints.length];
+                    let label = utils.getExcelLabel('a', 0);
+                    let index = 0;
+                    while (labelUsed.includes(label)) {
+                        index++;
+                        label = utils.getExcelLabel('a', index);
+                    }
+
+                    labelUsed.push(label);
+                    let segment = Factory.createSegment(
+                        utils.createLineDefaultShapeProps(label),
+                        p,
+                        pNext
+                    );
+
+                    segment.props.color = polygon.props.color;
+                    let shapeNode: ShapeNode = {
+                        id: segment.props.id,
+                        type: segment,
+                        node: this.createKonvaShape(segment),
+                        dependsOn: [p.props.id, pNext.props.id, polygon.props.id],
+                        defined: true,
+                        ambiguous: false,
+                        isSelected: false
+                    }
+
+                    DAG.set(segment.props.id, shapeNode);
+                    shapes = [...shapes, segment.props.id];
+                }
+
+                let shapeNode: ShapeNode = {
+                    id: polygon.props.id,
+                    type: polygon,
+                    node: this.createKonvaShape(polygon),
+                    dependsOn: polygonPoints.map(point => point.props.id),
+                    defined: true,
+                    ambiguous: false,
+                    isSelected: false,
+                    rotationFactor: {
+                        degree: angle,
+                        CCW: false
+                    }
+                }
+
+                polygon.type = 'RegularPolygon';
+        
+                DAG.set(polygon.props.id, shapeNode);
+                shapes.push(polygon.props.id)
+                this.props.onLabelUsed(labelUsed);
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState, shapes: shapes},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+        }
     }
 
     private findChildren = (id: string): string[] => {
@@ -4175,7 +4316,22 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 return { ...node };
             }
 
-            if (node.scaleFactor) {
+            // if ('points' in shape.type) {
+            //     let pts = shape.type.points;
+            //     pts.forEach(point => {
+            //         if (point.props.label === node.type.props.label) {
+            //             node.node.position({x: point.x, y: point.y});
+            //             if (this.layerUnchangeVisualRef.current) {
+            //                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node.id()));
+            //                 if (label) {
+            //                     label.setAttrs(this.createLabel(node).getAttrs());
+            //                 }
+            //             }
+            //         }
+            //     });
+            // }
+
+            else if (node.scaleFactor) {
                 let l = shape.node.getClassName() === 'Line' ? shape.node as Konva.Line : shape.node as Konva.Arrow;
                 let d = {
                     x: l.points()[2] - l.points()[0],
@@ -5991,18 +6147,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     }
 
     private updateRegularPoly = (node: ShapeNode): ShapeNode => {
-        const shape1 = this.props.dag.get(node.dependsOn[0]);
-        if (!shape1) return { ...node };
+        const [shape1, shape2] = [this.props.dag.get(node.dependsOn[0]), this.props.dag.get(node.dependsOn[1])];
+        if (!shape1 || !shape2) return { ...node };
 
         if (!node.rotationFactor) return { ...node };
         const posA = {
-            x: (shape1.node as Konva.Line).points()[0],
-            y: (shape1.node as Konva.Line).points()[1]
+            x: shape1.node.x(),
+            y: shape1.node.y()
         }
 
         const posB = {
-            x: (shape1.node as Konva.Line).points()[2],
-            y: (shape1.node as Konva.Line).points()[3]
+            x: shape2.node.x(),
+            y: shape2.node.y()
         }
 
         let [A, B] = [
@@ -6012,16 +6168,28 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         let pts: number[] = [A.x, A.y, B.x, B.y];
         let points = [A, B];
+        let tmpA = A, tmpB = B;
         while (pts.length < (node.node as Konva.Line).points().length) {
-            let newEnd = operation.rotation(A, B, node.rotationFactor.degree, false) as Point;
+            let newEnd = operation.rotation(tmpA, tmpB, 180 - node.rotationFactor.degree, node.rotationFactor.CCW) as Point;
             points.push(newEnd);
             pts.push(newEnd.x, newEnd.y);
-            A = B;
-            B = newEnd;
+            tmpA = tmpB;
+            tmpB = newEnd;
         }
 
         (node.node as Konva.Line).points(pts);
-        (node.type as Polygon).points = points;
+        (node.type as Polygon).points.forEach((point, idx) => {
+            point.x = points[idx].x;
+            point.y = points[idx].y;
+            this.props.dag.get(point.props.id)!.node.position({x: points[idx].x, y: points[idx].y});
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(this.props.dag.get(point.props.id)!.node.id()));
+                if (label) {
+                    label.setAttrs(this.createLabel(this.props.dag.get(point.props.id)!).getAttrs());
+                }
+            }
+        });
+
         if (this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node.id()));
             if (label) {
