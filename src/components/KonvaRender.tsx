@@ -4122,7 +4122,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         id: point.props.id,
                         type: point,
                         node: pNode,
-                        dependsOn: [],
+                        dependsOn: [polygon.props.id],
                         isSelected: false,
                         defined: true,
                         ambiguous: false
@@ -4316,20 +4316,20 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 return { ...node };
             }
 
-            // if ('points' in shape.type) {
-            //     let pts = shape.type.points;
-            //     pts.forEach(point => {
-            //         if (point.props.label === node.type.props.label) {
-            //             node.node.position({x: point.x, y: point.y});
-            //             if (this.layerUnchangeVisualRef.current) {
-            //                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node.id()));
-            //                 if (label) {
-            //                     label.setAttrs(this.createLabel(node).getAttrs());
-            //                 }
-            //             }
-            //         }
-            //     });
-            // }
+            if ('points' in shape.type) {
+                let pts = shape.type.points;
+                pts.forEach(point => {
+                    if (point.props.label === node.type.props.label) {
+                        node.node.position({x: point.x, y: point.y});
+                        if (this.layerUnchangeVisualRef.current) {
+                            let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node.id()));
+                            if (label) {
+                                label.setAttrs(this.createLabel(node).getAttrs());
+                            }
+                        }
+                    }
+                });
+            }
 
             else if (node.scaleFactor) {
                 let l = shape.node.getClassName() === 'Line' ? shape.node as Konva.Line : shape.node as Konva.Arrow;
@@ -6181,13 +6181,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         (node.type as Polygon).points.forEach((point, idx) => {
             point.x = points[idx].x;
             point.y = points[idx].y;
-            this.props.dag.get(point.props.id)!.node.position({x: points[idx].x, y: points[idx].y});
-            if (this.layerUnchangeVisualRef.current) {
-                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(this.props.dag.get(point.props.id)!.node.id()));
-                if (label) {
-                    label.setAttrs(this.createLabel(this.props.dag.get(point.props.id)!).getAttrs());
-                }
-            }
         });
 
         if (this.layerUnchangeVisualRef.current) {
