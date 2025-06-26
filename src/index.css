@@ -301,9 +301,8 @@ nav ul li a {
     max-height: 300px;
     overflow-y: auto;
     background: white;
-    border: 1px solid #ccc;
     border-radius: 4px;
-    z-index: 999;
+    z-index: 500;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -525,6 +524,8 @@ button {
     background-color: #fff;
     border-radius: 2px;
     box-shadow: 0 9px 46px 8px rgba(0, 0, 0, .14), 0 11px 15px -7px rgba(0, 0, 0, .12), 0 24px 38px 3px rgba(0, 0, 0, .2);
+    max-width: 500px;
+    width: 90%;
 }
 
 .dialogComponent .popupContent {
@@ -542,6 +543,7 @@ button {
     font-size: 125%;
     margin-bottom: 20px;
     margin-left: 24px;
+    text-align: left;
 }
 
 .dialogComponent .dialogMainPanel .dialogContent {
@@ -567,6 +569,7 @@ button {
     height: 12px;
     line-height: 100%;
     display: block;
+    text-align: left;
 }
 
 .inputTextField .textField {
@@ -621,20 +624,18 @@ input[type=text].TextField {
 }
 
 .cancelButton {
+    flex-grow: 0;
     color: #6e6d73;
 }
 
-.okButton {
-    padding: 0px 16px;
-    background-color: #a7d3d2;
-    color: #fff;
-    transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
-    text-align: center;
+.cancelButton:hover {
+    color: #6e6d73;
+    background-color: #f3f2f7;
 }
 
 .cancelButton, .okButton {
     display: inline-block;
-    min-width: 64px;
+    min-width: 90px;
     height: 36px;
     background: rgba(0, 0, 0, 0);
     font-size: 90%;
@@ -644,14 +645,37 @@ input[type=text].TextField {
     border-radius: 4px;
     margin-left: 8px;
     cursor: pointer;
+    padding: 0px 16px;
+    font-size: 14px;
 }
 
-.inputTextField.hoverState {
-    color: #46443f;
+.okButton {
+    padding: 0px 16px;
+    background: #a7d3d2;
+    color: #fff;
+    transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    box-shadow: none;
 }
 
-.inputTextField.focusState {
-    color: #a7d3d2;
+.okButton:hover {
+    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, .2), 0px 4px 5px 0px rgba(0, 0, 0, .14), 0px 1px 10px 0px rgba(0, 0, 0, .12);
+}
+
+.inputTextField.hoverState .inputLabel, .inputTextField.hoverState .fieldContainer {
+    color: #46443f !important;
+}
+
+input:focus {
+    outline: none;
+}
+
+.inputTextField.focusState .inputLabel {
+    color: #a7d3d2 !important;
+}
+
+.inputTextField.focusState .TextField {
+    caret-color: #46443f;
 }
 
 .PopupPanel {
@@ -708,4 +732,70 @@ input[type=text].TextField {
 .PopupPanel .listMenuItem .checkIcon{
     display: flex;
     justify-items: end;
+}
+
+.inputDialogComponent.angleInputDialog .radioButtonPanel {
+    display: flex;
+}
+
+.inputDialogComponent.angleInputDialog .radioButtonPanel .radioButton {
+    margin-right: 20px;
+}
+
+.radioButton {
+    cursor: pointer;
+    display: inline-flex;
+}
+
+.radioButton .radioBg {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #fff;
+}
+
+.ripple {
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+}
+
+.radioButton.selected .outerCircle {
+    border-color: #6557d2;
+}
+
+.radioButton .radioBg .outerCircle {
+    width: 16px;
+    height: 16px;
+    margin: 8px;
+    border: 2px solid;
+    border-radius: 50%;
+    transition: border-color .12s cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+
+.radioButton.selected .innerCircle {
+    transform: scale(1);
+    width: 10px;
+    height: 10px;
+    background-color: #6557d2;
+    position: relative;
+    bottom: 23px;
+    left: 13px;
+    border-radius: 50%;
+}
+.radioButton .radioBg .innerCircle {
+    transition: transform .12s cubic-bezier(0, 0, 0.2, 1) 0ms, background-color .12s cubic-bezier(0, 0, 0.2, 1) 0ms, -webkit-transform .12s cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+
+.inputTextField.error .inputLabel {
+    color: #b00020;
+}
+
+.inputTextField .errorLabel {
+    color: #b00020;
+    font-size: 75%;
+    height: 12px;
+    line-height: 100%;
+    text-align: left;
 }

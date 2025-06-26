@@ -22,6 +22,14 @@ interface CanvasProps {
     selectedPoints: Point[];
     selectedShapes: Shape[];
     labelUsed: string[];
+    data: {
+        radius: number | undefined;
+        vertices: number | undefined;
+        rotation: {
+            degree: number;
+            CCW: boolean;
+        } | undefined;
+    };
     onChangeMode: (mode: DrawingMode) => void;
     onClearCanvas: () => void;
     onUpdateLastFailedState: (state?: {
@@ -45,6 +53,7 @@ interface CanvasProps {
     }) => void;
     onRenderMenuRightClick: (pos?: {x: number, y: number}) => void;
     onRemoveNode: (id: string) => void;
+    onRenderDialogbox: (mode: DrawingMode) => void;
 }
 
 class KonvaCanvas extends React.Component<CanvasProps, {}> {
@@ -72,10 +81,19 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     }
 
     componentDidMount(): void {
+        this.stageRef.current?.container().addEventListener('contextmenu', this.handleContextMenu);
         this.drawShapes();
     }
 
     componentDidUpdate(prevProps: Readonly<CanvasProps>): void {
+        if (
+            (['segment_length', 'circle'].includes(this.props.mode)) &&
+            this.props.data.radius !== prevProps.data.radius &&
+            typeof this.props.data.radius === 'number'
+        ) {
+            this.handleDrawing(); // ✅ call same function again
+        }
+
         if (
             prevProps.geometryState !== this.props.geometryState ||
             prevProps.dag !== this.props.dag
@@ -83,6 +101,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.drawShapes();
         }
     }
+
+    componentWillUnmount(): void {
+        this.stageRef.current?.container().removeEventListener('contextmenu', this.handleContextMenu);
+    }
+
+    private handleContextMenu = (e: MouseEvent) => {
+        e.preventDefault();
+    };
 
     private handleZoom = (e: Konva.KonvaEventObject<MouseEvent>) => {
         e.evt.preventDefault();
@@ -197,7 +223,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const pointer = this.stageRef.current.getPointerPosition();
         if (!pointer) return;
         if (e.evt.button !== 0) {
-            this.stageRef.current.container()!.addEventListener('contextmenu', (e) => e.preventDefault());
             this.props.onRenderMenuRightClick({x: e.evt.clientX, y: e.evt.clientY});
             return;
         }
@@ -1862,59 +1887,48 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         }
 
         else if (this.props.mode === 'circle') {
-            const point = this.props.selectedPoints[0];
-            let pNode = DAG.get(point.props.id);
-            pNode?.node.draggable(false);
-            let input = prompt('Enter the radius of the circle');
-            if (!input) return;
-            try {
-                const radius = math.evaluate(input);
-                if (typeof radius !== 'number' || radius <= 0) {
-                    alert('Invalid radius');
-                    pNode?.node.draggable(true);
-                    return;
-                }
+            const selectedPoints = [...this.props.selectedPoints];
+            if (selectedPoints.length !== 1) return;
 
-                pNode?.node.draggable(true);
-                let label = utils.getExcelLabel('c', 0);
-                let index = 0;
-                while (this.props.labelUsed.includes(label)) {
-                    index++;
-                    label = utils.getExcelLabel('c', index);
-                }
-
-                this.props.onLabelUsed([...this.props.labelUsed, label]);
-                
-                const circle: Circle = Factory.createCircle(
-                    utils.createCircleDefaultShapeProps(label, radius, 0, 10, 0),
-                    point,
-                    radius * constants.BASE_SPACING
-                )
-
-                let shapeNode: ShapeNode = {
-                    id: circle.props.id,
-                    type: circle,
-                    node: this.createKonvaShape(circle),
-                    dependsOn: [point.props.id],
-                    defined: true,
-                    ambiguous: false,
-                    isSelected: false
-                }
-
-                DAG.set(circle.props.id, shapeNode);
-                this.props.onUpdateLastFailedState();
-                this.props.onUpdateAll({
-                    gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, circle.props.id]},
-                    dag: DAG,
-                    selectedPoints: [],
-                    selectedShapes: []
-                });
+            const point = selectedPoints[0];
+            const radius = this.props.data.radius;
+            if (radius === undefined) {
+                this.props.onRenderDialogbox(this.props.mode);
+                return;
+            }
+            
+            let label = utils.getExcelLabel('c', 0);
+            let index = 0;
+            while (this.props.labelUsed.includes(label)) {
+                index++;
+                label = utils.getExcelLabel('c', index);
             }
 
-            catch (error) {
-                pNode?.node.draggable(true);
-                alert('Invalid expression for radius');
+            this.props.onLabelUsed([...this.props.labelUsed, label]);
+            const circle: Circle = Factory.createCircle(
+            utils.createCircleDefaultShapeProps(label, radius, 0, 10, 0),
+                point,
+                radius * constants.BASE_SPACING
+            )
+
+            let shapeNode: ShapeNode = {
+                id: circle.props.id,
+                type: circle,
+                node: this.createKonvaShape(circle),
+                dependsOn: [point.props.id],
+                defined: true,
+                ambiguous: false,
+                isSelected: false
             }
+
+            DAG.set(circle.props.id, shapeNode);
+            this.props.onUpdateLastFailedState();
+            this.props.onUpdateAll({
+                gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, circle.props.id]},
+                dag: DAG,
+                selectedPoints: [],
+                selectedShapes: []
+            });
         }
 
         else if (this.props.mode === 'polygon') {
@@ -3426,88 +3440,74 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if (this.props.mode === 'segment_length') {
             const selectedPoints = [...this.props.selectedPoints];
             if (selectedPoints.length !== 1) return;
-            const pNode = DAG.get(selectedPoints[0].props.id);
-            if (!pNode) return;
-            pNode?.node.draggable(false);
-            let input = prompt('Enter the length of segment');
-            if (!input) return;
-            try {
-                const length = math.evaluate(input);
-                if (typeof length !== 'number' || length <= 0) {
-                    alert('Invalid length');
-                    pNode?.node.draggable(true);
-                    return;
-                }
-
-                pNode.node.draggable(true);
-                let segment_label = utils.getExcelLabel('f', 0);
-                let index = 0;
-                while (this.props.labelUsed.includes(segment_label)) {
-                    index++;
-                    segment_label = utils.getExcelLabel('c', index);
-                }
-
-                let point_label = utils.getExcelLabel('A', 0);
-                index = 0;
-                while (this.props.labelUsed.includes(point_label)) {
-                    index++;
-                    point_label = utils.getExcelLabel('A', index);
-                }
-
-                this.props.onLabelUsed([...this.props.labelUsed, point_label, segment_label]);
-                
-                const point: Point = Factory.createPoint(
-                    utils.createPointDefaultShapeProps(point_label),
-                    (pNode.type as Point).x + length * constants.BASE_SPACING,
-                    (pNode.type as Point).y
-                )
-
-                const segment: Segment = Factory.createSegment(
-                    utils.createLineDefaultShapeProps(segment_label),
-                    pNode.type as Point,
-                    point
-                )
-
-                let shapeNodePoint: ShapeNode = {
-                    id: point.props.id,
-                    type: point,
-                    node: this.createKonvaShape(point),
-                    dependsOn: [pNode.id],
-                    defined: true,
-                    ambiguous: false,
-                    isSelected: false,
-                    scaleFactor: length,
-                    rotationFactor: {
-                        degree: 0,
-                        CCW: true
-                    }
-                }
-
-                let shapeNodeSegment: ShapeNode = {
-                    id: segment.props.id,
-                    type: segment,
-                    node: this.createKonvaShape(segment),
-                    dependsOn: [pNode.id, point.props.id],
-                    defined: true,
-                    ambiguous: false,
-                    isSelected: false
-                }
-
-                DAG.set(shapeNodePoint.id, shapeNodePoint);
-                DAG.set(shapeNodeSegment.id, shapeNodeSegment);
-                this.props.onUpdateLastFailedState();
-                this.props.onUpdateAll({
-                    gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, shapeNodePoint.id, shapeNodeSegment.id]},
-                    dag: DAG,
-                    selectedPoints: [],
-                    selectedShapes: []
-                });
+            const length = this.props.data.radius;
+            if (length === undefined) {
+                this.props.onRenderDialogbox(this.props.mode);
+                return;
             }
 
-            catch (error) {
-                pNode?.node.draggable(true);
-                alert('Invalid expression for length');
+            let segment_label = utils.getExcelLabel('f', 0);
+            let index = 0;
+            while (this.props.labelUsed.includes(segment_label)) {
+                index++;
+                segment_label = utils.getExcelLabel('c', index);
             }
+
+            let point_label = utils.getExcelLabel('A', 0);
+            index = 0;
+            while (this.props.labelUsed.includes(point_label)) {
+                index++;
+                point_label = utils.getExcelLabel('A', index);
+            }
+
+            this.props.onLabelUsed([...this.props.labelUsed, point_label, segment_label]);
+            
+            const point: Point = Factory.createPoint(
+                utils.createPointDefaultShapeProps(point_label),
+                selectedPoints[0].x + length * constants.BASE_SPACING,
+                selectedPoints[0].y
+            )
+
+            const segment: Segment = Factory.createSegment(
+                utils.createLineDefaultShapeProps(segment_label),
+                selectedPoints[0],
+                point
+            )
+
+            let shapeNodePoint: ShapeNode = {
+                id: point.props.id,
+                type: point,
+                node: this.createKonvaShape(point),
+                dependsOn: [selectedPoints[0].props.id],
+                defined: true,
+                ambiguous: false,
+                isSelected: false,
+                scaleFactor: length,
+                rotationFactor: {
+                    degree: 0,
+                    CCW: true
+                }
+            }
+
+            let shapeNodeSegment: ShapeNode = {
+                id: segment.props.id,
+                type: segment,
+                node: this.createKonvaShape(segment),
+                dependsOn: [selectedPoints[0].props.id, point.props.id],
+                defined: true,
+                ambiguous: false,
+                isSelected: false
+            }
+
+            DAG.set(shapeNodePoint.id, shapeNodePoint);
+            DAG.set(shapeNodeSegment.id, shapeNodeSegment);
+            this.props.onUpdateLastFailedState();
+            this.props.onUpdateAll({
+                gs: {...this.props.geometryState, shapes: [...this.props.geometryState.shapes, shapeNodePoint.id, shapeNodeSegment.id]},
+                dag: DAG,
+                selectedPoints: [],
+                selectedShapes: []
+            });
         }
 
         else if (this.props.mode === 'perpendicular_bisector') {
