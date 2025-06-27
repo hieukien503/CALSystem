@@ -61,7 +61,8 @@ interface GeometryToolProps {
     onRegularPolygonClick: () => void;
     // onTranslationClick: () => void;
     // onRotationClick: () => void;
-    // onReflectionClick: () => void;
+    onReflectLineClick: () => void;
+    onReflectPointClick: () => void;
     // onProjectionClick: () => void;
     // onScalingClick: () => void;
     onIntersectionClick: () => void;
@@ -252,9 +253,13 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
         //     this.props.onProjectionClick();
         // }
 
-        // else if (toolKey === "reflection") {
-        //     this.props.onReflectionClick();
-        // }
+        else if (toolKey === "reflect_point") {
+            this.props.onReflectPointClick();
+        }
+
+        else if (toolKey === "reflect_point") {
+            this.props.onReflectLineClick();
+        }
     }
 
     render(): React.ReactNode {

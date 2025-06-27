@@ -99,7 +99,6 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 numLoops: 0,
                 axisTickInterval: 1,
                 spacing: constants.BASE_SPACING,
-                shapes: [],
                 gridVisible: true,
                 zoom_level: 1,
                 axesVisible: true,
@@ -288,7 +287,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
     private handleClearCanvas = () => {
         this.labelUsed.length = 0;
         this.setState({
-            geometryState: {...this.state.geometryState, shapes: []},
+            geometryState: {...this.state.geometryState},
             selectedPoints: new Array<Point>(),
             selectedShapes: new Array<Shape>(),
             dag: new Map<string, ShapeNode>(),
@@ -472,7 +471,6 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
     }
 
     private removeNodeBatch = (id: string, visited: Set<string>, state: {
-        shapes: string[],
         labelUsed: string[],
         dag: Map<string, ShapeNode>
     }) => {
@@ -495,18 +493,14 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
 
         (node as ShapeNode).node.destroy();
         state.dag.delete(id);
-
-        // 3. Remove from shapes
-        state.shapes = state.shapes.filter(shapeId => shapeId !== id);
     };
 
     // Public method that does batch delete with single re-render
     private removeNode = (id: string): void => {
-        const newShapes = [...this.state.geometryState.shapes];
         const dag = utils.cloneDAG(this.state.dag);
         const set = new Set<string>();
 
-        this.removeNodeBatch(id, set, { shapes: newShapes, labelUsed: this.labelUsed, dag: dag });
+        this.removeNodeBatch(id, set, { labelUsed: this.labelUsed, dag: dag });
 
         // Only one render here
         this.setState({
@@ -720,6 +714,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     onAngleBisecClick={() => this.setMode('angle_bisector')}
                     onRegularPolygonClick={() => this.setMode('regular_polygon')}
                     onTangentLineClick={() => this.setMode('tangent_line')}
+                    onReflectLineClick={() => this.setMode('reflect_line')}
+                    onReflectPointClick={() => this.setMode('reflect_point')}
                 />
                 <div 
                     className="resizer flex justify-center items-center"

@@ -1988,7 +1988,7 @@ export const volume = (shape: GeometryShape.Shape) => {
         let pr: GeometryShape.Prism = shape as GeometryShape.Prism;
         let base_area = getArea(pr.base);
         let top_point: GeometryShape.Point = Factory.createPoint(
-            pr.base.points[0].props,
+            {...pr.base.points[0].props},
             pr.base.points[0].x + pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
             pr.base.points[0].y + pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
             (pr.base.points[0].z ?? 0) + (pr.shiftVector.endVector.x ?? 0) - (pr.shiftVector.startVector.x ?? 0)
@@ -2036,7 +2036,7 @@ export const surface_area = (shape: GeometryShape.Shape) => {
         let pr: GeometryShape.Prism = shape as GeometryShape.Prism;
         let base_area = getArea(pr.base);
         let top_point: GeometryShape.Point = Factory.createPoint(
-            pr.base.points[0].props,
+            {...pr.base.points[0].props},
             pr.base.points[0].x + pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
             pr.base.points[0].y + pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
             (pr.base.points[0].z ?? 0) + (pr.shiftVector.endVector.x ?? 0) - (pr.shiftVector.startVector.x ?? 0)
@@ -2378,9 +2378,9 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
         else {
             let m = midPoint(p, c.centerC);
             let c1: GeometryShape.Circle = Factory.createCircle(
-                c.props,
+                {...c.props},
                 Factory.createPoint(
-                    p.props,
+                    {...p.props},
                     m.x,
                     m.y,
                     m.z
@@ -2479,9 +2479,9 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             }
 
             let c1: GeometryShape.Circle = Factory.createCircle(
-                c.props,
+                {...c.props},
                 Factory.createPoint(
-                    p.props,
+                    {...p.props},
                     m.x,
                     m.y,
                     m.z
@@ -2530,11 +2530,14 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
 
     if ('startVector' in o1) {
         let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
-        return Factory.createVector(
-            v.props,
+        let vector = Factory.createVector(
+            {...v.props},
             reflection(v.startVector, o2) as GeometryShape.Point,
             reflection(v.endVector, o2) as GeometryShape.Point
-        )
+        );
+        
+        vector.type = 'Vector';
+        return vector;
     }
 
     else if ('x' in o1 && 'y' in o1) {
@@ -2580,22 +2583,28 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
                 z: (start.z ?? 0) + v1.z
             }
 
-            return Factory.createPoint(
-                p.props,
+            const point = Factory.createPoint(
+                {...p.props},
                 2 * foot.x - p.x,
                 2 * foot.y - p.y,
                 2 * foot.z - (p.z ?? 0)
-            )
+            );
+
+            point.type = 'Point';
+            return point;
         }
 
         else if ('x' in o2 && 'y' in o2) {
             let p2: GeometryShape.Point = o2 as GeometryShape.Point;
-            return Factory.createPoint(
-                p.props,
+            const point = Factory.createPoint(
+                {...p.props},
                 2 * p2.x - p.x,
                 2 * p2.y - p.y,
                 2 * (p2.z ?? 0) - (p.z ?? 0)
-            )
+            );
+
+            point.type = 'Point';
+            return point;
         }
 
         else if ('point' in o2 && 'norm' in o2) {
@@ -2608,12 +2617,15 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
 
             let numerator = n.x * (p.x - pl.point.x) + n.y * (p.y - pl.point.y) + n.z * ((p.z ?? 0) - (pl.point.z ?? 0));
             let denominator = dot(n.x, n.y, n.z, n.x, n.y, n.z);
-            return Factory.createPoint(
-                p.props,
+            const point = Factory.createPoint(
+                {...p.props},
                 p.x - (2 * n.x * numerator) / denominator,
                 p.y - (2 * n.y * numerator) / denominator,
                 (p.z ?? 0) - (2 * n.z * numerator) / denominator
             )
+
+            point.type = 'Point';
+            return point;
         }
 
         else throw new Error('Cannot perform reflection');
@@ -2622,12 +2634,15 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     else if ('centerC' in o1 && 'radius' in o1) {
         let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
         let p = reflection(c.centerC, o2) as GeometryShape.Point;
-        return Factory.createCircle(
-            c.props,
+        const circle = Factory.createCircle(
+            {...c.props},
             p,
             c.radius,
             c.normal
-        )
+        );
+
+        circle.type = 'Circle';
+        return circle;
     }
 
     else if ('start' in o1 && 'end' in o1) {
@@ -2636,12 +2651,16 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             reflection(sem.start, o2) as GeometryShape.Point,
             reflection(sem.end, o2) as GeometryShape.Point,
         ];
-        return Factory.createSemiCircle(
-            sem.props,
+        
+        const semi = Factory.createSemiCircle(
+            {...sem.props},
             p1,
             p2,
-            sem.normal
-        )
+            {...sem.normal}
+        );
+
+        semi.type = 'SemiCircle';
+        return semi;
     }
 
     else if ('points' in o1) {
@@ -2651,22 +2670,26 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             points.push(reflection(p, o2) as GeometryShape.Point);
         })
 
-        return Factory.createPolygon(
-            o1.props,
+        const polygon = Factory.createPolygon(
+            {...o1.props},
             points
-        )
+        );
+
+        polygon.type = o1.type;
+        return polygon;
     }
 
     else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
         let [start2, end2] = getStartAndEnd(o1);
+        let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
         let [start3, end3] = [
             reflection(Factory.createPoint(
-                o2.props,
+                props1,
                 start2.x,
                 start2.y,
                 (start2.z ?? 0)
             ), o2) as GeometryShape.Point, reflection(Factory.createPoint(
-                o2.props,
+                props2,
                 end2.x,
                 end2.y,
                 (end2.z ?? 0)
@@ -2674,84 +2697,111 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         ]
 
         if ('startSegment' in o1) {
-            return Factory.createSegment(o2.props, start3, end3);
+            const segment = Factory.createSegment({...o2.props}, start3, end3);
+            segment.type = 'Segment';
+            return segment;
         }
 
         else if ('startRay' in o1) {
-            return Factory.createRay(o2.props, start3, end3);
+            const ray = Factory.createRay({...o2.props}, start3, end3);
+            ray.type = 'Ray';
+            return ray;
         }
             
         else {
-            return Factory.createLine(o2.props, start3, end3);
+            const line =  Factory.createLine({...o2.props}, start3, end3);
+            line.type = 'Line';
+            return line;
         }
     }
 
     else if ('centerS' in o1 && 'radius' in o1) {
         let c: GeometryShape.Sphere = o1 as GeometryShape.Sphere;
         let p = reflection(c.centerS, o2) as GeometryShape.Point;
-        return Factory.createSphere(
-            c.props,
+        const s = Factory.createSphere(
+            {...c.props},
             p,
             c.radius
-        )
+        );
+
+        s.type = 'Sphere';
+        return s;
     }
 
     else if ('point' in o1 && 'norm' in o1) {
         let pl: GeometryShape.Plane = o1 as GeometryShape.Plane;
-        return Factory.createPlane(
-            pl.props,
+        const plane = Factory.createPlane(
+            {...pl.props},
             reflection(pl.point, o2) as GeometryShape.Point,
-            pl.norm
-        )
+            {...pl.norm}
+        );
+
+        plane.type = 'Plane';
+        return plane;
     }
 
     else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
         let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-        return Factory.createCuboid(
-            cube.props,
+        const cuboid = Factory.createCuboid(
+            {...cube.props},
             reflection(cube.origin, o2) as GeometryShape.Point,
             reflection(cube.axisX, o2) as GeometryShape.Vector,
             reflection(cube.axisY, o2) as GeometryShape.Vector,
             cube.width, cube.height, cube.depth
-        )
+        );
+
+        cuboid.type = 'Cuboid';
+        return cuboid;
     }
 
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
-        return Factory.createCylinder(
-            cy.props,
+        const cylinder = Factory.createCylinder(
+            {...cy.props},
             reflection(cy.centerBase1, o2) as GeometryShape.Point,
             reflection(cy.centerBase2, o2) as GeometryShape.Point,
             cy.radius
-        )
+        );
+
+        cylinder.type = 'Cylinder';
+        return cylinder;
     }
 
     else if ('base' in o1 && 'shiftVector' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
-        return Factory.createPrism(
-            pr.props,
+        const prism = Factory.createPrism(
+            {...pr.props},
             reflection(pr.base, o2) as GeometryShape.Polygon,
-            pr.shiftVector
-        )
+            {...pr.shiftVector}
+        );
+
+        prism.type = 'Prism';
+        return prism;
     }
 
     else if ('base' in o1 && 'apex' in o1) {
         let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
-        return Factory.createPyramid(
-            py.props,
+        const pyramid = Factory.createPyramid(
+            {...py.props},
             reflection(py.base, o2) as GeometryShape.Polygon,
             reflection(py.apex, o2) as GeometryShape.Point
-        )
+        );
+
+        pyramid.type = 'Pyramid';
+        return pyramid;
     }
 
     else if ('center' in o1 && 'apex' in o1) {
         let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
-        return Factory.createCone(
-            py.props,
+        const cone = Factory.createCone(
+            {...py.props},
             reflection(py.center, o2) as GeometryShape.Point,
             reflection(py.apex, o2) as GeometryShape.Point,
             py.radius
         )
+
+        cone.type = 'Cone';
+        return cone;
     }
 
     else {
@@ -2867,40 +2917,54 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 y: (p2.x - p1.x) * symbolicSin(radian) + (p2.y - p1.y) * symbolicCos(radian) + p2.y
             }
 
-            return Factory.createPoint(
-                p1.props,
+            const point = Factory.createPoint(
+                {...p1.props},
                 rotated_point.x,
                 rotated_point.y
-            )
+            );
+
+            point.type = 'Point';
+            return point;
         }
 
         else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
             let [start, end] = getStartAndEnd(o1);
-            let [A, B] = [Factory.createPoint(p2.props, start.x, start.y), Factory.createPoint(p2.props, end.x, end.y)];
+            let [A, B] = [Factory.createPoint({...p2.props}, start.x, start.y), Factory.createPoint({...p2.props}, end.x, end.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
-            switch (o1.type) {
-                case 'Segment':
-                    return Factory.createSegment(o1.props, A, B);
+            if ('startSegment' in o1) {
+                const segment = Factory.createSegment({...o1.props}, A, B);
+                segment.type = 'Segment';
+                return segment;
+            }
+
+            else if ('startRay' in o1) {
+                const ray = Factory.createRay({...o1.props}, A, B);
+                ray.type = 'Ray';
+                return ray;
+            }
                 
-                case 'Ray':
-                    return Factory.createRay(o1.props, A, B);
-                
-                default:
-                    return Factory.createLine(o1.props, A, B);
+            else {
+                const line =  Factory.createLine({...o1.props}, A, B);
+                line.type = 'Line';
+                return line;
             }
         }
 
         else if ('startVector' in o1) {
             let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
-            let [A, B] = [Factory.createPoint(p2.props, v.startVector.x, v.startVector.y), Factory.createPoint(p2.props, v.endVector.x, v.endVector.y)];
+            let [A, B] = [Factory.createPoint({...p2.props}, v.startVector.x, v.startVector.y), Factory.createPoint({...p2.props}, v.endVector.x, v.endVector.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
-            return Factory.createVector(v.props, A, B);
+            const vector = Factory.createVector({...v.props}, A, B);
+            vector.type = 'Vector';
+            return vector;
         }
 
         else if ('centerC' in o1 && 'radius' in o1) {
             let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
             let center = rotation(c.centerC, o2, degree, CCW) as GeometryShape.Point;
-            return Factory.createCircle(c.props, center, c.radius, c.normal);
+            const circle = Factory.createCircle({...c.props}, center, c.radius, c.normal);
+            circle.type = 'Circle';
+            return circle;
         }
 
         else if ('start' in o1 && 'end' in o1) {
@@ -2909,12 +2973,16 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 rotation(sem.start, o2, degree, CCW) as GeometryShape.Point,
                 rotation(sem.end, o2, degree, CCW) as GeometryShape.Point,
             ];
-            return Factory.createSemiCircle(
-                sem.props,
+
+            const semi = Factory.createSemiCircle(
+                {...sem.props},
                 p1,
                 p2,
-                sem.normal
-            )
+                {...sem.normal}
+            );
+
+            semi.type = 'SemiCircle';
+            return semi;
         }
 
         else if ('points' in o1) {
@@ -2924,56 +2992,73 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 points.push(rotation(p, o2, degree, CCW) as GeometryShape.Point);
             })
 
-            return Factory.createPolygon(poly.props, points);
+            const polygon = Factory.createPolygon({...poly.props}, points);
+            polygon.type = o1.type;
+            return polygon;
         }
 
         else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
             let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-            return Factory.createCuboid(
-                cube.props,
+            const cuboid = Factory.createCuboid(
+                {...cube.props},
                 rotation(cube.origin, o2, degree, CCW) as GeometryShape.Point,
                 rotation(cube.axisX, o2, degree, CCW) as GeometryShape.Vector,
                 rotation(cube.axisY, o2, degree, CCW) as GeometryShape.Vector,
                 cube.width, cube.height, cube.depth
-            )
+            );
+
+            cuboid.type = 'Cuboid';
+            return cuboid;
         }
 
         else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
             let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
-            return Factory.createCylinder(
-                cy.props,
+            const cylinder = Factory.createCylinder(
+                {...cy.props},
                 rotation(cy.centerBase1, o2, degree, CCW) as GeometryShape.Point,
                 rotation(cy.centerBase2, o2, degree, CCW) as GeometryShape.Point,
                 cy.radius
-            )
+            );
+
+            cylinder.type = 'Cylinder';
+            return cylinder;
         }
 
         else if ('base' in o1 && 'shiftVector' in o1) {
             let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
-            return Factory.createPrism(
-                pr.props,
+            const prism = Factory.createPrism(
+                {...pr.props},
                 rotation(pr.base, o2, degree, CCW) as GeometryShape.Polygon,
-                pr.shiftVector
-            )
+                {...pr.shiftVector}
+            );
+
+            prism.type = 'Prism';
+            return prism;
         }
 
         else if ('base' in o1 && 'apex' in o1) {
             let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
-            return Factory.createPyramid(
-                py.props,
+            const pyramid = Factory.createPyramid(
+                {...py.props},
                 rotation(py.base, o2, degree, CCW) as GeometryShape.Polygon,
                 rotation(py.apex, o2, degree, CCW) as GeometryShape.Point
-            )
+            );
+
+            pyramid.type = 'Pyramid';
+            return pyramid;
         }
 
         else if ('center' in o1 && 'apex' in o1) {
             let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
-            return Factory.createCone(
-                py.props,
+            const cone = Factory.createCone(
+                {...py.props},
                 rotation(py.center, o2, degree, CCW) as GeometryShape.Point,
                 rotation(py.apex, o2, degree, CCW) as GeometryShape.Point,
                 py.radius
-            )
+            );
+
+            cone.type = 'Cone';
+            return cone
         }
 
         else {
@@ -3001,41 +3086,73 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             let crossProd = cross(v.x, v.y, v.z, u.x, u.y, u.z);
             let dot_uv = dot(v.x, v.y, v.z, u.x, u.y, u.z);
 
-            return Factory.createPoint(
-                p.props,
+            const point = Factory.createPoint(
+                {...p.props},
                 start.x + u.x * symbolicCos(radian) + symbolicSin(radian) * crossProd.x + (1 - symbolicCos(radian)) * dot_uv * v.x,
                 start.y + u.y * symbolicCos(radian) + symbolicSin(radian) * crossProd.y + (1 - symbolicCos(radian)) * dot_uv * v.y,
                 (start.z ?? 0) + u.z * symbolicCos(radian) + symbolicSin(radian) * crossProd.z + (1 - symbolicCos(radian)) * dot_uv * v.z
-            )
+            );
+
+            point.type = 'Point';
+            return point;
         }
 
         else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
             let [start, end] = getStartAndEnd(o1);
-            let [A, B] = [Factory.createPoint(o2.props, start.x, start.y), Factory.createPoint(o2.props, end.x, end.y)];
+            let [A, B] = [Factory.createPoint({...o2.props}, start.x, start.y), Factory.createPoint({...o2.props}, end.x, end.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
-            switch (o1.type) {
-                case 'Segment':
-                    return Factory.createSegment(o1.props, A, B);
+            if ('startSegment' in o1) {
+                const segment = Factory.createSegment({...o1.props}, A, B);
+                segment.type = 'Segment';
+                return segment;
+            }
+
+            else if ('startRay' in o1) {
+                const ray = Factory.createRay({...o1.props}, A, B);
+                ray.type = 'Ray';
+                return ray;
+            }
                 
-                case 'Ray':
-                    return Factory.createRay(o1.props, A, B);
-                
-                default:
-                    return Factory.createLine(o1.props, A, B);
+            else {
+                const line =  Factory.createLine({...o1.props}, A, B);
+                line.type = 'Line';
+                return line;
             }
         }
 
         else if ('startVector' in o1) {
             let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
-            let [A, B] = [Factory.createPoint(o2.props, v.startVector.x, v.startVector.y), Factory.createPoint(o2.props, v.endVector.x, v.endVector.y)];
+            let [A, B] = [Factory.createPoint({...o2.props}, v.startVector.x, v.startVector.y), Factory.createPoint({...o2.props}, v.endVector.x, v.endVector.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
-            return Factory.createVector(v.props, A, B);
+            const vector = Factory.createVector({...v.props}, A, B);
+            vector.type = 'Vector';
+            return vector;
         }
 
         else if ('centerC' in o1 && 'radius' in o1) {
             let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
             let center = rotation(c.centerC, o2, degree, CCW) as GeometryShape.Point;
-            return Factory.createCircle(c.props, center, c.radius, c.normal);
+            const circle = Factory.createCircle({...c.props}, center, c.radius, c.normal);
+            circle.type = 'Circle';
+            return circle;
+        }
+
+        else if ('start' in o1 && 'end' in o1) {
+            let sem: GeometryShape.SemiCircle = o1 as GeometryShape.SemiCircle;
+            let [p1, p2] = [
+                rotation(sem.start, o2, degree, CCW) as GeometryShape.Point,
+                rotation(sem.end, o2, degree, CCW) as GeometryShape.Point,
+            ];
+
+            const semi = Factory.createSemiCircle(
+                {...sem.props},
+                p1,
+                p2,
+                {...sem.normal}
+            );
+
+            semi.type = 'SemiCircle';
+            return semi;
         }
 
         else if ('points' in o1) {
@@ -3045,19 +3162,73 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 points.push(rotation(p, o2, degree, CCW) as GeometryShape.Point);
             })
 
-            return Factory.createPolygon(poly.props, points);
+            const polygon = Factory.createPolygon({...poly.props}, points);
+            polygon.type = o1.type;
+            return polygon;
         }
 
-        else if ('centerS' in o1 && 'radius' in o1) {
-            let sp: GeometryShape.Sphere = o1 as GeometryShape.Sphere;
-            let center = rotation(sp.centerS, o2, degree, CCW) as GeometryShape.Point;
-            return Factory.createSphere(sp.props, center, sp.radius);
+        else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
+            let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
+            const cuboid = Factory.createCuboid(
+                {...cube.props},
+                rotation(cube.origin, o2, degree, CCW) as GeometryShape.Point,
+                rotation(cube.axisX, o2, degree, CCW) as GeometryShape.Vector,
+                rotation(cube.axisY, o2, degree, CCW) as GeometryShape.Vector,
+                cube.width, cube.height, cube.depth
+            );
+
+            cuboid.type = 'Cuboid';
+            return cuboid;
         }
 
-        else if ('point' in o1 && 'norm' in o1) {
-            let pl: GeometryShape.Plane = o1 as GeometryShape.Plane;
-            let p_ref = rotation(pl.point, o2, degree, CCW) as GeometryShape.Point;
-            return Factory.createPlane(pl.props, p_ref, pl.norm);
+        else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
+            let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
+            const cylinder = Factory.createCylinder(
+                {...cy.props},
+                rotation(cy.centerBase1, o2, degree, CCW) as GeometryShape.Point,
+                rotation(cy.centerBase2, o2, degree, CCW) as GeometryShape.Point,
+                cy.radius
+            );
+
+            cylinder.type = 'Cylinder';
+            return cylinder;
+        }
+
+        else if ('base' in o1 && 'shiftVector' in o1) {
+            let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
+            const prism = Factory.createPrism(
+                {...pr.props},
+                rotation(pr.base, o2, degree, CCW) as GeometryShape.Polygon,
+                {...pr.shiftVector}
+            );
+
+            prism.type = 'Prism';
+            return prism;
+        }
+
+        else if ('base' in o1 && 'apex' in o1) {
+            let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
+            const pyramid = Factory.createPyramid(
+                {...py.props},
+                rotation(py.base, o2, degree, CCW) as GeometryShape.Polygon,
+                rotation(py.apex, o2, degree, CCW) as GeometryShape.Point
+            );
+
+            pyramid.type = 'Pyramid';
+            return pyramid;
+        }
+
+        else if ('center' in o1 && 'apex' in o1) {
+            let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
+            const cone = Factory.createCone(
+                {...py.props},
+                rotation(py.center, o2, degree, CCW) as GeometryShape.Point,
+                rotation(py.apex, o2, degree, CCW) as GeometryShape.Point,
+                py.radius
+            );
+
+            cone.type = 'Cone';
+            return cone
         }
 
         else {
@@ -3113,7 +3284,7 @@ export const exradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
 
 export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: number): GeometryShape.Shape => {
     if (k === 0) {
-        return o2;
+        return {...o2};
     }
 
     if ('x' in o1 && 'y' in o1) {
@@ -3126,23 +3297,29 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
 
         // o2p' = k*o2o1 => p' - o2 = k(o1 - o2)
 
-        return Factory.createPoint(
-            o2.props,
+        const point = Factory.createPoint(
+            {...o2.props},
             o2.x + k * v.x,
             o2.y + k * v.y,
             (o2.z ?? 0) + v.z
-        )
+        );
+
+        point.type = 'Point';
+        return point;
     }
 
     else if ('centerC' in o1 && 'radius' in o1) {
         let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
         let p = enlarge(c.centerC, o2, k) as GeometryShape.Point;
-        return Factory.createCircle(
-            c.props,
+        const circle = Factory.createCircle(
+            {...c.props},
             p,
             Math.abs(k) * c.radius,
             c.normal
-        )
+        );
+
+        circle.type = 'Circle';
+        return circle;
     }
 
     else if ('start' in o1 && 'end' in o1) {
@@ -3151,12 +3328,16 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
             enlarge(sem.start, o2, k) as GeometryShape.Point,
             enlarge(sem.end, o2, k) as GeometryShape.Point,
         ];
-        return Factory.createSemiCircle(
-            sem.props,
+
+        const semi = Factory.createSemiCircle(
+            {...sem.props},
             p1,
             p2,
-            sem.normal
-        )
+            {...sem.normal}
+        );
+
+        semi.type = 'SemiCircle';
+        return semi;
     }
 
     else if ('points' in o1) {
@@ -3166,115 +3347,150 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
             points.push(enlarge(p, o2, k) as GeometryShape.Point);
         })
 
-        return Factory.createPolygon(
-            o1.props,
+        const polygon = Factory.createPolygon(
+            {...o1.props},
             points
-        )
+        );
+
+        polygon.type = o1.type;
+        return polygon;
     }
 
     else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
         let [start2, end2] = getStartAndEnd(o1);
+        let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
         let [start3, end3] = [
             enlarge(Factory.createPoint(
-                o2.props,
+                props1,
                 start2.x,
                 start2.y,
                 (start2.z ?? 0)
             ), o2, k) as GeometryShape.Point, enlarge(Factory.createPoint(
-                o2.props,
+                props2,
                 end2.x,
                 end2.y,
                 (end2.z ?? 0)
             ), o2, k) as GeometryShape.Point
         ]
 
-        switch (o1.type) {
-            case 'Segment':
-                return Factory.createSegment(o2.props, start3, end3);
+        if ('startSegment' in o1) {
+            const segment = Factory.createSegment({...o2.props}, start3, end3);
+            segment.type = 'Segment';
+            return segment;
+        }
+
+        else if ('startRay' in o1) {
+            const ray = Factory.createRay({...o2.props}, start3, end3);
+            ray.type = 'Ray';
+            return ray;
+        }
             
-            case 'Line':
-                return Factory.createLine(o2.props, start3, end3);
-            
-            default:
-                return Factory.createRay(o2.props, start3, end3);
+        else {
+            const line =  Factory.createLine({...o2.props}, start3, end3);
+            line.type = 'Line';
+            return line;
         }
     }
 
     else if ('startVector' in o1) {
         let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
-        return Factory.createVector(
-            v.props,
+        const vector = Factory.createVector(
+            {...v.props},
             enlarge(v.startVector, o2, k) as GeometryShape.Point,
             enlarge(v.endVector, o2, k) as GeometryShape.Point
-        )
+        );
+
+        vector.type = 'Vector';
+        return vector;
     }
 
     else if ('centerS' in o1 && 'radius' in o1) {
         let c: GeometryShape.Sphere = o1 as GeometryShape.Sphere;
         let p = enlarge(c.centerS, o2, k) as GeometryShape.Point;
-        return Factory.createSphere(
-            c.props,
+        const sphere = Factory.createSphere(
+            {...c.props},
             p,
             Math.abs(k) * c.radius
-        )
+        );
+
+        sphere.type = 'Sphere';
+        return sphere;
     }
 
     else if ('point' in o1 && 'norm' in o1) {
         let pl: GeometryShape.Plane = o1 as GeometryShape.Plane;
-        return Factory.createPlane(
-            pl.props,
+        const plane = Factory.createPlane(
+            {...pl.props},
             enlarge(pl.point, o2, k) as GeometryShape.Point,
-            pl.norm
-        )
+            {...pl.norm}
+        );
+
+        plane.type = 'Plane';
+        return plane;
     }
 
     else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
         let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-        return Factory.createCuboid(
-            cube.props,
+        const cuboid = Factory.createCuboid(
+            {...cube.props},
             enlarge(cube.origin, o2, k) as GeometryShape.Point,
             enlarge(cube.axisX, o2, k) as GeometryShape.Vector,
             enlarge(cube.axisY, o2, k) as GeometryShape.Vector,
             cube.width, cube.height, cube.depth
-        )
+        );
+
+        cuboid.type = 'Cuboid';
+        return cuboid;
     }
 
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
-        return Factory.createCylinder(
-            cy.props,
+        const cylinder = Factory.createCylinder(
+            {...cy.props},
             enlarge(cy.centerBase1, o2, k) as GeometryShape.Point,
             enlarge(cy.centerBase2, o2, k) as GeometryShape.Point,
             cy.radius
-        )
+        );
+
+        cylinder.type = 'Cylinder';
+        return cylinder;
     }
 
     else if ('base' in o1 && 'shiftVector' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
-        return Factory.createPrism(
-            pr.props,
+        const prism = Factory.createPrism(
+            {...pr.props},
             enlarge(pr.base, o2, k) as GeometryShape.Polygon,
-            pr.shiftVector
-        )
+            {...pr.shiftVector}
+        );
+
+        prism.type = 'Prism';
+        return prism;
     }
 
     else if ('base' in o1 && 'apex' in o1) {
         let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
-        return Factory.createPyramid(
-            py.props,
+        const pyramid = Factory.createPyramid(
+            {...py.props},
             enlarge(py.base, o2, k) as GeometryShape.Polygon,
             enlarge(py.apex, o2, k) as GeometryShape.Point
-        )
+        );
+
+        pyramid.type = 'Pyramid';
+        return pyramid;
     }
 
     else if ('center' in o1 && 'apex' in o1) {
         let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
-        return Factory.createCone(
-            py.props,
+        const cone = Factory.createCone(
+            {...py.props},
             enlarge(py.center, o2, k) as GeometryShape.Point,
             enlarge(py.apex, o2, k) as GeometryShape.Point,
             py.radius
-        )
+        );
+
+        cone.type = 'Cone';
+        return cone;
     }
 
     else {

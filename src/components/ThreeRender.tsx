@@ -129,7 +129,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             numLoops: 0,
             spacing: 20,
             axisTickInterval: 1,
-            shapes: [],
             gridVisible: true,
             axesVisible: true,
             zoom_level: 1,
@@ -831,7 +830,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     private handleClearClick = () => {
         this.setState({
-            shapes: [],
             polygonIndex: 0
         });
 
@@ -1238,6 +1236,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     onAngleBisecClick={this.handleClearClick}
                     onRegularPolygonClick={this.handleClearClick}
                     onTangentLineClick={this.handleClearClick}
+                    onReflectLineClick={this.handleClearClick}
+                    onReflectPointClick={this.handleClearClick}
                 />
 
                 <canvas

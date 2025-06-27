@@ -218,10 +218,7 @@ export interface ShapeNode3D {
 }
 
 // Geometry state
-export interface GeometryState {
-    /** Array of shapes in the scene */
-    shapes: string[];
-    
+export interface GeometryState {    
     /** Whether the grid is visible */
     gridVisible: boolean;
     
@@ -252,8 +249,8 @@ type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' 
                    'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'show_label' | 'show_object' | 'intersection' |
                    'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
                    'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length' | 'perpendicular_bisector' |
-                   'semicircle' | 'reflection' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
-                   'angle_bisector';
+                   'semicircle' | 'reflect_point' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
+                   'angle_bisector' | 'reflect_line';
 
 /** History */
 interface HistoryEntry {
