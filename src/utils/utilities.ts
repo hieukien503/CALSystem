@@ -500,3 +500,16 @@ export const cloneDAG = (dag: Map<string, ShapeNode>): Map<string, ShapeNode> =>
 
     return copyDAG;
 }
+
+export const incrementLabel = (label: string): string => {
+    const match = label.match(/^([A-Za-z])([₀₁₂₃₄₅₆₇₈₉]*)$/);
+    if (!match) return label;  // or throw error
+
+    const toNormal = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9' };
+    const toSub = ['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
+    const [_, base, sub] = match;
+    const normalDigits = sub.split('').map(c => toNormal[c as keyof typeof toNormal] ?? '').join('');
+    const nextIndex = (normalDigits === '' ? 1 : parseInt(normalDigits) + 1);
+    const newSub = nextIndex.toString().split('').map(d => toSub[parseInt(d)]).join('');
+    return base + newSub;
+}
