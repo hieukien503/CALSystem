@@ -748,7 +748,8 @@ input:focus {
 .radioButton {
     cursor: pointer;
     display: inline-flex;
-    justify-items: center;
+    justify-content: center;
+    align-items: center;
 }
 
 .radioButton .radioBg {
