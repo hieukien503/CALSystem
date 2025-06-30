@@ -13,8 +13,6 @@ const math = require('mathjs');
 type SharingMode = 'public' | 'private' | 'organization-wide';
 
 interface ProjectProps {
-    width: number;
-    height: number;
     id: string;
     title: string;
     description: string;
@@ -112,7 +110,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             snapToGridEnabled: false,
             isSnapToGrid: false,
             isResize: false,
-            toolWidth: 280,
+            toolWidth: Math.max(window.innerWidth * 0.22, 264),
             isMenuRightClick: undefined,
             isDialogBox: undefined,
             data: {
@@ -144,6 +142,14 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         this.errorDialogRef = createRef<ErrorDialogbox | null>();
     }
 
+    componentDidMount(): void {
+        window.addEventListener("resize", this.handleWindowResize);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener("resize", this.handleWindowResize);
+    }
+
     componentDidUpdate(prevProps: Readonly<ProjectProps>, prevState: Readonly<Project2DState>, snapshot?: any): void {
         if (
             !prevState.isDialogBox &&
@@ -171,6 +177,13 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 }
             }, 0);
         }
+    }
+
+    private handleWindowResize = () => {
+        this.setState({
+            geometryState: {...this.state.geometryState},
+            toolWidth: this.state.toolWidth
+        })
     }
 
     private setRightMenuClick = (pos?: {x: number, y: number}): void => {
@@ -575,7 +588,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             this.setState({
                 isDialogBox: {
                     title: 'Rotate around Point',
-                    input_label: 'Angle',
+                    input_label: 'Angle (in degree)',
                     angleMode: true
                 },
                 isMenuRightClick: undefined
@@ -591,14 +604,25 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 },
                 isMenuRightClick: undefined
             });
-        } 
+        }
+
+        else if (mode === 'enlarge') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Dilate from Point',
+                    input_label: 'Scale factor',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
 
         else {
             throw new Error('Invalid mode');
         }
     }
 
-    private receiveData = (value: string, CCW?: boolean): void => {
+    private receiveData = (value: string, CCW: boolean = true): void => {
         if (['segment_length', 'circle'].includes(this.state.mode)) {
             try {
                 const radius = math.evaluate(value);
@@ -670,6 +694,82 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 })
             }
         }
+
+        else if (this.state.mode === 'rotation') {
+            console.log(CCW);
+            try {
+                const degree = math.evaluate(value);
+                if (typeof degree !== 'number') {
+                    this.setState({
+                        error: {
+                            label: 'Number expected',
+                            message: ''
+                        }
+                    })
+                }
+
+                this.setState({
+                    data: {
+                        radius: undefined,
+                        vertices: undefined,
+                        rotation: {
+                            degree: degree,
+                            CCW: CCW
+                        }
+                    },
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for angle`
+                    }
+                })
+            }
+        }
+
+        else if (this.state.mode === 'enlarge') {
+            try {
+                const scaleFactor = math.evaluate(value);
+                if (typeof scaleFactor !== 'number') {
+                    this.setState({
+                        error: {
+                            label: 'Number expected',
+                            message: ''
+                        }
+                    })
+                }
+
+                this.setState({
+                    data: {
+                        radius: scaleFactor,
+                        vertices: undefined,
+                        rotation: undefined
+                    },
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for scale factor`
+                    }
+                })
+            }
+        }
     }
 
     render(): React.ReactNode {
@@ -677,7 +777,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             <div className="flex justify-start flex-row">
                 <GeometryTool
                     width={this.state.toolWidth}
-                    height={this.props.height}
+                    height={window.innerHeight * 0.74}
                     onPointClick={() => this.setMode('point')}
                     onLineClick={() => this.setMode('line')}
                     onSegmentClick={() => this.setMode('segment')}
@@ -716,6 +816,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     onTangentLineClick={() => this.setMode('tangent_line')}
                     onReflectLineClick={() => this.setMode('reflect_line')}
                     onReflectPointClick={() => this.setMode('reflect_point')}
+                    onRotationClick={() => this.setMode('rotation')}
+                    onScalingClick={() => this.setMode('enlarge')}
                 />
                 <div 
                     className="resizer flex justify-center items-center"
@@ -725,9 +827,9 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 >
                     <div className="resizerPanel w-1 h-6 bg-gray-400 rounded"></div>
                 </div>
-                {this.state.toolWidth < this.props.width && <KonvaCanvas 
-                    width={this.props.width - this.state.toolWidth}
-                    height={this.props.height}
+                {this.state.toolWidth < window.innerWidth && <KonvaCanvas 
+                    width={window.innerWidth - this.state.toolWidth}
+                    height={window.innerHeight * 0.74}
                     background_color="#ffffff"
                     dag={this.state.dag}
                     onChangeMode={(mode: DrawingMode) => this.setState({mode: mode})}

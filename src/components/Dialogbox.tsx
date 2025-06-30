@@ -92,13 +92,14 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                 <input
                                                     ref={this.inputRef} 
                                                     type='text'
-                                                    value={this.props.angleMode ? "30°" : this.state.value_from_input}
+                                                    value={this.state.value_from_input}
                                                     onChange={(e) => this.setState({ value_from_input: e.target.value })}
                                                     className='TextField'
                                                     autoComplete='off'
                                                     autoCapitalize='off'
                                                     onFocus={this.handleInputFocus}
                                                     onBlur={this.handleInputBlur}
+                                                    placeholder={this.props.angleMode ? "30" : ""}
                                                 >
                                                 </input>
                                             </div>
@@ -134,7 +135,12 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                             <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
                                 <div className='label'>Cancel</div>
                             </button>
-                            <button type='button' className='okButton' onClick={() => this.props.onSubmitClick(this.state.value_from_input, this.state.isCCW)}>
+                            <button type='button' className='okButton'
+                                onClick={() => {
+                                    const value = this.state.value_from_input || (this.props.angleMode ? "30" : "");
+                                    this.props.onSubmitClick(value, this.state.isCCW);
+                                }}
+                            >
                                 <div className='label'>OK</div>
                             </button>
                         </div>
