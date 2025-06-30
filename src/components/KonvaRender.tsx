@@ -289,21 +289,89 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             
                 else {
                     if (!shape.id().includes('point-')) {
-                        const newSelected = [...this.props.selectedShapes, pNode.type];
-                        this.props.onSelectedShapesChange(newSelected);
+                        const ids = this.props.selectedShapes.map(shape => shape.props.id);
+                        if (!ids.includes(shape.id())) {
+                            const newSelected = [...this.props.selectedShapes, pNode.type];
+                            this.props.onSelectedShapesChange(newSelected);
+                        }
+
+                        else {
+                            if (children.length > 1) {
+                                const second_shape = children[children.length - 2];
+                                pNode = this.props.dag.get(second_shape.id());
+                                if (!pNode) {
+                                    let l: Line = Factory.createLine(
+                                        utils.createLineDefaultShapeProps(shape.id()),
+                                        Factory.createPoint(
+                                            utils.createPointDefaultShapeProps(''),
+                                            this.stageRef.current.width() / 2,
+                                            this.stageRef.current.height() / 2
+                                        ),
+
+                                        Factory.createPoint(
+                                            utils.createPointDefaultShapeProps(''),
+                                            this.stageRef.current.width() / 2 + (second_shape.id().includes('x-axis') ? 1 : 0),
+                                            this.stageRef.current.height() / 2 + (second_shape.id().includes('y-axis') ? 1 : 0)
+                                        ),
+                                    )
+
+                                    const newSelected = [...this.props.selectedShapes, l];
+                                    this.props.onSelectedShapesChange(newSelected);
+                                }
+
+                                else {
+                                    const newSelected = [...this.props.selectedShapes, pNode.type];
+                                    this.props.onSelectedShapesChange(newSelected);
+                                }
+                            }
+                        }
                     }
 
                     else {
-                        this.props.onUpdateLastFailedState({
-                            selectedPoints: [...this.props.selectedPoints, pNode.type as Point],
-                            selectedShapes: [...this.props.selectedShapes]
-                        })
+                        const ids = this.props.selectedPoints.map(shape => shape.props.id);
+                        if (!ids.includes(shape.id())) {
+                            this.props.onUpdateLastFailedState({
+                                selectedPoints: [...this.props.selectedPoints, pNode.type as Point],
+                                selectedShapes: [...this.props.selectedShapes]
+                            })
 
-                        this.props.onSelectedPointsChange([...this.props.selectedPoints, pNode.type as Point]);
+                            this.props.onSelectedPointsChange([...this.props.selectedPoints, pNode.type as Point]);
+                        }
+
+                        else {
+                            if (children.length > 1) {
+                                const second_shape = children[children.length - 2];
+                                pNode = this.props.dag.get(second_shape.id());
+                                if (!pNode) {
+                                    let l: Line = Factory.createLine(
+                                        utils.createLineDefaultShapeProps(shape.id()),
+                                        Factory.createPoint(
+                                            utils.createPointDefaultShapeProps(''),
+                                            this.stageRef.current.width() / 2,
+                                            this.stageRef.current.height() / 2
+                                        ),
+
+                                        Factory.createPoint(
+                                            utils.createPointDefaultShapeProps(''),
+                                            this.stageRef.current.width() / 2 + (second_shape.id().includes('x-axis') ? 1 : 0),
+                                            this.stageRef.current.height() / 2 + (second_shape.id().includes('y-axis') ? 1 : 0)
+                                        ),
+                                    )
+
+                                    const newSelected = [...this.props.selectedShapes, l];
+                                    this.props.onSelectedShapesChange(newSelected);
+                                }
+
+                                else {
+                                    const newSelected = [...this.props.selectedShapes, pNode.type];
+                                    this.props.onSelectedShapesChange(newSelected);
+                                }
+                            }
+                        }
                     }
                 }
             }
-            
+
             if (this.props.mode === 'intersection' && children.filter(item => !item.id().includes('point-')).length > 1) {
                 this.createPoint(position, children);
                 return;
@@ -4765,6 +4833,25 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     selectedPoints: [],
                     selectedShapes: []
                 });
+            }
+        }
+
+        else if (this.props.mode === 'projection') {
+            const selectedPoints = [...this.props.selectedPoints];
+            const selectedShapes = [...this.props.selectedShapes];
+            if (selectedPoints.length === 1) {
+                if (selectedShapes.length !== 1) return;
+                if (!('startSegment' in selectedShapes[0]) && !('startLine' in selectedShapes[0]) && !('startRay' in selectedShapes[0])) {
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    });
+
+                    return;
+                }
+
+
             }
         }
     }
