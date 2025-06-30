@@ -60,11 +60,11 @@ interface GeometryToolProps {
     onSemiClick: () => void;
     onRegularPolygonClick: () => void;
     // onTranslationClick: () => void;
-    // onRotationClick: () => void;
+    onRotationClick: () => void;
     onReflectLineClick: () => void;
     onReflectPointClick: () => void;
     // onProjectionClick: () => void;
-    // onScalingClick: () => void;
+    onScalingClick: () => void;
     onIntersectionClick: () => void;
     onAreaClick: () => void;
 }
@@ -241,13 +241,13 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
         //     this.props.onTranslationClick();
         // }
 
-        // else if (toolKey === "scaling") {
-        //     this.props.onScalingClick();
-        // }
+        else if (toolKey === "scaling") {
+            this.props.onScalingClick();
+        }
 
-        // else if (toolKey === "rotation") {
-        //     this.props.onRotationClick();
-        // }
+        else if (toolKey === "rotation") {
+            this.props.onRotationClick();
+        }
 
         // else if (toolKey === "projection") {
         //     this.props.onProjectionClick();
@@ -257,7 +257,7 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             this.props.onReflectPointClick();
         }
 
-        else if (toolKey === "reflect_point") {
+        else if (toolKey === "reflect_line") {
             this.props.onReflectLineClick();
         }
     }
@@ -362,13 +362,13 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
             <div 
                 className="customScrollBar"
                 style={{
-                    overflow: 'auto',
                     position: 'relative',
                     width: this.props.width,
                     height: this.props.height,
                     display: 'flex',
                     flexDirection: 'row',
-                    backgroundColor: '#f9f9f9'
+                    backgroundColor: '#f9f9f9',
+                    overflow: 'auto',
                 }}
             >
                 <div

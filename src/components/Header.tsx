@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Project2D from './Project2D';
 import ThreeDCanvas from './ThreeRender';
 import { v4 as uuidv4 } from 'uuid'
 
 const Header = () => {
     const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
+    const [searchWidth, setSearchWidth] = useState<number>(window.innerWidth * 0.35);
+
+    useEffect(() => {
+        window.addEventListener('resize', handleSearchWidthChange);
+        return () => {
+            window.removeEventListener('resize', handleSearchWidthChange);
+        }
+    }, [searchWidth]);
+
+    const handleSearchWidthChange = () => {
+        setSearchWidth(window.innerWidth * 0.35)
+    }
 
     // Handle dropdown change with explicit typing
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -36,9 +48,7 @@ const Header = () => {
                     </h1>
                     <main className="outer-main">
                         <div className="inner-main text-center text-gray-600 text-xl flex-grow">
-                            <Project2D 
-                                width={window.innerWidth}
-                                height={window.innerHeight * 0.74}
+                            <Project2D
                                 id={uuidv4()}
                                 title={'2D Geometry'}
                                 description={'Test Geometry'}
@@ -61,7 +71,7 @@ const Header = () => {
     }
     return (
         <div className="flex flex-col min-h-screen">
-            <header className="flex items-center">
+            <header className="flex flex-col justify-center h-20">
                 <div className="logo">
                     <img src="image/Menu.svg" alt="Menu" className="menu-icon"/>
                     <span><a href="index.php">
@@ -70,7 +80,7 @@ const Header = () => {
                         </button>
                     </a></span>
                 </div>
-                <div className="search-wrapper">
+                <div className="search-wrapper" style={{width: searchWidth}}>
                     <input type="text" id="search" placeholder="Search project..."
                         className="border border-gray-300 px-3 py-1 rounded-full w-52 text-sm focus:outline-none"/>
                     <div id="results"></div>
@@ -92,7 +102,6 @@ const Header = () => {
             </header>
             {renderTool()}
         </div>
-        
     );
 };
 

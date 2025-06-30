@@ -2390,7 +2390,6 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             )
 
             let intersections = getIntersections2D(c1, c);
-            console.log(intersections);
             return [
                 {
                     point:  {
@@ -2551,9 +2550,9 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             }
 
             let v = {
-                x: start.x - p.x,
-                y: start.y - p.y,
-                z: (start.z ?? 0) - (p.z ?? 0)
+                x: p.x - start.x,
+                y: p.y - start.y,
+                z: (p.z ?? 0) - (start.z ?? 0)
             }
 
             let cross_uv = cross(
@@ -2562,7 +2561,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             )
 
             if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
-                return o1
+                return structuredClone(o1);
             }
 
             let dot_uv = dot(
@@ -2570,18 +2569,18 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
                 d.x, d.y, d.z
             )
 
-            let norm = L2_norm(d.x, d.y, d.z)
+            let dot_dd = dot(d.x, d.y, d.z, d.x, d.y, d.z);
             let v1 = {
-                x: dot_uv / norm * d.x,
-                y: dot_uv / norm * d.y,
-                z: dot_uv / norm * d.z,
+                x: dot_uv / dot_dd * d.x,
+                y: dot_uv / dot_dd * d.y,
+                z: dot_uv / dot_dd * d.z,
             }
 
             let foot = {
                 x: start.x + v1.x,
                 y: start.y + v1.y,
                 z: (start.z ?? 0) + v1.z
-            }
+            };
 
             const point = Factory.createPoint(
                 {...p.props},
@@ -2638,7 +2637,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             {...c.props},
             p,
             c.radius,
-            c.normal
+            c.normal ? {...c.normal} : undefined
         );
 
         circle.type = 'Circle';
@@ -2823,9 +2822,9 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
         }
 
         let v = {
-            x: start.x - o1.x,
-            y: start.y - o1.y,
-            z: (start.z ?? 0) - (o1.z ?? 0)
+            x: o1.x - start.x,
+            y: o1.y - start.y,
+            z: (o1.z ?? 0) - (start.z ?? 0)
         }
 
         let cross_uv = cross(
@@ -2834,7 +2833,7 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
         )
 
         if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
-            return o1
+            return structuredClone(o1);
         }
 
         let dot_uv = dot(
@@ -2904,8 +2903,8 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         return rotation(o1, o2, degree % 360, CCW);
     }
 
-    degree = (CCW ? degree : -degree);
-    let radian = Math.PI / 180 * degree;
+    let tmpDegree = (CCW ? degree : -degree);
+    let radian = Math.PI / 180 * tmpDegree;
 
     if ('x' in o2 && 'y' in o2) {
         // Only 2D
@@ -2913,8 +2912,8 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         if ('x' in o1 && 'y' in o1) {
             let p1: GeometryShape.Point = o1 as GeometryShape.Point;
             let rotated_point = {
-                x: (p2.x - p1.x) * symbolicCos(radian) - (p2.y - p1.y) * symbolicSin(radian) + p2.x,
-                y: (p2.x - p1.x) * symbolicSin(radian) + (p2.y - p1.y) * symbolicCos(radian) + p2.y
+                x: (p1.x - p2.x) * symbolicCos(radian) + (p1.y - p2.y) * symbolicSin(radian) + p2.x,
+                y: -(p1.x - p2.x) * symbolicSin(radian) + (p1.y - p2.y) * symbolicCos(radian) + p2.y
             }
 
             const point = Factory.createPoint(
