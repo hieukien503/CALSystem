@@ -632,7 +632,9 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                             label: 'Number expected',
                             message: ''
                         }
-                    })
+                    });
+
+                    return;
                 }
 
                 this.setState({
@@ -668,7 +670,9 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                             label: 'Expected: number of vertices > 2',
                             message: ''
                         }
-                    })
+                    });
+
+                    return;
                 }
 
                 this.setState({
@@ -696,7 +700,6 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         }
 
         else if (this.state.mode === 'rotation') {
-            console.log(CCW);
             try {
                 const degree = math.evaluate(value);
                 if (typeof degree !== 'number') {
@@ -705,7 +708,9 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                             label: 'Number expected',
                             message: ''
                         }
-                    })
+                    });
+
+                    return;
                 }
 
                 this.setState({
@@ -869,7 +874,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     angleMode={this.state.isDialogBox.angleMode}
                     onSubmitClick={this.receiveData}
                     inputError={this.state.error}
-                    onCancelClick={() => this.setState({isDialogBox: undefined})}
+                    onCancelClick={() => this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})}
                     position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
                     ref={this.dialogRef}
                 />)}
