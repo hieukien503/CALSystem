@@ -4538,7 +4538,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     labelUsed.push((newShape as Segment).startSegment.props.label);
                     (newShape as Segment).endSegment.props.label = getNewLabel(end.props.label);
                     (newShape as Segment).endSegment.props.id = `point-${(newShape as Segment).endSegment.props.label}`
-                    labelUsed.push((newShape as Segment).startSegment.props.label);
+                    labelUsed.push((newShape as Segment).endSegment.props.label);
                     const segment_label = getNewLabel(selectedShapes[0].props.label);
                     labelUsed.push(segment_label);
                     newShape.props.label = segment_label;
@@ -4592,7 +4592,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     labelUsed.push((newShape as Line).startLine.props.label);
                     (newShape as Line).endLine.props.label = getNewLabel(end.props.label);
                     (newShape as Line).endLine.props.id = `point-${(newShape as Line).endLine.props.label}`
-                    labelUsed.push((newShape as Line).startLine.props.label);
+                    labelUsed.push((newShape as Line).endLine.props.label);
                     const line_label = getNewLabel(selectedShapes[0].props.label);
                     labelUsed.push(line_label);
                     newShape.props.label = line_label;
@@ -4646,7 +4646,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     labelUsed.push((newShape as Ray).startRay.props.label);
                     (newShape as Ray).endRay.props.label = getNewLabel(end.props.label);
                     (newShape as Ray).endRay.props.id = `point-${(newShape as Ray).endRay.props.label}`
-                    labelUsed.push((newShape as Ray).startRay.props.label);
+                    labelUsed.push((newShape as Ray).endRay.props.label);
                     const ray_label = getNewLabel(selectedShapes[0].props.label);
                     labelUsed.push(ray_label);
                     newShape.props.label = ray_label;
@@ -4700,7 +4700,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     labelUsed.push((newShape as Vector).startVector.props.label);
                     (newShape as Vector).endVector.props.label = getNewLabel(end.props.label);
                     (newShape as Vector).endVector.props.id = `point-${(newShape as Vector).endVector.props.label}`
-                    labelUsed.push((newShape as Vector).startVector.props.label);
+                    labelUsed.push((newShape as Vector).endVector.props.label);
                     const vector_label = getNewLabel(selectedShapes[0].props.label);
                     labelUsed.push(vector_label);
                     newShape.props.label = vector_label;
@@ -5006,11 +5006,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     if ('startSegment' in selectedShapes[0]) {
                         const [start, end] = [(selectedShapes[0] as Segment).startSegment, (selectedShapes[0] as Segment).endSegment];
                         (newShape as Segment).startSegment.props.label = getNewLabel(start.props.label);
-                        (newShape as Segment).startSegment.props.id = `point-${(newShape as Segment).startSegment.props.label}`
-                        labelUsed.push((newShape as Segment).startSegment.props.label);
+                        (newShape as Segment).startSegment.props.id = `point-${(newShape as Segment).startSegment.props.label}`;
+-                       labelUsed.push((newShape as Segment).startSegment.props.label);
++                       labelUsed.push((newShape as Segment).endSegment.props.label);
                         (newShape as Segment).endSegment.props.label = getNewLabel(end.props.label);
                         (newShape as Segment).endSegment.props.id = `point-${(newShape as Segment).endSegment.props.label}`
-                        labelUsed.push((newShape as Segment).startSegment.props.label);
+                        labelUsed.push((newShape as Segment).endSegment.props.label);
                         const segment_label = getNewLabel(selectedShapes[0].props.label);
                         labelUsed.push(segment_label);
                         newShape.props.label = segment_label;
@@ -5064,7 +5065,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         labelUsed.push((newShape as Line).startLine.props.label);
                         (newShape as Line).endLine.props.label = getNewLabel(end.props.label);
                         (newShape as Line).endLine.props.id = `point-${(newShape as Line).endLine.props.label}`
-                        labelUsed.push((newShape as Line).startLine.props.label);
+                        labelUsed.push((newShape as Line).endLine.props.label);
                         const line_label = getNewLabel(selectedShapes[0].props.label);
                         labelUsed.push(line_label);
                         newShape.props.label = line_label;
@@ -5118,7 +5119,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         labelUsed.push((newShape as Ray).startRay.props.label);
                         (newShape as Ray).endRay.props.label = getNewLabel(end.props.label);
                         (newShape as Ray).endRay.props.id = `point-${(newShape as Ray).endRay.props.label}`
-                        labelUsed.push((newShape as Ray).startRay.props.label);
+                        labelUsed.push((newShape as Ray).endRay.props.label);
                         const ray_label = getNewLabel(selectedShapes[0].props.label);
                         labelUsed.push(ray_label);
                         newShape.props.label = ray_label;
@@ -5172,7 +5173,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         labelUsed.push((newShape as Vector).startVector.props.label);
                         (newShape as Vector).endVector.props.label = getNewLabel(end.props.label);
                         (newShape as Vector).endVector.props.id = `point-${(newShape as Vector).endVector.props.label}`
-                        labelUsed.push((newShape as Vector).startVector.props.label);
+                        labelUsed.push((newShape as Vector).endVector.props.label);
                         const vector_label = getNewLabel(selectedShapes[0].props.label);
                         labelUsed.push(vector_label);
                         newShape.props.label = vector_label;
