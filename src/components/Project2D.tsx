@@ -823,6 +823,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     onReflectPointClick={() => this.setMode('reflect_point')}
                     onRotationClick={() => this.setMode('rotation')}
                     onScalingClick={() => this.setMode('enlarge')}
+                    onProjectionClick={() => this.setMode('projection')}
+                    onTranslationClick={() => this.setMode('translation')}
                 />
                 <div 
                     className="resizer flex justify-center items-center"
