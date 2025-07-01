@@ -513,3 +513,31 @@ export const incrementLabel = (label: string): string => {
     const newSub = nextIndex.toString().split('').map(d => toSub[parseInt(d)]).join('');
     return base + newSub;
 }
+
+export const convertToCustomCoords = (
+    pos: {x: number, y: number}, origin: {x: number, y: number}, gridSpace: number
+) => {
+    const screenX = pos.x;
+    const screenY = pos.y;
+
+    const gridSpacing = gridSpace;
+
+    const cx = (screenX - origin.x) / gridSpacing;
+    const cy = (origin.y - screenY) / gridSpacing;
+
+    return { x: cx, y: cy };
+}
+
+export const convertToScreenCoords = (
+    pos: {x: number, y: number}, origin: {x: number, y: number}, gridSpace: number
+) => {
+    const gridSpacing = gridSpace;
+
+    const screenX = origin.x + pos.x * gridSpacing;
+    const screenY = origin.y - pos.y * gridSpacing;
+
+    const cx = screenX;
+    const cy = screenY;
+
+    return { x: cx, y: cy };
+}

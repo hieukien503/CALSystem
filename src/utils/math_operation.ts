@@ -2696,19 +2696,19 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         ]
 
         if ('startSegment' in o1) {
-            const segment = Factory.createSegment({...o2.props}, start3, end3);
+            const segment = Factory.createSegment({...o1.props}, start3, end3);
             segment.type = 'Segment';
             return segment;
         }
 
         else if ('startRay' in o1) {
-            const ray = Factory.createRay({...o2.props}, start3, end3);
+            const ray = Factory.createRay({...o1.props}, start3, end3);
             ray.type = 'Ray';
             return ray;
         }
             
         else {
-            const line =  Factory.createLine({...o2.props}, start3, end3);
+            const line =  Factory.createLine({...o1.props}, start3, end3);
             line.type = 'Line';
             return line;
         }
@@ -2928,7 +2928,8 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 
         else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
             let [start, end] = getStartAndEnd(o1);
-            let [A, B] = [Factory.createPoint({...p2.props}, start.x, start.y), Factory.createPoint({...p2.props}, end.x, end.y)];
+            let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
+            let [A, B] = [Factory.createPoint({...props1}, start.x, start.y), Factory.createPoint({...props2}, end.x, end.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
             if ('startSegment' in o1) {
                 const segment = Factory.createSegment({...o1.props}, A, B);
@@ -2951,8 +2952,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 
         else if ('startVector' in o1) {
             let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
-            let [A, B] = [Factory.createPoint({...p2.props}, v.startVector.x, v.startVector.y), Factory.createPoint({...p2.props}, v.endVector.x, v.endVector.y)];
-            [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
+            let [A, B] = [rotation(v.startVector, o2, degree, CCW) as GeometryShape.Point, rotation(v.endVector, o2, degree, CCW) as GeometryShape.Point];
             const vector = Factory.createVector({...v.props}, A, B);
             vector.type = 'Vector';
             return vector;
@@ -3098,7 +3098,8 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 
         else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
             let [start, end] = getStartAndEnd(o1);
-            let [A, B] = [Factory.createPoint({...o2.props}, start.x, start.y), Factory.createPoint({...o2.props}, end.x, end.y)];
+            let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
+            let [A, B] = [Factory.createPoint({...props1}, start.x, start.y), Factory.createPoint({...props2}, end.x, end.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
             if ('startSegment' in o1) {
                 const segment = Factory.createSegment({...o1.props}, A, B);
@@ -3121,8 +3122,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 
         else if ('startVector' in o1) {
             let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
-            let [A, B] = [Factory.createPoint({...o2.props}, v.startVector.x, v.startVector.y), Factory.createPoint({...o2.props}, v.endVector.x, v.endVector.y)];
-            [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
+            let [A, B] = [rotation(v.startVector, o2, degree, CCW) as GeometryShape.Point, rotation(v.endVector, o2, degree, CCW) as GeometryShape.Point];
             const vector = Factory.createVector({...v.props}, A, B);
             vector.type = 'Vector';
             return vector;
@@ -3297,9 +3297,9 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         // o2p' = k*o2o1 => p' - o2 = k(o1 - o2)
 
         const point = Factory.createPoint(
-            {...o2.props},
-            o2.x + k * v.x,
-            o2.y + k * v.y,
+            {...o1.props},
+            o2.x + Math.abs(k) * v.x,
+            o2.y + Math.abs(k) * v.y,
             (o2.z ?? 0) + v.z
         );
 
@@ -3373,19 +3373,19 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         ]
 
         if ('startSegment' in o1) {
-            const segment = Factory.createSegment({...o2.props}, start3, end3);
+            const segment = Factory.createSegment({...o1.props}, start3, end3);
             segment.type = 'Segment';
             return segment;
         }
 
         else if ('startRay' in o1) {
-            const ray = Factory.createRay({...o2.props}, start3, end3);
+            const ray = Factory.createRay({...o1.props}, start3, end3);
             ray.type = 'Ray';
             return ray;
         }
             
         else {
-            const line =  Factory.createLine({...o2.props}, start3, end3);
+            const line =  Factory.createLine({...o1.props}, start3, end3);
             line.type = 'Line';
             return line;
         }
@@ -3524,7 +3524,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     if ('x' in o1 && 'y' in o1) {
         let p: GeometryShape.Point = o1 as GeometryShape.Point;
         const point = Factory.createPoint(
-            {...o2.props},
+            {...o1.props},
             p.x + (o2.endVector.x - o2.startVector.x),
             p.y + (o2.endVector.y - o2.startVector.y),
             (p.z ?? 0) + ((o2.endVector.z ?? 0) - (o2.startVector.z ?? 0))
@@ -3600,19 +3600,19 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         ]
 
         if ('startSegment' in o1) {
-            const segment = Factory.createSegment({...o2.props}, start3, end3);
+            const segment = Factory.createSegment({...o1.props}, start3, end3);
             segment.type = 'Segment';
             return segment;
         }
 
         else if ('startRay' in o1) {
-            const ray = Factory.createRay({...o2.props}, start3, end3);
+            const ray = Factory.createRay({...o1.props}, start3, end3);
             ray.type = 'Ray';
             return ray;
         }
             
         else {
-            const line =  Factory.createLine({...o2.props}, start3, end3);
+            const line =  Factory.createLine({...o1.props}, start3, end3);
             line.type = 'Line';
             return line;
         }

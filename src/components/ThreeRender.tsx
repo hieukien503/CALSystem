@@ -1240,6 +1240,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     onReflectPointClick={this.handleClearClick}
                     onRotationClick={this.handleClearClick}
                     onScalingClick={this.handleClearClick}
+                    onProjectionClick={this.handleClearClick}
+                    onTranslationClick={this.handleClearClick}
                 />
 
                 <canvas
