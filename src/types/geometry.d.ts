@@ -191,8 +191,6 @@ export interface ShapeNode {
     node: Konva.Shape;
     /** For undefined shape */
     defined: boolean;
-    /** For infinity intersections */
-    ambiguous: boolean;
     /** IDs of other ShapeNodes this one depends on */
     dependsOn: string[];
     /** For enlarge */
