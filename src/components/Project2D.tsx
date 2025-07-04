@@ -1,6 +1,6 @@
 import React, { createRef, RefObject } from "react";
 import KonvaCanvas from "./KonvaRender";
-import { GeometryTool } from "./GeometryTool";
+import Tool from "./Tool";
 import Dialogbox from "./Dialogbox";
 import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../types/geometry'
 import * as constants from '../types/constants'
@@ -12,7 +12,7 @@ const math = require('mathjs');
 
 type SharingMode = 'public' | 'private' | 'organization-wide';
 
-interface ProjectProps {
+interface Project2DProps {
     id: string;
     title: string;
     description: string;
@@ -30,7 +30,6 @@ interface ProjectProps {
 
 interface Project2DState {
     geometryState: GeometryState;
-    dag: Map<string, ShapeNode>;
     selectedPoints: Point[];
     selectedShapes: Shape[];
     mode: DrawingMode;
@@ -39,7 +38,6 @@ interface Project2DState {
     isResize: boolean;
     /** Tool width */
     toolWidth: number;
-    /** Menu when right click */
     isMenuRightClick: {
         x: number
         y: number
@@ -79,7 +77,7 @@ interface Project2DState {
     snapToGridEnabled: boolean;
 }
 
-class Project2D extends React.Component<ProjectProps, Project2DState> {
+class Project2D extends React.Component<Project2DProps, Project2DState> {
     private labelUsed: string[];
     private historyStack: HistoryEntry[];
     private futureStack: HistoryEntry[];
@@ -89,7 +87,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
     } | null;
     private dialogRef: RefObject<Dialogbox | null>;
     private errorDialogRef: RefObject<ErrorDialogbox | null>;
-    constructor(props: ProjectProps) {
+    private dag: Map<string, ShapeNode> = new Map<string, ShapeNode>();
+    constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
         this.state = {
@@ -104,7 +103,6 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 polygonIndex: 0
             },
             mode: 'edit',
-            dag: new Map<string, ShapeNode>(),
             selectedPoints: new Array<Point>(),
             selectedShapes: new Array<Shape>(),
             snapToGridEnabled: false,
@@ -131,7 +129,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         this.lastFailedState = null;
         this.historyStack = new Array<HistoryEntry>(utils.clone(
             this.state.geometryState,
-            this.state.dag,
+            this.dag,
             this.state.selectedPoints,
             this.state.selectedShapes,
             this.labelUsed
@@ -144,13 +142,15 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
 
     componentDidMount(): void {
         window.addEventListener("resize", this.handleWindowResize);
+        window.addEventListener("keydown", this.handleKeyDown);
     }
 
     componentWillUnmount() {
         window.removeEventListener("resize", this.handleWindowResize);
+        window.removeEventListener("keydown", this.handleKeyDown);
     }
 
-    componentDidUpdate(prevProps: Readonly<ProjectProps>, prevState: Readonly<Project2DState>, snapshot?: any): void {
+    componentDidUpdate(prevProps: Readonly<Project2DProps>, prevState: Readonly<Project2DState>): void {
         if (
             !prevState.isDialogBox &&
             this.state.isDialogBox &&
@@ -179,10 +179,76 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         }
     }
 
+    private handleKeyDown = (e: KeyboardEvent): void => {
+        const target = e.target as HTMLElement;
+        const isTextInput =
+            target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            (target as HTMLInputElement).isContentEditable;
+
+        if (isTextInput) return; // ✅ Allow normal typing
+
+        // ✅ Only handle global shortcuts here
+        e.preventDefault();
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+            this.dag.forEach((node, key) => {
+                node.isSelected = true;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowColor('gray');
+                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
+                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth * 2);
+                }
+            });
+        }
+
+        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            this.handleUndoClick();
+        }
+
+        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+            this.handleRedoClick();
+        }
+
+        else if (e.key === 'Delete') {
+            this.setMode('delete');
+        }
+
+        else if (e.key === 'Escape') {
+            this.dag.forEach((node, key) => {
+                node.isSelected = false;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            });
+        }
+    }
+
     private handleWindowResize = () => {
+        const domRect = this.dialogRef.current?.getBoundingClientRect?.();
         this.setState({
             geometryState: {...this.state.geometryState},
-            toolWidth: this.state.toolWidth
+            toolWidth: this.state.toolWidth,
+            position: {
+                dialogPos: (this.dialogRef.current ? {
+                    x: (window.innerWidth - (domRect ? domRect.width : 0)) / 2,
+                    y: (window.innerHeight - (domRect ? domRect.height : 0)) / 2
+                } : undefined),
+                errorDialogPos: (this.errorDialogRef.current ? {
+                    x: (window.innerWidth - (domRect ? domRect.width : 0)) / 2,
+                    y: (window.innerHeight - (domRect ? domRect.height : 0)) / 2
+                } : undefined)
+            }
         })
     }
 
@@ -192,8 +258,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
 
     private handleUndoClick = () => {
         if (this.lastFailedState) {
-            const dag = utils.cloneDAG(this.state.dag);
-            this.state.dag.forEach((node, key) => {
+            const dag = utils.cloneDAG(this.dag);
+            this.dag.forEach((node, key) => {
                 if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key) ||
                     this.lastFailedState?.selectedShapes.find(shape => shape.props.id === key)
                 ) {
@@ -203,8 +269,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                 }
             });
 
+            this.dag = dag;
             this.setState({
-                dag: dag,
                 selectedPoints: [],
                 selectedShapes: [],
                 isMenuRightClick: undefined
@@ -225,15 +291,13 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             copyState = utils.clone(prevState.state, prevState.dag, prevState.selectedPoints, prevState.selectedShapes, prevState.label_used);
         }
 
-        const DAG = utils.cloneDAG(copyState.dag);
+        this.dag = copyState.dag;
         this.labelUsed = copyState.label_used
 
         this.setState({
-            geometryState: copyState.state,
+            mode: 'edit',
             selectedPoints: copyState.selectedPoints,
             selectedShapes: copyState.selectedShapes,
-            mode: 'edit',
-            dag: DAG,
             isMenuRightClick: undefined
         });
     }
@@ -247,17 +311,13 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             }
 
             const copyState = utils.clone(nextState.state, nextState.dag, nextState.selectedPoints, nextState.selectedShapes, nextState.label_used);
-
-            const DAG = utils.cloneDAG(copyState.dag);
+            this.dag = copyState.dag;
 
             this.labelUsed = copyState.label_used
-
             this.setState({
-                geometryState: copyState.state,
+                mode: 'edit',
                 selectedPoints: copyState.selectedPoints,
                 selectedShapes: copyState.selectedShapes,
-                mode: 'edit',
-                dag: DAG,
                 isMenuRightClick: undefined
             });
         }
@@ -272,13 +332,13 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
 
     private handleMouseMoveResize = (e: MouseEvent) => {
         if (!this.state.isResize) return;
-        const newWidth = e.clientX + 4;
+        const newWidth = e.clientX - 72;
         if (newWidth > 150) {
-            this.setState({ toolWidth: newWidth });
+            this.setState({ toolWidth: newWidth, geometryState: {...this.state.geometryState} });
         }
 
         else {
-            this.setState({ toolWidth: 0 });
+            this.setState({ toolWidth: 0, geometryState: {...this.state.geometryState} });
         }
     }
 
@@ -299,16 +359,16 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
 
     private handleClearCanvas = () => {
         this.labelUsed.length = 0;
+        this.dag = new Map<string, ShapeNode>();
         this.setState({
             geometryState: {...this.state.geometryState},
-            selectedPoints: new Array<Point>(),
-            selectedShapes: new Array<Shape>(),
-            dag: new Map<string, ShapeNode>(),
+            selectedPoints: [],
+            selectedShapes: [],
             isMenuRightClick: undefined
         }, () => {
             this.pushHistory(utils.clone(
                 this.state.geometryState,
-                this.state.dag,
+                this.dag,
                 this.state.selectedPoints,
                 this.state.selectedShapes,
                 this.labelUsed
@@ -337,9 +397,9 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             }
         });
 
+        this.dag = state.dag;
         this.setState({
             geometryState: state.gs,
-            dag: state.dag,
             selectedPoints: state.selectedPoints,
             selectedShapes: state.selectedShapes,
             isDialogBox: undefined,
@@ -356,7 +416,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             if (!this.lastFailedState) {
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
-                    this.state.dag,
+                    this.dag,
                     this.state.selectedPoints,
                     this.state.selectedShapes,
                     this.labelUsed
@@ -379,19 +439,11 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
     }
 
     private onSelectedPointsChange = (selectedPoints: Point[]): void => {
-        const DAG = utils.cloneDAG(this.state.dag);
-        DAG.forEach((node, key) => {
+        this.dag.forEach((node, key) => {
             if (!selectedPoints.find(value => value.props.id === key)) {
                 node.isSelected = false;
-                if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
-                }
-                
-                else {
-                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
-                }
+                (node.node as Konva.Circle).shadowBlur(0);
+                (node.node as Konva.Circle).shadowOpacity(0);
             }
 
             else {
@@ -403,51 +455,32 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         });
 
         this.setState({
-            dag: DAG,
             selectedPoints: [...selectedPoints]
         })
     }
 
     private onSelectedShapesChange = (selectedShapes: Shape[]): void => {
-        const DAG = utils.cloneDAG(this.state.dag);
-        DAG.forEach((node, key) => {
+        this.dag.forEach((node, key) => {
             if (!selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
-                if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
-                }
-                
-                else {
-                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
-                }
+                const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                node.node.strokeWidth(strokeWidth);
             }
 
             else {
                 node.isSelected = true;
-                if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowColor('gray');
-                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
-                    (node.node as Konva.Circle).shadowOpacity(1.5);
-                }
-                
-                else {
-                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth * 2);
-                }
+                const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                node.node.strokeWidth(strokeWidth * 2);
             }
         });
 
         this.setState({
-            dag: DAG,
             selectedShapes: [...selectedShapes]
         })
     }
 
     private onSelectedChange = (state: {selectedShapes: Shape[], selectedPoints: Point[]}): void => {
-        const DAG = utils.cloneDAG(this.state.dag);
-        DAG.forEach((node, key) => {
+        this.dag.forEach((node, key) => {
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
@@ -477,9 +510,8 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         });
 
         this.setState({
-            dag: DAG,
-            selectedPoints: [...state.selectedPoints],
-            selectedShapes: [...state.selectedShapes]
+            selectedShapes: [...state.selectedShapes],
+            selectedPoints: [...state.selectedPoints]
         })
     }
 
@@ -504,41 +536,39 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
             label => label !== node.type.props.label
         );
 
-        (node as ShapeNode).node.destroy();
+        node.node.destroy();
         state.dag.delete(id);
     };
 
     // Public method that does batch delete with single re-render
     private removeNode = (id: string): void => {
-        const dag = utils.cloneDAG(this.state.dag);
         const set = new Set<string>();
 
-        this.removeNodeBatch(id, set, { labelUsed: this.labelUsed, dag: dag });
-
-        // Only one render here
-        this.setState({
-            geometryState: this.state.geometryState,
-            dag: dag,
-            selectedPoints: this.state.selectedPoints,
-            selectedShapes: this.state.selectedShapes
-        })
+        this.removeNodeBatch(id, set, { labelUsed: this.labelUsed, dag: this.dag });
     };
 
     private setMode = (mode: DrawingMode) => {
-        const DAG = utils.cloneDAG(this.state.dag);
         if (mode === 'delete') {
             let selected: string[] = [];
-            DAG.forEach((node, key) => {
+            this.dag.forEach((node, key) => {
                 if (node.isSelected) {
                     selected.push(key);
                 }
             });
 
-            selected.forEach(id => this.removeNode(id));
+            const visited = new Set<string>();
+            selected.forEach(id => this.removeNodeBatch(id, visited, {labelUsed: this.labelUsed, dag: this.dag}));
+            this.pushHistory(utils.clone(
+                this.state.geometryState,
+                this.dag,
+                [],
+                [],
+                this.labelUsed
+            ))
         }
 
         else {
-            DAG.forEach((node, key) => {
+            this.dag.forEach((node, key) => {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
                     (node.node as Konva.Circle).shadowBlur(0);
@@ -550,13 +580,24 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     node.node.strokeWidth(strokeWidth);
                 }
             });
+
+            if (mode === 'undo') {
+                this.handleUndoClick();
+            }
+
+            else if (mode === 'redo') {
+                this.handleRedoClick();
+            }
+
+            else if (mode === 'clear') {
+                this.handleClearCanvas();
+            }
         }
         
         this.setState({
-            dag: DAG,
-            mode: mode,
             selectedPoints: [],
             selectedShapes: [],
+            mode: mode,
             isMenuRightClick: undefined
         })
     }
@@ -620,6 +661,73 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
         else {
             throw new Error('Invalid mode');
         }
+    }
+
+    private handleSelectObject = (id: string, e: React.MouseEvent): void => {
+        const isCtrl = e.ctrlKey || e.metaKey;
+        if (isCtrl) {
+            const node = this.dag.get(id);
+            if (!node) return;
+            const wasSelected = node.isSelected;
+            node.isSelected = !wasSelected;
+            if (node.isSelected) {
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowColor('gray');
+                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
+                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth * 2);
+                }
+            }
+
+            else {
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            }
+        }
+        
+        else {
+            // Clear previous selection
+            this.dag.forEach(node => {
+                node.isSelected = false;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowBlur(0);
+                    (node.node as Konva.Circle).shadowOpacity(0);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth);
+                }
+            });
+
+            const node = this.dag.get(id);
+            if (node) {
+                node.isSelected = true;
+                if (node.id.includes('point-')) {
+                    (node.node as Konva.Circle).shadowColor('gray');
+                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
+                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                }
+                
+                else {
+                    const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
+                    node.node.strokeWidth(strokeWidth * 2);
+                }
+            }
+        }
+
+        this.setState({selectedPoints: [...this.state.selectedPoints]});
     }
 
     private receiveData = (value: string, CCW: boolean = true): void => {
@@ -779,66 +887,28 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
 
     render(): React.ReactNode {
         return (
-            <div className="flex justify-start flex-row">
-                <GeometryTool
+            <div className="flex justify-start flex-row" style={{overflow: "hidden"}}>
+                <Tool 
                     width={this.state.toolWidth}
-                    height={window.innerHeight * 0.74}
-                    onPointClick={() => this.setMode('point')}
-                    onLineClick={() => this.setMode('line')}
-                    onSegmentClick={() => this.setMode('segment')}
-                    onVectorClick={() => this.setMode('vector')}
-                    onPolygonClick={() => this.setMode('polygon')}
-                    onCircleRadiusClick={() => this.setMode('circle')}
-                    onRayClick={() => this.setMode('ray')}
-                    onEditClick={() => this.setMode('edit')}
-                    onDeleteClick={() => this.setMode('delete')}
-                    onClearClick={this.handleClearCanvas}
-                    onUndoClick={this.handleUndoClick}
-                    onRedoClick={this.handleRedoClick}
-                    onAngleClick={() => this.setMode('angle')}
-                    onLengthClick={() => this.setMode('length')}
-                    onAreaClick={() => this.setMode('area')}
-                    onHideLabelClick={() => this.setMode('show_label')}
-                    onHideObjectClick={() => this.setMode('show_object')}
-                    onIntersectionClick={() => this.setMode('intersection')}
-                    onCircle2PointClick={() => this.setMode('circle_2_points')}
-                    onCentroidClick={() => this.setMode('centroid')}
-                    onCircumcenterClick={() => this.setMode('circumcenter')}
-                    onOrthocenterClick={() => this.setMode('orthocenter')}
-                    onIncenterClick={() => this.setMode('incenter')}
-                    onCircumcircleClick={() => this.setMode('circumcircle')}
-                    onIncircleClick={() => this.setMode('incircle')}
-                    onExcenterClick={() => this.setMode('excenter')}
-                    onExcircleClick={() => this.setMode('excircle')}
-                    onMidPointClick={() => this.setMode('midpoint')}
-                    onParaLineClick={() => this.setMode('parallel')}
-                    onPerpenLineClick={() => this.setMode('perpendicular')}
-                    onSegmentLengthClick={() => this.setMode('segment_length')}
-                    onPerpenBisecClick={() => this.setMode('perpendicular_bisector')}
-                    onSemiClick={() => this.setMode('semicircle')}
-                    onAngleBisecClick={() => this.setMode('angle_bisector')}
-                    onRegularPolygonClick={() => this.setMode('regular_polygon')}
-                    onTangentLineClick={() => this.setMode('tangent_line')}
-                    onReflectLineClick={() => this.setMode('reflect_line')}
-                    onReflectPointClick={() => this.setMode('reflect_point')}
-                    onRotationClick={() => this.setMode('rotation')}
-                    onScalingClick={() => this.setMode('enlarge')}
-                    onProjectionClick={() => this.setMode('projection')}
-                    onTranslationClick={() => this.setMode('translation')}
+                    height={window.innerHeight * 0.745}
+                    dag={this.dag}
+                    onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
+                    onSelect={this.handleSelectObject}
+                    onSetMode={(mode) => this.setMode(mode)}
                 />
-                <div 
-                    className="resizer flex justify-center items-center"
+                {this.state.toolWidth > 0 && <div 
+                    className="resizer flex justify-center items-center min-w-[20px]"
                     id="resizer"
                     onMouseDown={this.handleMouseDownResize}
                     onMouseUp={this.handleMouseUpResize}
                 >
                     <div className="resizerPanel w-1 h-6 bg-gray-400 rounded"></div>
-                </div>
+                </div>}
                 {this.state.toolWidth < window.innerWidth && <KonvaCanvas 
-                    width={window.innerWidth - this.state.toolWidth}
-                    height={window.innerHeight * 0.74}
+                    width={window.innerWidth - this.state.toolWidth - 102}
+                    height={window.innerHeight * 0.745}
                     background_color="#ffffff"
-                    dag={this.state.dag}
+                    dag={this.dag}
                     onChangeMode={(mode: DrawingMode) => this.setState({mode: mode})}
                     onClearCanvas={this.handleClearCanvas}
                     onSelectedShapesChange={this.onSelectedShapesChange}
@@ -859,7 +929,7 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
                     getSnapshot={() => {
                         return utils.clone(
                             this.state.geometryState,
-                            this.state.dag,
+                            this.dag,
                             this.state.selectedPoints,
                             this.state.selectedShapes,
                             this.labelUsed
@@ -909,4 +979,4 @@ class Project2D extends React.Component<ProjectProps, Project2DState> {
     }
 }
 
-export default Project2D
+export default Project2D;

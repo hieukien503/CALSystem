@@ -807,3 +807,190 @@ input:focus {
     line-height: 100%;
     text-align: left;
 }
+
+.algebraView {
+    top: -2px;
+}
+
+.algebraView .avItem {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.avItem, .avItem.selectedItem {
+    border-bottom: 1px solid #dcdcdc;
+    min-height: 50px;
+    justify-items: center;
+}
+
+.Tree .TreeItem {
+    margin: 0;
+    white-space: nowrap;
+    cursor: pointer;
+    background-color: rgb(255, 255, 255);
+}
+
+.Tree .TreeItem .elem {
+    display: block;
+    min-height: 48px;
+    position: relative;
+}
+
+.Tree .TreeItem .elem>* {
+    display: grid;
+    align-items: center;
+}
+
+.avItem.selectedItem .marblePanel {
+    background-color: #dcdcdc;
+}
+
+
+.marblePanel {
+    border-right: 1px solid #dcdcdc;
+    position: absolute;
+    min-width: 58px;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0 18px;
+}
+
+.marblePanel>* {
+    position: relative;
+}
+
+.marble {
+    height: 18px;
+    width: 18px;
+    border: 1px solid #000;
+    border-radius: 24px;
+}
+
+.algebraViewObjectStylebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    padding-right: 12px;
+}
+
+.more {
+    background: #fff;
+    opacity: .54;
+    transition: .3s ease;
+}
+
+.avItem .elemText {
+    padding-top: 7px;
+    padding-bottom: 0px;
+    padding-left: 68px;
+    justify-content: left;
+}
+
+.avItem .elemText .avPlainText {
+    padding: 2px;
+}
+
+.marbleHidden {
+    visibility: hidden;
+}
+
+.dockPanelParent {
+    overflow: visible !important;
+}
+
+.dockPanelParent>div {
+    overflow: visible !important;
+}
+
+.toolbar {
+    overflow: hidden;
+    z-index: 2;
+    background: #fff;
+}
+
+.toolbar .header-open-landscape, .toolbar .header-close-landscape {
+    width: 72px;
+    min-width: 56px;
+    height: 100%;
+    position: absolute;
+}
+
+.toolbar .header-open-landscape {
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .2), 0 1px 10px 0 rgba(0, 0, 0, .12), 0 4px 5px 0 rgba(0, 0, 0, .14);
+}
+
+.toolbar .header {
+    z-index: 5;
+    background-color: #f9f9f9;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+}
+
+.header-open-landscape .center, .toolbar .header-close-landscape .center {
+    display: block;
+    width: 100%;
+    top: 24px;
+}
+.toolbar .header .center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 100%;
+}
+
+.toolbar .header-open-landscape .tabButton, .toolbar .header-close-landscape .tabButton {
+    width: 100%;
+    height: 72px;
+}
+
+.button {
+    cursor: pointer;
+}
+
+.GeoGebraFrame .tabButton {
+    position: relative;
+    box-sizing: border-box;
+    min-width: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    opacity: .54;
+}
+
+.tabButton .label {
+    width: 100%;
+    line-height: 12px;
+    min-height: 28px;
+    font-size: 10px;
+    text-align: center;
+    word-break: break-word;
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+.toolbar .header-open-landscape .selected, .toolbar .header-close-landscape .selected {
+    border-bottom: none;
+}
+
+.toolbar .header-open-landscape .tabButton, .toolbar .header-close-landscape .tabButton {
+    width: 100%;
+    height: 72px;
+}
+
+.tabButton.selected {
+    opacity: 1;
+}
+
+.tabButton.selected .gwt-Label {
+    color: #a7d3d2;
+}
+
+.tool-wraper.hidden {
+    display: none;
+}
