@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
 import { Shape, Sphere, GeometryState, ShapeProps, ShapeNode3D, Vector, Plane, Cylinder, Cone, Pyramid, Cuboid, Prism, 
-        Polygon, Segment, Ray, Circle, Point, Line } from '../types/geometry';
+        Polygon, Segment, Ray, Circle, Point, Line, 
+        DrawingMode} from '../types/geometry';
 import { GeometryTool3D } from './GeometryTool';
-import { v4 as uuidv4 } from 'uuid';
 import type { MathNode, ConstantNode, SymbolNode } from 'mathjs';
 const math = require('mathjs');
 
@@ -15,97 +15,6 @@ interface ThreeDCanvasProps {
     background_color: string;
 }
 
-// Constants
-const FONT_DEFAULTS = {
-    SIZE: 12,
-    FAMILY: 'Calibri',
-    COLOR: 'black'
-};
-
-const LINE_EXTENSION = 10;
-
-const ARROW_DEFAULTS = {
-    POINTER_WIDTH: 0.1,
-    POINTER_LENGTH: 0.1
-};
-
-// Utility functions
-const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THREE.Mesh | THREE.Group | null => {
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    let mesh: THREE.Mesh | THREE.Group | null = null;
-    // Create dashed line material
-    const dashedMaterial = new THREE.LineDashedMaterial({
-        color: props.color,
-        dashSize: props.line_style.dash_size, // Length of the dash
-        gapSize: props.line_style.gap_size,   // Length of the gap
-        linewidth: props.line_size
-    });
-
-    // Create line instead of mesh
-    const mainLine = new THREE.Line(geometry, dashedMaterial);
-    mainLine.computeLineDistances(); // Required for dashed lines
-
-    // For dot-dash pattern, we need to create multiple lines with different dash patterns
-    if (props.line_style.dot_size !== undefined) {
-        // Create a second line for dots
-        const dotMaterial = new THREE.LineDashedMaterial({
-            color: props.color,
-            dashSize: props.line_style.dot_size ?? 0.1, // Very small dash for dots
-            gapSize: props.line_style.gap_size,     // Larger gap for dots
-            linewidth: props.line_size
-        });
-
-        const dotLine = new THREE.Line(geometry.clone(), dotMaterial);
-        dotLine.computeLineDistances();
-
-        // Create a group to hold both lines
-        const group = new THREE.Group();
-        group.add(mainLine);
-        group.add(dotLine);
-        mesh = group as unknown as THREE.Mesh; // Type assertion since we know it's a valid object
-    } else {
-        mesh = mainLine as unknown as THREE.Mesh; // Type assertion for single line
-    }
-
-    return mesh;
-}
-
-const convertToVector3 = (x: number, y: number, z: number): THREE.Vector3 => {
-    return new THREE.Vector3(x, z, y);
-}
-
-const createPointDefaultShapeProps = (label: string, radius: number = 0.02, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
-    return {
-        label: label,
-        labelXOffset: labelXOffset,
-        labelYOffset: labelYOffset,
-        labelZOffset: labelZOffset,
-        line_size: 1,
-        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-        radius: radius,
-        color: 'black',
-        visible: {shape: true, label: true},
-        fill: true,
-        id: uuidv4()
-    }
-}
-
-const createLineDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
-    return {
-        line_size: 1,
-        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
-        radius: 0,
-        label: label,
-        visible: {shape: true, label: true},
-        fill: true,
-        color: 'black',
-        labelXOffset: labelXOffset,
-        labelYOffset: labelYOffset,
-        labelZOffset: labelZOffset,
-        id: uuidv4()
-    }
-}
-
 class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private sceneRef: RefObject<THREE.Scene | null>;
     private cameraRef: RefObject<THREE.PerspectiveCamera | null>;
@@ -113,7 +22,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
     private labelRenderer: RefObject<CSS2DRenderer | null>;
-    private mode: string;
+    private mode: DrawingMode;
     private DAG: Map<string, ShapeNode3D>;
     private selectedShapes: Point[];
 
