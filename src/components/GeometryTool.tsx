@@ -589,7 +589,7 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 tools: [
                     { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object" },
                     { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex" },
-                    { key: "cube", label: "Cube", onClick: () => this.setActiveTool("cube"), title: "Select 2 points" },
+                    { key: "cuboid", label: "Cuboid", onClick: () => this.setActiveTool("cuboid"), title: "Select 3 points and direction (line, segment, ray or vector), then enter the last 2 dimensions" },
                     { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere" },
                     { key: "plane_3_points", label: "Plane through 3 Points", onClick: () => this.setActiveTool("plane_3_points"), title: "Select 3 points" },
                     { key: "edit", label: "Move", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View" }
@@ -656,7 +656,7 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 name: "Circles",
                 tools: [
                     { key: "circle_axis_point", label: "Circle with Axis through Point", onClick: () => this.setActiveTool("circle_axis_point"), title: "Select an axis, then point on circle" },
-                    { key: "circle_center_direction", label: "Circle: Center, Radius and Direction", onClick: () => this.setActiveTool("circle_center_direction"), title: "Select center point, then direction (line or vector), then enter radius" },
+                    { key: "circle_center_direction", label: "Circle: Center, Radius and Direction", onClick: () => this.setActiveTool("circle_center_direction"), title: "Select center point, then direction, then enter radius" },
                     { key: "circumcircle", label: "Circle through 3 points", onClick: () => this.setActiveTool("circumcircle"), title: "Select 3 points on the circle" },
                 ]
             },

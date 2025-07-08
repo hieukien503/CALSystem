@@ -27,7 +27,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
     private changeMode = (mode: 'algebra' | 'geometry' = 'geometry', e: React.MouseEvent): void => {
         e.stopPropagation();
         this.setState({mode: mode}, () => {
-            this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, 264));
+            this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, 300));
         })
     }
 

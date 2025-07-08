@@ -8,9 +8,8 @@ import * as utils from '../utils/utilities'
 import MenuItem from "./MenuItem";
 import Konva from "konva";
 import ErrorDialogbox from "./ErrorDialogbox";
+import { SharingMode } from "../types/types";
 const math = require('mathjs');
-
-type SharingMode = 'public' | 'private' | 'organization-wide';
 
 interface Project2DProps {
     id: string;
@@ -93,7 +92,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         this.labelUsed = [];
         this.state = {
             geometryState: {
-                numLoops: 0,
+                numLoops: 1,
                 axisTickInterval: 1,
                 spacing: constants.BASE_SPACING,
                 gridVisible: true,
@@ -108,7 +107,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             snapToGridEnabled: false,
             isSnapToGrid: false,
             isResize: false,
-            toolWidth: Math.max(window.innerWidth * 0.22, 264),
+            toolWidth: Math.max(window.innerWidth * 0.22, 300),
             isMenuRightClick: undefined,
             isDialogBox: undefined,
             data: {
@@ -910,7 +909,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     background_color="#ffffff"
                     dag={this.dag}
                     onChangeMode={(mode: DrawingMode) => this.setState({mode: mode})}
-                    onClearCanvas={this.handleClearCanvas}
                     onSelectedShapesChange={this.onSelectedShapesChange}
                     onSelectedPointsChange={this.onSelectedPointsChange}
                     onGeometryStateChange={(s) => this.setState({geometryState: s})}

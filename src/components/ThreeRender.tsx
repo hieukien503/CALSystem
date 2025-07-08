@@ -4,15 +4,59 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
 import { Shape, Sphere, GeometryState, ShapeProps, ShapeNode3D, Vector, Plane, Cylinder, Cone, Pyramid, Cuboid, Prism, 
         Polygon, Segment, Ray, Circle, Point, Line, 
-        DrawingMode} from '../types/geometry';
+        DrawingMode,
+        HistoryEntry3D} from '../types/geometry';
 import { GeometryTool3D } from './GeometryTool';
-import type { MathNode, ConstantNode, SymbolNode } from 'mathjs';
+import * as utils3d from '../utils/utilities3D';
+import * as utils from '../utils/utilities';
+import * as constants3d from '../types/constants3D';
+import ThreeAxis from '../utils/ThreeAxis';
+import ThreeGrid from '../utils/ThreeGrid';
 const math = require('mathjs');
 
 interface ThreeDCanvasProps {
     width: number;
     height: number;
     background_color: string;
+    geometryState: GeometryState;
+    dag: Map<string, ShapeNode3D>,
+    mode: DrawingMode;
+    isSnapToGrid: boolean;
+    isResize: boolean;
+    selectedPoints: Point[];
+    selectedShapes: Shape[];
+    labelUsed: string[];
+    data: {
+        radius: number | undefined;
+        vertices: number | undefined;
+        rotation: {
+            degree: number;
+            CCW: boolean;
+        } | undefined;
+    };
+    onChangeMode: (mode: DrawingMode) => void;
+    onUpdateLastFailedState: (state?: {
+        selectedPoints: Point[], selectedShapes: Shape[]
+    }) => void;
+    onUpdateAll: (state: {
+        gs: GeometryState,
+        dag: Map<string, ShapeNode3D>,
+        selectedShapes: Shape[],
+        selectedPoints: Point[]
+    }) => void;
+    onSelectedShapesChange: (s: Shape[]) => void;
+    onSelectedPointsChange: (s: Point[]) => void;
+    onGeometryStateChange: (s: GeometryState) => void;
+    pushHistory: (history: HistoryEntry3D) => void;
+    getSnapshot: () => HistoryEntry3D;
+    onLabelUsed: (labelUsed: string[]) => void;
+    onSelectedChange: (s: {
+        selectedShapes: Shape[],
+        selectedPoints: Point[]
+    }) => void;
+    onRenderMenuRightClick: (pos?: {x: number, y: number}) => void;
+    onRemoveNode: (id: string) => void;
+    onRenderDialogbox: (mode: DrawingMode) => void;
 }
 
 class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
@@ -21,11 +65,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private rendererRef: RefObject<THREE.WebGLRenderer | null>;
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
-    private labelRenderer: RefObject<CSS2DRenderer | null>;
-    private mode: DrawingMode;
-    private DAG: Map<string, ShapeNode3D>;
-    private selectedShapes: Point[];
-
+    private labelRef: RefObject<CSS2DRenderer | null>;
     constructor(props: ThreeDCanvasProps) {
         super(props);
         this.sceneRef = React.createRef<THREE.Scene>();
@@ -33,28 +73,14 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.rendererRef = React.createRef<THREE.WebGLRenderer>();
         this.controlsRef = React.createRef<OrbitControls>();
         this.canvasRef = React.createRef<HTMLCanvasElement>();
-        this.labelRenderer = React.createRef<CSS2DRenderer>();
-        this.state = {
-            numLoops: 0,
-            spacing: 20,
-            axisTickInterval: 1,
-            gridVisible: true,
-            axesVisible: true,
-            zoom_level: 1,
-            panning: false,
-            polygonIndex: 0
-        }
-
+        this.labelRef = React.createRef<CSS2DRenderer>();
         this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.mode = 'edit';
-        this.DAG = new Map<string, ShapeNode3D>();
-        this.selectedShapes = new Array<Point>();
     }
 
     componentDidMount(): void {
         this.initializeScene();
         this.updateShapes();
-        window.addEventListener("mousedown", this.handleMouseDown);
+        this.rendererRef.current!.domElement.addEventListener("mousedown", this.handleMouseDown);
     }
 
     componentDidUpdate(prevProps: ThreeDCanvasProps, prevState: GeometryState): void {
@@ -77,15 +103,36 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     componentWillUnmount() {
         this.disposeResources();
-        window.removeEventListener('mousedown', this.handleMouseDown)
+        this.rendererRef.current!.domElement.removeEventListener('mousedown', this.handleMouseDown);
     }
 
-    initializeScene(): void {
+    animate = () => {
+        requestAnimationFrame(this.animate);
+        if (this.controlsRef.current && this.rendererRef.current && this.sceneRef.current && this.cameraRef.current && this.labelRef.current) {
+            this.controlsRef.current.update();
+            this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current);
+            this.labelRef.current.render(this.sceneRef.current, this.cameraRef.current);
+        }
+
+        if (this.cameraRef.current && this.sceneRef.current) {
+            const zoom = this.cameraRef.current.zoom;
+
+            const scale = 1 / zoom; // Inverse scaling
+            const xAxis = this.sceneRef.current.getObjectByName('xAxis');
+            const yAxis = this.sceneRef.current.getObjectByName('yAxis');
+            const zAxis = this.sceneRef.current.getObjectByName('zAxis');
+
+            if (xAxis) xAxis.scale.set(scale, scale, scale);
+            if (yAxis) yAxis.scale.set(scale, scale, scale);
+            if (zAxis) zAxis.scale.set(scale, scale, scale);
+        }
+    }
+
+    initializeScene = (): void => {
         const { width, height, background_color } = this.props;
         if (!this.canvasRef.current) return;
-        const rect = this.canvasRef.current.getBoundingClientRect();
-        this.canvasRef.current.width = rect.width * window.devicePixelRatio;
-        this.canvasRef.current.height = rect.height * window.devicePixelRatio;
+        this.canvasRef.current.width = width * window.devicePixelRatio;
+        this.canvasRef.current.height = height * window.devicePixelRatio;
 
         // Create scene
         const scene = new THREE.Scene();
@@ -93,7 +140,14 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.sceneRef.current = scene;
 
         // Create camera
-        const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+        const aspect = this.props.width / this.props.height;
+        const camera = new THREE.PerspectiveCamera(
+            75, aspect, 0.1, 1000
+        );
+
+        camera.zoom = 1;
+        camera.updateProjectionMatrix();
+
         camera.position.set(5, 5, 5);
         camera.lookAt(0, 0, 0);
         this.cameraRef.current = camera;
@@ -104,77 +158,103 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             antialias: true
         });
 
-        renderer.setSize(rect.width, rect.height);
+        renderer.setSize(width, height);
         renderer.setPixelRatio(window.devicePixelRatio);
         this.rendererRef.current = renderer;
 
         // Add lights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+        this.sceneRef.current.add(ambientLight);
 
         // Add directional light
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(5, 5, 5);
-        scene.add(directionalLight);
+        this.sceneRef.current.add(directionalLight);
+
+        // Add axes helper
+        const xAxis = new ThreeAxis({
+            length: 13,
+            radius: 0.02,
+            axisColor: '#ff0000',
+            pointerWidth: 0.1,
+            pointerLength: 0.4,
+            xTickSpacing: constants3d.BASE_SPACING,
+            axisInterval: this.props.geometryState.axisTickInterval,
+            originX: -6,
+            originY: 0,
+            originZ: 1,
+        }).generateAxis(); // Red
+        xAxis.rotation.z = -Math.PI / 2;
+
+        const yAxis = new ThreeAxis({
+            length: 13,
+            radius: 0.02,
+            axisColor: '#00ff00',
+            pointerWidth: 0.1,
+            pointerLength: 0.4,
+            xTickSpacing: constants3d.BASE_SPACING,
+            axisInterval: this.props.geometryState.axisTickInterval,
+            originX: 1,
+            originY: 0,
+            originZ: 7
+        }).generateAxis(); // Green
+        yAxis.rotation.x = -Math.PI / 2;
         
-        // Add grid helper
-        if (this.state.gridVisible) {
-            const gridHelper = new THREE.GridHelper(10, 10);
-            scene.add(gridHelper);
+        const zAxis = new ThreeAxis({
+            length: 7,
+            radius: 0.02,
+            axisColor: '#0000ff',
+            pointerWidth: 0.1,
+            pointerLength: 0.4,
+            xTickSpacing: constants3d.BASE_SPACING,
+            axisInterval: this.props.geometryState.axisTickInterval,
+            originX: 1,
+            originY: -2,
+            originZ: 1
+        }).generateAxis(); // Blue
+
+        // Grid Helper
+        const grid = new ThreeGrid({
+            size: this.props.geometryState.spacing,
+            gridSpacing: this.props.geometryState.axisTickInterval,
+            originX: 0,
+            originY: 0,
+            originZ: 0
+        }).generateGrid();
+
+        xAxis.name = 'xAxis';
+        yAxis.name = 'yAxis';
+        zAxis.name = 'zAxis';
+
+        this.sceneRef.current.add(grid, xAxis, yAxis, zAxis);
+
+        if (!this.props.geometryState.axesVisible) {
+            xAxis.visible = false;
+            yAxis.visible = false;
+            zAxis.visible = false;
         }
 
-        // Add arrow axes
-        if (this.state.axesVisible) {
-            const xAxisLength = 5;
-            const yAxisLength = 5;
-            const zAxisLength = 3.5;
-            const arrowHeadLength = ARROW_DEFAULTS.POINTER_LENGTH;
-            const arrowHeadWidth = ARROW_DEFAULTS.POINTER_WIDTH;
-
-            // X-axis (red)
-            const xDir = new THREE.Vector3(1, 0, 0);
-            const xOrigin = new THREE.Vector3(-xAxisLength, 0, 0);
-            const xArrow = new THREE.ArrowHelper(xDir, xOrigin, xAxisLength * 2, 0xff0000, arrowHeadLength, arrowHeadWidth);
-            scene.add(xArrow);
-
-            // Y-axis (green)
-            const yDir = new THREE.Vector3(0, 0, 1);
-            const yOrigin = new THREE.Vector3(0, 0, -yAxisLength);
-            const yArrow = new THREE.ArrowHelper(yDir, yOrigin, yAxisLength * 2, 0x00ff00, arrowHeadLength, arrowHeadWidth);
-            scene.add(yArrow);
-
-            // Z-axis (blue)
-            const zDir = new THREE.Vector3(0, 1, 0);
-            const zOrigin = new THREE.Vector3(0, -zAxisLength, 0);
-            const zArrow = new THREE.ArrowHelper(zDir, zOrigin, zAxisLength * 2, 0x0000ff, arrowHeadLength, arrowHeadWidth);
-            scene.add(zArrow);
+        if (!this.props.geometryState.gridVisible) {
+            grid.visible = false;
         }
+
+        const labelRender = new CSS2DRenderer();
+        labelRender.setSize(width, height);
+        labelRender.domElement.style.position = 'absolute';
+        labelRender.domElement.style.top = '0';
+        labelRender.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRender.domElement);
+        this.labelRef.current = labelRender;
         
         // Add orbit controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.enableZoom = false;
         this.controlsRef.current = controls;
-
-        // Add label renderer
-        if (this.labelRenderer.current) {
-            this.labelRenderer.current.setSize(rect.width, rect.height);
-            this.labelRenderer.current.domElement.style.position = 'absolute';
-            this.labelRenderer.current.domElement.style.top = '0px';
-            this.labelRenderer.current.domElement.style.pointerEvents = 'none';
-        }
         
-        // Animation loop
-        const animate = () => {
-            requestAnimationFrame(animate);
-            controls.update();
-            if (this.sceneRef.current && this.cameraRef.current && this.rendererRef.current && this.labelRenderer.current) {
-                this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current);
-                this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current)
-            }
-        };
-
-        animate();
+        renderer.domElement.addEventListener('wheel', this.onMouseWheel, { passive: false });
+        requestAnimationFrame(this.animate);
     }
 
     disposeResources = () => {
@@ -188,7 +268,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     object.geometry.dispose();
                     if (Array.isArray(object.material)) {
                         object.material.forEach(material => material.dispose());
-                    } else {
+                    }
+                    
+                    else {
                         object.material.dispose();
                     }
                 }
@@ -196,11 +278,21 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             this.rendererRef.current.dispose();
         }
+
+        if (this.labelRef.current) {
+            if (this.labelRef.current.domElement.parentNode) {
+                this.labelRef.current.domElement.parentNode.removeChild(this.labelRef.current.domElement);
+            }
+        }
     };
 
     updateRendererSize = () => {
         if (this.rendererRef.current) {
             this.rendererRef.current.setSize(this.props.width, this.props.height);
+        }
+
+        if (this.labelRef.current) {
+            this.labelRef.current.setSize(this.props.width, this.props.height);
         }
     };
 
@@ -217,40 +309,51 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         }
     };
 
-    createLabel (
-        text: string,
-        position: THREE.Vector3,
-        xOffset: number,
-        yOffset: number,
-        zOffset: number
-    ): CSS2DObject {
-        // Create the HTML element for the label
-        const div = document.createElement('div');
-        div.className = 'label';
-        div.textContent = text;
+    onMouseWheel = (event: WheelEvent) => {
+        event.preventDefault();
+        if (!this.cameraRef.current) return;
+        const zoomFactor = 1.1;
+        const scale = event.deltaY < 0 ? 1 / zoomFactor : zoomFactor;
 
-        // Style the label with CSS directly
-        div.style.color = FONT_DEFAULTS.COLOR;
-        div.style.fontSize = `${FONT_DEFAULTS.SIZE}px`;
-        div.style.fontFamily = FONT_DEFAULTS.FAMILY;
-        div.style.padding = '2px 6px';
-        div.style.backgroundColor = 'rgba(0, 0, 0, 0)';
-        div.style.borderRadius = '4px';
-        div.style.whiteSpace = 'nowrap';
-        div.style.pointerEvents = 'none'; // so it doesn’t block mouse events
-        div.style.userSelect = 'none';
-
-        // Create CSS2DObject from the div
-        const label = new CSS2DObject(div);
-
-        // Position label with offset
-        label.position.set(
-            position.x + xOffset,
-            position.y + yOffset,
-            position.z + zOffset
+        const rect = this.rendererRef.current!.domElement.getBoundingClientRect();
+        const mouse = new THREE.Vector2(
+            ((event.clientX - rect.left) / rect.width) * 2 - 1,
+            -((event.clientY - rect.top) / rect.height) * 2 + 1
         );
 
-        return label;
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, this.cameraRef.current);
+
+        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0); // XY-plane
+        const targetPoint = new THREE.Vector3();
+        const hit = raycaster.ray.intersectPlane(plane, targetPoint);
+        if (!hit) return;
+
+        const camToTarget = new THREE.Vector3().subVectors(targetPoint, this.cameraRef.current.position);
+
+        // Apply zoom factor (interpolate between camera and targetPoint)
+        const newPosition = new THREE.Vector3().addVectors(
+            this.cameraRef.current.position,
+            camToTarget.multiplyScalar(1 - scale) // e.g., 1 - 1/1.2 = 0.166 for zoom in
+        );
+
+        // Optional: limit zoom distance
+        let newScale = this.props.geometryState.zoom_level * scale;
+        if (newScale > 1000 || newScale < 0.002) {
+            newScale = this.props.geometryState.zoom_level
+        }
+
+        // Update camera position and controls target
+        this.cameraRef.current.position.copy(newPosition);
+
+        // Keep orbit target fixed relative to view
+        const offset = new THREE.Vector3().subVectors(this.controlsRef.current!.target, this.cameraRef.current.position);
+        this.controlsRef.current!.target.copy(newPosition.clone().add(offset));
+        this.controlsRef.current!.update();
+        this.props.onGeometryStateChange({
+            ...this.props.geometryState,
+            zoom_level: newScale
+        })
     }
 
     create3DMesh (shape: Shape): THREE.Object3D | null {
@@ -267,12 +370,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         let mesh: THREE.Mesh | THREE.Group | null = null;
         let labelPosition = new THREE.Vector3();
 
-        if (shape.type === 'Plane') {
+        if ('point' in shape && 'norm' in shape) {
             let pl: Plane = shape as Plane;
             geometry = new THREE.PlaneGeometry(5, 5);
             mesh = new THREE.Mesh(geometry, material);
-            let point = convertToVector3(pl.point.x, pl.point.y, pl.point.z ?? 0);
-            let norm = convertToVector3(
+            let point = utils3d.convertToVector3(pl.point.x, pl.point.y, pl.point.z ?? 0);
+            let norm = utils3d.convertToVector3(
                 pl.norm.endVector.x - pl.norm.startVector.x,
                 pl.norm.endVector.y - pl.norm.startVector.y,
                 (pl.norm.endVector.z ?? 0) - (pl.norm.startVector.z ?? 0)
@@ -285,10 +388,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, 2.5, 0));
         }
         
-        else if (shape.type === 'Cylinder') {
+        else if ('centerBase1' in shape && 'centerBase2' in shape && 'radius' in shape) {
             let cy: Cylinder = shape as Cylinder;
-            const start = convertToVector3(cy.centerBase1.x, cy.centerBase1.y, cy.centerBase1.z ?? 0);
-            const end = convertToVector3(cy.centerBase2.x, cy.centerBase2.y, cy.centerBase2.z ?? 0);
+            const start = utils3d.convertToVector3(cy.centerBase1.x, cy.centerBase1.y, cy.centerBase1.z ?? 0);
+            const end = utils3d.convertToVector3(cy.centerBase2.x, cy.centerBase2.y, cy.centerBase2.z ?? 0);
             const direction = new THREE.Vector3().subVectors(end, start);
             const length = direction.length();
             const radius = cy.radius;
@@ -302,10 +405,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             labelPosition = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
         }
         
-        else if (shape.type === 'Cone') {
+        else if ('center' in shape && 'apex' in shape && 'radius' in shape) {
             let co: Cone = shape as Cone;
-            const center = convertToVector3(co.center.x, co.center.y, co.center.z ?? 0);
-            const apex = convertToVector3(co.apex.x, co.apex.y, co.apex.z ?? 0);
+            const center = utils3d.convertToVector3(co.center.x, co.center.y, co.center.z ?? 0);
+            const apex = utils3d.convertToVector3(co.apex.x, co.apex.y, co.apex.z ?? 0);
             const direction = new THREE.Vector3().subVectors(apex, center);
             const height = direction.length();
             const radius = co.radius
@@ -319,18 +422,18 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             labelPosition = new THREE.Vector3().addVectors(center, apex).multiplyScalar(0.5);
         }
         
-        else if (shape.type === 'Sphere') {
+        else if ('centerS' in shape && 'radius' in shape) {
             let sp:  Sphere = shape as Sphere;
             geometry = new THREE.SphereGeometry(sp.radius, 32, 32);
             mesh = new THREE.Mesh(geometry, material);
-            let center = convertToVector3(sp.centerS.x, sp.centerS.y, sp.centerS.z ?? 0)
+            let center = utils3d.convertToVector3(sp.centerS.x, sp.centerS.y, sp.centerS.z ?? 0)
             mesh.position.set(center.x, center.y, center.z);
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, sp.radius + 0.5, 0));
         }
         
-        else if (shape.type === 'Pyramid') {
+        else if ('apex' in shape && 'base' in shape) {
             let py: Pyramid = shape as Pyramid;
-            const apex = convertToVector3(py.apex.x, py.apex.y, py.apex.z ?? 0);
+            const apex = utils3d.convertToVector3(py.apex.x, py.apex.y, py.apex.z ?? 0);
             const vertices: number[] = [];
             const indices: number[] = [];
 
@@ -363,7 +466,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             let baseCenter = new THREE.Vector3();
             for (const p of py.base.points) {
-                baseCenter.add(convertToVector3(p.x, p.y, p.z ?? 0));
+                baseCenter.add(utils3d.convertToVector3(p.x, p.y, p.z ?? 0));
             }
             
             baseCenter.divideScalar(py.base.points.length);
@@ -371,26 +474,48 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             labelPosition = new THREE.Vector3().addVectors(baseCenter, apex).multiplyScalar(0.5);
         }
         
-        else if (shape.type === 'Cuboid') {
-            let cube: Cuboid = shape as Cuboid
+        else if ('width' in shape && 'height' in shape && 'depth' in shape) {
+            let cube: Cuboid = shape as Cuboid;
             const width = cube.width;
             const height = cube.height;
             const depth = cube.depth;
 
             geometry = new THREE.BoxGeometry(width, height, depth);
             mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(
-                0,
-                0,
-                0
-            );
+            // 2. Create local axes
+            const xAxis = utils3d.convertToVector3(
+                cube.axisX.endVector.x - cube.axisX.startVector.x,
+                cube.axisX.endVector.y - cube.axisX.startVector.y,
+                (cube.axisX.endVector.z ?? 0) - (cube.axisX.startVector.z ?? 0)
+            ).normalize();
+
+            const yAxis = utils3d.convertToVector3(
+                cube.axisY.endVector.x - cube.axisY.startVector.x,
+                cube.axisY.endVector.y - cube.axisY.startVector.y,
+                (cube.axisY.endVector.z ?? 0) - (cube.axisY.startVector.z ?? 0)
+            ).normalize();
+
+            const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+
+            // Re-orthogonalize Y to ensure perfect perpendicularity
+            yAxis.crossVectors(zAxis, xAxis).normalize();
+
+            // 3. Create rotation matrix from axes
+            const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+
+            // 4. Apply rotation
+            mesh.setRotationFromMatrix(rotationMatrix);
+
+            // 5. Move to center (Three.js BoxGeometry is centered)
+            let pos = utils3d.convertToVector3(cube.origin.x, cube.origin.y, cube.origin.z ?? 0)
+            mesh.position.set(pos.x, pos.y, pos.z);
 
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, height / 2 + 0.5, 0));
         }
         
-        else if (shape.type === 'Prism') {
+        else if ('shiftVector' in shape && 'base' in shape) {
             let pr: Prism = shape as Prism
-            const direction = convertToVector3(
+            const direction = utils3d.convertToVector3(
                 pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
                 pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
                 (pr.shiftVector.endVector.z ?? 0) - (pr.shiftVector.startVector.z ?? 0),
@@ -398,7 +523,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             let base: THREE.Vector3[] = [], secondBase: THREE.Vector3[] = [];
             pr.base.points.forEach(p => {
-                base.push(convertToVector3(p.x, p.y, p.z ?? 0));
+                base.push(utils3d.convertToVector3(p.x, p.y, p.z ?? 0));
                 let v = base[base.length - 1].clone()
                 secondBase.push(v.add(direction))
             })
@@ -461,13 +586,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 baseCenter2.add(v);
             })
 
-            baseCenter1.divideScalar(base.length);
-            baseCenter2.divideScalar(secondBase.length);
-            mesh.position.copy(baseCenter1);
             labelPosition = new THREE.Vector3().addVectors(baseCenter1, baseCenter2).multiplyScalar(0.5);
         }
         
-        else if (shape.type === 'Vector') {
+        else if ('startVector' in shape && 'endVector' in shape) {
             // Calculate direction vector
             let v: Vector = shape as Vector
             const start = new THREE.Vector3(
@@ -489,8 +611,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 start,                 // Start point
                 length,                // Length of the arrow
                 shape.props.color,     // Color
-                ARROW_DEFAULTS.POINTER_LENGTH * length, // Arrow head length
-                ARROW_DEFAULTS.POINTER_WIDTH * length // Arrow head width
+                constants3d.ARROW_DEFAULTS.POINTER_LENGTH * length, // Arrow head length
+                constants3d.ARROW_DEFAULTS.POINTER_WIDTH * length // Arrow head width
             );
 
             // Create group to hold the arrow and potential label
@@ -512,13 +634,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
         // Add label if visible
         if (shape.props.visible.label) {
-            const label = this.createLabel(
+            const label = utils3d.createLabel(
                 shape.props.label, 
                 labelPosition,
                 shape.props.labelXOffset ?? 0,
                 shape.props.labelYOffset ?? 0,
-                shape.props.labelZOffset ?? 0
+                shape.props.labelZOffset ?? 0,
+                constants3d.FONT_DEFAULTS.COLOR
             );
+            
             group.add(label);
         }
 
@@ -532,14 +656,14 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             color: shape.props.color,
             transparent: true,
             opacity: shape.props.opacity ?? 0.1,
-            wireframe: shape.type === 'Circle' ? true : false
+            wireframe: 'centerC' in shape && 'radius' in shape ? true : false
         });
 
         let geometry: THREE.BufferGeometry | null = null;
         let mesh: THREE.Mesh | THREE.Group | null = null;
         let labelPosition = new THREE.Vector3();
 
-        if (shape.type === 'Circle') {
+        if ('centerC' in shape && 'radius' in shape) {
             let c: Circle = shape as Circle;
             // Create points for the circle
             const points = [];
@@ -549,7 +673,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 const x = Math.cos(theta);
                 const y = Math.sin(theta);
                 const z = 0;
-                points.push(convertToVector3(x, y, z));
+                points.push(utils3d.convertToVector3(x, y, z));
             }
 
             for (let p of points) {
@@ -561,6 +685,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 (c.normal.endVector.z ?? 0) - (c.normal.startVector.z ?? 0),
                 c.normal.endVector.y - c.normal.startVector.y
             ).normalize() : new THREE.Vector3(0, 1, 0);
+
             let defaultNorm = new THREE.Vector3(0, 1, 0);
             if (!defaultNorm.equals(normalVec)) {
                 let quaternion = new THREE.Quaternion();
@@ -571,67 +696,67 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             for (let p of points) {
-                p.add(convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0));
+                p.add(utils3d.convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0));
             }
 
-            mesh = createDashLine(points, c.props);
+            mesh = utils3d.createDashLine(points, c.props);
             labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, c.radius + 0.5, 0));
         }
         
-        else if (shape.type === 'Point') {
+        else if ('x' in shape && 'y' in shape) {
             let p: Point = shape as Point;
             geometry = new THREE.SphereGeometry(shape.props.radius, 32, 32);
             mesh = new THREE.Mesh(geometry, material);
-            let pConvert = convertToVector3(p.x, p.y, p.z ?? 0);
+            let pConvert = utils3d.convertToVector3(p.x, p.y, p.z ?? 0);
             mesh.position.set(pConvert.x, pConvert.y, pConvert.z);
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, shape.props.radius + 0.5, 0));
         }
         
-        else if (shape.type === 'Line') {
+        else if ('startLine' in shape && 'endLine' in shape) {
             let l: Line = shape as Line;
             let points = []
-            let start_point = convertToVector3(l.startLine.x, l.startLine.y, l.startLine.z ?? 0)
-            let end_point = convertToVector3(l.endLine.x, l.endLine.y, l.endLine.z ?? 0)
+            let start_point = utils3d.convertToVector3(l.startLine.x, l.startLine.y, l.startLine.z ?? 0)
+            let end_point = utils3d.convertToVector3(l.endLine.x, l.endLine.y, l.endLine.z ?? 0)
             let direction = new THREE.Vector3().subVectors(end_point, start_point)
-            const P1 = new THREE.Vector3().copy(start_point).sub(direction.clone().multiplyScalar(LINE_EXTENSION))
-            const P2 = new THREE.Vector3().copy(end_point).add(direction.clone().multiplyScalar(LINE_EXTENSION))
+            const P1 = new THREE.Vector3().copy(start_point).sub(direction.clone().multiplyScalar(constants3d.LINE_EXTENSION))
+            const P2 = new THREE.Vector3().copy(end_point).add(direction.clone().multiplyScalar(constants3d.LINE_EXTENSION))
 
             points.push(P1)
             points.push(P2)
 
-            mesh = createDashLine(points, l.props);
+            mesh = utils3d.createDashLine(points, l.props);
             labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
 
-        else if (shape.type === 'Ray') {
+        else if ('startRay' in shape && 'endRay' in shape) {
             let r: Ray = shape as Ray;
             let points = [];
-            const P1 = convertToVector3(r.startRay.x, r.startRay.y, r.startRay.z ?? 0);
-            const P2 = convertToVector3(r.endRay.x, r.endRay.y, r.endRay.z ?? 0);
+            const P1 = utils3d.convertToVector3(r.startRay.x, r.startRay.y, r.startRay.z ?? 0);
+            const P2 = utils3d.convertToVector3(r.endRay.x, r.endRay.y, r.endRay.z ?? 0);
             const direction = new THREE.Vector3().subVectors(P2, P1);
-            const P3 = new THREE.Vector3().copy(P2).add(direction.clone().multiplyScalar(LINE_EXTENSION));
+            const P3 = new THREE.Vector3().copy(P2).add(direction.clone().multiplyScalar(constants3d.LINE_EXTENSION));
 
             points.push(P1);
             points.push(P3);
 
-            mesh = createDashLine(points, r.props);
+            mesh = utils3d.createDashLine(points, r.props);
             labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
         
-        else if (shape.type === 'Segment') {
+        else if ('startSegment' in shape && 'endSegment' in shape) {
             let s: Segment = shape as Segment;
             let points = []
-            const P1 = convertToVector3(s.startSegment.x, s.startSegment.y, s.startSegment.z ?? 0)
-            const P2 = convertToVector3(s.endSegment.x, s.endSegment.y, s.endSegment.z ?? 0)
+            const P1 = utils3d.convertToVector3(s.startSegment.x, s.startSegment.y, s.startSegment.z ?? 0)
+            const P2 = utils3d.convertToVector3(s.endSegment.x, s.endSegment.y, s.endSegment.z ?? 0)
             
             points.push(P1)
             points.push(P2)
 
-            mesh = createDashLine(points, s.props);
+            mesh = utils3d.createDashLine(points, s.props);
             labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
         
-        else if (shape.type === 'Polygon') {
+        else if ('points' in shape) {
             // Create a polygon from the points
             let poly: Polygon = shape as Polygon;
             const points = poly.points.map(point => new THREE.Vector3(point.x, point.y, point.z ?? 0));
@@ -691,12 +816,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
         // Add label if visible
         if (shape.props.visible.label) {
-            const label = this.createLabel(
+            const label = utils3d.createLabel(
                 shape.props.label, 
                 labelPosition,
                 shape.props.labelXOffset ?? 0,
                 shape.props.labelYOffset ?? 0,
-                shape.props.labelZOffset ?? 0
+                shape.props.labelZOffset ?? 0,
+                constants3d.FONT_DEFAULTS.COLOR
             );
             
             group.add(label);
@@ -707,8 +833,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     createShape (shape: Shape): THREE.Object3D | null {
         // 2D shapes
-        if (shape.type === 'Circle' || shape.type === 'Polygon' || shape.type === 'Line' || shape.type === 'Segment' || 
-            shape.type === 'Point' || shape.type === 'Ray') {
+        if (('x' in shape && 'y' in shape) || ('points' in shape) || ('startLine' in shape && 'endLine' in shape) ||
+            ('startSegment' in shape && 'endSegment' in shape) || ('centerC' in shape && 'radius' in shape) ||
+            ('startRay' in shape && 'endRay' in shape)
+        ) {
             return this.create2DShape(shape);
         }
 
@@ -719,17 +847,19 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     updateShapes = () => {
         if (!this.sceneRef.current) return;
 
+        const children = [...this.sceneRef.current.children]
         // Clear existing shapes
-        this.sceneRef.current.children.forEach(child => {
+        children.forEach(child => {
             if (child instanceof THREE.Group || child instanceof THREE.Mesh) {
-                if (!(child instanceof THREE.GridHelper) && !(child instanceof THREE.AxesHelper)) {
-                    this.sceneRef.current?.remove(child);
+                const isAxis = child.name === 'xAxis' || child.name === 'yAxis' || child.name === 'zAxis';
+                if (!(child instanceof THREE.GridHelper) && !isAxis) {
+                    this.sceneRef.current!.remove(child);
                 }
             }
         });
 
         // Add new shapes
-        this.DAG.forEach(shape => {
+        this.props.dag.forEach(shape => {
             const mesh = this.createShape(shape.type);
             if (mesh) {
                 this.sceneRef.current!.add(mesh);
@@ -737,425 +867,32 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         })
     }
 
-    private handleClearClick = () => {
-        this.setState({
-            polygonIndex: 0
-        });
-
-        this.selectedShapes = [];
-        this.mode = 'edit';
-    }
-
-    private handlePointClick = () => {
-        this.mode = 'point';
-    }
-
-    private handleLineClick = () => {
-        this.mode = 'line';
-    }
-
-    private handleSegmentClick = () => {
-        this.mode = 'segment';
-    }
-
-    private handleVectorClick = () => {
-        this.mode = 'vector';
-    }
-
-    private handlePolygonClick = () => {
-        this.mode = 'polygon';
-    }
-
-    private handleCircleClick = () => {
-        this.mode = 'circle';
-    }
-
-    private handleRayClick = () => {
-        this.mode = 'ray';
-    }
-
-    private handleEditClick = () => {
-        this.mode = 'edit';
-    }
-
-    private handleDeleteClick = () => {
-        this.mode = 'delete';
-    }
-
-    private handleUndoClick = () => {
-
-    }
-
-    private handleRedoClick = () => {
-
-    }
-
-    private handleAddCuboid = () => {
-        this.mode = 'cuboid';
-    }
-
-    private handleAddCylinder = () => {
-        this.mode = 'cylinder';
-    }
-
-    private handleAddPrism = () => {
-        this.mode = 'prism';
-    }
-
-    private handleAddPyramid = () => {
-        this.mode = 'pyramid';
-    }
-
-    private handleAddSphere = () => {
-        this.mode = 'sphere';
-    }
-
-    private handleAddPlane = () => {
-        this.mode = 'plane';
-    }
-
-    private handleAddCone = () => {
-        this.mode = 'cone';
-    }
-
     private handleMouseDown = (e: MouseEvent) => {
-        if (e.button === 0 && this.mode !== 'edit') {
-            this.handleDrawing();
+        if (e.button !== 0) {
+            this.props.onRenderMenuRightClick({x: e.clientX, y: e.clientY});
+            return;
         }
+
+        if (this.props.mode !== 'edit') {
+            this.controlsRef.current!.enabled = false;
+            requestAnimationFrame(() => this.handleDrawing);
+            return;
+        }
+
+        this.controlsRef.current!.enabled = true;
     }
 
     private handleDrawing = () => {
-        let mode = this.mode;
-        if (mode === "sphere") {
-            let coors = prompt('Enter the center radius');
-            let regex = /^\(\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*\)$/
-            if (!coors) {
-                this.mode = 'edit';
-                return;
-            }
-
-            let match = coors.match(regex);
-            if (!match) {
-                alert('Invalid coordinates format');
-            }
-
-            else {
-                const x = parseFloat(match[1]); // group 1
-                const y = parseFloat(match[3]); // group 3
-                const z = parseFloat(match[5]); // group 5
-                let r = prompt('Enter the radius of the circle');
-                if (!r) return;
-                try {
-                    const radius = math.evaluate(r);
-                    if (typeof radius !== 'number' || radius <= 0) {
-                        alert('Invalid radius');
-                        return;
-                    }
-
-                    let s: Sphere = {
-                        centerS: {
-                            x: x,
-                            y: y,
-                            z: z,
-                            props: createPointDefaultShapeProps('O', 0.02, 0, 0.5, -0.5),
-                            type: 'Point'
-                        },
-                        radius: radius,
-                        type: 'Sphere',
-                        props: {
-                            line_style: {
-                                dash_size: 0,
-                                gap_size: 0,
-                                dot_size: 0
-                            },
-                            radius: radius,
-                            color: 'red',
-                            fill: true,
-                            opacity: 0.5,
-                            visible: {
-                                shape: true,
-                                label: false,
-                            },
-                            labelXOffset: 0,
-                            labelYOffset: 0,
-                            labelZOffset: 0,
-                            label: 'c',
-                            id: uuidv4(),
-                            line_size: 1
-                        }
-                    }
-
-                    this.DAG.set(s.props.id, {
-                        id: s.props.id,
-                        type: s,
-                        dependsOn: []
-                    })
-
-                    this.mode = 'edit';
-                }
-
-                catch (error) {
-                    alert('Invalid expression for radius');
-                }
-            }
-        }
-
-        else if (mode === "plane") {
-            let expr = prompt('Input the equation of the plane');
-            if (!expr) return
-            const parts = expr.split('=');
-            if (parts.length !== 2) {
-                alert('Invalid equation of a plane');
-                this.mode = 'edit';
-                return;
-            }
-
-            const [lhs, rhs] = parts;
-            try {
-                const extractVariables = (node: math.MathNode, variables = new Set<string>()): Set<string> => {
-                    node.forEach?.((child: math.MathNode) => extractVariables(child, variables));
-                    if (node.type === 'SymbolNode') {
-                        const symbolNode = node as math.SymbolNode;
-                        variables.add(symbolNode.name);
-                    }
-                        return variables;
-                }
-
-                let nodes: math.MathNode[] = [];
-                for (const part of parts) {
-                    const node = math.parse(part.trim());
-                    nodes.push(node);
-                }
-
-                const allVars = new Set<string>();
-                nodes.forEach(node => extractVariables(node, allVars));
-
-                const usedVars = Array.from(allVars);
-                const expectedVars = ['x', 'y', 'z'];
-
-                if (usedVars.length > 3) {
-                    alert('Invalid equation of a plane');
-                    return;
-                }
-
-                const sortedUsed = [...usedVars].sort();
-                const sortedExpected = expectedVars.slice(0, usedVars.length).sort();
-
-                const isExact = sortedUsed.every((v, i) => v === sortedExpected[i]);
-
-                if (!isExact) {
-                    alert('Invalid equation of a plane');
-                    this.mode = 'edit';
-                    return;
-                }
-
-                let left = math.parse(lhs);
-                let right = math.parse(rhs);
-                const eq = math.simplify(`(${left}) - (${right})`);
-                let expanded = math.simplify(eq, { expand: true });
-                console.log(expanded)
-
-                // Get all terms and check degrees
-                const terms = [expanded];
-                for (const term of terms) {
-                    const poly = math.simplify(term.toString());
-                    const polyStr = poly.toString();
-
-                    // Check if any variable appears with power > 1
-                    const powerPattern = /(\w+)\^(\d+)/g;
-                    let match;
-                    while ((match = powerPattern.exec(polyStr)) !== null) {
-                        if (parseInt(match[2]) > 1) {
-                            alert('Invalid equation of a plane');
-                            this.mode = 'edit';
-                            return;
-                        }
-                    }
-
-                    // Check for non-linear operations like sin, cos, log, etc.
-                    if (/sin|cos|tan|log|cot|sqrt/.test(polyStr)) {
-                        alert('Invalid equation of a plane');
-                        this.mode = 'edit';
-                        return;
-                    }
-                }
-
-                let result = {
-                    A: 0,
-                    B: 0,
-                    C: 0,
-                    D: 0
-                }
-
-                const walk = (node: math.MathNode, multiplier = 1): void => {
-                    console.log(node.type)
-                    if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '+') {
-                        (node as math.OperatorNode).args.forEach((args: math.MathNode) => walk(args, multiplier));
-                    }
-                    
-                    else if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '-') {
-                        walk((node as math.OperatorNode).args[0], multiplier);
-                        walk((node as math.OperatorNode).args[1], -multiplier);
-                    }
-                    
-                    else if (node.type === 'OperatorNode' && (node as math.OperatorNode).op === '*') {
-                        let coeff = 1;
-                        let variable = '';
-                        (node as math.OperatorNode).args.forEach(arg => {
-                            if (arg.type === 'ConstantNode') coeff *= Number((arg as math.ConstantNode).value);
-                            if (arg.type === 'SymbolNode') variable = (arg as math.SymbolNode).name;
-                        });
-                        
-                        if (variable === 'x') result.A += coeff * multiplier;
-                        else if (variable === 'y') result.B += coeff * multiplier;
-                        else if (variable === 'z') result.C += coeff * multiplier;
-                    }
-                    
-                    else if (node.type === 'SymbolNode') {
-                        if ((node as math.SymbolNode).name === 'x') result.A += multiplier;
-                        else if ((node as math.SymbolNode).name === 'y') result.B += multiplier;
-                        else if ((node as math.SymbolNode).name === 'z') result.C += multiplier;
-                        
-                    }
-                    
-                    else if (node.type === 'ConstantNode') {
-                        result.D += Number((node as math.ConstantNode).value) * multiplier;
-                    }
-                }
-
-                let ast = math.parse(expanded.toString());
-                walk(ast);
-                if (Math.pow(result.A, 2) + Math.pow(result.B, 2) + Math.pow(result.C, 2) === 0) {
-                    this.mode = 'edit';
-                    alert('Invalid equation of a plane');
-                    return;
-                }
-
-                let [x, y, z] = [0, 0, 0];
-
-                if (result.A === 0) {
-                    [x, y, z] = (result.C !== 0) ? [0, 0, -result.D / result.C] : [0, -result.D / result.B, 0];
-                }
-
-                else {
-                    [x, y, z] = [-result.D / result.A, 0, 0];
-                }
-
-                console.log(result, [x, y, z]);
-
-                let normal: Vector = {
-                    startVector: {
-                        x: 0,
-                        y: 0,
-                        z: 0,
-                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0),
-                        type: 'Point'
-                    },
-
-                    endVector: {
-                        x: result.A,
-                        y: result.B,
-                        z: result.C,
-                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0),
-                        type: 'Point'
-                    },
-
-                    props: createLineDefaultShapeProps('', 0, 0, 0, 0),
-                    type: 'Vector'
-                }
-
-                let p: Plane = {
-                    norm: normal,
-                    point: {
-                        x: x,
-                        y: y,
-                        z: z,
-                        props: createPointDefaultShapeProps('', 0.02, 0, 0, 0),
-                        type: 'Point'
-                    },
-
-                    props: createLineDefaultShapeProps('p', 0, 0, 0, 0),
-                    type: 'Plane'
-                }
-
-                p.props.color = 'blue';
-                p.props.opacity = 1
-                this.DAG.set(p.props.id, {
-                    id: p.props.id,
-                    type: p,
-                    dependsOn: []
-                })
-
-                this.mode = 'edit';
-            }
-
-            catch(error) {
-                alert('Cannot parse the input expression!');
-            }
-        }
+        
     }
 
     render(): React.ReactNode {
         const { width, height, background_color } = this.props;
         return (
             <div className="flex flex-row h-full">
-                <GeometryTool3D 
-                    width={width * 0.3}
-                    height={height * 0.74}
-                    onPointClick={this.handlePointClick}
-                    onLineClick={this.handleLineClick}
-                    onSegmentClick={this.handleSegmentClick}
-                    onVectorClick={this.handleVectorClick}
-                    onPolygonClick={this.handlePolygonClick}
-                    onCircleRadiusClick={this.handleCircleClick}
-                    onLengthClick={this.handleClearClick}
-                    onAreaClick={this.handleClearClick}
-                    onRayClick={this.handleRayClick}
-                    onEditClick={this.handleEditClick}
-                    onDeleteClick={this.handleDeleteClick}
-                    onClearClick={this.handleClearClick}
-                    onUndoClick={this.handleUndoClick}
-                    onRedoClick={this.handleRedoClick}
-                    onAddCuboid={this.handleAddCuboid}
-                    onAddCone={this.handleAddCone}
-                    onAddCylinder={this.handleAddCylinder}
-                    onAddPlane={this.handleAddPlane}
-                    onAddPrism={this.handleAddPrism}
-                    onAddPyramid={this.handleAddPyramid}
-                    onAddSphere={this.handleAddSphere}
-                    onAngleClick={this.handleAddSphere}
-                    onHideLabelClick={this.handleClearClick}
-                    onHideObjectClick={this.handleClearClick}
-                    onIntersectionClick={this.handleClearClick}
-                    onCircle2PointClick={this.handleClearClick}
-                    onCentroidClick={this.handleClearClick}
-                    onCircumcenterClick={this.handleClearClick}
-                    onOrthocenterClick={this.handleClearClick}
-                    onIncenterClick={this.handleClearClick}
-                    onCircumcircleClick={this.handleClearClick}
-                    onIncircleClick={this.handleClearClick}
-                    onExcenterClick={this.handleClearClick}
-                    onExcircleClick={this.handleClearClick}
-                    onMidPointClick={this.handleClearClick}
-                    onParaLineClick={this.handleClearClick}
-                    onPerpenLineClick={this.handleClearClick}
-                    onSegmentLengthClick={this.handleClearClick}
-                    onPerpenBisecClick={this.handleClearClick}
-                    onSemiClick={this.handleClearClick}
-                    onAngleBisecClick={this.handleClearClick}
-                    onRegularPolygonClick={this.handleClearClick}
-                    onTangentLineClick={this.handleClearClick}
-                    onReflectLineClick={this.handleClearClick}
-                    onReflectPointClick={this.handleClearClick}
-                    onRotationClick={this.handleClearClick}
-                    onScalingClick={this.handleClearClick}
-                    onProjectionClick={this.handleClearClick}
-                    onTranslationClick={this.handleClearClick}
-                />
-
                 <canvas
                     ref={this.canvasRef}
-                    width={width * 0.7}
+                    width={width}
                     height={height}
                     style={{ background: background_color }}
                 />

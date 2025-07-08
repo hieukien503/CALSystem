@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Project2D from './Project2D';
-import ThreeDCanvas from './ThreeRender';
+import Project3D from './Project3D';
 import { v4 as uuidv4 } from 'uuid'
 
 const Header = () => {
@@ -33,7 +33,21 @@ const Header = () => {
                     </h1>
                     <main className="outer-main">
                         <div className="inner-main text-center text-gray-600 text-xl flex-grow">
-                            <ThreeDCanvas width={window.innerWidth} height={window.innerHeight} background_color='#ffffff' />
+                            <Project3D
+                                id={uuidv4()}
+                                title={'2D Geometry'}
+                                description={'Test Geometry'}
+                                sharing={'public'}
+                                projectVersion={{
+                                    versionName: 'alpha',
+                                    versionNumber: '1.0',
+                                    createdAt: new Date().toString(),
+                                    updatedAt: new Date().toString(),
+                                    updatedBy: 'Kien'
+                                }}
+                                ownedBy='Kien'
+                                collaborators={[]}
+                            />
                         </div>
                     </main>
                 </div>
