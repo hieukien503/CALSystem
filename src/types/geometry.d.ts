@@ -213,6 +213,21 @@ export interface ShapeNode3D {
     type: Shape;
     /** IDs of other ShapeNodes this one depends on */
     dependsOn: string[];
+    /** For undefined shape */
+    defined: boolean;
+    /** IDs of other ShapeNodes this one depends on */
+    dependsOn: string[];
+    /** For enlarge */
+    scaleFactor?: number;
+    /** For rotation */
+    rotationFactor?: {
+        degree: number;
+        CCW: boolean;
+    };
+    /** For tangent line and angle bisector */
+    side? : 0 | 1;
+    /** Selected or not */
+    isSelected: boolean;
 }
 
 // Geometry state
@@ -254,6 +269,14 @@ type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' 
 interface HistoryEntry {
     state: GeometryState,
     dag: Map<string, ShapeNode>,
+    selectedPoints: Point[],
+    selectedShapes: Shape[],
+    label_used: string[]
+};
+
+interface HistoryEntry3D {
+    state: GeometryState,
+    dag: Map<string, ShapeNode3D>,
     selectedPoints: Point[],
     selectedShapes: Shape[],
     label_used: string[]

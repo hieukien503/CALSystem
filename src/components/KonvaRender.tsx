@@ -31,7 +31,6 @@ interface CanvasProps {
         } | undefined;
     };
     onChangeMode: (mode: DrawingMode) => void;
-    onClearCanvas: () => void;
     onUpdateLastFailedState: (state?: {
         selectedPoints: Point[], selectedShapes: Shape[]
     }) => void;
@@ -207,8 +206,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.layerAxisRef.current?.batchDraw();
             this.layerUnchangeVisualRef.current?.batchDraw();
 
-            let numLoops = this.props.geometryState.numLoops + (newScale > oldScale ? -1 : (newScale < oldScale ? 1 : 0));
-            let calcNextInterval = (interval: number, forward: boolean) => {
+            let numLoops = this.props.geometryState.numLoops + (newScale > oldScale ? 1 : (newScale < oldScale ? -1 : 0));
+            numLoops = (numLoops < 0 ? 7 : (numLoops === 8 ? 0 : numLoops));
+            const calcNextInterval = (interval: number, forward: boolean) => {
                 let multiplier = [2, 2.5, 2];
                 let base = 1;
                 if (interval >= base) {
@@ -235,9 +235,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             let axisTickInterval = this.props.geometryState.axisTickInterval;
-            if (numLoops === 8 || numLoops === -8) {
-                axisTickInterval = calcNextInterval(axisTickInterval, numLoops > 0);
-                numLoops = 0;
+            if (numLoops % 8 === 1 && newScale > oldScale) {
+                axisTickInterval = calcNextInterval(axisTickInterval, false);
+            }
+
+            else if (numLoops % 8 === 0 && newScale < oldScale) {
+                axisTickInterval = calcNextInterval(axisTickInterval, true);
             }
 
             this.props.onGeometryStateChange({

@@ -1,0 +1,1 @@
+export type SharingMode = 'public' | 'private' | 'organization-wide';
