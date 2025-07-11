@@ -16,11 +16,12 @@ code {
 }
 /* General Styles */
 html, body {
-    height: 100%;
+    min-height: 100%;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
+    overflow: visible;
 }
 
 /* Header Styles */
@@ -73,7 +74,6 @@ header {
     align-self: center;
     align-content: center;
     display: flex;
-    flex: 1;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -82,7 +82,6 @@ header {
 .inner-main {
     height: 100%;
     width: 100%;
-    padding: 20px;
     background-color: white;
     border: 50px;
     border-color: #fd8818;
@@ -185,7 +184,7 @@ header {
         background-color: #717171;
     }
 /* Footer Styles */
-    footer {
+footer {
     background-color: #a7d3d2;
     color: #292929;
     text-align: center;
@@ -195,7 +194,6 @@ header {
     align-items: center;
     margin-top: auto;
     padding: 10px 20px;
-    flex: 1;
 }
 
     footer div {
