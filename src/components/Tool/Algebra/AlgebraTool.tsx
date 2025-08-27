@@ -1,8 +1,7 @@
 import React from "react";
-import { ShapeNode } from "../types/geometry";
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import * as utils from "../utils/utilities"
-import * as GeometryShape from "../types/geometry"
+import * as utils from "../../../utils/utilities"
+import * as GeometryShape from "../../../types/geometry"
 import Latex from 'react-latex'
 
 interface AlgebraItemProps {
@@ -56,12 +55,12 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
 interface AlgebraToolProps {
     width: number;
     height: number;
-    dag: Map<string, ShapeNode>;
+    dag: Map<string, GeometryShape.ShapeNode>;
     onSelect: (id: string, e: React.MouseEvent) => void;
 }
 
 class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
-    private createDescription = (shapeNode: ShapeNode): string => {
+    private createDescription = (shapeNode: GeometryShape.ShapeNode): string => {
         const shape = shapeNode.type.type;
         if (shape === 'Point') {
             if (shapeNode.id.includes('tmpPoint')) {

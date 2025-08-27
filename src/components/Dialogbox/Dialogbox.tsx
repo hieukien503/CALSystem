@@ -34,12 +34,12 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
     }
 
     componentDidMount() {
-        document.addEventListener('mousedown', this.handleClickOutside);
+        document.addEventListener('pointerdown', this.handleClickOutside);
         this.inputRef.current?.focus();
     }
 
     componentWillUnmount() {
-        document.removeEventListener('mousedown', this.handleClickOutside);
+        document.removeEventListener('pointerdown', this.handleClickOutside);
     }
 
     public getBoundingClientRect = (): DOMRect | undefined => {
@@ -96,7 +96,6 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                     onChange={(e) => this.setState({ value_from_input: e.target.value })}
                                                     className='TextField'
                                                     autoComplete='off'
-                                                    autoCapitalize='off'
                                                     onFocus={this.handleInputFocus}
                                                     onBlur={this.handleInputBlur}
                                                     placeholder={this.props.angleMode ? "30" : ""}

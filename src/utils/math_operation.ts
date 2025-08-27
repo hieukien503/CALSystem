@@ -4,7 +4,7 @@ const math = require('mathjs');
 
 const epsilon = 1e-5;
 
-const cross = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
+export const cross = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
     return {
         x: y1 * z2 - z1 * y2,
         y: z1 * x2 - x1 * z2,
@@ -12,7 +12,7 @@ const cross = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: n
     }
 }
 
-const dot = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
+export const dot = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
     return x1 * x2 + y1 * y2 + z1 * z2;
 }
 
@@ -3722,4 +3722,25 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     else {
         throw new Error('Cannot perform enlarge process');
     }
+}
+
+export const checkCoplanar = (arr: GeometryShape.Point[]): boolean => {
+    if (arr.length < 4) {
+        return true;
+    }
+
+    let [A, B, C] = arr.slice(0, 3);
+    let n = cross(
+        B.x - A.x, B.y - A.y, (B.z ?? 0) - (A.z ?? 0),
+        C.x - A.x, C.y - A.y, (C.z ?? 0) - (A.z ?? 0)
+    );
+
+    for (let i = 3; i < arr.length; i++) {
+        let D = arr[i];
+        if (Math.abs(dot(n.x, n.y, n.z, D.x - A.x, D.y - A.y, (D.z ?? 0) - (A.z ?? 0))) > epsilon) {
+            return false;
+        }
+    }
+
+    return true;
 }

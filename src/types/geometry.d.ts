@@ -20,7 +20,7 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
                         'PerpendicularLine' | 'TangentLine' | 'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' |
                         'Circle2Point' | 'Angle' | 'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
                         'Reflection' | 'Rotation' | 'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' |
-                        'RegularPolygon';
+                        'RegularPolygon' | 'Sphere2Point';
 
 export interface Angle extends BaseShape {
     // Use degree for angle
@@ -215,14 +215,12 @@ export interface ShapeNode3D {
     dependsOn: string[];
     /** For undefined shape */
     defined: boolean;
-    /** IDs of other ShapeNodes this one depends on */
-    dependsOn: string[];
     /** For enlarge */
     scaleFactor?: number;
     /** For rotation */
     rotationFactor?: {
-        degree: number;
-        CCW: boolean;
+        azimuth: number; // Rotation around the vertical axis
+        polar: number; // Rotation around the horizontal axis
     };
     /** For tangent line and angle bisector */
     side? : 0 | 1;
@@ -252,18 +250,17 @@ export interface GeometryState {
 
     /** Whether a panning event is happening */
     panning: boolean;
-
-    /** Index for buttons */
-    polygonIndex: number;
 }
 
 /** Drawing mode */
 type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
-                   'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'show_label' | 'show_object' | 'intersection' |
+                   'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'volume' | 'show_label' | 'show_object' | 'intersection' |
                    'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
                    'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length' | 'perpendicular_bisector' |
                    'semicircle' | 'reflect_point' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
-                   'angle_bisector' | 'reflect_line';
+                   'angle_bisector' | 'reflect_line' | 'sphere' | 'sphere_2_points' | 'circle_axis_point' | 'circle_center_direction' |
+                   'plane' | 'plane_3_points' | 'parallel_plane' | 'perpendicular_plane' | 'cone' | 'cuboid' | 'prism' | 'pyramid' |
+                   'tetrahedron' | 'cylinder' | 'extrude_pyramid' | 'extrude_prism' | 'reflect_plane';
 
 /** History */
 interface HistoryEntry {

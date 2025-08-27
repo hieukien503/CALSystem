@@ -1,13 +1,18 @@
 import React, { createRef, RefObject } from "react";
-import Dialogbox from "./Dialogbox";
-import ErrorDialogbox from "./ErrorDialogbox";
-import * as constants3D from '../types/constants3D';
-import * as utils from '../utils/utilities3D';
-import MenuItem from "./MenuItem";
-import { GeometryTool3D } from './GeometryTool';
-import { GeometryState, Point, Shape, DrawingMode, ShapeNode3D, HistoryEntry3D } from "../types/geometry";
-import { SharingMode } from "../types/types";
-import ThreeDCanvas from "./ThreeRender";
+import Dialogbox from "../Dialogbox/Dialogbox";
+import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
+import * as constants3D from '../../types/constants3D';
+import * as utils from '../../utils/utilities3D';
+import MenuItem from "../MenuItem";
+import { GeometryState, Point, Shape, DrawingMode, ShapeNode3D, HistoryEntry3D } from "../../types/geometry";
+import { SharingMode } from "../../types/types";
+import ThreeDCanvas from "../Canvas/ThreeRender";
+import Tool3D from "../Tool/Tool3D";
+import { MathCommandLexer } from "../../antlr4/parser/MathCommandLexer";
+import { CharStreams, CommonTokenStream } from "antlr4ts";
+import { MathCommandParser } from "../../antlr4/parser/MathCommandParser";
+import ASTGen from "../../antlr4/astgen/ASTGen";
+const math = require('mathjs');
 
 interface Project3DProps {
     id: string;
@@ -46,14 +51,7 @@ interface Project3DState {
         angleMode: boolean;
     } | undefined;
     /** For user input */
-    data: {
-        radius: number | undefined;
-        vertices: number | undefined;
-        rotation: {
-            degree: number;
-            CCW: boolean;
-        } | undefined;
-    };
+    data: number | {x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
     /** For error */
     error: {
         label: string; // for dialogbox error
@@ -108,11 +106,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             toolWidth: Math.max(window.innerWidth * 0.22, 264),
             isMenuRightClick: undefined,
             isDialogBox: undefined,
-            data: {
-                radius: undefined,
-                vertices: undefined,
-                rotation: undefined
-            },
+            data: undefined,
             error: {
                 label: '',
                 message: ''
@@ -261,11 +255,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             selectedPoints: state.selectedPoints,
             selectedShapes: state.selectedShapes,
             isDialogBox: undefined,
-            data: {
-                radius: undefined,
-                vertices: undefined,
-                rotation: undefined
-            },
+            data: undefined,
             error: {
                 label: '',
                 message: ''
@@ -364,6 +354,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     };
 
     private setMode = (mode: DrawingMode) => {
+        let isDialogBox: {
+            title: string,
+            input_label: string;
+            angleMode: boolean;
+        } | undefined = undefined;
         if (mode === 'delete') {
             let selected: string[] = [];
             this.dag.forEach((node, key) => {
@@ -399,13 +394,23 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             else if (mode === 'clear') {
                 this.handleClearCanvas();
             }
+
+            else if (mode === 'point') {
+                isDialogBox = {
+                    title: 'Point',
+                    input_label: 'Enter point in form Point(x, y, z) or (x, y, z)',
+                    angleMode: false
+                }
+            }
         }
         
         this.setState({
             selectedPoints: [],
             selectedShapes: [],
             mode: mode,
-            isMenuRightClick: undefined
+            isMenuRightClick: undefined,
+            isDialogBox: isDialogBox,
+            data: undefined
         })
     }
 
@@ -536,43 +541,307 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         }
     }
 
+    private handleMouseDownResize = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        document.addEventListener("pointermove", this.handleMouseMoveResize);
+        document.addEventListener("pointerup", this.handleMouseUpResize);
+        this.setState({ isResize: true, isMenuRightClick: undefined });
+    }
+
+    private handleMouseMoveResize = (e: MouseEvent) => {
+        if (!this.state.isResize) return;
+        const newWidth = e.clientX - 72;
+        if (newWidth > 150) {
+            this.setState({ toolWidth: newWidth, geometryState: {...this.state.geometryState} });
+        }
+
+        else {
+            this.setState({ toolWidth: 0, geometryState: {...this.state.geometryState} });
+        }
+    }
+
+    private handleMouseUpResize = () => {
+        document.removeEventListener("pointermove", this.handleMouseMoveResize);
+        document.removeEventListener("pointerup", this.handleMouseUpResize);
+        this.setState({ isResize: false });
+    };
+
+    private handleSelectObject = (id: string, e: React.MouseEvent): void => {
+        const isCtrl = e.ctrlKey || e.metaKey;
+        if (isCtrl) {
+            const node = this.dag.get(id);
+            if (!node) return;
+            const wasSelected = node.isSelected;
+            node.isSelected = !wasSelected;
+        }
+        
+        else {
+            // Clear previous selection
+            this.dag.forEach(node => {
+                node.isSelected = false;
+            });
+
+            const node = this.dag.get(id);
+            if (node) {
+                node.isSelected = true;
+            }
+        }
+
+        this.setState({selectedPoints: [...this.state.selectedPoints]});
+    }
+
+    private receiveData = (value: string, CCW: boolean = true) => {
+        if (this.state.mode === 'point') {
+            try {
+                const inputStream = CharStreams.fromString(value);
+                const lexer = new MathCommandLexer(inputStream);
+                const tokens = new CommonTokenStream(lexer);
+                const parser = new MathCommandParser(tokens);
+                const tree = parser.program();
+                const ast = new ASTGen(this.dag, this.labelUsed);
+                this.setState({ data: ast.visit(tree) as {x: number, y: number, z: number} | undefined });
+                return;
+            }
+
+            catch (error) {
+                this.setState({
+                    error: {
+                        label: 'Invalid expression',
+                        message: `Invalid expression for point`
+                    }
+                });
+
+                return;
+            }
+        }
+
+        if (['segment_length', 'sphere', 'circle_center_direction'].includes(this.state.mode)) {
+            try {
+                const radius = math.evaluate(value);
+                if (typeof radius !== 'number' || radius <= 0) {
+                    this.setState({
+                        error: {
+                            label: 'Number expected',
+                            message: ''
+                        }
+                    });
+
+                    return;
+                }
+
+                this.setState({
+                    data: radius,
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for ${this.state.mode === 'sphere' ? 'radius' : 'length'}`
+                    }
+                })
+            }
+        }
+
+        else if (this.state.mode === 'regular_polygon') {
+            try {
+                const vertices = math.evaluate(value);
+                if (typeof vertices !== 'number' || (Number.isInteger(vertices) && vertices <= 2)) {
+                    this.setState({
+                        error: {
+                            label: 'Expected: number of vertices > 2',
+                            message: ''
+                        }
+                    });
+
+                    return;
+                }
+
+                this.setState({
+                    data: vertices,
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for number of vertices`
+                    }
+                })
+            }
+        }
+
+        else if (this.state.mode === 'rotation') {
+            try {
+                const degree = math.evaluate(value);
+                if (typeof degree !== 'number') {
+                    this.setState({
+                        error: {
+                            label: 'Number expected',
+                            message: ''
+                        }
+                    });
+
+                    return;
+                }
+
+                this.setState({
+                    data: {
+                        degree: degree,
+                        CCW: CCW
+                    },
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for angle`
+                    }
+                })
+            }
+        }
+
+        else if (this.state.mode === 'enlarge') {
+            try {
+                const scaleFactor = math.evaluate(value);
+                if (typeof scaleFactor !== 'number') {
+                    this.setState({
+                        error: {
+                            label: 'Number expected',
+                            message: ''
+                        }
+                    })
+                }
+
+                this.setState({
+                    data: scaleFactor,
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            }
+
+            catch(error) {
+                this.setState({
+                    error: {
+                        label: 'Number expected',
+                        message: `Invalid expression for scale factor`
+                    }
+                })
+            }
+        }
+    }
+
     render(): React.ReactNode {
         return (
-            <ThreeDCanvas 
-                width={window.innerWidth - this.state.toolWidth - 102}
-                height={window.innerHeight * 0.745}
-                background_color="#ffffff"
-                dag={this.dag}
-                onChangeMode={(mode: DrawingMode) => this.setState({mode: mode})}
-                onSelectedShapesChange={this.onSelectedShapesChange}
-                onSelectedPointsChange={this.onSelectedPointsChange}
-                onGeometryStateChange={(s) => this.setState({geometryState: s})}
-                onSelectedChange = {this.onSelectedChange}
-                mode={this.state.mode}
-                isSnapToGrid={this.state.isSnapToGrid}
-                selectedPoints={this.state.selectedPoints}
-                selectedShapes={this.state.selectedShapes}
-                labelUsed={this.labelUsed}
-                onLabelUsed={this.updateLabelUsed}
-                geometryState={this.state.geometryState}
-                pushHistory={this.pushHistory}
-                onUpdateLastFailedState={this.updateLastFailedState}
-                isResize={this.state.isResize}
-                onUpdateAll={this.updateAll}
-                getSnapshot={() => {
-                    return utils.clone(
-                        this.state.geometryState,
-                        this.dag,
-                        this.state.selectedPoints,
-                        this.state.selectedShapes,
-                        this.labelUsed
-                    )
-                }}
-                onRenderMenuRightClick={this.setRightMenuClick}
-                onRemoveNode={this.removeNode}
-                onRenderDialogbox={this.setDialogbox}
-                data={this.state.data}
-            />
+            <div className="flex justify-start flex-row" style={{overflow: "hidden"}}>
+                <Tool3D 
+                    width={this.state.toolWidth}
+                    height={window.innerHeight * 0.745}
+                    dag={this.dag}
+                    onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
+                    onSelect={this.handleSelectObject}
+                    onSetMode={(mode) => this.setMode(mode)}
+                />
+                {this.state.toolWidth > 0 && <div 
+                    className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
+                    id="resizer"
+                    onPointerDown={this.handleMouseDownResize}
+                    onPointerUp={this.handleMouseUpResize}
+                >
+                    <div className="resizerPanel w-1 h-6 bg-gray-400 rounded"></div>
+                </div>}
+                {this.state.toolWidth < window.innerWidth && <ThreeDCanvas 
+                    width={window.innerWidth - this.state.toolWidth - 102}
+                    height={window.innerHeight * 0.745}
+                    background_color="#ffffff"
+                    dag={this.dag}
+                    onChangeMode={(mode: DrawingMode) => this.setState({mode: mode})}
+                    onSelectedShapesChange={this.onSelectedShapesChange}
+                    onSelectedPointsChange={this.onSelectedPointsChange}
+                    onGeometryStateChange={(s) => this.setState({geometryState: s})}
+                    onSelectedChange = {this.onSelectedChange}
+                    mode={this.state.mode}
+                    isSnapToGrid={this.state.isSnapToGrid}
+                    selectedPoints={this.state.selectedPoints}
+                    selectedShapes={this.state.selectedShapes}
+                    labelUsed={this.labelUsed}
+                    onLabelUsed={this.updateLabelUsed}
+                    geometryState={this.state.geometryState}
+                    pushHistory={this.pushHistory}
+                    onUpdateLastFailedState={this.updateLastFailedState}
+                    isResize={this.state.isResize}
+                    onUpdateAll={this.updateAll}
+                    getSnapshot={() => {
+                        return utils.clone(
+                            this.state.geometryState,
+                            this.dag,
+                            this.state.selectedPoints,
+                            this.state.selectedShapes,
+                            this.labelUsed
+                        )
+                    }}
+                    onRenderMenuRightClick={this.setRightMenuClick}
+                    onRemoveNode={this.removeNode}
+                    onRenderDialogbox={this.setDialogbox}
+                    data={this.state.data}
+                />}
+                {this.state.isDialogBox && (<Dialogbox 
+                    title={this.state.isDialogBox.title}
+                    input_label={this.state.isDialogBox.input_label}
+                    angleMode={this.state.isDialogBox.angleMode}
+                    onSubmitClick={this.receiveData}
+                    inputError={this.state.error}
+                    onCancelClick={() => this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})}
+                    position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
+                    ref={this.dialogRef}
+                />)}
+                {this.state.error.message.length > 0 && <ErrorDialogbox 
+                    position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}
+                    error={{message: this.state.error.message}}
+                    onCancelClick={() => this.setState({error: {label: this.state.error.label, message: ''}})}
+                    ref={this.errorDialogRef}
+                />}
+                {this.state.isMenuRightClick && !this.state.isDialogBox && (<MenuItem 
+                    isSnapToGrid={this.state.snapToGridEnabled}
+                    gridVisible={this.state.geometryState.gridVisible}
+                    axisVisible={this.state.geometryState.axesVisible}
+                    left={this.state.isMenuRightClick.x}
+                    top={this.state.isMenuRightClick.y}
+                    onSetAxisVisible={() => this.setState({geometryState: {...this.state.geometryState, axesVisible: !this.state.geometryState.axesVisible}, isMenuRightClick: undefined})}
+                    onSetGridVisible={() => this.setState({geometryState: {...this.state.geometryState, gridVisible: !this.state.geometryState.gridVisible}, isMenuRightClick: undefined})}
+                    onIsSnapToGrid={() => this.setState((prevState) => {
+                        const newSnapToGridEnabled = !prevState.snapToGridEnabled;
+                        const newIsSnapToGrid = prevState.geometryState.gridVisible && newSnapToGridEnabled;
+                        return {
+                            snapToGridEnabled: newSnapToGridEnabled,
+                            isSnapToGrid: newIsSnapToGrid,
+                            isMenuRightClick: undefined
+                        }
+                    })}
+                />)}
+            </div>
         )
     }
 }

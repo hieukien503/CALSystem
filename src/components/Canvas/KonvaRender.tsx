@@ -1,13 +1,13 @@
 import React, { RefObject } from "react";
-import { Line, Point, Shape, GeometryState, ShapeNode, DrawingMode, HistoryEntry, Segment, Ray, Vector, Circle, Polygon, Angle, SemiCircle, ShapeType } from "../types/geometry"
+import { Line, Point, Shape, GeometryState, ShapeNode, DrawingMode, HistoryEntry, Segment, Ray, Vector, Circle, Polygon, Angle, SemiCircle, ShapeType } from "../../types/geometry"
 import Konva from "konva";
 import { Stage, Layer } from "react-konva";
-import { KonvaAxis } from "../utils/KonvaAxis";
-import { KonvaGrid } from "../utils/KonvaGrid";
-import * as Factory from '../utils/Factory'
-import * as utils from '../utils/utilities'
-import * as constants from '../types/constants'
-import * as operation from '../utils/math_operation'
+import { KonvaAxis } from "../../utils/KonvaAxis";
+import { KonvaGrid } from "../../utils/KonvaGrid";
+import * as Factory from '../../utils/Factory'
+import * as utils from '../../utils/utilities'
+import * as constants from '../../types/constants'
+import * as operation from '../../utils/math_operation'
 const math = require('mathjs');
 
 interface CanvasProps {
@@ -254,7 +254,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         
     }
 
-    private handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    private handleMouseDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
         if (!this.stageRef.current || !this.layerMathObjectRef.current) return;
         const pointer = this.stageRef.current.getPointerPosition();
         if (!pointer) return;
@@ -485,7 +485,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         }
     }
 
-    private handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    private handleMouseMove = (e: Konva.KonvaEventObject<PointerEvent>) => {
         if (this.moveFrameId) {
             cancelAnimationFrame(this.moveFrameId);
         }
@@ -2136,7 +2136,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 else {
                     selectedPoints.pop();
-                    let label = `poly${this.props.geometryState.polygonIndex + 1}`;
+                    const labelUsed = [...this.props.labelUsed];
+                    let index = 1;
+                    let label: string = `poly${index}`;
+                    while (labelUsed.includes(label)) {
+                        index += 1;
+                        label = `poly${index}`;
+                    }
+
+                    labelUsed.push(label);
                     const polygon: Polygon = Factory.createPolygon(
                         utils.createPolygonDefaultShapeProps(label),
                         selectedPoints
@@ -2144,7 +2152,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                     let dependencies: string[] = [];
                     dependencies = selectedPoints.map(point => point.props.id);
-                    const labelUsed = [...this.props.labelUsed];
 
                     for (let i = 0; i < selectedPoints.length; i++) {
                         let p = selectedPoints[i];
@@ -2189,7 +2196,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState, polygonIndex: this.props.geometryState.polygonIndex + 1},
+                        gs: {...this.props.geometryState},
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3835,12 +3842,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
                             start2.x,
-                            start2.y
+                            start2.y,
+                            start2.z
                         ),
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
                             end2.x,
-                            end2.y
+                            end2.y,
+                            end2.z
                         ),
                     )
                 ]
@@ -4207,7 +4216,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     points.push(newEnd);
                 }
 
-                let poly_label = `poly${this.props.geometryState.polygonIndex + 1}`;
+                let idx = 1;
+                let poly_label = `regular_poly${idx}`;
+                while (labelUsed.includes(poly_label)) {
+                    idx += 1;
+                    poly_label = `regular_poly${idx}`;
+                }
+
+                labelUsed.push(poly_label);
+
                 const polygonPoints = [segment.startSegment, segment.endSegment, ...points];
                 let props = utils.createPolygonDefaultShapeProps(poly_label);
                 props.color = segment.props.color;
@@ -4281,7 +4298,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState, polygonIndex: this.props.geometryState.polygonIndex + 1},
+                    gs: {...this.props.geometryState},
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -4316,7 +4333,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     points.push(newEnd);
                 }
 
-                let poly_label = `poly${this.props.geometryState.polygonIndex + 1}`;
+                let idx = 1;
+                let poly_label = `regular_poly${idx}`;
+                while (labelUsed.includes(poly_label)) {
+                    idx += 1;
+                    poly_label = `regular_poly${idx}`;
+                }
+
+                labelUsed.push(poly_label);
                 const polygonPoints = [selectedPoints[0], selectedPoints[1], ...points];
                 let props = utils.createPolygonDefaultShapeProps(poly_label);
                 const polygon: Polygon = Factory.createPolygon(
@@ -4387,7 +4411,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState, polygonIndex: this.props.geometryState.polygonIndex + 1},
+                    gs: {...this.props.geometryState},
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -4545,7 +4569,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 (this.props.mode === 'enlarge' ? 'Enlarge' : (this.props.mode === 'translation' ? 'Translation' : 'Reflection')));
 
             if ('points' in newShape) {
-                let label = `poly${this.props.geometryState.polygonIndex + 1}`;
+                let idx = 1;
+                let label = `poly${idx}`;
+                while (labelUsed.includes(label)) {
+                    idx += 1;
+                    label = `poly${idx}`;
+                }
+
+                labelUsed.push(label);
                 newShape.props.label = label;
                 newShape.props.id = `polygon-${label}`;
                 const points = (newShape as Polygon).points;
@@ -4618,8 +4649,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
                     gs: {
-                        ...this.props.geometryState,
-                        polygonIndex: this.props.geometryState.polygonIndex + 1
+                        ...this.props.geometryState
                     },
                     dag: DAG,
                     selectedPoints: [],
@@ -7474,9 +7504,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 height={height} 
                 style={{background: background_color}}
                 onWheel={this.handleZoom}
-                onMouseDown={this.handleMouseDown}
-                onMouseMove={this.handleMouseMove}
-                onMouseUp={this.handleMouseUp}
+                onPointerDown={this.handleMouseDown}
+                onPointerMove={this.handleMouseMove}
+                onPointerUp={this.handleMouseUp}
             >
                 <Layer ref={this.layerGridRef} />
                 <Layer ref={this.layerUnchangeVisualRef} />
