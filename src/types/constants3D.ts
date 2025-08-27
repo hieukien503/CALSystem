@@ -18,4 +18,4 @@ export const ARROW_DEFAULTS = {
     POINTER_WIDTH: 0.1
 }
 
-export const BASE_SPACING = 13;
+export const BASE_SPACING = 12;

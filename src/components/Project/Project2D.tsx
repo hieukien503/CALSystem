@@ -1,14 +1,14 @@
 import React, { createRef, RefObject } from "react";
-import KonvaCanvas from "./KonvaRender";
-import Tool from "./Tool";
-import Dialogbox from "./Dialogbox";
-import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../types/geometry'
-import * as constants from '../types/constants'
-import * as utils from '../utils/utilities'
-import MenuItem from "./MenuItem";
+import KonvaCanvas from "../Canvas/KonvaRender";
+import Tool from "../Tool/Tool";
+import Dialogbox from "../Dialogbox/Dialogbox";
+import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../../types/geometry'
+import * as constants from '../../types/constants'
+import * as utils from '../../utils/utilities'
+import MenuItem from "../MenuItem";
 import Konva from "konva";
-import ErrorDialogbox from "./ErrorDialogbox";
-import { SharingMode } from "../types/types";
+import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
+import { SharingMode } from "../../types/types";
 const math = require('mathjs');
 
 interface Project2DProps {
@@ -99,7 +99,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 zoom_level: 1,
                 axesVisible: true,
                 panning: false,
-                polygonIndex: 0
             },
             mode: 'edit',
             selectedPoints: new Array<Point>(),
@@ -324,8 +323,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
     private handleMouseDownResize = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
-        document.addEventListener("mousemove", this.handleMouseMoveResize);
-        document.addEventListener("mouseup", this.handleMouseUpResize);
+        document.addEventListener("pointermove", this.handleMouseMoveResize);
+        document.addEventListener("pointerup", this.handleMouseUpResize);
         this.setState({ isResize: true, isMenuRightClick: undefined });
     }
 
@@ -342,8 +341,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleMouseUpResize = () => {
-        document.removeEventListener("mousemove", this.handleMouseMoveResize);
-        document.removeEventListener("mouseup", this.handleMouseUpResize);
+        document.removeEventListener("pointermove", this.handleMouseMoveResize);
+        document.removeEventListener("pointerup", this.handleMouseUpResize);
         this.setState({ isResize: false });
     };
 
@@ -896,10 +895,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onSetMode={(mode) => this.setMode(mode)}
                 />
                 {this.state.toolWidth > 0 && <div 
-                    className="resizer flex justify-center items-center min-w-[20px]"
+                    className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
                     id="resizer"
-                    onMouseDown={this.handleMouseDownResize}
-                    onMouseUp={this.handleMouseUpResize}
+                    onPointerDown={this.handleMouseDownResize}
+                    onPointerUp={this.handleMouseUpResize}
                 >
                     <div className="resizerPanel w-1 h-6 bg-gray-400 rounded"></div>
                 </div>}

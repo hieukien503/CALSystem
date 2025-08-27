@@ -501,8 +501,6 @@ button {
     top: 0px;
     bottom: 0px;
     width: 20px;
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
     z-index: 1;
     background-color: #f9f9f9;
     box-shadow: 0.25px 0px 0px;
@@ -671,6 +669,14 @@ input[type=text].TextField {
 
 input:focus {
     outline: none;
+}
+
+.inputTextField.hoverState .TextFieldW {
+    border-bottom: 2px solid #46443f;
+}
+
+.inputTextField.focusState .TextFieldW {
+    border-bottom: 2px solid #a7d3d2;
 }
 
 .inputTextField.focusState .inputLabel {

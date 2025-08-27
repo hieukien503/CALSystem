@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import Project2D from './Project2D';
-import Project3D from './Project3D';
+import Project2D from './Project/Project2D';
+import Project3D from './Project/Project3D';
 import { v4 as uuidv4 } from 'uuid'
 
 const Header = () => {

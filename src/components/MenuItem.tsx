@@ -32,6 +32,7 @@ class Item extends React.Component<ItemProps, ItemState> {
             <div 
                 className={`MenuItem listMenuItem keyboardFocus${this.state.isHovered? " selectedItem" : ""}`}
                 role="checkbox"
+                aria-checked={this.props.isChecked}
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
                 onClick={this.props.onClick}
@@ -59,10 +60,6 @@ interface MenuItemProps {
 }
 
 class MenuItem extends React.Component<MenuItemProps, {}> {
-    constructor(props: MenuItemProps) {
-        super(props);
-    }
-
     private setToolKey = (key: string): void => {
         if (key === "show_axes") {
             this.props.onSetAxisVisible();

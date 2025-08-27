@@ -127,9 +127,9 @@ export const createSemiCircleDefaultShapeProps = _.memoize((label: string, radiu
 export const createPolygonDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
-        labelXOffset: 0,
-        labelYOffset: 10,
-        labelZOffset: 0,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
         line_size: 1,
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
         radius: 0,  
@@ -144,9 +144,9 @@ export const createPolygonDefaultShapeProps = _.memoize((label: string, radius: 
 export const createAngleDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
-        labelXOffset: 0,
-        labelYOffset: 10,
-        labelZOffset: 0,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
         line_size: 1,
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
         radius: 0,  
@@ -154,6 +154,40 @@ export const createAngleDefaultShapeProps = _.memoize((label: string, radius: nu
         color: 'green',
         fill: true,
         id: `angle-${label}`,
+        opacity: 0.1
+    }
+});
+
+export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 0,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,  
+        visible: {shape: true, label: false},
+        color: '#ADD8E6', // Light blue color for plane
+        fill: true,
+        id: `plane-${label}`,
+        opacity: 0.1
+    }
+});
+
+export const createCylinderDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 0,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,  
+        visible: {shape: true, label: false},
+        color: '#FF7276', // Light red color for cylinder
+        fill: true,
+        id: `cylinder-${label}`,
         opacity: 0.1
     }
 })
@@ -300,7 +334,7 @@ export const snapToShape = (
     else {
         let shapeNode = dag.get(shape.id());
         if (shapeNode) {
-            if (shapeNode.type.type === 'Circle') {
+            if ('centerC' in shapeNode.type && 'radius' in shapeNode.type) {
                 const cx = shapeNode.node.x();
                 const cy = shapeNode.node.y();
                 const r = (shapeNode.node as Konva.Circle).radius();
@@ -337,8 +371,8 @@ export const snapToShape = (
                 }
             }
 
-            else if (['Segment', 'Line', 'Ray', 'Vector'].includes(shapeNode.type.type)) {
-                let l = shapeNode.type.type === 'Vector' ? (shapeNode as ShapeNode).node as Konva.Arrow :
+            else if (('startSegment' in shapeNode.type) || ('startRay' in shapeNode.type) || ('startLine' in shapeNode.type) ||  ('startVector' in shapeNode.type)) {
+                let l = ('startVector' in shapeNode.type) ? (shapeNode as ShapeNode).node as Konva.Arrow :
                                                             (shapeNode as ShapeNode).node as Konva.Line;
 
                 let start = {
@@ -363,7 +397,7 @@ export const snapToShape = (
                 };
             }
 
-            else if (shapeNode.type.type === 'Polygon') {
+            else if ('points' in shapeNode.type) {
                 // Polygon
                 // Only restricts in its segments
                 let segmentDepends = shapeNode.dependsOn.slice((shapeNode.type as Polygon).points.length);

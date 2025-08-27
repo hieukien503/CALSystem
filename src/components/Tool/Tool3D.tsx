@@ -1,0 +1,130 @@
+import React from "react";
+import AlgebraTool3D from "./Algebra/AlgebraTool3D";
+import { GeometryTool3D } from "./Geometry/GeometryTool";
+import { DrawingMode, ShapeNode3D } from "../../types/geometry";
+
+interface Tool3DProps {
+    width: number;
+    height: number;
+    dag: Map<string, ShapeNode3D>;
+    onUpdateWidth: (width: number) => void;
+    onSetMode: (mode: DrawingMode) => void;
+    onSelect: (id: string, e: React.MouseEvent) => void;
+}
+
+interface Tool3DState {
+    mode: 'algebra' | 'geometry'
+}
+
+class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
+    constructor(props: Tool3DProps) {
+        super(props);
+        this.state = {
+            mode: 'geometry'
+        }
+    }
+
+    private changeMode = (mode: 'algebra' | 'geometry' = 'geometry', e: React.MouseEvent): void => {
+        e.stopPropagation();
+        this.setState({mode: mode}, () => {
+            this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, 300));
+        })
+    }
+
+    render(): React.ReactNode {
+        return (
+            <div
+                className="dockPanelParent min-w-[72px]"
+                style={{position: 'relative', top: '0px', bottom: '0px', left: '0px', overflow: 'hidden', width: this.props.width + 72, height: this.props.height, display: 'flex'}}>
+                <div style={{position: 'relative', overflow: 'hidden', display: "flex", flexDirection: "column", flex: 1, height: "100%"}}>
+                    <div className={`toolbar${this.props.width === 0 ? " closeLandscape" : ""}`} style={{position: 'relative', display: 'flex', flexDirection: 'row', flex: 1}}>
+                        <div className={`header header-${this.props.width === 0 ? "close" : "open"}-landscape`}>
+                            <div className="contents">
+                                <div className="center">
+                                    <button 
+                                        type="button"
+                                        className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'algebra' ? " selected" : "") : ""}`}
+                                        onClick={(e) => this.changeMode('algebra', e)}
+                                    >
+                                        <div className="label">Algebra</div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'geometry' ? " selected" : "") : ""}`}
+                                        onClick={(e) => this.changeMode('geometry', e)}
+                                    >
+                                        <div className="label">Geometry</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className={`tool-wrapper${this.props.width === 0 ? " hidden" : ""}`} style={{left: "72px", height: "calc(100% + 0px)", width: "calc(100% - 72px)", position: 'absolute'}}>
+                            {this.props.width > 0 && 
+                                (this.state.mode === 'geometry' ? <GeometryTool3D
+                                    width={this.props.width}
+                                    height={this.props.height}
+                                    onPointClick={() => this.props.onSetMode('point')}
+                                    onLineClick={() => this.props.onSetMode('line')}
+                                    onSegmentClick={() => this.props.onSetMode('segment')}
+                                    onVectorClick={() => this.props.onSetMode('vector')}
+                                    onPolygonClick={() => this.props.onSetMode('polygon')}
+                                    onSphereClick={() => this.props.onSetMode('sphere')}
+                                    onRayClick={() => this.props.onSetMode('ray')}
+                                    onEditClick={() => this.props.onSetMode('edit')}
+                                    onDeleteClick={() => this.props.onSetMode('delete')}
+                                    onClearClick={() => this.props.onSetMode('clear')}
+                                    onUndoClick={() => this.props.onSetMode('undo')}
+                                    onRedoClick={() => this.props.onSetMode('redo')}
+                                    onAngleClick={() => this.props.onSetMode('angle')}
+                                    onLengthClick={() => this.props.onSetMode('length')}
+                                    onAreaClick={() => this.props.onSetMode('area')}
+                                    onHideLabelClick={() => this.props.onSetMode('show_label')}
+                                    onHideObjectClick={() => this.props.onSetMode('show_object')}
+                                    onIntersectionClick={() => this.props.onSetMode('intersection')}
+                                    onSphere2PointClick={() => this.props.onSetMode('sphere_2_points')}
+                                    onCircumcircleClick={() => this.props.onSetMode('circumcircle')}
+                                    onMidPointClick={() => this.props.onSetMode('midpoint')}
+                                    onParaLineClick={() => this.props.onSetMode('parallel')}
+                                    onPerpenLineClick={() => this.props.onSetMode('perpendicular')}
+                                    onSegmentLengthClick={() => this.props.onSetMode('segment_length')}
+                                    onPerpenBisecClick={() => this.props.onSetMode('perpendicular_bisector')}
+                                    onAngleBisecClick={() => this.props.onSetMode('angle_bisector')}
+                                    onRegularPolygonClick={() => this.props.onSetMode('regular_polygon')}
+                                    onTangentLineClick={() => this.props.onSetMode('tangent_line')}
+                                    onReflectLineClick={() => this.props.onSetMode('reflect_line')}
+                                    onReflectPointClick={() => this.props.onSetMode('reflect_point')}
+                                    onRotationClick={() => this.props.onSetMode('rotation')}
+                                    onScalingClick={() => this.props.onSetMode('enlarge')}
+                                    onProjectionClick={() => this.props.onSetMode('projection')}
+                                    onTranslationClick={() => this.props.onSetMode('translation')}
+                                    onCircleAxisClick={() => this.props.onSetMode('circle_axis_point')}
+                                    onCircleDirectionClick={() => this.props.onSetMode('circle_center_direction')}
+                                    onVolumeClick={() => this.props.onSetMode('volume')}
+                                    onPlaneClick={() => this.props.onSetMode('plane')}
+                                    onParaPlaneClick={() => this.props.onSetMode('parallel_plane')}
+                                    onPerpenPlaneClick={() => this.props.onSetMode('perpendicular_plane')}
+                                    onPlane3PointClick={() => this.props.onSetMode('plane_3_points')}
+                                    onConeClick={() => this.props.onSetMode('cone')}
+                                    onCuboidClick={() => this.props.onSetMode('cuboid')}
+                                    onCylinderClick={() => this.props.onSetMode('cylinder')}
+                                    onExtrudePrismClick={() => this.props.onSetMode('extrude_prism')}
+                                    onExtrudePyramidClick={() => this.props.onSetMode('extrude_pyramid')}
+                                    onPrismClick={() => this.props.onSetMode('prism')}
+                                    onPyramidClick={() => this.props.onSetMode('pyramid')}
+                                    onReflectPlaneClick={() => this.props.onSetMode('reflect_plane')}
+                                    onTetrahedronClick={() => this.props.onSetMode('tetrahedron')}
+                            /> : <AlgebraTool3D 
+                                width={this.props.width}
+                                height={this.props.height}
+                                dag={this.props.dag}
+                                onSelect={this.props.onSelect}
+                            />)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+}
+
+export default Tool3D;

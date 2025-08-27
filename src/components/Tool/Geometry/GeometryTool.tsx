@@ -69,16 +69,6 @@ interface GeometryToolProps {
     onAreaClick: () => void;
 }
 
-interface GeometryTool3DProps extends GeometryToolProps {
-    onAddCuboid: () => void;
-    onAddCone: () => void;
-    onAddPrism: () => void;
-    onAddPyramid: () => void;
-    onAddSphere: () => void;
-    onAddPlane: () => void;
-    onAddCylinder: () => void;
-}
-
 interface GeometryToolState {
     activeButton: string | null;
 }
@@ -403,6 +393,61 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
     }
 }
 
+interface GeometryTool3DProps {
+    width: number;
+    height: number;
+    onPointClick: () => void;
+    onLineClick: () => void;
+    onSegmentClick: () => void;
+    onVectorClick: () => void;
+    onLengthClick: () => void;
+    onAreaClick: () => void;
+    onVolumeClick: () => void;
+    onUndoClick: () => void;
+    onRegularPolygonClick: () => void;
+    onTranslationClick: () => void;
+    onRotationClick: () => void;
+    onReflectPlaneClick: () => void;
+    onReflectLineClick: () => void;
+    onReflectPointClick: () => void;
+    onProjectionClick: () => void;
+    onScalingClick: () => void;
+    onIntersectionClick: () => void;
+    onRayClick: () => void;
+    onEditClick: () => void;
+    onDeleteClick: () => void;
+    onClearClick: () => void;
+    onRedoClick: () => void;
+    onAngleClick: () => void;
+    onHideLabelClick: () => void;
+    onHideObjectClick: () => void;
+    onMidPointClick: () => void;
+    onPerpenLineClick: () => void;
+    onPerpenBisecClick: () => void;
+    onParaLineClick: () => void;
+    onAngleBisecClick: () => void;
+    onTangentLineClick: () => void;
+    onSegmentLengthClick: () => void;
+    onPolygonClick: () => void;
+    onSphere2PointClick: () => void;
+    onPlane3PointClick: () => void;
+    onCuboidClick: () => void;
+    onPyramidClick: () => void;
+    onPrismClick: () => void;
+    onConeClick: () => void;
+    onPlaneClick: () => void;
+    onParaPlaneClick: () => void;
+    onPerpenPlaneClick: () => void;
+    onCircumcircleClick: () => void;
+    onCircleAxisClick: () => void;
+    onCircleDirectionClick: () => void;
+    onCylinderClick: () => void;
+    onSphereClick: () => void;
+    onTetrahedronClick: () => void;
+    onExtrudePyramidClick: () => void;
+    onExtrudePrismClick: () => void;
+}
+
 export class GeometryTool3D extends React.Component<GeometryTool3DProps, GeometryToolState> {
     constructor(props: GeometryTool3DProps) {
         super(props);
@@ -429,12 +474,12 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
             this.props.onVectorClick();
         }
 
-        else if (toolKey === "polygon") {
-            this.props.onPolygonClick();
+        else if (toolKey === "segment_length") {
+            this.props.onSegmentLengthClick();
         }
 
-        else if (toolKey === "circle") {
-            this.props.onCircleRadiusClick();
+        else if (toolKey === "polygon") {
+            this.props.onPolygonClick();
         }
 
         else if (toolKey === "ray") {
@@ -501,26 +546,6 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
             this.props.onIntersectionClick();
         }
 
-        else if (toolKey === "circumcenter") {
-            this.props.onCircumcenterClick();
-        }
-
-        else if (toolKey === "incenter") {
-            this.props.onIncenterClick();
-        }
-
-        else if (toolKey === "excenter") {
-            this.props.onExcenterClick();
-        }
-
-        else if (toolKey === "orthocenter") {
-            this.props.onOrthocenterClick();
-        }
-
-        else if (toolKey === "centroid") {
-            this.props.onCentroidClick();
-        }
-
         else if (toolKey === "length") {
             this.props.onLengthClick();
         }
@@ -529,28 +554,16 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
             this.props.onAreaClick();
         }
 
-        else if (toolKey === "segment_length") {
-            this.props.onSegmentLengthClick();
+        else if (toolKey === "volume") {
+            this.props.onVolumeClick();
         }
 
-        else if (toolKey === "circle_2_points") {
-            this.props.onCircle2PointClick();
+        else if (toolKey === "sphere_2_points") {
+            this.props.onSphere2PointClick();
         }
 
-        else if (toolKey === "circumcircle") {
-            this.props.onCircumcircleClick();
-        }
-
-        else if (toolKey === "incircle") {
-            this.props.onIncircleClick();
-        }
-
-        else if (toolKey === "excircle") {
-            this.props.onExcircleClick();
-        }
-
-        else if (toolKey === "semicircle") {
-            this.props.onSemiClick();
+        else if (toolKey === "plane_3_points") {
+            this.props.onPlane3PointClick();
         }
 
         else if (toolKey === "reg_polygon") {
@@ -579,6 +592,66 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
 
         else if (toolKey === "reflect_line") {
             this.props.onReflectLineClick();
+        }
+
+        else if (toolKey === "reflect_plane") {
+            this.props.onReflectPlaneClick();
+        }
+
+        else if (toolKey === 'cuboid') {
+            this.props.onCuboidClick();
+        }
+
+        else if (toolKey === 'pyramid') {
+            this.props.onPyramidClick();
+        }
+
+        else if (toolKey === 'cylinder') {
+            this.props.onCylinderClick();
+        }
+
+        else if (toolKey === 'prism') {
+            this.props.onPrismClick();
+        }
+
+        else if (toolKey === 'sphere') {
+            this.props.onSphereClick();
+        }
+
+        else if (toolKey === 'cone') {
+            this.props.onConeClick();
+        }
+
+        else if (toolKey === 'extrude_pyramid') {
+            this.props.onExtrudePyramidClick();
+        }
+
+        else if (toolKey === 'extrude_prism') {
+            this.props.onExtrudePrismClick();
+        }
+
+        else if (toolKey === 'plane') {
+            this.props.onPlaneClick();
+        }
+
+        else if (toolKey === 'parallel_plane') {
+            this.props.onParaPlaneClick();
+        }
+
+        else if (toolKey === 'perpendicular_plane') {
+            this.props.onPerpenPlaneClick();
+        }
+
+        else if (toolKey === 'circumcircle') {
+            this.props.onCircumcircleClick();
+        }
+
+        else if (toolKey === 'circle_axis_point') {
+            this.props.onCircleAxisClick();
+        }
+
+        else if (toolKey === 'circle_center_direction') {
+            this.props.onCircleDirectionClick();
         }
     }
 
@@ -650,6 +723,21 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                     { key: "plane", label: "Plane", onClick: () => this.setActiveTool("plane"), title: "Select 3 points, or point and line, or 2 lines, or polygon" },
                     { key: "parallel_plane", label: "Parallel Plane", onClick: () => this.setActiveTool("parallel_plane"), title: "Select point and parallel plane" },
                     { key: "perpendicular_plane", label: "Perpendicular Plane", onClick: () => this.setActiveTool("perpendicular_plane"), title: "Select point and perpendicular line" },
+                    { key: "perpendicular_bisector", label: "Perpendicular Bisector", onClick: () => this.setActiveTool("perpendicular_bisector"), title: "Select 2 points or a segment" }
+                ]
+            },
+            {
+                name: "Solids",
+                tools: [
+                    { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex" },
+                    { key: "cuboid", label: "Cuboid", onClick: () => this.setActiveTool("cuboid"), title: "Select a point, then enter 3 dimensions, then enter azimuth angle and polar angle" },
+                    { key: "tetrahedron", label: "Tetrahedron", onClick: () => this.setActiveTool("tetrahedron"), title: "Select 3 points on the same plane, then apex" },
+                    { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere" },
+                    { key: "sphere", label: "Sphere: Center & Radius", onClick: () => this.setActiveTool("sphere"), title: "Select a center, then enter radius" },
+                    { key: "cone", label: "Cone", onClick: () => this.setActiveTool("cone"), title: "Select a bottom point, then top point, then enter radius" },
+                    { key: "cylinder", label: "Cylinder", onClick: () => this.setActiveTool("cylinder"), title: "Select a bottom point, then top point, then enter radius" },
+                    { key: "extrude_pyramid", label: "Pyramid", onClick: () => this.setActiveTool("extrude_pyramid"), title: "Select a polygon for bottom, then enter altitude" },
+                    { key: "extrude_prism", label: "Pyramid", onClick: () => this.setActiveTool("extrude_prism"), title: "Select a polygon for bottom, then enter altitude" },
                 ]
             },
             {
@@ -663,8 +751,8 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
             {
                 name: "Polygon",
                 tools: [
-                    { key: "polygon", label: "Polygon", onClick: () => this.setActiveTool("polygon"), title: "Select all vertices, then click on the first point again" },
-                    { key: "reg_polygon", label: "Regular Polygon", onClick: () => this.setActiveTool("reg_polygon"), title: "Select 2 points, then enter number of vertices" },
+                    { key: "polygon", label: "Polygon", onClick: () => this.setActiveTool("polygon"), title: "Select all vertices on the same plane, then click on the first point again" },
+                    { key: "reg_polygon", label: "Regular Polygon", onClick: () => this.setActiveTool("reg_polygon"), title: "Select 2 points, then direction, then enter number of vertices" },
                 ]
             },
             {

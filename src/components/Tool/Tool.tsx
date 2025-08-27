@@ -1,7 +1,7 @@
 import React from "react";
-import AlgebraTool from "./AlgebraTool";
-import { GeometryTool } from "./GeometryTool";
-import { DrawingMode, ShapeNode } from "../types/geometry";
+import AlgebraTool from "./Algebra/AlgebraTool";
+import { GeometryTool } from "./Geometry/GeometryTool";
+import { DrawingMode, ShapeNode } from "../../types/geometry";
 
 interface ToolProps {
     width: number;

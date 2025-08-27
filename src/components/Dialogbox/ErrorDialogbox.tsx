@@ -10,10 +10,6 @@ interface ErrorDialogboxProps {
 
 class ErrorDialogbox extends React.Component<ErrorDialogboxProps, {}> {
     private dialogRef: RefObject<HTMLDivElement | null> = createRef();
-    constructor(props: ErrorDialogboxProps) {
-        super(props);
-    }
-
     componentDidMount() {
         document.addEventListener('mousedown', this.handleClickOutside);
     }
