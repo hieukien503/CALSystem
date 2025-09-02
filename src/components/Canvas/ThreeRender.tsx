@@ -29,7 +29,7 @@ interface ThreeDCanvasProps {
     selectedShapes: Shape[];
     labelUsed: string[];
     data: number | {
-        x: number, y: number, z: number
+        type: string, x: number, y: number, z: number
     } | {
         degree: number;
         CCW: boolean;
@@ -97,8 +97,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         if (
             this.props.mode === 'point' &&
             this.props.data !== prevProps.data &&
-            typeof this.props.data !== 'number' &&
             this.props.data !== undefined &&
+            typeof this.props.data === 'object' &&
             ('x' in this.props.data && 'y' in this.props.data && 'z' in this.props.data)
         ) {
             this.handleDrawing(); // ✅ call same function again
@@ -977,6 +977,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return;
             }
 
+            console.log(pointData);
+
             if (pointData && typeof pointData !== 'number' && 'x' in pointData && 'y' in pointData && 'z' in pointData) {
                 const labelUsed = [...this.props.labelUsed];
                 let index = 0;
@@ -998,6 +1000,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     isSelected: false,
                     defined: true,
                     dependsOn: []
+                });
+
+                this.props.onLabelUsed(labelUsed);
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
                 });
             }
         }
@@ -3399,8 +3410,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return (a.object.renderOrder ?? 0) - (b.object.renderOrder ?? 0);
             });
 
-            console.log('Objects intersected:', objects);
-
             const shape = objects.length > 0 ? objects[0].object : undefined;
             if (shape && this.props.dag.get(shape.name) && this.props.mode === 'delete') {
                 shape.traverse((child) => {
@@ -3436,11 +3445,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return;
             }
 
-            if (!['length', 'area', 'volume'].includes(this.props.mode) && shape) {
-                this.createPoint(mouse, objects);
-            }
-
-            else if (['show_label', 'show_object'].includes(this.props.mode)) {
+            if (['show_label', 'show_object'].includes(this.props.mode)) {
                 if (!shape) return;
                 let shapeNode = this.props.dag.get(shape.name);
                 if (!shapeNode) return;
@@ -3465,6 +3470,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 let text = shape.children.find(item => item instanceof THREE.Sprite);
                 if (!text) return;
                 text.visible = shapeNode.type.props.visible.label;
+                return;
             }
 
             requestAnimationFrame(() => this.handleDrawing);

@@ -106,7 +106,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             snapToGridEnabled: false,
             isSnapToGrid: false,
             isResize: false,
-            toolWidth: Math.max(window.innerWidth * 0.22, 300),
+            toolWidth: Math.max(window.innerWidth * 0.22, constants.MIN_TOOL_WIDTH),
             isMenuRightClick: undefined,
             isDialogBox: undefined,
             data: {

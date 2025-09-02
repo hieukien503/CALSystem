@@ -121,8 +121,8 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
         }
 
         else if (!(['Translation', 'Rotation', 'Reflection', 'Enlarge'].includes(shape))) {
-            let str = `$${shapeNode.type.props.label} = ${shape}\\left(`
-            let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
+            let str = `$${shapeNode.type.props.label} = ${shape}\\left(`;
+            let labels = shapeNode.dependsOn.map(id => id.split('-').at(-1));
             labels.forEach(label => {
                 str += label + ",";
             });

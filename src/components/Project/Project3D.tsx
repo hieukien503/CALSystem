@@ -8,6 +8,7 @@ import { GeometryState, Point, Shape, DrawingMode, ShapeNode3D, HistoryEntry3D }
 import { SharingMode } from "../../types/types";
 import ThreeDCanvas from "../Canvas/ThreeRender";
 import Tool3D from "../Tool/Tool3D";
+import * as constants from "../../types/constants";
 import { MathCommandLexer } from "../../antlr4/parser/MathCommandLexer";
 import { CharStreams, CommonTokenStream } from "antlr4ts";
 import { MathCommandParser } from "../../antlr4/parser/MathCommandParser";
@@ -51,7 +52,7 @@ interface Project3DState {
         angleMode: boolean;
     } | undefined;
     /** For user input */
-    data: number | {x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
+    data: number | {type: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
     /** For error */
     error: {
         label: string; // for dialogbox error
@@ -95,7 +96,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 zoom_level: 1,
                 axesVisible: true,
                 panning: false,
-                polygonIndex: 0
             },
             mode: 'edit',
             selectedPoints: new Array<Point>(),
@@ -103,7 +103,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             snapToGridEnabled: false,
             isSnapToGrid: false,
             isResize: false,
-            toolWidth: Math.max(window.innerWidth * 0.22, 264),
+            toolWidth: Math.max(window.innerWidth * 0.22, constants.MIN_TOOL_WIDTH),
             isMenuRightClick: undefined,
             isDialogBox: undefined,
             data: undefined,
@@ -599,7 +599,20 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const parser = new MathCommandParser(tokens);
                 const tree = parser.program();
                 const ast = new ASTGen(this.dag, this.labelUsed);
-                this.setState({ data: ast.visit(tree) as {x: number, y: number, z: number} | undefined });
+                const data = ast.visit(tree);
+                if (data === undefined || 
+                    (typeof data === 'object' && data !== null && (!('type' in data) || ('type' in data && data.type !== 'Point')))) {
+                    this.setState({
+                        error: {
+                            label: 'Invalid expression',
+                            message: `Invalid expression for point`
+                        }
+                    });
+
+                    return;
+                }
+
+                this.setState({ data: data as { type: 'Point', x: number, y: number, z: number } });
                 return;
             }
 
