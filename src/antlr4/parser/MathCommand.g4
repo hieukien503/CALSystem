@@ -36,6 +36,7 @@ polygonDef: POLYGON LR pointList RR;
 pointList: pointExpr COMMA pointList | pointExpr;
 circleDef: CIRCLE LR (
         (pointExpr COMMA numberExpr) |
+        (pointExpr COMMA pointExpr) |
         (pointExpr COMMA pointExpr COMMA pointExpr) |
         (pointExpr COMMA numberExpr COMMA directionExpr) |
         (pointExpr COMMA pointExpr COMMA directionExpr)
@@ -130,12 +131,12 @@ vectorExpr: vectorDef | SHAPE_ID;
 planeExpr: planeDef | SHAPE_ID;
 directionExpr: SHAPE_ID | vectorDef;
 polygonExpr: SHAPE_ID | polygonDef;
-cubodeExpr: SHAPE_ID | cuboidDef;
+cuboidExpr: SHAPE_ID | cuboidDef;
 tetrahedronExpr: SHAPE_ID | tetrahedronDef;
 cylinderExpr: SHAPE_ID | cylinderDef;
 coneExpr: SHAPE_ID | coneDef;
 prismExpr: SHAPE_ID | prismDef;
-shapeExpr: pointExpr | lineExpr | vectorExpr | polygonExpr | planeExpr | directionExpr | cubodeExpr | tetrahedronExpr | cylinderExpr | coneExpr | prismExpr;
+shapeExpr: pointExpr | lineExpr | vectorExpr | polygonExpr | planeExpr | directionExpr | cuboidExpr | tetrahedronExpr | cylinderExpr | coneExpr | prismExpr;
 
 two_side_expr: varExpr EQ varExpr;
 varExpr

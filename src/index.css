@@ -1000,3 +1000,7 @@ input:focus {
 .tool-wraper.hidden {
     display: none;
 }
+
+.button.tabButton.selected .label {
+    font-weight: 550;
+}

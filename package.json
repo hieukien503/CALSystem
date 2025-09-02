@@ -41,7 +41,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "prebuild": "antlr4ts -o src/antlr4/parser src/antlr4/parser/MathCommand.g4",
+    "prebuild": "antlr4ts -visitor -o src/antlr4/parser src/antlr4/parser/MathCommand.g4",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

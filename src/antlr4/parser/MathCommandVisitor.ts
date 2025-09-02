@@ -47,7 +47,7 @@ import { VectorExprContext } from "./MathCommandParser";
 import { PlaneExprContext } from "./MathCommandParser";
 import { DirectionExprContext } from "./MathCommandParser";
 import { PolygonExprContext } from "./MathCommandParser";
-import { CubodeExprContext } from "./MathCommandParser";
+import { CuboidExprContext } from "./MathCommandParser";
 import { TetrahedronExprContext } from "./MathCommandParser";
 import { CylinderExprContext } from "./MathCommandParser";
 import { ConeExprContext } from "./MathCommandParser";
@@ -379,11 +379,11 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitPolygonExpr?: (ctx: PolygonExprContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `MathCommandParser.cubodeExpr`.
+	 * Visit a parse tree produced by `MathCommandParser.cuboidExpr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitCubodeExpr?: (ctx: CubodeExprContext) => Result;
+	visitCuboidExpr?: (ctx: CuboidExprContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `MathCommandParser.tetrahedronExpr`.

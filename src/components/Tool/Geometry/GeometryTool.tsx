@@ -736,8 +736,7 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                     { key: "sphere", label: "Sphere: Center & Radius", onClick: () => this.setActiveTool("sphere"), title: "Select a center, then enter radius" },
                     { key: "cone", label: "Cone", onClick: () => this.setActiveTool("cone"), title: "Select a bottom point, then top point, then enter radius" },
                     { key: "cylinder", label: "Cylinder", onClick: () => this.setActiveTool("cylinder"), title: "Select a bottom point, then top point, then enter radius" },
-                    { key: "extrude_pyramid", label: "Pyramid", onClick: () => this.setActiveTool("extrude_pyramid"), title: "Select a polygon for bottom, then enter altitude" },
-                    { key: "extrude_prism", label: "Pyramid", onClick: () => this.setActiveTool("extrude_prism"), title: "Select a polygon for bottom, then enter altitude" },
+                    { key: "prism", label: "Prism", onClick: () => this.setActiveTool("prism"), title: "Select a polygon for bottom, then direction" },
                 ]
             },
             {

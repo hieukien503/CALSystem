@@ -235,7 +235,7 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                     str += label + ",";
                 });
 
-                str += ((shapeNode.rotationFactor!.CCW ? 1 : -1) * shapeNode.rotationFactor!.degree).toString() + "\\right)$";
+                str += (shapeNode.rotationFactor!.azimuth).toString() + "," + (shapeNode.rotationFactor!.polar).toString() + "\\right)$";
             }
 
             else {

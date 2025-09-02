@@ -2,6 +2,7 @@ import React from "react";
 import AlgebraTool from "./Algebra/AlgebraTool";
 import { GeometryTool } from "./Geometry/GeometryTool";
 import { DrawingMode, ShapeNode } from "../../types/geometry";
+import * as constants from "../../types/constants"
 
 interface ToolProps {
     width: number;
@@ -27,7 +28,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
     private changeMode = (mode: 'algebra' | 'geometry' = 'geometry', e: React.MouseEvent): void => {
         e.stopPropagation();
         this.setState({mode: mode}, () => {
-            this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, 300));
+            this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, constants.MIN_TOOL_WIDTH));
         })
     }
 
