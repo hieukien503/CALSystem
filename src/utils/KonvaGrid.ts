@@ -49,9 +49,10 @@ export class KonvaGrid {
             group.add(new Konva.Line({
                 points: [x, visibleTop, x, visibleBottom],
                 stroke: gridColor,
-                strokeWidth: strokeWidth / scale, // Scale stroke width inversely with zoom
+                strokeWidth: strokeWidth,
                 opacity: opacity,
-                listening: false // Improve performance by disabling event listening
+                listening: false, // Improve performance by disabling event listening,
+                strokeScaleEnabled: false // Disable stroke scaling for consistent appearance
             }));
         }
 
@@ -61,9 +62,10 @@ export class KonvaGrid {
             group.add(new Konva.Line({
                 points: [x, visibleTop, x, visibleBottom],
                 stroke: gridColor,
-                strokeWidth: strokeWidth / scale, // Scale stroke width inversely with zoom
+                strokeWidth: strokeWidth, // Scale stroke width inversely with zoom
                 opacity: opacity,
-                listening: false // Improve performance by disabling event listening
+                listening: false, // Improve performance by disabling event listening
+                strokeScaleEnabled: false // Disable stroke scaling for consistent appearance
             }));
         }
 
@@ -75,9 +77,10 @@ export class KonvaGrid {
             group.add(new Konva.Line({
                 points: [visibleLeft, y, visibleRight, y],
                 stroke: gridColor,
-                strokeWidth: strokeWidth / scale, // Scale stroke width inversely with zoom
+                strokeWidth: strokeWidth, // Scale stroke width inversely with zoom
                 opacity: opacity,
-                listening: false // Improve performance by disabling event listening
+                listening: false, // Improve performance by disabling event listening
+                strokeScaleEnabled: false // Disable stroke scaling for consistent appearance
             }));
         }
 
@@ -88,9 +91,10 @@ export class KonvaGrid {
             group.add(new Konva.Line({
                 points: [visibleLeft, y, visibleRight, y],
                 stroke: gridColor,
-                strokeWidth: strokeWidth / scale, // Scale stroke width inversely with zoom
+                strokeWidth: strokeWidth, // Scale stroke width inversely with zoom
                 opacity: opacity,
-                listening: false // Improve performance by disabling event listening
+                listening: false, // Improve performance by disabling event listening
+                strokeScaleEnabled: false // Disable stroke scaling for consistent appearance
             }));
         }
 

@@ -40,14 +40,14 @@ header {
     position: relative;
 }
 
-    header #search {
-        flex: 1;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        width: 100%;
-        padding: 8px;
-        font-size: 16px;
-    }
+header #search {
+    flex: 1;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+}
 
 
 /* Flexbox Layout */
@@ -67,7 +67,7 @@ header {
 }
 
 .outer-main {
-    padding: 20px;
+    padding: 15px;
     width: 100%;
     /*background-color: #f5d930cc;*/
     background-image: url(../public/image/background.png);
@@ -136,12 +136,12 @@ header {
     height: 100%;
 }
 
-    .slider-inner img {
-        height: 400px;
-        width: 100%;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
+.slider-inner img {
+    height: 400px;
+    width: 100%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
 
 .arrow {
     position: absolute;
@@ -180,9 +180,9 @@ header {
     transition: background-color 0.3s ease;
 }
 
-    .dot.active {
-        background-color: #717171;
-    }
+.dot.active {
+    background-color: #717171;
+}
 /* Footer Styles */
 footer {
     background-color: #a7d3d2;
@@ -196,25 +196,29 @@ footer {
     padding: 10px 20px;
 }
 
-    footer div {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
+footer div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
 
-    footer a {
-        color: #007bff;
-        text-decoration: none;
-    }
+footer a {
+    color: #007bff;
+    text-decoration: none;
+}
 
-        footer a:hover {
-            text-decoration: underline;
-        }
+footer a:hover {
+    text-decoration: underline;
+}
 
 .footer-nav {
     display: flex;
     justify-content: inherit;
     align-items: center;
+}
+
+img.menu-icon {
+    max-width: 20px;
 }
 
 @media (max-width: 600px) {
@@ -223,10 +227,10 @@ footer {
         text-align: center;
     }
 
-        nav ul li {
-            display: block;
-            margin-bottom: 10px;
-        }
+    nav ul li {
+        display: block;
+        margin-bottom: 10px;
+    }
 }
 
 nav ul {
@@ -235,17 +239,17 @@ nav ul {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    margin-bottom: 0;
 }
 
-    nav ul li {
-        display: inline;
-        margin: 0 15px;
-    }
+nav ul li {
+    display: inline;
+}
 
-        nav ul li a {
-            color: black;
-            text-decoration: none;
-        }
+nav ul li a {
+    color: black;
+    text-decoration: none;
+}
 
 .store-locations-heading {
     margin-top: 40px;
@@ -265,8 +269,6 @@ nav ul {
     border: 1px solid #ccc;
     min-height: 500px;
 }
-
-
 
 .product-image {
     width: 100%;
@@ -290,7 +292,6 @@ nav ul {
 
 .search-wrapper {
     position: relative;
-    width: 40%;
     max-width: 400px;
 }
 
@@ -302,9 +303,8 @@ nav ul {
     max-height: 300px;
     overflow-y: auto;
     background: white;
-    border: 1px solid #ccc;
     border-radius: 4px;
-    z-index: 999;
+    z-index: 500;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -314,25 +314,25 @@ nav ul {
     cursor: pointer;
 }
 
-    .result-item:last-child {
-        border-bottom: none;
-    }
+.result-item:last-child {
+    border-bottom: none;
+}
 
-    .result-item:hover {
-        background-color: #f9f9f9;
-    }
+.result-item:hover {
+    background-color: #f9f9f9;
+}
 
-    .result-item h4 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 500;
-    }
+.result-item h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+}
 
-    .result-item p {
-        margin: 2px 0;
-        font-size: 14px;
-        color: #555;
-    }
+.result-item p {
+    margin: 2px 0;
+    font-size: 14px;
+    color: #555;
+}
 
 .homepage-section-title {
     font-size: 24px;
@@ -361,17 +361,17 @@ nav ul {
 }
 
 
-    .product-card img {
-        width: 100%;
-        height: auto;
-        object-fit: contain;
-        max-height: 250px;
-        margin-bottom: 10px;
-    }
+.product-card img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    max-height: 250px;
+    margin-bottom: 10px;
+}
 
-    .product-card:hover {
-        transform: scale(1.03);
-    }
+.product-card:hover {
+    transform: scale(1.03);
+}
 
 form {
     display: flex;
@@ -398,11 +398,11 @@ form {
     gap: 20px;
 }
 
-    .brand-home img {
-        height: 50px; /* Adjust size as needed */
-        width: 50px; /* Adjust size as needed */
-        margin-right: 10px; /* Space between image and text */
-    }
+.brand-home img {
+    height: 50px; /* Adjust size as needed */
+    width: 50px; /* Adjust size as needed */
+    margin-right: 10px; /* Space between image and text */
+}
 
 .login-option {
     display: flex;
@@ -420,4 +420,586 @@ form {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+.customScrollBar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.customScrollBar::-webkit-scrollbar-track {
+    background: #f9f9f9
+}
+
+.customScrollBar::-webkit-scrollbar-thumb {
+    color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 10px;
+}
+
+.customScrollBar:hover::-webkit-scrollbar-thumb {
+    position: relative;
+    color: rgba(0, 0, 0,.38);
+    border-radius: 10px;
+}
+
+.toolButton {
+    margin: 0px;
+    vertical-align: top;
+    margin-bottom: 4px;
+    display: inline-block;
+    border-radius: 4px;
+    height: 72px;
+    cursor: pointer
+}
+
+.catLabel {
+    cursor: default;
+    line-height: 24px;
+    font-size: 16px;
+    margin: 8px 0px;
+    text-align: left;
+}
+
+.categoryPanel {
+    position: relative;
+    line-height: 31px !important;
+    display: flex; /* Add flexbox to the container */
+    flex-wrap: wrap; /* Allow items to wrap to the next line */
+    justify-content: flex-start; /* Align items to the start of the container */
+    gap: 8px; /* Add some gap between buttons if desired */
+}
+
+button {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+}
+
+.toolButton .label {
+    font-weight: normal;
+    font-size: 12px;
+    width: 80px;
+    height: 28px;
+    text-align: center;
+    line-height: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.toolButton:hover .label {
+    font-weight: 550;
+}
+
+.toolButton.selected .label {
+    font-weight: 550;
+}
+
+.resizer {
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: hidden !important;
+    top: 0px;
+    bottom: 0px;
+    width: 20px;
+    z-index: 1;
+    background-color: #f9f9f9;
+    box-shadow: 0.25px 0px 0px;
+    cursor: ew-resize;
+}
+
+.cursor_hit {
+    cursor: default !important;
+}
+
+.cursor_drag {
+    cursor: pointer !important;
+}
+
+.cursor_grabbing {
+    cursor: grabbing !important;
+}
+
+.dialogComponent {
+    padding: 0px;
+    z-index: 501;
+    background-color: #fff;
+    border-radius: 2px;
+    box-shadow: 0 9px 46px 8px rgba(0, 0, 0, .14), 0 11px 15px -7px rgba(0, 0, 0, .12), 0 24px 38px 3px rgba(0, 0, 0, .2);
+    max-width: 500px;
+    width: 90%;
+}
+
+.dialogComponent .popupContent {
+    height: 100%;
+}
+
+.dialogComponent .dialogMainPanel {
+    padding-top: 20px;
+    height: calc(100% - 20px);
+    overflow: hidden;
+}
+
+.dialogComponent .dialogMainPanel .dialogTitle {
+    min-height: 20px;
+    font-size: 125%;
+    margin-bottom: 20px;
+    margin-left: 24px;
+    text-align: left;
+}
+
+.dialogComponent .dialogMainPanel .dialogContent {
+    height: calc(100% - 92px);
+    padding: 0px 24px;
+    overflow-y: auto;
+}
+
+.inputDialogComponent .inputTextField {
+    max-width: 456px;
+    width: 100%;
+}
+
+.inputTextField {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    display: inline-block;
+    min-height: 68px;
+}
+
+.inputTextField .inputLabel {
+    font-size: 75%;
+    height: 12px;
+    line-height: 100%;
+    display: block;
+    text-align: left;
+}
+
+.inputTextField .textField {
+    margin-top: 8px;
+}
+
+.inputDialogComponent .inputTextField .AutoCompleteTextFieldW {
+    margin-right: 0px;
+}
+
+.inputTextField .TextFieldW {
+    margin-right: 0px;
+    margin-bottom: 7px;
+    border-radius: 0px;
+    border: none;
+    border-bottom: 1px solid #b4b3ba;
+}
+
+.TextFieldW {
+    box-sizing: border-box;
+    position: relative;
+}
+
+.inputTextField .TextFieldW input[type=text] {
+    border: none !important;
+    box-shadow: none !important;
+    height: 28px;
+    margin: 0px;
+    padding: 0px 0px 8px 0px;
+}
+
+.dialogComponent input[type=text] {
+    border-radius: 0px;
+}
+
+input[type=text].TextField {
+    padding: 2px;
+    width: 100%;
+}
+
+.TextFieldW .TextField {
+    display: inline-block;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.dialogComponent .dialogMainPanel .dialogButtonPanel {
+    display: inline-flex;
+    padding: 8px 8px 8px 24px;
+    position: relative;
+    float: right;
+}
+
+.cancelButton {
+    flex-grow: 0;
+    color: #6e6d73;
+}
+
+.cancelButton:hover {
+    color: #6e6d73;
+    background-color: #f3f2f7;
+}
+
+.cancelButton, .okButton {
+    display: inline-block;
+    min-width: 90px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0);
+    font-size: 90%;
+    letter-spacing: .04em;
+    line-height: 36px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    margin-left: 8px;
+    cursor: pointer;
+    padding: 0px 16px;
+    font-size: 14px;
+}
+
+.okButton {
+    padding: 0px 16px;
+    background: #a7d3d2;
+    color: #fff;
+    transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    box-shadow: none;
+}
+
+.okButton:hover {
+    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, .2), 0px 4px 5px 0px rgba(0, 0, 0, .14), 0px 1px 10px 0px rgba(0, 0, 0, .12);
+}
+
+.inputTextField.hoverState .inputLabel, .inputTextField.hoverState .fieldContainer {
+    color: #46443f !important;
+}
+
+input:focus {
+    outline: none;
+}
+
+.inputTextField.hoverState .TextFieldW {
+    border-bottom: 2px solid #46443f;
+}
+
+.inputTextField.focusState .TextFieldW {
+    border-bottom: 2px solid #a7d3d2;
+}
+
+.inputTextField.focusState .inputLabel {
+    color: #a7d3d2 !important;
+}
+
+.inputTextField.focusState .TextField {
+    caret-color: #46443f;
+}
+
+.PopupPanel {
+    background-color: #fff;
+    padding: 8px 0 8px 0;
+    border-radius: 12px;
+    font: 100px, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    box-shadow: 0px 2px 24px -1px rgba(133, 132, 138, .14), 0px 2px 8px 0px rgba(133, 132, 138, .04);
+    z-index: 501;
+    will-change: transform;
+}
+
+.MenuBar {
+    cursor: default;
+}
+
+.PopupPanel .listMenuItem {
+    box-sizing: border-box;
+    min-width: 190px;
+    height: 32px;
+    line-height: 32px;
+    padding: 0 16px 0 16px;
+    border-radius: 2px;
+}
+
+.MenuItem {
+    cursor: pointer;
+    white-space: nowrap;
+    list-style: none;
+}
+
+.PopupPanel .listMenuItem .checkMarkMenuItem {
+    display: flex;
+    align-items: center;   /* vertical alignment */
+    width: 100%;
+}
+
+.PopupPanel .listMenuItem .ItemText {
+    display: block;
+    flex-grow: 1;
+    text-align: left;
+    line-height: 32px;
+}
+
+.ItemText {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.MenuItem.listMenuItem.keyboardFocus.selectedItem {
+    background-color: #ddd;
+}
+
+.PopupPanel .listMenuItem .checkIcon{
+    display: flex;
+    justify-items: end;
+}
+
+.inputDialogComponent.angleInputDialog .radioButtonPanel {
+    display: flex;
+}
+
+.inputDialogComponent.angleInputDialog .radioButtonPanel .radioButton {
+    margin-right: 20px;
+}
+
+.radioButton {
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.radioButton .radioBg {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #fff;
+}
+
+.ripple {
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+}
+
+.radioButton.selected .outerCircle {
+    border-color: #a7d3d2;
+}
+
+.radioButton .radioBg .outerCircle {
+    width: 16px;
+    height: 16px;
+    margin: 8px;
+    border: 2px solid;
+    border-radius: 50%;
+    transition: border-color .12s cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+
+.radioButton.selected .innerCircle {
+    width: 10px;
+    height: 10px;
+    background-color: #a7d3d2;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+}
+.radioButton .radioBg .innerCircle {
+    transition: transform .12s cubic-bezier(0, 0, 0.2, 1) 0ms, background-color .12s cubic-bezier(0, 0, 0.2, 1) 0ms, -webkit-transform .12s cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+
+.inputTextField.error .inputLabel {
+    color: #b00020;
+}
+
+.inputTextField .errorLabel {
+    color: #b00020;
+    font-size: 75%;
+    height: 12px;
+    line-height: 100%;
+    text-align: left;
+}
+
+.algebraView {
+    top: -2px;
+}
+
+.algebraView .avItem {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.avItem, .avItem.selectedItem {
+    border-bottom: 1px solid #dcdcdc;
+    min-height: 50px;
+    justify-items: center;
+}
+
+.Tree .TreeItem {
+    margin: 0;
+    white-space: nowrap;
+    cursor: pointer;
+    background-color: rgb(255, 255, 255);
+}
+
+.Tree .TreeItem .elem {
+    display: block;
+    min-height: 48px;
+    position: relative;
+}
+
+.Tree .TreeItem .elem>* {
+    display: grid;
+    align-items: center;
+}
+
+.avItem.selectedItem .marblePanel {
+    background-color: #dcdcdc;
+}
+
+
+.marblePanel {
+    border-right: 1px solid #dcdcdc;
+    position: absolute;
+    min-width: 58px;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0 18px;
+}
+
+.marblePanel>* {
+    position: relative;
+}
+
+.marble {
+    height: 18px;
+    width: 18px;
+    border: 1px solid #000;
+    border-radius: 24px;
+}
+
+.algebraViewObjectStylebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    padding-right: 12px;
+}
+
+.more {
+    background: #fff;
+    opacity: .54;
+    transition: .3s ease;
+}
+
+.avItem .elemText {
+    padding-top: 7px;
+    padding-bottom: 0px;
+    padding-left: 68px;
+    justify-content: left;
+}
+
+.avItem .elemText .avPlainText {
+    padding: 2px;
+}
+
+.marbleHidden {
+    visibility: hidden;
+}
+
+.dockPanelParent {
+    overflow: visible !important;
+}
+
+.dockPanelParent>div {
+    overflow: visible !important;
+}
+
+.toolbar {
+    overflow: hidden;
+    z-index: 2;
+    background: #fff;
+}
+
+.toolbar .header-open-landscape, .toolbar .header-close-landscape {
+    width: 72px;
+    min-width: 56px;
+    height: 100%;
+    position: absolute;
+}
+
+.toolbar .header-open-landscape {
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .2), 0 1px 10px 0 rgba(0, 0, 0, .12), 0 4px 5px 0 rgba(0, 0, 0, .14);
+}
+
+.toolbar .header {
+    z-index: 5;
+    background-color: #f9f9f9;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+}
+
+.header-open-landscape .center, .toolbar .header-close-landscape .center {
+    display: block;
+    width: 100%;
+    top: 24px;
+}
+.toolbar .header .center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 100%;
+}
+
+.toolbar .header-open-landscape .tabButton, .toolbar .header-close-landscape .tabButton {
+    width: 100%;
+    height: 72px;
+}
+
+.button {
+    cursor: pointer;
+}
+
+.GeoGebraFrame .tabButton {
+    position: relative;
+    box-sizing: border-box;
+    min-width: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    opacity: .54;
+}
+
+.tabButton .label {
+    width: 100%;
+    line-height: 12px;
+    min-height: 28px;
+    font-size: 10px;
+    text-align: center;
+    word-break: break-word;
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+.toolbar .header-open-landscape .selected, .toolbar .header-close-landscape .selected {
+    border-bottom: none;
+}
+
+.toolbar .header-open-landscape .tabButton, .toolbar .header-close-landscape .tabButton {
+    width: 100%;
+    height: 72px;
+}
+
+.tabButton.selected {
+    opacity: 1;
+}
+
+.tabButton.selected .gwt-Label {
+    color: #a7d3d2;
+}
+
+.tool-wraper.hidden {
+    display: none;
+}
+
+.button.tabButton.selected .label {
+    font-weight: 550;
 }

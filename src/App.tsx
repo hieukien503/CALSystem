@@ -11,8 +11,6 @@ import SearchResults from './SearchResults';
 import './index.css'; // Use Tailwind's CSS instead of App.css
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-
-
 function App() {
     return (
         <div className="flex flex-col min-h-screen">
@@ -23,6 +21,7 @@ function App() {
             {/*<SearchResults />*/}
             {/*<Home />*/}
             {/*<SignUp />*/}
+
             <Footer />
         </div>
     );
