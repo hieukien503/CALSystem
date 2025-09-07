@@ -3,10 +3,11 @@ import Konva from 'konva';
 // Base interfaces
 export interface BaseShape {
     props: ShapeProps;
+    type: ShapeType;
 }
 
 export interface Shape2D extends BaseShape {
-    area?: number;
+
 }
 
 export interface Shape3D extends BaseShape {
@@ -14,12 +15,31 @@ export interface Shape3D extends BaseShape {
     volume?: number;
 }
 
+export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
+                        'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'AngleBisector' | 'PerpendicularBisector' |
+                        'PerpendicularLine' | 'TangentLine' | 'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' |
+                        'Circle2Point' | 'Angle' | 'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
+                        'Reflection' | 'Rotation' | 'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' |
+                        'RegularPolygon' | 'Sphere2Point';
+
+export interface Angle extends BaseShape {
+    // Use degree for angle
+    vertex?: Point;
+    startAngle: number;
+    degree: number;
+}
+
+export interface SemiCircle extends BaseShape {
+    start: Point,
+    end: Point,
+    normal?: GeometryState.Vector
+}
+
 // Point type
-export interface Point extends Shape2D {
+export interface Point extends BaseShape {
     x: number;
     y: number;
     z?: number;
-    shapes: Set<Shape>;
 }
 
 // 2D Shapes
@@ -45,12 +65,14 @@ export interface Ray extends Shape2D {
 
 export interface Polygon extends Shape2D {
     points: Point[];
+    area?: number;
 }
 
 export interface Circle extends Shape2D {
     centerC: Point;
     radius: number;
     normal?: Vector;
+    area?: number;
 }
 
 // 3D Shapes
@@ -82,13 +104,17 @@ export interface Pyramid extends Shape3D {
 }
 
 export interface Cuboid extends Shape3D {
-    topLeftBack: Point;
-    bottomRightFront: Point;
+    origin: Point;
+    axisX: Vector;
+    axisY: Vector;
+    width: number;
+    height: number;
+    depth: number;
 }
 
 export interface Prism extends Shape3D {
     base: Polygon;
-    top_point: Point;
+    shiftVector: Vector;
 }
 
 // Union type for all shapes
@@ -100,6 +126,8 @@ export type Shape =
     | Polygon 
     | Circle 
     | Ray
+    | Angle
+    | SemiCircle
     | Sphere 
     | Plane 
     | Cuboid 
@@ -154,11 +182,54 @@ export interface ShapeProps {
     id: string;
 }
 
+export interface ShapeNode {
+    /** ID of KonvaShape */
+    id: string;
+    /** Type of shape */
+    type: Shape;
+    /** Konva node for the shape */
+    node: Konva.Shape;
+    /** For undefined shape */
+    defined: boolean;
+    /** IDs of other ShapeNodes this one depends on */
+    dependsOn: string[];
+    /** For enlarge */
+    scaleFactor?: number;
+    /** For rotation */
+    rotationFactor?: {
+        degree: number;
+        CCW: boolean;
+    };
+    /** For tangent line and angle bisector */
+    side? : 0 | 1;
+    /** Selected or not */
+    isSelected: boolean;
+}
+
+export interface ShapeNode3D {
+    /** ID of KonvaShape */
+    id: string;
+    /** Type of shape */
+    type: Shape;
+    /** IDs of other ShapeNodes this one depends on */
+    dependsOn: string[];
+    /** For undefined shape */
+    defined: boolean;
+    /** For enlarge */
+    scaleFactor?: number;
+    /** For rotation */
+    rotationFactor?: {
+        azimuth: number; // Rotation around the vertical axis
+        polar: number; // Rotation around the horizontal axis
+    };
+    /** For tangent line and angle bisector */
+    side? : 0 | 1;
+    /** Selected or not */
+    isSelected: boolean;
+}
+
 // Geometry state
-export interface GeometryState {
-    /** Array of shapes in the scene */
-    shapes: Shape[];
-    
+export interface GeometryState {    
     /** Whether the grid is visible */
     gridVisible: boolean;
     
@@ -179,21 +250,31 @@ export interface GeometryState {
 
     /** Whether a panning event is happening */
     panning: boolean;
-
-    /** Dummy variable to force re-render */
-    dummy: boolean;
-
-    /** Index for buttons */
-    pointIndex: number;
-    lineIndex: number;
-    circleIndex: number;
-    polygonIndex: number;
-    rayIndex: number;
-    segmentIndex: number;
-    vectorIndex: number;
-
-    /** Selected shapes */
-    selectedShapes: Point[];
-    /** Whether the tool is active */
-    mode: string;
 }
+
+/** Drawing mode */
+type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
+                   'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'volume' | 'show_label' | 'show_object' | 'intersection' |
+                   'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
+                   'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length' | 'perpendicular_bisector' |
+                   'semicircle' | 'reflect_point' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
+                   'angle_bisector' | 'reflect_line' | 'sphere' | 'sphere_2_points' | 'circle_axis_point' | 'circle_center_direction' |
+                   'plane' | 'plane_3_points' | 'parallel_plane' | 'perpendicular_plane' | 'cone' | 'cuboid' | 'prism' | 'pyramid' |
+                   'tetrahedron' | 'cylinder' | 'extrude_pyramid' | 'extrude_prism' | 'reflect_plane';
+
+/** History */
+interface HistoryEntry {
+    state: GeometryState,
+    dag: Map<string, ShapeNode>,
+    selectedPoints: Point[],
+    selectedShapes: Shape[],
+    label_used: string[]
+};
+
+interface HistoryEntry3D {
+    state: GeometryState,
+    dag: Map<string, ShapeNode3D>,
+    selectedPoints: Point[],
+    selectedShapes: Shape[],
+    label_used: string[]
+};

@@ -15,44 +15,11 @@ interface AxisProps {
 
 // Constants for font and styling
 const FONT_CONFIG = {
-    fontSize: 9,
-    fontFamily: 'Arial'
+    fontSize: 0.625 * parseFloat(getComputedStyle(document.documentElement).fontSize),
+    fontFamily: 'Arial, sans-serif'
 };
 
 const LABEL_OFFSET = 5;
-
-// Utility functions
-function printRTL(text: string, originX: number, originY: number, opacity: number, scale: number): Konva.Text[] {
-    const chars = text.split('');
-    let currentX = originX;
-    const texts: Konva.Text[] = [];
-    
-    for (let i = chars.length - 1; i >= 0; i--) {
-        const char = chars[i];
-        const temp = new Konva.Text({
-            text: char,
-            fontSize: FONT_CONFIG.fontSize / scale,
-            fontFamily: FONT_CONFIG.fontFamily,
-        });
-
-        const text = new Konva.Text({
-            text: char,
-            fontSize: FONT_CONFIG.fontSize / scale,
-            fontFamily: FONT_CONFIG.fontFamily,
-            x: currentX - (char.charCodeAt(0) >= 48 && char.charCodeAt(0) <= 57 ? 2 * temp.width() : 2.75 * temp.width()),
-            y: originY,
-            opacity: opacity,
-            verticalAlign: 'middle',
-            align: 'center',
-            listening: false
-        });
-
-        texts.push(text);
-        currentX -= temp.width();
-    }
-
-    return texts;
-}
 
 export class KonvaAxis {
     private props: AxisProps;
@@ -63,14 +30,12 @@ export class KonvaAxis {
 
     generateAxis(
         axisTickInterval: number,
-        layerPosition: {x: number, y: number},
+        layer: Konva.Layer,
         scale: number,
         layerText: Konva.Layer
-    ): Konva.Group {
+    ): void {
         const { width, height, axisColor, axisWidth, pointerWidth, pointerLength, xTickSpacing, originX, originY, opacity } = this.props;
-        const group = new Konva.Group();
-
-
+        let layerPosition = layer.position();
         // Calculate visible area based on layer position and scale
         const visibleLeft = -layerPosition.x / scale;
         const visibleRight = (width - layerPosition.x) / scale;
@@ -78,7 +43,7 @@ export class KonvaAxis {
         const visibleBottom = (height - layerPosition.y) / scale;
 
         // Calculate scaled dimensions
-        const scaledAxisWidth = axisWidth / scale;
+        const scaledAxisWidth = axisWidth;
         const scaledPointerWidth = pointerWidth / scale;
         const scaledPointerLength = pointerLength / scale;
         const scaledTickSpacing = xTickSpacing * axisTickInterval;
@@ -91,9 +56,22 @@ export class KonvaAxis {
             pointerWidth: scaledPointerWidth,
             pointerLength: scaledPointerLength,
             opacity: opacity,
-            listening: false
+            fill: axisColor,
+            listening: true,
+            strokeScaleEnabled: false,
+            hitStrokeWidth: 2,
+            id: 'x-axis'
         });
-        group.add(xAxis);
+
+        xAxis.on('mouseover', (e) => {
+            e.cancelBubble = true;
+            let stage = e.target.getStage();
+            if (stage) {
+                stage.container().style.cursor = 'default';
+            }
+        })
+
+        layer.add(xAxis);
 
         // Draw y-axis
         const yAxis = new Konva.Arrow({
@@ -103,40 +81,62 @@ export class KonvaAxis {
             pointerWidth: scaledPointerWidth,
             pointerLength: scaledPointerLength,
             opacity: opacity,
-            listening: false
+            listening: true,
+            fill: axisColor,
+            strokeScaleEnabled: false,
+            hitStrokeWidth: 2,
+            id: 'y-axis'
         });
-        group.add(yAxis);
 
-        // Helper function to format tick labels
-        const formatTickLabel = (value: number): string => {
-            let format = Math.log10(axisTickInterval) >= 0 ? 0 : Math.ceil(-Math.log10(axisTickInterval));
-            const formatted = Number(value.toFixed(format));
-            if (Math.abs(formatted) >= 1000000 || (Math.abs(formatted) <= 0.000001 && formatted > 0)) {
-                return formatted.toExponential(1);
+        yAxis.on('mouseover', (e) => {
+            e.cancelBubble = true;
+            let stage = e.target.getStage();
+            if (stage) {
+                stage.container().style.cursor = 'default';
             }
+        })
 
-            return formatted.toString();
-        };
+        layer.add(yAxis);
 
         // Draw x-axis ticks and labels
         const drawXTicks = (start: number, end: number, step: number, forward: boolean) => {
             for (let x = start; (forward ? x <= end : x >= end); x = forward ? x + step : x - step) {
                 if (x < visibleLeft - step || x > visibleRight + step) continue;
 
+                const x_stage = (x * scale) + layerPosition.x;
+                const y_stage = (originY * scale) + layerPosition.y;
+
                 // Draw label
+                let useSci = (x !== originX) && (Math.abs((x - originX) / xTickSpacing) <= 1e-6 || Math.abs((x - originX) / xTickSpacing) >= 1e6);
+                const formatTickLabel = (value: number): string => {
+                    if (useSci) {
+                        return value.toExponential(1);
+                    }
+                    
+                    else {
+                        return value.toFixed(6).replace(/\.?0+$/, ''); // Remove trailing zeros
+                    }
+                };
+
                 const labelText = formatTickLabel((x - originX) / xTickSpacing);
+                let tmpLabel = new Konva.Text({
+                    text: labelText,
+                    fontSize: FONT_CONFIG.fontSize,
+                    fontFamily: FONT_CONFIG.fontFamily,
+                });
+
                 const label = new Konva.Text({
                     text: labelText,
-                    x: (x === originX ? x + 0.25 * FONT_CONFIG.fontSize / scale : x - 0.6 * LABEL_OFFSET / scale),
-                    y: originY + LABEL_OFFSET / scale,
-                    fontSize: FONT_CONFIG.fontSize / scale,
+                    x: x_stage - tmpLabel.width() / 2 + (x === originX ? LABEL_OFFSET : 0),
+                    y: y_stage + LABEL_OFFSET,
+                    fontSize: FONT_CONFIG.fontSize,
                     fontFamily: FONT_CONFIG.fontFamily,
                     opacity: opacity,
-                    align: 'center',
+                    align: 'left',
                     verticalAlign: 'middle',
                     listening: false
                 });
-                
+
                 layerText.add(label);
             }
         };
@@ -146,17 +146,46 @@ export class KonvaAxis {
             for (let y = start; (forward ? y <= end : y >= end); y = forward ? y + step : y - step) {
                 if (y < visibleTop - step || y > visibleBottom + step) continue;
 
+                const x_stage = (originX * scale) + layerPosition.x;
+                const y_stage = (y * scale) + layerPosition.y;
+
                 // Draw label
+                let useSci = (y !== originY) && (Math.abs((originY - y) / xTickSpacing) <= 1e-6 || Math.abs((originY - y) / xTickSpacing) >= 1e6);
+                const formatTickLabel = (value: number): string => {
+                    if (useSci) {
+                        return value.toExponential(1);
+                    }
+                    
+                    else {
+                        return value.toFixed(6).replace(/\.?0+$/, ''); // Remove trailing zeros
+                    }
+                };
                 const labelText = formatTickLabel((originY - y) / xTickSpacing);
-                const texts = printRTL(
-                    labelText,
-                    originX,
-                    (y === originY ? y - FONT_CONFIG.fontSize / scale : y - 0.6 * LABEL_OFFSET / scale),
-                    opacity,
-                    scale
-                );
-                
-                texts.forEach(text => layerText.add(text));
+                const tmpLabel = new Konva.Text({
+                    text: labelText,
+                    fontSize: FONT_CONFIG.fontSize,
+                    fontFamily: FONT_CONFIG.fontFamily,
+                });
+
+                const label = new Konva.Text({
+                    text: labelText,
+                    x: x_stage - LABEL_OFFSET - tmpLabel.width(), // Position LABEL_OFFSET pixels to the left of the axis
+                    y: y_stage - LABEL_OFFSET, // Center the label vertically at y_stage_center
+                    fontSize: FONT_CONFIG.fontSize,
+                    fontFamily: FONT_CONFIG.fontFamily,
+                    opacity: opacity,
+                    align: 'right', // Align text content to its right x-coordinate
+                    verticalAlign: 'middle', // Position text so its middle is at `y`
+                    listening: false
+                });
+
+                if (y === originY) {
+                    label.x(x_stage - 2 * LABEL_OFFSET); // Move right
+                    label.y(y_stage - 2 * LABEL_OFFSET); // Center vertically
+                    label.align('left'); // Align left
+                }
+
+                layerText.add(label);
             }
         };
 
@@ -165,7 +194,5 @@ export class KonvaAxis {
         drawXTicks(originX - scaledTickSpacing, visibleLeft, scaledTickSpacing, false);
         drawYTicks(originY, visibleBottom, scaledTickSpacing, true);
         drawYTicks(originY - scaledTickSpacing, visibleTop, scaledTickSpacing, false);
-
-        return group;
     }
 }
