@@ -8,7 +8,7 @@ const Footer = () => {
             </div>
             <div className="right">
                 <nav>
-                    <ul className="navi-right">
+                    <ul className="navi-right gap-3">
                         <li><a href="index.php?page=contact">Top page</a></li>
                         <li><a href="index.php?page=contact">Login/Signup</a></li>
                     </ul>

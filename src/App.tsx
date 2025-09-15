@@ -15,12 +15,14 @@ function App() {
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
-            <CalApp />
 
+            <CalApp />
             {/*<ProfilePage />*/}
             {/*<SearchResults />*/}
             {/*<Home />*/}
             {/*<SignUp />*/}
+            {/*<Login />*/}
+            {/*<ForgotPassword />*/}
 
             <Footer />
         </div>
