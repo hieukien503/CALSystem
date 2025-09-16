@@ -244,6 +244,7 @@ nav ul {
 
 nav ul li {
     display: inline;
+    cursor: pointer;
 }
 
 nav ul li a {

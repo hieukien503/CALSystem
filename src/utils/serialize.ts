@@ -12,14 +12,12 @@ export function serializeDAG(dag: Map<string, ShapeNode>) {
             scaleFactor: node.scaleFactor,
             rotationFactor: node.rotationFactor,
             side: node.side,
-            // serialize shape without Konva node
-            type: node.type,
+            // store type string instead of the object
+            type: node.type,   // store full shape for reconstruction
         };
     });
     return obj;
 }
-
-
 function isPoint(shape: Shape): shape is Point {
     return shape.type === "Point";
 }
@@ -34,39 +32,45 @@ function isCircle(shape: Shape): shape is Circle {
 export function deserializeDAG(data: Record<string, any>): Map<string, ShapeNode> {
     const dag = new Map<string, ShapeNode>();
 
-    Object.entries(data).forEach(([key, value]) => {
-        const v = value as ShapeNode;
+    // 🔥 handle wrapped array
+    const obj = Array.isArray(data) ? data[0] : data;
+
+    Object.entries(obj).forEach(([key, value]) => {
+        console.log("Rendering key: ", key);
+
+        const v = value as any;
+
+        console.log("v.type: ", v.type);
 
         let konvaNode: Konva.Shape | null = null;
 
-        if (isPoint(v.type)) {
+        if (v.type.type === "Point") {
+            console.log("Rendering point");
+            const point = v.type as Point;
             konvaNode = new Konva.Circle({
-                x: v.type.x,
-                y: v.type.y,
+                x: point.x,
+                y: point.y,
+                z: point.z,
                 radius: 5,
-                fill: v.type.props.color,
+                fill: point.props.color || "black",
             });
-        }
-
-        else if (isLine(v.type)) {
+        } else if (v.type.type === "Line") {
+            const line = v.type as Line;
             konvaNode = new Konva.Line({
-                points: [v.type.startLine.x, v.type.startLine.y, v.type.endLine.x, v.type.endLine.y],
-                stroke: v.type.props.color,
-                strokeWidth: v.type.props.line_size,
+                points: [line.startLine.x, line.startLine.y, line.endLine.x, line.endLine.y],
+                stroke: line.props.color || "black",
+                strokeWidth: line.props.line_size || 1,
             });
-        }
-
-        else if (isCircle(v.type)) {
+        } else if (v.type.type === "Circle") {
+            const circle = v.type as Circle;
             konvaNode = new Konva.Circle({
-                x: v.type.centerC.x,
-                y: v.type.centerC.y,
-                radius: v.type.radius,
-                stroke: v.type.props.color,
-                strokeWidth: v.type.props.line_size,
+                x: circle.centerC.x,
+                y: circle.centerC.y,
+                radius: circle.radius,
+                //stroke: circle.props.color,
+                //strokeWidth: circle.props.line_size,
             });
         }
-
-        // TODO: add cases for Segment, Vector, Ray, Sphere, etc.
 
         dag.set(key, {
             ...v,

@@ -1,14 +1,10 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
-const { saveProject, loadProject, loadAllProjects } = require("../controllers/projectController");
+const { createProject, loadProject, updateProject } = require("../controllers/projectController");
 
-// Save project
-router.post("/save", saveProject);
-
-// Load project theo tên
-router.get("/load/:name", loadProject);
-
-// Lấy tất cả projects
-router.get("/", loadAllProjects);
+router.post("/", createProject);           // POST /api/projects
+router.get("/:id", loadProject);           // GET /api/projects/:id
+router.patch("/:id", updateProject);       // PATCH /api/projects/:id
+//router.patch("/:id/session", updateSession); // PATCH /api/projects/:id/session
 
 module.exports = router;

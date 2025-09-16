@@ -1,8 +1,9 @@
 import React from 'react';
-import './index.css'; // Use Tailwind's CSS instead of App.css
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+    const navigate = useNavigate();
     return (
         <div>
             <h1 className="upper-main"

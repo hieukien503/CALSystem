@@ -1,8 +1,10 @@
 import React from 'react';
-import './index.css'; // Use Tailwind's CSS instead of App.css
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+    const navigate = useNavigate();
+
     return (
         <div>
             <h1 className="upper-main" color="#46443f">
@@ -35,6 +37,7 @@ const Home = () => {
                             width: "200px",
                             borderWidth: "5px"
                         }}
+                        onClick={() => navigate("/view/project")}
                     >
                         CREATE NOW
                     </button>
@@ -43,6 +46,7 @@ const Home = () => {
                             width: "200px",
                             borderWidth: "5px"
                         }}
+                        onClick={() => navigate("/view/signup")}
                     >
                         SIGN UP
                     </button>
