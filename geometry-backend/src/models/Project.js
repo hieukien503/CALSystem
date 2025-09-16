@@ -81,6 +81,7 @@ const collaboratorSchema = new mongoose.Schema({
 }, { _id: false });
 
 const projectSchema = new mongoose.Schema({
+
     title: String,
     description: String,
     sharing: { type: String, default: "private" },
@@ -88,7 +89,7 @@ const projectSchema = new mongoose.Schema({
     collaborators: [collaboratorSchema],
     ownedBy: String,
 
-    // Core geometry objects (points, lines, circles…)
+    // Core geometry objects (points, lines, circlesï¿½)
     objects: [objectSchema],
 
     // Store serialized geometry and DAG
