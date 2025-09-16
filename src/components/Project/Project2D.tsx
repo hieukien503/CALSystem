@@ -9,8 +9,9 @@ import MenuItem from "../MenuItem";
 import Konva from "konva";
 import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
 import { SharingMode } from "../../types/types";
-const math = require('mathjs');
+import { serializeDAG, deserializeDAG } from "../../utils/serialize";
 
+const math = require('mathjs');
 interface Project2DProps {
     id: string;
     title: string;
@@ -882,6 +883,25 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }
     }
+
+    // Save
+    private saveProject = async () => {
+        const dagData = serializeDAG(this.dag);
+        await fetch("/api/projects/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...this.props, ...this.state, dag: dagData }),
+        });
+    };
+
+    // Load
+    private loadProject = async () => {
+        const res = await fetch(`/api/projects/${this.props.id}`);
+        const data = await res.json();
+        this.dag = deserializeDAG(data.dag);
+        this.setState({ geometryState: data.geometryState });
+    };
+
 
     render(): React.ReactNode {
         return (
