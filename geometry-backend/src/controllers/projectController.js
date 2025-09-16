@@ -1,58 +1,78 @@
 const Project = require("../models/Project");
 
-// Save project (POST /api/projects/save)
-const saveProject = async (req, res) => {
-  try {
-    const { name, data } = req.body;
+// --- Create a new project ---
+exports.createProject = async (req, res) => {
+    try {
+        const newProject = new Project({
+            title: req.body.title || "Untitled Project",
+            description: req.body.description || "",
+            sharing: req.body.sharing || "private",
+            projectVersion: req.body.projectVersion,
+            collaborators: req.body.collaborators || [],
+            ownedBy: req.body.ownedBy || null,
+            objects: req.body.objects || [],
+            session: req.body.session || {} // optional session
+        });
 
-    if (!name || !data) {
-      return res.status(400).json({ message: "Thiếu name hoặc data" });
+        await newProject.save();
+        res.status(201).json(newProject); // return Mongo _id
+    } catch (err) {
+        console.error("Error creating project:", err);
+        res.status(500).json({ message: err.message });
     }
-
-    // Kiểm tra nếu project đã tồn tại → update
-    let project = await Project.findOne({ name });
-
-    if (project) {
-      project.data = data;
-      project.updatedAt = Date.now();
-      await project.save();
-      return res.json({ message: "Cập nhật project thành công", project });
-    }
-
-    // Nếu chưa có thì tạo mới
-    project = new Project({ name, data });
-    await project.save();
-
-    res.status(201).json({ message: "Tạo project thành công", project });
-  } catch (err) {
-    res.status(500).json({ message: "Lỗi khi save project", error: err.message });
-  }
 };
 
-// Load project theo tên (GET /api/projects/load/:name)
-const loadProject = async (req, res) => {
-  try {
-    const { name } = req.params;
-    const project = await Project.findOne({ name });
+// --- Load project by Mongo _id ---
+exports.loadProject = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const project = await Project.findById(id);
 
-    if (!project) {
-      return res.status(404).json({ message: "Không tìm thấy project" });
+        if (!project) return res.status(404).json({ message: "Project not found" });
+
+        res.json(project);
+    } catch (err) {
+        console.error("Error loading project:", err);
+        res.status(500).json({ message: err.message });
     }
-
-    res.json(project);
-  } catch (err) {
-    res.status(500).json({ message: "Lỗi khi load project", error: err.message });
-  }
 };
 
-// Lấy tất cả projects
-const loadAllProjects = async (req, res) => {
-  try {
-    const projects = await Project.find();
-    res.json(projects);
-  } catch (err) {
-    res.status(500).json({ message: "Lỗi server", error: err.message });
-  }
+// --- Update project by Mongo _id ---
+exports.updateProject = async (req, res) => {
+    try {
+        const { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed } = req.body;
+
+        console.log("dag: ", dag);
+
+        const project = await Project.findByIdAndUpdate(
+            req.params.id,
+            { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed },
+            { new: true, runValidators: true }
+        );
+
+        if (!project) return res.status(404).json({ error: "Project not found" });
+        res.json(project);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 };
 
-module.exports = { saveProject, loadProject, loadAllProjects, };
+//exports.updateSession = async (req, res) => {
+//    try {
+//        const { id } = req.params;
+
+//        const project = await Project.findByIdAndUpdate(
+//            id,
+//            { $set: { session: req.body } }, // replace session entirely
+//            { new: true, upsert: true }      // upsert ensures session exists
+//        );
+
+//        if (!project) return res.status(404).json({ message: "Project not found" });
+
+//        res.json(project);
+//    } catch (err) {
+//        console.error("Error updating session:", err);
+//        res.status(500).json({ message: "Failed to update session" });
+//    }
+//};
