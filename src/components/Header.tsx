@@ -27,10 +27,7 @@ const Header = () => {
         const path = selectedTool
         if (path === "3d-graph") {
             return (
-                <div className="flex flex-col min-h-screen">
-                    <h1 className="upper-main" color="#46443f">
-                        3D Geometry
-                    </h1>
+                <div className="flex flex-col">
                     <main className="outer-main">
                         <div className="inner-main text-center text-gray-600 text-xl flex-grow">
                             <Project3D
@@ -56,10 +53,7 @@ const Header = () => {
 
         else {
             return (
-                <div className="flex flex-col min-h-screen">
-                    <h1 className="upper-main" color="#46443f">
-                        2D Geometry
-                    </h1>
+                <div className="flex flex-col">
                     <main className="outer-main">
                         <div className="inner-main text-center text-gray-600 text-xl flex-grow">
                             <Project2D
@@ -84,7 +78,7 @@ const Header = () => {
         }
     }
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col">
             <header className="flex flex-col justify-center h-20">
                 <div className="logo">
                     <img src="image/Menu.svg" alt="Menu" className="menu-icon"/>
@@ -100,7 +94,7 @@ const Header = () => {
                     <div id="results"></div>
                 </div>
                 <nav>
-                    <ul className="flex items-center">
+                    <ul className="flex items-center gap-3">
                         <li>
                             <select className="border border-gray-300 px-2 py-1 rounded text-sm" value={selectedTool} onChange={handleChange}>
                                 <option value="2d-graph">2D Geometry</option>
