@@ -14,7 +14,7 @@ interface ToolProps {
 }
 
 interface ToolState {
-    mode: 'algebra' | 'geometry'
+    mode: 'algebra' | 'geometry' | 'animation' | 'project';
 }
 
 class Tool extends React.Component<ToolProps, ToolState> {

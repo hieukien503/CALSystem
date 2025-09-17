@@ -1615,6 +1615,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private createLabel = (shapeNode: ShapeNode): Konva.Text => {
         let x = 0, y = 0;
         let shape = shapeNode.type;
+
+        console.log("shape: ", shapeNode.type);
+
         if ('centerC' in shape && 'radius' in shape) {
             let p1 = {
                 x: shapeNode.node.x(),
