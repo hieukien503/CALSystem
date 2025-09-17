@@ -126,22 +126,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         e.preventDefault();
     };
 
-    private createDefaultLine(shapeId: string, stageWidth: number, stageHeight: number): Line {
-        return Factory.createLine(
-            utils.createLineDefaultShapeProps(shapeId),
-            Factory.createPoint(
-                utils.createPointDefaultShapeProps(''),
-                stageWidth / 2,
-                stageHeight / 2
-            ),
-            Factory.createPoint(
-                utils.createPointDefaultShapeProps(''),
-                stageWidth / 2 + (shapeId.includes('x-axis') ? 1 : 0),
-                stageHeight / 2 + (shapeId.includes('y-axis') ? 1 : 0)
-            ),
-        );
-    }
-
     private handleZoom = (e: Konva.KonvaEventObject<MouseEvent>) => {
         e.evt.preventDefault();
         const stage = this.stageRef.current;
@@ -621,7 +605,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             'SemiCircle': 5,
 
             'Polygon': 6,
-
             'RegularPolygon': 7,
 
             'Line': 8,
