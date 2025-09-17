@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import Project2D from './Project/Project2D';
-import Project3D from './Project/Project3D';
-import { v4 as uuidv4 } from 'uuid'
+import { useNavigate } from "react-router-dom";
+interface HeaderProps {       // for input parameters
+    selectedTool: string,
+    setSelectedTool: React.Dispatch<React.SetStateAction<string>>
+}
 
-const Header = () => {
-    const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
+const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
     const [searchWidth, setSearchWidth] = useState<number>(window.innerWidth * 0.35);
 
     useEffect(() => {
@@ -23,76 +24,20 @@ const Header = () => {
         setSelectedTool(e.target.value);
     };
 
-    const renderTool = () => {
-        const path = selectedTool
-        if (path === "3d-graph") {
-            return (
-                <div className="flex flex-col min-h-screen">
-                    <h1 className="upper-main" color="#46443f">
-                        3D Geometry
-                    </h1>
-                    <main className="outer-main">
-                        <div className="inner-main text-center text-gray-600 text-xl flex-grow">
-                            <Project3D
-                                id={uuidv4()}
-                                title={'2D Geometry'}
-                                description={'Test Geometry'}
-                                sharing={'public'}
-                                projectVersion={{
-                                    versionName: 'alpha',
-                                    versionNumber: '1.0',
-                                    createdAt: new Date().toString(),
-                                    updatedAt: new Date().toString(),
-                                    updatedBy: 'Kien'
-                                }}
-                                ownedBy='Kien'
-                                collaborators={[]}
-                            />
-                        </div>
-                    </main>
-                </div>
-            )
-        }
+    const navigate = useNavigate();
 
-        else {
-            return (
-                <div className="flex flex-col min-h-screen">
-                    <h1 className="upper-main" color="#46443f">
-                        2D Geometry
-                    </h1>
-                    <main className="outer-main">
-                        <div className="inner-main text-center text-gray-600 text-xl flex-grow">
-                            <Project2D
-                                id={uuidv4()}
-                                title={'2D Geometry'}
-                                description={'Test Geometry'}
-                                sharing={'public'}
-                                projectVersion={{
-                                    versionName: 'alpha',
-                                    versionNumber: '1.0',
-                                    createdAt: new Date().toString(),
-                                    updatedAt: new Date().toString(),
-                                    updatedBy: 'Kien'
-                                }}
-                                ownedBy='Kien'
-                                collaborators={[]}
-                            />
-                        </div>
-                    </main>
-                </div>
-            )
-        }
-    }
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col">
             <header className="flex flex-col justify-center h-20">
                 <div className="logo">
                     <img src="image/Menu.svg" alt="Menu" className="menu-icon"/>
-                    <span><a href="index.php">
-                        <button className="btn">
+                    <span>
+                        <button className="btn"
+                            onClick={() => navigate("/view/home")}
+                        >
                             <div className="font-bold text-lg">GRAPHIC CALCULATOR</div>
                         </button>
-                    </a></span>
+                    </span>
                 </div>
                 <div className="search-wrapper" style={{width: searchWidth}}>
                     <input type="text" id="search" placeholder="Search project..."
@@ -100,7 +45,7 @@ const Header = () => {
                     <div id="results"></div>
                 </div>
                 <nav>
-                    <ul className="flex items-center">
+                    <ul className="flex items-center gap-3">
                         <li>
                             <select className="border border-gray-300 px-2 py-1 rounded text-sm" value={selectedTool} onChange={handleChange}>
                                 <option value="2d-graph">2D Geometry</option>
@@ -108,13 +53,16 @@ const Header = () => {
                                 <option value="3d-calc">3D Calculator</option>
                             </select>
                         </li>
-                        <li><span><a href='index.php?page=login'>
-                            <button className='btn'>Login/Signup</button>
-                        </a></span></li>
+                        <li><span>
+                            <button className='btn'
+                                onClick={() => navigate("/view/login")}
+                            >
+                                Login/Signup
+                            </button>
+                        </span></li>
                     </ul>
                 </nav>
             </header>
-            {renderTool()}
         </div>
     );
 };

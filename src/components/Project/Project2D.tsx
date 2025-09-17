@@ -1,4 +1,4 @@
-import React, { createRef, RefObject } from "react";
+import React, { createRef, RefObject, useEffect } from "react";
 import KonvaCanvas from "../Canvas/KonvaRender";
 import Tool from "../Tool/Tool";
 import Dialogbox from "../Dialogbox/Dialogbox";
@@ -9,8 +9,10 @@ import MenuItem from "../MenuItem";
 import Konva from "konva";
 import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
 import { SharingMode } from "../../types/types";
-const math = require('mathjs');
+import { serializeDAG, deserializeDAG } from "../../utils/serialize";
+import { useParams } from "react-router-dom";
 
+const math = require('mathjs');
 interface Project2DProps {
     id: string;
     title: string;
@@ -87,6 +89,9 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private dialogRef: RefObject<Dialogbox | null>;
     private errorDialogRef: RefObject<ErrorDialogbox | null>;
     private dag: Map<string, ShapeNode> = new Map<string, ShapeNode>();
+    private autoSaveInterval?: number;
+    private parts = window.location.pathname.split('/');
+    private projectId = this.parts[this.parts.length - 1]; // last segmen
     constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
@@ -141,6 +146,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     componentDidMount(): void {
         window.addEventListener("resize", this.handleWindowResize);
         window.addEventListener("keydown", this.handleKeyDown);
+
+        this.loadProject();
+
+        // Auto-save every 60 seconds
+        //this.autoSaveInterval = window.setInterval(() => {
+        //    console.log("Project saving");
+        //    this.saveProject();
+        //}, 5000);
     }
 
     componentWillUnmount() {
@@ -174,6 +187,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     this.setState({position: {errorDialogPos: {x: x, y: y}, dialogPos: this.state.position.dialogPos}});
                 }
             }, 0);
+        }
+
+        // ✅ Auto-save when DAG or geometry changes
+        if (prevState.geometryState !== this.state.geometryState ||
+            prevState.selectedPoints !== this.state.selectedPoints ||
+            prevState.selectedShapes !== this.state.selectedShapes) {
+            this.saveProject();
         }
     }
 
@@ -882,6 +902,69 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }
     }
+
+
+
+    // Save Project
+    private saveProject = async () => {
+        try {
+            const payload = {
+                title: this.props.title,
+                description: this.props.description,
+                sharing: this.props.sharing,
+                projectVersion: this.props.projectVersion,
+                collaborators: this.props.collaborators,
+                ownedBy: this.props.ownedBy,
+                geometryState: this.state.geometryState,
+                dag: serializeDAG(this.dag),
+                labelUsed: this.labelUsed,
+            };
+
+            //console.log("Raw DAG: ", this.dag);
+            //console.log("Saving DAG: ", payload.dag);
+            //console.log("projectId: ", this.projectId);
+
+            await fetch(`http://localhost:3000/api/projects/${this.projectId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("Error saving project:", err);
+        }
+    };
+
+    // Load Project
+    public loadProject = async () => {
+        try {
+            const res = await fetch(`http://localhost:3000/api/projects/${this.projectId}`);
+            if (!res.ok) throw new Error("Failed to load project");
+
+            const data = await res.json();
+
+            //console.log("Loaded DAG: ", data.dag);
+
+            // Restore DAG (no Konva nodes yet)
+            this.dag = deserializeDAG(data.dag);
+
+            // force React update
+            this.setState((prev) => ({ ...prev }));
+
+            console.log("Updated DAG: ", this.dag);
+
+            //// Restore state
+            this.setState({
+                geometryState: data.geometryState,
+                selectedPoints: [],
+                selectedShapes: [],
+            });
+
+            //this.labelUsed = data.labelUsed;
+
+        } catch (err) {
+            console.error("Error loading project:", err);
+        }
+    };
 
     render(): React.ReactNode {
         return (
