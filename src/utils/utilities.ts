@@ -108,6 +108,22 @@ export const createCircleDefaultShapeProps = _.memoize((label: string, radius: n
     }
 })
 
+export const createSphereDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,
+        color: 'red',
+        visible: {shape: true, label: false},
+        fill: true,
+        id: `sphere-${label}`
+    }
+})
+
 export const createSemiCircleDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
@@ -168,10 +184,10 @@ export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: nu
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
         radius: radius,  
         visible: {shape: true, label: false},
-        color: '#ADD8E6', // Light blue color for plane
+        color: 'blue', // Light blue color for plane
         fill: true,
         id: `plane-${label}`,
-        opacity: 0.1
+        opacity: 0.5
     }
 });
 
