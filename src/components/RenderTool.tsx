@@ -3,18 +3,34 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Project2D from './Project/Project2D';
 import Project3D from './Project/Project3D';
 import { v4 as uuidv4 } from 'uuid'
-interface RenderToolProps {       // for input parameters
-    selectedTool: string,
-    setSelectedTool: React.Dispatch<React.SetStateAction<string>>
+
+interface User {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    project: string[];
+}
+interface RenderToolProps {
+    selectedTool: string;
+    setSelectedTool: React.Dispatch<React.SetStateAction<string>>;
+    user: User | null;
+    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
-const RenderTool: React.FC<RenderToolProps> = ({ selectedTool, setSelectedTool }) => {
+
+const RenderTool: React.FC<RenderToolProps> = ({
+    selectedTool,
+    setSelectedTool,
+    user,
+    setUser
+}) => {
     const path = selectedTool
     if (path === "3d-graph") {
         return (
             <Project3D
                 id={uuidv4()}
-                title={'2D Geometry'}
+                title={'3D Geometry'}
                 description={'Test Geometry'}
                 sharing={'public'}
                 projectVersion={{
@@ -22,7 +38,7 @@ const RenderTool: React.FC<RenderToolProps> = ({ selectedTool, setSelectedTool }
                     versionNumber: '1.0',
                     createdAt: new Date().toString(),
                     updatedAt: new Date().toString(),
-                    updatedBy: 'Kien'
+                    updatedBy: user?.name || ""
                 }}
                 ownedBy='Kien'
                 collaborators={[]}
@@ -41,7 +57,7 @@ const RenderTool: React.FC<RenderToolProps> = ({ selectedTool, setSelectedTool }
                     versionNumber: '1.0',
                     createdAt: new Date().toString(),
                     updatedAt: new Date().toString(),
-                    updatedBy: 'Kien'
+                    updatedBy: user?.name || ""
                 }}
                 ownedBy='Kien'
                 collaborators={[]}
