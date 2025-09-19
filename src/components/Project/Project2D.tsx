@@ -920,7 +920,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 labelUsed: this.labelUsed,
             };
 
-            //console.log("Raw DAG: ", this.dag);
+            console.log("Raw DAG: ", this.dag);
             //console.log("Saving DAG: ", payload.dag);
             //console.log("projectId: ", this.projectId);
 
@@ -959,7 +959,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 selectedShapes: [],
             });
 
-            //this.labelUsed = data.labelUsed;
+            this.labelUsed = data.labelUsed;
 
         } catch (err) {
             console.error("Error loading project:", err);
