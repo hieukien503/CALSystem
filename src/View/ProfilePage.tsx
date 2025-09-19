@@ -1,70 +1,118 @@
-import React from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useEffect, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
 
-const ProfilePage = () => {
+interface User {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    project: string[];
+}
+interface ProfilePageProps {
+    user: User | null;
+    setUser: React.Dispatch<React.SetStateAction<User | null>>;
+}
+
+interface Project {
+    _id: string;
+    title: string;
+    sharing: string;
+}
+
+const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
+    const [projects, setProjects] = useState<Project[]>([]);
+
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        if (!token || !user) {
+            return;
+        }
+
+        fetch(`http://localhost:3000/api/auth/profile/${user._id}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                setUser(data);
+            })
+            .catch((err) => {
+                console.error("Error fetching profile:", err);
+            });
+
+    }, [navigate]);
+
+    useEffect(() => { 
+        if (user && user.project.length > 0) {
+            fetch("http://localhost:3000/api/projects/bulk", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify({ ids: user.project }),
+            })
+                .then((res) => res.json())
+                .then((data) => setProjects(data))
+                .catch((err) => console.error("Error fetching projects:", err));
+        }
+    }, [user]);
+
+    if (!user) {
+        return <div className="p-5 text-center">Loading profile...</div>;
+    }
+
     return (
         <div>
             <h1 className="upper-main" color="#46443f">
                 Profile page
             </h1>
             <main className="outer-main">
-                <div className="inner-main text-center text-gray-600 text-xl"
+                <div
+                    className="inner-main text-center text-gray-600 text-xl"
                     style={{
                         height: "100%",
                         overflow: "auto",
                     }}
                 >
-                    <div className="text-center text-gray-600 text-xl"
-                        style={{
-                            position: "relative"
-                        }}
+                    <div
+                        className="text-center text-gray-600 text-xl"
+                        style={{ position: "relative" }}
                     >
+                        {/* Banner */}
                         <div
                             style={{
                                 width: "100%",
                                 height: "150px",
                                 backgroundColor: "#EDEDED",
                             }}
-                        >
-                        </div>
-                        <div className="d-flex flex-row align-items-center justify-content-end gap-6"
+                        />
+                        {/* Top buttons */}
+                        <div
+                            className="d-flex flex-row align-items-center justify-content-end gap-6"
                             style={{
                                 width: "100%",
                                 height: "50px",
                                 backgroundColor: "#D9D9D9",
-                                paddingRight: "30px"
+                                paddingRight: "30px",
                             }}
                         >
-                            <button
-                                style={{
-                                    backgroundColor: "inherit", // match with parent color
-                                    display: "flex",
-                                    alignItems: "inherit",
-                                    justifyContent: "inherit",
-                                    border: "0px",
-                                    borderTopLeftRadius: "10px",
-                                    borderBottomLeftRadius: "10px"
-                                }}
-                            >
+                            <button style={{ backgroundColor: "inherit", border: 0 }}>
                                 Edit profile
                             </button>
-                            <button
-                                style={{
-                                    backgroundColor: "inherit", // match with parent color
-                                    display: "flex",
-                                    alignItems: "inherit",
-                                    justifyContent: "inherit",
-                                    border: "0px",
-                                    borderTopLeftRadius: "10px",
-                                    borderBottomLeftRadius: "10px"
-                                }}
-                            >
+                            <button style={{ backgroundColor: "inherit", border: 0 }}>
                                 Setting
                             </button>
                         </div>
-                        <div className="d-flex flex-row align-items-center justify-content-end gap-6"
+
+                        {/* Avatar + Name */}
+                        <div
+                            className="d-flex flex-row align-items-center justify-content-end gap-6"
                             style={{
                                 position: "absolute",
                                 left: 50,
@@ -79,411 +127,101 @@ const ProfilePage = () => {
                                     borderRadius: "50%",
                                 }}
                             />
-                            <div>Profile name</div>
+                            <div className="fw-bold fs-4">{user.name}</div>
                         </div>
                     </div>
 
-
-                    <div className="d-flex flex-row align-items-center justify-content-start"
+                    {/* User details
+                    <div className="p-3 text-start">
+                        <p>
+                            <strong>Email:</strong> {user.email}
+                        </p>
+                        <p>
+                            <strong>Role:</strong> {user.role}
+                        </p>
+                    </div>
+                     */}
+                    {/* Tabs */}
+                    <div
+                        className="d-flex flex-row align-items-center justify-content-start"
                         style={{
                             width: "100%",
                             height: "50px",
                             backgroundColor: "#EDEDED",
                         }}
                     >
-                        <button className="d-flex flex-column align-items-center justify-content-center"
+                        <button
+                            className="d-flex flex-column align-items-center justify-content-center"
                             style={{
                                 width: "300px",
                                 height: "50px",
                                 backgroundColor: "#C8B0F8",
-                                color: "#5000F1"
+                                color: "#5000F1",
                             }}
                         >
                             PROJECT
                         </button>
-                        <button className="d-flex flex-column align-items-center justify-content-center"
+                        <button
+                            className="d-flex flex-column align-items-center justify-content-center"
                             style={{
                                 width: "300px",
                                 height: "50px",
                                 backgroundColor: "white",
-                                color: "black"
+                                color: "black",
                             }}
                         >
                             FAVORITE
                         </button>
                     </div>
-                    <div className="d-flex flex-row align-items-right justify-content-end p-2"
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            backgroundColor: "inherit",
-                        }}
+
+                    {/* Project section */}
+                    <div
+                        className="d-flex flex-column align-items-center justify-content-start p-3 gap-3"
+                        style={{ backgroundColor: "white" }}
                     >
-                        <nav>
-                            <ul className="flex items-center">
-                                <li>
-                                    <select className="border border-gray-300 px-2 py-1 rounded text-sm">
-                                        <option>Last modified</option>
-                                        <option>Title</option>
-                                    </select>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                    <div className="d-flex flex-row align-items-center justify-content-start p-3 gap-3"
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            backgroundColor: "white",
-                        }}
-                    >
-                        <div className="d-flex flex-column align-items-center justify-content-start p-3 gap-3"
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                backgroundColor: "white",
-                            }}
+                        <button
+                            style={{ width: "200px", borderWidth: "5px" }}
+                            onClick={() => navigate("/view/project")}
                         >
-                            <div className="d-flex flex-row align-items-center justify-content-start gap-3"
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    backgroundColor: "white",
-                                }}
-                            >
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
+                            + New Project
+                        </button>
+
+                        <div className="d-flex flex-wrap gap-3 w-100">
+                            {
+                                user.project.length === 0 ? (
+                                //<div>No projects yet.</div>
+                                <div></div>
+                            ) : (
+                                projects.map((proj) => (
+                                    <div
+                                        key={proj._id}
+                                        className="d-flex flex-column align-items-left justify-content-start"
                                         style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
+                                            width: "200px",
+                                            height: "300px",
+                                            backgroundColor: "#F6F6F6",
+                                            borderRadius: "5px",
+                                            padding: "5px",
+                                            cursor: "pointer",
                                         }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
+                                        onClick={() => navigate(`/view/project/${proj._id}`)}
+                                    >
+                                        <div
+                                            className="d-flex flex-column align-items-center justify-content-start"
+                                            style={{
+                                                width: "190px",
+                                                height: "190px",
+                                                backgroundColor: "#D9D9D9",
+                                                borderRadius: "5px",
+                                            }}
+                                        />
+                                        <div className="d-flex flex-column text-left justify-content-start gap-2">
+                                            <div className="fw-bold">{proj.title}</div>
+                                            <div>Shared: {proj.sharing}</div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="d-flex flex-row align-items-center justify-content-start gap-3"
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    backgroundColor: "white",
-                                }}
-                            >
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex flex-column align-items-left justify-content-start"
-                                    style={{
-                                        width: "200px",
-                                        height: "300px",
-                                        backgroundColor: "#F6F6F6",
-                                        borderRadius: "5px",
-                                        padding: "5px"
-                                    }}
-                                >
-                                    <div className="d-flex flex-column align-items-center justify-content-start"
-                                        style={{
-                                            width: "190px",
-                                            height: "190px",
-                                            backgroundColor: "#D9D9D9",
-                                            borderRadius: "5px"
-                                        }}
-                                    />
-                                    <div className="d-flex flex-column text-left justify-content-start gap-2">
-                                        <div className="fw-bold"
-                                        >
-                                            Project name
-                                        </div>
-                                        <div>
-                                            Profile name
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                ))
+                            ) }
                         </div>
                     </div>
                 </div>
@@ -493,4 +231,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-                   

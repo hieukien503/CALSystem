@@ -1,6 +1,7 @@
 ﻿// utils/serialize.ts
 import Konva from "konva";
 import { ShapeNode, Shape, Point, Line, Circle } from "../types/geometry";
+
 export function serializeDAG(dag: Map<string, ShapeNode>) {
     const obj: Record<string, any> = {};
     dag.forEach((node, key) => {

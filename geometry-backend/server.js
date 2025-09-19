@@ -4,7 +4,7 @@ const connectDB = require("./src/config/db");
 const cors = require("cors");
 
 const projectRoutes = require("./src/routes/projectRoutes");
-//const authRoutes = require("./src/routes/authRoutes");
+const authRoutes = require("./src/routes/authRoutes");
 const publicRoutes = require("./src/routes/publicRoutes"); // 👈 add this
 
 dotenv.config();
@@ -25,10 +25,8 @@ connectDB();
 
 // Routes
 app.use("/api/projects", projectRoutes);
-//app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api", publicRoutes); // 👈 /api/home and /api/search
-
-
 
 // Start server
 const PORT = process.env.PORT || 3000;
