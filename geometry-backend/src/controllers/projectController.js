@@ -1,4 +1,5 @@
 const Project = require("../models/Project");
+const User = require("../models/User");
 
 // --- Create a new project ---
 exports.createProject = async (req, res) => {
@@ -58,21 +59,38 @@ exports.updateProject = async (req, res) => {
     }
 };
 
-//exports.updateSession = async (req, res) => {
-//    try {
-//        const { id } = req.params;
+exports.bulkProject = async (req, res) => {
+    try {
+        console.log("body: ", req.body);
+        const { ids } = req.body; // array of projectIds
+        const projects = await Project.find({ _id: { $in: ids } });
+        res.json(projects);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
 
-//        const project = await Project.findByIdAndUpdate(
-//            id,
-//            { $set: { session: req.body } }, // replace session entirely
-//            { new: true, upsert: true }      // upsert ensures session exists
-//        );
+exports.addProjectToUser = async (req, res) => {
+    try {
+        const { userId, projectId } = req.body;
 
-//        if (!project) return res.status(404).json({ message: "Project not found" });
+        if (!userId || !projectId) {
+            return res.status(400).json({ message: "Missing userId or projectId" });
+        }
 
-//        res.json(project);
-//    } catch (err) {
-//        console.error("Error updating session:", err);
-//        res.status(500).json({ message: "Failed to update session" });
-//    }
-//};
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $addToSet: { project: projectId } }, // prevents duplicates
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "Project added", user });
+    } catch (err) {
+        console.error("Error in addProjectToUser:", err);
+        res.status(500).json({ message: "Error adding project", error: err.message });
+    }
+};
