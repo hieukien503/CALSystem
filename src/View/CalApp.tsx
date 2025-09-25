@@ -12,17 +12,13 @@ interface User {
 interface CalAppProps {       // for input parameters
     selectedTool: string;
     setSelectedTool: React.Dispatch<React.SetStateAction<string>>;
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
-const CalApp: React.FC<CalAppProps> = ({ selectedTool, setSelectedTool, user, setUser }) => {
+const CalApp: React.FC<CalAppProps> = ({ selectedTool, setSelectedTool }) => {
     return (
         <main className="outer-main">
             <div className="inner-main text-center text-gray-600 text-xl">
-                <RenderTool selectedTool={selectedTool} setSelectedTool={setSelectedTool}
-                    user={user} setUser={setUser}
-                />
+                <RenderTool selectedTool={selectedTool} setSelectedTool={setSelectedTool} />
             </div>
         </main>
     );
