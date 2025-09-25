@@ -14,18 +14,15 @@ interface User {
 interface RenderToolProps {
     selectedTool: string;
     setSelectedTool: React.Dispatch<React.SetStateAction<string>>;
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 
 const RenderTool: React.FC<RenderToolProps> = ({
     selectedTool,
-    setSelectedTool,
-    user,
-    setUser
+    setSelectedTool
 }) => {
-    const path = selectedTool
+    const path = selectedTool;
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
     if (path === "3d-graph") {
         return (
             <Project3D

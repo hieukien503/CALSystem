@@ -821,6 +821,17 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             });
         })
 
+        // inside drawPoint after creating `c`
+        c.on("dblclick", () => {
+            new Konva.Tween({
+                node: c,
+                duration: 0.8,
+                x: c.x() + 100, // move 100px right
+                y: c.y() + 50,  // move 50px down
+                easing: Konva.Easings.EaseInOut,
+            }).play();
+        });
+
         return c;
     };
 

@@ -8,12 +8,8 @@ interface User {
     role: string;
     project: string[];
 }
-interface LoginProps {
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
-}
 
-const Login: React.FC<LoginProps> = ({ user, setUser }) => {
+const Login = () => {
     const navigate = useNavigate();
 
     // local form states
@@ -39,11 +35,11 @@ const Login: React.FC<LoginProps> = ({ user, setUser }) => {
                 return;
             }
 
-            // example: backend returns { userId, name, token }
-            localStorage.setItem("token", data.token);
-            setUser(data.user); // update global state
+            // store in sessionStorage
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("user", JSON.stringify(data.user));
 
-            navigate("../view/home"); // redirect after login
+            navigate("../"); // redirect after login
         } catch (err) {
             setError("Something went wrong. Please try again.");
         }

@@ -8,13 +8,11 @@ interface User {
     role: string;
     project: string[];
 }
-interface NewCalAppProps {
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
-}
 
-const NewCalApp: React.FC<NewCalAppProps> = ({ user, setUser }) => {
+const NewCalApp: React.FC = () => {
     const navigate = useNavigate();
+
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     useEffect(() => {
         const createNewProject = async () => {
@@ -24,11 +22,6 @@ const NewCalApp: React.FC<NewCalAppProps> = ({ user, setUser }) => {
                 body: JSON.stringify({ title: "Untitled Project" })
             });
             const project = await res.json();
-
-            console.log("body: ", JSON.stringify({
-                userId: user?._id,
-                projectId: project._id,
-            }))
 
             if (user) { // add new project to user's project list if new user
                 await fetch(`http://localhost:3000/api/projects/add/`, {

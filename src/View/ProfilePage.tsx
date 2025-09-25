@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { isUndefined } from "lodash";
 
 interface User {
     _id: string;
@@ -9,24 +10,22 @@ interface User {
     role: string;
     project: string[];
 }
-interface ProfilePageProps {
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
-}
-
 interface Project {
     _id: string;
     title: string;
     sharing: string;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
+const ProfilePage: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
 
     const navigate = useNavigate();
 
+
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
+
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
 
         if (!token || !user) {
             return;
@@ -39,7 +38,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
         })
             .then((res) => res.json())
             .then((data) => {
-                setUser(data);
+                sessionStorage.setItem("user", JSON.stringify(data));
             })
             .catch((err) => {
                 console.error("Error fetching profile:", err);
@@ -53,7 +52,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${sessionStorage.getItem("token")}`,
                 },
                 body: JSON.stringify({ ids: user.project }),
             })

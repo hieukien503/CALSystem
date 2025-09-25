@@ -43,8 +43,6 @@ exports.updateProject = async (req, res) => {
     try {
         const { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed } = req.body;
 
-        console.log("dag: ", dag);
-
         const project = await Project.findByIdAndUpdate(
             req.params.id,
             { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed },
@@ -61,7 +59,6 @@ exports.updateProject = async (req, res) => {
 
 exports.bulkProject = async (req, res) => {
     try {
-        console.log("body: ", req.body);
         const { ids } = req.body; // array of projectIds
         const projects = await Project.find({ _id: { $in: ids } });
         res.json(projects);
