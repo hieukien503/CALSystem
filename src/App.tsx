@@ -24,24 +24,23 @@ interface User {
 }
 function App() {
     const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
-    const [user, setUser] = useState<User | null>(null);
 
     return (
         <Router>
             <div className="flex flex-col min-h-screen">
-                <Header selectedTool={selectedTool} setSelectedTool={setSelectedTool} user={user} setUser={setUser} />
+                <Header selectedTool={selectedTool} setSelectedTool={setSelectedTool} />
 
                 <main className="flex-grow">
                     <Routes>
-                        <Route path="/view/home" element={<Home />} />
-                        <Route path="/view/project" element={<NewCalApp user={user} setUser={setUser} />} />
-                        <Route path="/view/project/:_id" element={<CalApp selectedTool={selectedTool} setSelectedTool={setSelectedTool} user={user} setUser={setUser} />} />
-                        <Route path="/view/login" element={<Login user={user} setUser={setUser} />} />
+                        <Route path="/" element={<Home />} />
+                        <Route path="/view/project" element={<NewCalApp />} />
+                        <Route path="/view/project/:_id" element={<CalApp selectedTool={selectedTool} setSelectedTool={setSelectedTool} />} />
+                        <Route path="/view/login" element={<Login />} />
                         <Route path="/view/forgot-password" element={<ForgotPassword />} />
                         <Route path="/view/signup" element={<SignUp />} />
-                        <Route path="/view/profile" element={<ProfilePage user={user} setUser={setUser} />} />
+                        <Route path="/view/profile" element={<ProfilePage />} />
                         <Route path="/view/search" element={<SearchResults />} />
-                        <Route path="/" element={<Home />} />
+                        <Route path="*" element={<E404 />} />
                     </Routes>
                 </main>
 
