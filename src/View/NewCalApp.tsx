@@ -8,13 +8,11 @@ interface User {
     role: string;
     project: string[];
 }
-interface NewCalAppProps {
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
-}
 
-const NewCalApp: React.FC<NewCalAppProps> = ({ user, setUser }) => {
+const NewCalApp: React.FC = () => {
     const navigate = useNavigate();
+
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     useEffect(() => {
         const createNewProject = async () => {

@@ -59,7 +59,6 @@ exports.updateProject = async (req, res) => {
 
 exports.bulkProject = async (req, res) => {
     try {
-        
         const { ids } = req.body; // array of projectIds
         const projects = await Project.find({ _id: { $in: ids } });
         res.json(projects);

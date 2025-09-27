@@ -11,21 +11,19 @@ interface User {
 interface HeaderProps {
     selectedTool: string;
     setSelectedTool: React.Dispatch<React.SetStateAction<string>>;
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const Header: React.FC<HeaderProps> = ({
     selectedTool,
-    setSelectedTool,
-    user,
-    setUser,
+    setSelectedTool
 }) => {
     const [searchWidth, setSearchWidth] = useState<number>(
         window.innerWidth * 0.35
     );
 
     const navigate = useNavigate();
+
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     useEffect(() => {
         window.addEventListener("resize", handleSearchWidthChange);
@@ -43,8 +41,8 @@ const Header: React.FC<HeaderProps> = ({
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("token"); // clear auth token
-        setUser(null); // reset user state
+        sessionStorage.removeItem("token"); // clear auth token
+        sessionStorage.setItem("user", ""); // reset user state
         navigate("/view/login"); // redirect
     };
 
@@ -54,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="logo">
                     <img src="../image/Menu.svg" alt="Menu" className="menu-icon" />
                     <span>
-                        <button className="btn" onClick={() => navigate("/view/home")}>
+                        <button className="btn" onClick={() => navigate("/")}>
                             <div className="font-bold text-lg">GRAPHIC CALCULATOR</div>
                         </button>
                     </span>
