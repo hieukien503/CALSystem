@@ -25,11 +25,6 @@ const NewCalApp: React.FC<NewCalAppProps> = ({ user, setUser }) => {
             });
             const project = await res.json();
 
-            console.log("body: ", JSON.stringify({
-                userId: user?._id,
-                projectId: project._id,
-            }))
-
             if (user) { // add new project to user's project list if new user
                 await fetch(`http://localhost:3000/api/projects/add/`, {
                     method: "POST",

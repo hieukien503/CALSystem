@@ -32,7 +32,7 @@ export interface Angle extends BaseShape {
 export interface SemiCircle extends BaseShape {
     start: Point,
     end: Point,
-    normal?: GeometryState.Vector
+    normal?: Vector
 }
 
 // Point type
@@ -188,7 +188,7 @@ export interface ShapeNode {
     /** Type of shape */
     type: Shape;
     /** Konva node for the shape */
-    node: Konva.Shape;
+    node?: Konva.Shape;
     /** For undefined shape */
     defined: boolean;
     /** IDs of other ShapeNodes this one depends on */
@@ -260,7 +260,7 @@ type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' 
                    'semicircle' | 'reflect_point' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
                    'angle_bisector' | 'reflect_line' | 'sphere' | 'sphere_2_points' | 'circle_axis_point' | 'circle_center_direction' |
                    'plane' | 'plane_3_points' | 'parallel_plane' | 'perpendicular_plane' | 'cone' | 'cube' | 'prism' | 'pyramid' |
-                   'tetrahedron' | 'cylinder' | 'extrude_pyramid' | 'extrude_prism' | 'reflect_plane';
+                   'tetrahedron' | 'cylinder' | 'extrude_pyramid' | 'extrude_prism' | 'reflect_plane' | 'changeName';
 
 /** History */
 interface HistoryEntry {
@@ -269,7 +269,7 @@ interface HistoryEntry {
     selectedPoints: Point[],
     selectedShapes: Shape[],
     label_used: string[]
-};
+}
 
 interface HistoryEntry3D {
     state: GeometryState,
@@ -277,4 +277,4 @@ interface HistoryEntry3D {
     selectedPoints: Point[],
     selectedShapes: Shape[],
     label_used: string[]
-};
+}

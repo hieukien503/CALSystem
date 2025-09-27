@@ -277,7 +277,7 @@ export const clone = (
             scaleFactor: node.scaleFactor,
             rotationFactor: structuredClone(node.rotationFactor),
             dependsOn: Array.from(node.dependsOn),
-            node: node.node.clone(),
+            node: node.node ? node.node.clone() : undefined,
             defined: node.defined,
             isSelected: node.isSelected,
             side: node.side
@@ -351,9 +351,9 @@ export const snapToShape = (
         let shapeNode = dag.get(shape.id());
         if (shapeNode) {
             if ('centerC' in shapeNode.type && 'radius' in shapeNode.type) {
-                const cx = shapeNode.node.x();
-                const cy = shapeNode.node.y();
-                const r = (shapeNode.node as Konva.Circle).radius();
+                const cx = shapeNode.node!.x();
+                const cy = shapeNode.node!.y();
+                const r = (shapeNode.node! as Konva.Circle).radius();
                 const dx = pos.x - cx;
                 const dy = pos.y - cy;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -420,7 +420,7 @@ export const snapToShape = (
                 for (let i = 0; i < segmentDepends.length; i++) {
                     let s = dag.get(segmentDepends[i]);
                     if (!s) continue;
-                    if (!s.node.intersects(pos)) continue;
+                    if (!s.node!.intersects(pos)) continue;
                     let start = {
                         x: (s.node as Konva.Line).points()[0],
                         y: (s.node as Konva.Line).points()[1]
