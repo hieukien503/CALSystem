@@ -4,6 +4,7 @@ import { LineStyle } from "../types/geometry";
 import { FONT_DEFAULTS, EPSILON } from "../types/constants";
 import { GeometryState, Shape, Point, ShapeNode, Polygon } from "../types/geometry";
 import * as constants from '../types/constants'
+import { v4 as uuidv4 } from 'uuid'
 const math = require('mathjs');
 
 // Utility functions
@@ -56,7 +57,7 @@ export const createPointDefaultShapeProps = _.memoize((label: string, radius: nu
         color: 'black',
         visible: {shape: true, label: true},
         fill: true,
-        id: `point-${label}`
+        id: `point-${uuidv4()}`
     }
 });
 
@@ -263,27 +264,14 @@ export const clone = (
     dag: Map<string, ShapeNode>,
     selectedPoints: Point[],
     selectedShapes: Shape[],
-    label_used: string[]
+    label_used: string[],
+    cloneType: boolean = false
 ) => {
     const copyState = structuredClone(state);
     const copySelectedPoints = structuredClone(selectedPoints);
     const copySelectedShapes = structuredClone(selectedShapes);
     const copyLabelUsed = Array.from(label_used);
-    const copyDAG = new Map<string, ShapeNode>();
-    dag.forEach((node, key) => {
-        copyDAG.set(key, {
-            id: key,
-            type: node.type,
-            scaleFactor: node.scaleFactor,
-            rotationFactor: structuredClone(node.rotationFactor),
-            dependsOn: Array.from(node.dependsOn),
-            node: node.node ? node.node.clone() : undefined,
-            defined: node.defined,
-            isSelected: node.isSelected,
-            side: node.side
-        })
-    })
-
+    const copyDAG = cloneDAG(dag, cloneType);
     return {
         state: copyState,
         dag: copyDAG,
@@ -530,12 +518,12 @@ export const getAngleLabel = (index: number): string => {
     return base + sub;
 }
 
-export const cloneDAG = (dag: Map<string, ShapeNode>): Map<string, ShapeNode> => {
+export const cloneDAG = (dag: Map<string, ShapeNode>, cloneType: boolean = false): Map<string, ShapeNode> => {
     const copyDAG = new Map<string, ShapeNode>();
     dag.forEach((node, key) => {
         copyDAG.set(key, {
             id: key,
-            type: node.type,
+            type: cloneType ? structuredClone(node.type) : node.type,
             scaleFactor: node.scaleFactor,
             rotationFactor: structuredClone(node.rotationFactor),
             dependsOn: Array.from(node.dependsOn),

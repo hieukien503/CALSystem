@@ -51,6 +51,7 @@ interface Project2DState {
     /** For user input */
     data: {
         radius: number | undefined | string;
+        id_to_change?: string;
         vertices: number | undefined;
         rotation: {
             degree: number;
@@ -88,7 +89,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private dialogRef: RefObject<Dialogbox | null>;
     private errorDialogRef: RefObject<ErrorDialogbox | null>;
     private dag: Map<string, ShapeNode> = new Map<string, ShapeNode>();
-    private autoSaveInterval?: number;
     private parts = window.location.pathname.split('/');
     private projectId = this.parts[this.parts.length - 1]; // last segmen
     constructor(props: Project2DProps) {
@@ -398,7 +398,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         dag: Map<string, ShapeNode>,
         selectedShapes: Shape[],
         selectedPoints: Point[]
-    }) => {
+    }, storeHistory: boolean = true) => {
         state.dag.forEach((node, key) => {
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
@@ -430,7 +430,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 message: ''
             }
         }, () => {
-            if (!this.lastFailedState) {
+            if (!this.lastFailedState && storeHistory) {
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
@@ -619,7 +619,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         })
     }
 
-    private setDialogbox = (mode: DrawingMode): void => {
+    private setDialogbox = (mode: DrawingMode, id_to_change?: string): void => {
         if (mode === 'circle') {
             this.setState({
                 isDialogBox: {
@@ -680,8 +680,9 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: {
                     title: 'Rename',
                     input_label: 'New name',
-                    angleMode: false
+                    angleMode: false,
                 },
+                data: {...this.state.data, id_to_change: id_to_change},
                 isMenuRightClick: undefined
             });
         }
@@ -912,7 +913,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }
 
-        else if (this.state.mode === 'changeName') {
+        else if (this.state.mode === 'edit') {
             // Check name pattern
             const newName = value.trim();
             if (newName.length === 0 || !/^[A-Z][A-Za-z]*(?:'|_[0-9]+|[₀₁₂₃₄₅₆₇₈₉]+)?$/.test(newName)) {
@@ -954,18 +955,39 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 return;
             }
 
+            // Update labelUsed and node properties
+            if (this.state.data.id_to_change) {
+                const node = this.dag.get(this.state.data.id_to_change);
+                if (node) {
+                    const oldLabel = node.type.props.label;
+                    this.labelUsed = this.labelUsed.filter(label => label !== oldLabel);
+                    this.labelUsed.push(formatName);
+                    node.type.props.label = formatName;
+                }
+            }
+
             this.setState({
                 data: {
-                    radius: formatName,
+                    radius: undefined,
                     vertices: undefined,
-                    rotation: undefined
+                    rotation: undefined,
+                    id_to_change: undefined
                 },
                 error: {
                     label: '',
                     message: '',
                 },
-                isDialogBox: undefined
-            })
+                isDialogBox: undefined,
+                geometryState: {...this.state.geometryState}
+            }, () => {
+                this.pushHistory(utils.clone(
+                    this.state.geometryState,
+                    this.dag,
+                    this.state.selectedPoints,
+                    this.state.selectedShapes,
+                    this.labelUsed
+                ))
+            });
         }
     }
 
@@ -1007,7 +1029,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             const data = await res.json();
             // Restore DAG (no Konva nodes yet)
             this.dag = deserializeDAG(data.dag);
-            console.log("DAG loaded:", this.dag);
 
             // force React update
             this.setState((prev) => ({ ...prev }));
@@ -1074,7 +1095,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                             this.dag,
                             this.state.selectedPoints,
                             this.state.selectedShapes,
-                            this.labelUsed
+                            this.labelUsed,
+                            true
                         )
                     }}
                     onRenderMenuRightClick={this.setRightMenuClick}
