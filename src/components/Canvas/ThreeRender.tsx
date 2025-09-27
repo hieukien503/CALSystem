@@ -469,6 +469,17 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         let geometry: THREE.BufferGeometry | null = null;
         let mesh: THREE.Mesh | THREE.Group | null = null;
         let labelPosition = new THREE.Vector3();
+        if ('point' in shape && 'norm' in shape) {
+            material.polygonOffset = true;
+            material.polygonOffsetFactor = 1;
+            material.polygonOffsetUnits = 1;
+        }
+
+        else {
+            material.polygonOffset = true;
+            material.polygonOffsetFactor = -1;
+            material.polygonOffsetUnits = -1;
+        }
 
         if ('point' in shape && 'norm' in shape) {
             let pl: Plane = shape as Plane;
@@ -3332,7 +3343,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (this.props.mode === 'pyramid') {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
-            console.log(selectedShapes);
+            
             if (selectedShapes.length !== 1) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
