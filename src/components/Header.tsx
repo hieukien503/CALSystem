@@ -40,12 +40,10 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
         <div className="flex flex-col">
             <header className="flex flex-col justify-center h-20">
                 <div className="logo flex items-center gap-2">
-                    <img src="../image/Menu.svg" alt="Menu" className="menu-icon" />
+                    <img src="/image/Menu.svg" alt="Menu" className="menu-icon" />
                     <button className="btn" onClick={() => navigate("/")}>
                         <div className="font-bold text-lg">GRAPHIC CALCULATOR</div>
                     </button>
-                        </button>
-                    </span>
                 </div>
 
                 <div className="search-wrapper flex items-center gap-2" style={{ width: searchWidth }}>
@@ -91,9 +89,9 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
                                 </button>
                             </li>
                         ) : (
-                                    <button className="btn" onClick={() => navigate("/view/profile")}>
-                                        onClick={() => navigate("/view/profile")}
-                                    >
+                            <>
+                                <li>
+                                    <button className="btn" onClick={() => navigate("/view/myprofile")}>
                                         Profile
                                     </button>
                                 </li>

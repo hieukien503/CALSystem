@@ -40,7 +40,7 @@ function App() {
                         <Route path="/view/forgot-password" element={<ForgotPassword />} />
                         <Route path="/view/signup" element={<SignUp />} />
                         <Route path="/view/profile/:id" element={<ProfilePage />} />
-                        <Route path="/view/profile/" element={<ProfilePage />} />
+                        <Route path="/view/myprofile/" element={<MyProfilePage />} />
                         <Route path="/view/search" element={<SearchResults />} />
                         <Route path="*" element={<E404 />} />
                     </Routes>
