@@ -44,11 +44,7 @@ const SearchResults: React.FC = () => {
 
     return (
         <div>
-            <h1 className="upper-main"
-                style={{
-                    backgroundColor: "#e37f6e"
-                }}
-                >
+            <h1 className="upper-main" color="#46443f">
                 Search results for "{query}"
             </h1>
             <main className="outer-main">
