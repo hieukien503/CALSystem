@@ -2,7 +2,7 @@ import React from "react";
 import AlgebraTool from "./Algebra/AlgebraTool";
 import { GeometryTool } from "./Geometry/GeometryTool";
 import { AnimationTool } from "./Animation/AnimationTool";
-import { DrawingMode, ShapeNode } from "../../types/geometry";
+import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../../types/geometry'
 import * as constants from "../../types/constants"
 
 interface ToolProps {
@@ -12,19 +12,37 @@ interface ToolProps {
     onUpdateWidth: (width: number) => void;
     onSetMode: (mode: DrawingMode) => void;
     onSelect: (id: string, e: React.MouseEvent) => void;
+    selectedPoints: Point[];
+    selectedShapes: Shape[];
+}
+
+interface TimelineItem {
+    object: string;
+    start: number;
+    end: number;
+    action: string;
+    tweens?: string[];
 }
 
 interface ToolState {
-    mode: 'algebra' | 'geometry' | 'animation' | 'project';
+    mode: 'algebra' | 'geometry' | 'animation';     // | 'project'
+    timeline: TimelineItem[];
 }
 
 class Tool extends React.Component<ToolProps, ToolState> {
     constructor(props: ToolProps) {
         super(props);
         this.state = {
-            mode: 'geometry'
+            mode: 'geometry',
+            timeline: []
         }
     }
+
+    setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>> = (value) => {
+        this.setState(prevState => ({
+            timeline: typeof value === "function" ? value(prevState.timeline) : value
+        }));
+    };
 
     private changeMode = (mode: 'algebra' | 'geometry' | 'animation' = 'geometry', e: React.MouseEvent): void => {
         e.stopPropagation();
@@ -122,6 +140,11 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                 /> : <AnimationTool
                                         width={this.props.width}
                                         height={this.props.height}
+                                        dag={this.props.dag}
+                                        timeline={this.state.timeline}
+                                        setTimeline={this.setTimeline}
+                                        selectedPoints={this.props.selectedPoints}
+                                        selectedShapes={this.props.selectedShapes}
                                 />
 
                             )}
