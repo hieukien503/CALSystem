@@ -3,7 +3,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-    const navigate = useNavigate();
     return (
         <div>
             <h1 className="upper-main"

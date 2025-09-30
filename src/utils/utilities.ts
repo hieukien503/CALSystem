@@ -4,6 +4,7 @@ import { LineStyle } from "../types/geometry";
 import { FONT_DEFAULTS, EPSILON } from "../types/constants";
 import { GeometryState, Shape, Point, ShapeNode, Polygon } from "../types/geometry";
 import * as constants from '../types/constants'
+import { v4 as uuidv4 } from 'uuid'
 const math = require('mathjs');
 
 // Utility functions
@@ -56,7 +57,7 @@ export const createPointDefaultShapeProps = _.memoize((label: string, radius: nu
         color: 'black',
         visible: {shape: true, label: true},
         fill: true,
-        id: `point-${label}`
+        id: `point-${uuidv4()}`
     }
 });
 
@@ -105,6 +106,22 @@ export const createCircleDefaultShapeProps = _.memoize((label: string, radius: n
         visible: {shape: true, label: false},
         fill: true,
         id: `circle-${label}`
+    }
+})
+
+export const createSphereDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+    return {
+        label: label,
+        labelXOffset: labelXOffset,
+        labelYOffset: labelYOffset,
+        labelZOffset: labelZOffset,
+        line_size: 1,
+        line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
+        radius: radius,
+        color: 'red',
+        visible: {shape: true, label: false},
+        fill: true,
+        id: `sphere-${label}`
     }
 })
 
@@ -168,10 +185,10 @@ export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: nu
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
         radius: radius,  
         visible: {shape: true, label: false},
-        color: '#ADD8E6', // Light blue color for plane
+        color: 'blue', // Light blue color for plane
         fill: true,
         id: `plane-${label}`,
-        opacity: 0.1
+        opacity: 0.5
     }
 });
 
@@ -247,27 +264,14 @@ export const clone = (
     dag: Map<string, ShapeNode>,
     selectedPoints: Point[],
     selectedShapes: Shape[],
-    label_used: string[]
+    label_used: string[],
+    cloneType: boolean = false
 ) => {
     const copyState = structuredClone(state);
     const copySelectedPoints = structuredClone(selectedPoints);
     const copySelectedShapes = structuredClone(selectedShapes);
     const copyLabelUsed = Array.from(label_used);
-    const copyDAG = new Map<string, ShapeNode>();
-    dag.forEach((node, key) => {
-        copyDAG.set(key, {
-            id: key,
-            type: node.type,
-            scaleFactor: node.scaleFactor,
-            rotationFactor: structuredClone(node.rotationFactor),
-            dependsOn: Array.from(node.dependsOn),
-            node: node.node.clone(),
-            defined: node.defined,
-            isSelected: node.isSelected,
-            side: node.side
-        })
-    })
-
+    const copyDAG = cloneDAG(dag, cloneType);
     return {
         state: copyState,
         dag: copyDAG,
@@ -335,9 +339,9 @@ export const snapToShape = (
         let shapeNode = dag.get(shape.id());
         if (shapeNode) {
             if ('centerC' in shapeNode.type && 'radius' in shapeNode.type) {
-                const cx = shapeNode.node.x();
-                const cy = shapeNode.node.y();
-                const r = (shapeNode.node as Konva.Circle).radius();
+                const cx = shapeNode.node!.x();
+                const cy = shapeNode.node!.y();
+                const r = (shapeNode.node! as Konva.Circle).radius();
                 const dx = pos.x - cx;
                 const dy = pos.y - cy;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -404,7 +408,7 @@ export const snapToShape = (
                 for (let i = 0; i < segmentDepends.length; i++) {
                     let s = dag.get(segmentDepends[i]);
                     if (!s) continue;
-                    if (!s.node.intersects(pos)) continue;
+                    if (!s.node!.intersects(pos)) continue;
                     let start = {
                         x: (s.node as Konva.Line).points()[0],
                         y: (s.node as Konva.Line).points()[1]
@@ -514,12 +518,12 @@ export const getAngleLabel = (index: number): string => {
     return base + sub;
 }
 
-export const cloneDAG = (dag: Map<string, ShapeNode>): Map<string, ShapeNode> => {
+export const cloneDAG = (dag: Map<string, ShapeNode>, cloneType: boolean = false): Map<string, ShapeNode> => {
     const copyDAG = new Map<string, ShapeNode>();
     dag.forEach((node, key) => {
         copyDAG.set(key, {
             id: key,
-            type: node.type,
+            type: cloneType ? structuredClone(node.type) : node.type,
             scaleFactor: node.scaleFactor,
             rotationFactor: structuredClone(node.rotationFactor),
             dependsOn: Array.from(node.dependsOn),

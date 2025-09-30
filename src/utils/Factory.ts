@@ -115,22 +115,22 @@ export const createPlane = (props: GeometryShape.ShapeProps, point: GeometryShap
     return p;
 }
 
-export const createCuboid = (
+export const createCube = (
     props: GeometryShape.ShapeProps,
     origin: GeometryShape.Point,
-    axisX: GeometryShape.Vector,
-    axisY: GeometryShape.Vector,
+    azimuth: number,
+    polar: number,
     width: number, height: number, depth: number
-): GeometryShape.Cuboid => {
-    let p: GeometryShape.Cuboid = {
+): GeometryShape.Cube => {
+    let p: GeometryShape.Cube = {
         origin: origin,
-        axisX: axisX,
-        axisY: axisY,
+        azimuth: azimuth,
+        polar: polar,
         width: width,
         height: height,
         depth: depth,
         props: props,
-        type: 'Cuboid'
+        type: 'Cube'
     }
 
     return p;
