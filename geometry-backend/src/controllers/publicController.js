@@ -15,7 +15,7 @@ const loadHome = async (req, res) => {
 };
 
 // Search projects by title
-// http://localhost:3000/api/search?q=keyword
+// http://localhost:3001/api/search?q=keyword
 const searchProjects = async (req, res) => {
     try {
         const { q } = req.query;
@@ -35,7 +35,7 @@ const searchProjects = async (req, res) => {
 };
 
 // Search users by name 
-// http://localhost:3000/api/search/users?q=keyword
+// http://localhost:3001/api/search/users?q=keyword
 const searchUsers = async (req, res) => {
     try {
         const { q } = req.query;
