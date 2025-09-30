@@ -682,6 +682,10 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
         else if (toolKey === 'circle_center_direction') {
             this.props.onCircleDirectionClick();
         }
+
+        else if (toolKey === 'tetrahedron') {
+            this.props.onTetrahedronClick();
+        }
     }
 
     render(): React.ReactNode {

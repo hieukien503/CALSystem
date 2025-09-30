@@ -482,10 +482,10 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             });
         }
         
-        else if (mode === 'circle') {
+        else if (mode === 'circle_center_direction') {
             this.setState({
                 isDialogBox: {
-                    title: 'Circle: Center & Radius',
+                    title: 'Circle: Center, Radius and Direction',
                     input_label: 'Radius',
                     angleMode: false
                 },
@@ -497,6 +497,28 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             this.setState({
                 isDialogBox: {
                     title: 'Sphere: Center & Radius',
+                    input_label: 'Radius',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'cone') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Cone',
+                    input_label: 'Radius',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'cylinder') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Cylinder',
                     input_label: 'Radius',
                     angleMode: false
                 },
@@ -640,7 +662,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             }
         }
 
-        if (['segment_length', 'sphere', 'circle_center_direction'].includes(this.state.mode)) {
+        if (['segment_length', 'sphere', 'circle_center_direction', 'cone', 'cylinder'].includes(this.state.mode)) {
             try {
                 const radius = math.evaluate(value);
                 if (typeof radius !== 'number' || radius <= 0) {
