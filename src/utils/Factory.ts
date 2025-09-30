@@ -109,28 +109,7 @@ export const createPlane = (props: GeometryShape.ShapeProps, point: GeometryShap
         point: point,
         norm: norm,
         props: props,
-        type: 'Sphere'
-    }
-
-    return p;
-}
-
-export const createCube = (
-    props: GeometryShape.ShapeProps,
-    origin: GeometryShape.Point,
-    azimuth: number,
-    polar: number,
-    width: number, height: number, depth: number
-): GeometryShape.Cube => {
-    let p: GeometryShape.Cube = {
-        origin: origin,
-        azimuth: azimuth,
-        polar: polar,
-        width: width,
-        height: height,
-        depth: depth,
-        props: props,
-        type: 'Cube'
+        type: 'Plane'
     }
 
     return p;
@@ -155,12 +134,12 @@ export const createCylinder = (
 
 export const createPrism = (
     props: GeometryShape.ShapeProps,
-    base: GeometryShape.Polygon,
-    shiftVector: GeometryShape.Vector
+    base1: GeometryShape.Polygon,
+    base2: GeometryShape.Polygon,
 ): GeometryShape.Prism => {
     let p: GeometryShape.Prism = {
-        base: base,
-        shiftVector: shiftVector,
+        base1: base1,
+        base2: base2,
         props: props,
         type: 'Prism'
     }

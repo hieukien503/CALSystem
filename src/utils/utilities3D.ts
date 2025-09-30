@@ -357,3 +357,98 @@ export const snapToGrid = (position: THREE.Vector3, gridSize: number) => {
 
     return position.clone();
 }
+
+export const splitCurveByPlane = (
+    points: THREE.Vector3[],
+    camera: THREE.Camera
+): { front: THREE.Vector3[][]; back: THREE.Vector3[][] } => {
+    const camPos = new THREE.Vector3();
+    camera.getWorldPosition(camPos);
+    const camAbove = camPos.y >= 0;
+    const isFront = (y: number) => camAbove ? y >= 0 : y <= 0;
+
+    const frontArcs: THREE.Vector3[][] = [];
+    const backArcs: THREE.Vector3[][] = [];
+
+    let currentArc: THREE.Vector3[] = [];
+    let currentFront = null as boolean | null;
+
+    for (let i = 0; i < points.length; i++) {
+        const p1 = points[i];
+        const p2 = points[(i + 1) % points.length]; // wrap around
+
+        const f1 = isFront(p1.y);
+        const f2 = isFront(p2.y);
+
+        if (currentFront === null) {
+            currentFront = f1;
+            currentArc.push(p1.clone());
+        }
+
+        if (f1 === f2) {
+            // same side -> continue arc
+            currentArc.push(p2.clone());
+        }
+        
+        else {
+            // crossing plane -> add intersection, finish arc
+            const t = (0 - p1.y) / (p2.y - p1.y);
+            const inter = p1.clone().lerp(p2, t);
+
+            currentArc.push(inter.clone());
+
+            // push finished arc
+            if (currentFront) frontArcs.push(currentArc);
+            else backArcs.push(currentArc);
+
+            // start new arc on the other side
+            currentArc = [inter.clone(), p2.clone()];
+            currentFront = !currentFront;
+        }
+    }
+
+    // push the last arc
+    if (currentArc.length > 1) {
+        if (currentFront) frontArcs.push(currentArc);
+        else backArcs.push(currentArc);
+    }
+
+    return { front: frontArcs, back: backArcs };
+}
+
+export const splitLineByPlane = (
+  p1: THREE.Vector3,
+  p2: THREE.Vector3,
+  camera: THREE.Camera
+): { frontSegs: THREE.Vector3[][]; backSegs: THREE.Vector3[][] } => {
+    const camPos = new THREE.Vector3();
+    camera.getWorldPosition(camPos);
+    const camAbove = camPos.z >= 0;
+    const isFront = (z: number) => (camAbove ? z >= 0 : z <= 0);
+
+    const frontSegs: THREE.Vector3[][] = [];
+    const backSegs: THREE.Vector3[][] = [];
+
+    const f1 = isFront(p1.z);
+    const f2 = isFront(p2.z);
+
+    if (f1 === f2) {
+        // Whole line is on one side
+        if (f1) frontSegs.push([p1.clone(), p2.clone()]);
+        else backSegs.push([p1.clone(), p2.clone()]);
+    } else {
+        // Line crosses the plane -> split at intersection
+        const t = (0 - p1.z) / (p2.z - p1.z);
+        const inter = p1.clone().lerp(p2, t);
+
+        if (f1) {
+        frontSegs.push([p1.clone(), inter.clone()]);
+        backSegs.push([inter.clone(), p2.clone()]);
+        } else {
+        backSegs.push([p1.clone(), inter.clone()]);
+        frontSegs.push([inter.clone(), p2.clone()]);
+        }
+    }
+
+    return { frontSegs, backSegs };
+}

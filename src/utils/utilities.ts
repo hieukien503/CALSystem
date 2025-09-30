@@ -188,7 +188,7 @@ export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: nu
         color: 'blue', // Light blue color for plane
         fill: true,
         id: `plane-${label}`,
-        opacity: 0.5
+        opacity: 0.3
     }
 });
 
@@ -205,7 +205,7 @@ export const createCylinderDefaultShapeProps = _.memoize((label: string, radius:
         color: '#FF7276', // Light red color for cylinder
         fill: true,
         id: `cylinder-${label}`,
-        opacity: 0.1
+        opacity: 0.5
     }
 })
 

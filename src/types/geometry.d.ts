@@ -18,7 +18,7 @@ export interface Shape3D extends BaseShape {
 export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
                         'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'AngleBisector' | 'PerpendicularBisector' |
                         'PerpendicularLine' | 'TangentLine' | 'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' |
-                        'Circle2Point' | 'Angle' | 'Cube' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
+                        'Circle2Point' | 'Angle' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
                         'Reflection' | 'Rotation' | 'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' |
                         'RegularPolygon' | 'Sphere2Point';
 
@@ -103,18 +103,9 @@ export interface Pyramid extends Shape3D {
     base: Polygon;
 }
 
-export interface Cube extends Shape3D {
-    origin: Point;
-    azimuth: number;
-    polar: number;
-    width: number;
-    height: number;
-    depth: number;
-}
-
 export interface Prism extends Shape3D {
-    base: Polygon;
-    shiftVector: Vector;
+    base1: Polygon;
+    base2: Polygon;
 }
 
 // Union type for all shapes
@@ -130,7 +121,6 @@ export type Shape =
     | SemiCircle
     | Sphere 
     | Plane 
-    | Cube
     | Pyramid 
     | Prism 
     | Cone 
