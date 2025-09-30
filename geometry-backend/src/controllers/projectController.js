@@ -91,3 +91,48 @@ exports.addProjectToUser = async (req, res) => {
         res.status(500).json({ message: "Error adding project", error: err.message });
     }
 };
+
+// Delete a project
+exports.deleteProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+
+        const project = await Project.findByIdAndDelete(projectId);
+        if (!project) {
+            return res.status(404).json({ message: "Project not found" });
+        }
+
+        res.json({ message: "Project deleted successfully", project });
+    } catch (err) {
+        res.status(500).json({ message: "Error deleting project", error: err.message });
+    }
+};
+
+// Rename a project
+exports.renameProject = async (req, res) => {
+    console.log("Rename Project Function Executed");
+    try {
+        const { projectId } = req.params;
+        const { newTitle } = req.body;
+
+        console.log("Project ID:", projectId);
+        console.log("New Title:", newTitle);
+
+        const project = await Project.findByIdAndUpdate(
+            projectId,
+            { title: newTitle },
+            { new: true }
+        );
+
+        console.log("Updated Project:", project);
+
+        if (!project) {
+            return res.status(404).json({ message: "Project not found" });
+        }
+
+        res.json({ message: "Project renamed successfully", project });
+    } catch (err) {
+        console.error("Error renaming project:", err.message);
+        res.status(500).json({ message: "Error renaming project", error: err.message });
+    }
+};

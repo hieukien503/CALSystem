@@ -7,7 +7,8 @@ const projectRoutes = require("./src/routes/projectRoutes");
 const authRoutes = require("./src/routes/authRoutes");
 const publicRoutes = require("./src/routes/publicRoutes"); // 👈 add this
 
-dotenv.config({ path: './geometry-backend/.env' });
+dotenv.config({ path: './.env' });
+
 const app = express();
 
 // ✅ allow your React dev origin
