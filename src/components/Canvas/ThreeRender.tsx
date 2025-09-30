@@ -1,7 +1,7 @@
 import React, { RefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Shape, Sphere, GeometryState, ShapeNode3D, Vector, Plane, Cylinder, Cone, Pyramid, Cube, Prism, 
+import { Shape, Sphere, GeometryState, ShapeNode3D, Vector, Plane, Cylinder, Cone, Pyramid, Prism, 
         Polygon, Segment, Ray, Circle, Point, Line, 
         DrawingMode,
         HistoryEntry3D
@@ -106,7 +106,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         }
 
         else if (
-            (['segment_length', 'circle_center_direction', 'enlarge', 'sphere', 'cone', 'cylinder'].includes(this.props.mode)) &&
+            (['segment_length', 'circle_center_direction', 'enlarge', 'sphere', 'cone', 'cylinder', 'prism'].includes(this.props.mode)) &&
             this.props.data !== prevProps.data &&
             typeof this.props.data === 'number'
         ) {
@@ -132,6 +132,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         requestAnimationFrame(this.animate);
         if (this.controlsRef.current && this.rendererRef.current && this.sceneRef.current && this.cameraRef.current) {
             this.controlsRef.current.update();
+            // this.sceneRef.current.traverse((object) => {
+            //     if ((object as any).updateCircleStyles) {
+            //         (object as any).updateCircleStyles(this.cameraRef.current!);
+            //     }
+            // });
+
             this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current);
         }
 
@@ -249,7 +255,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         const material = new THREE.MeshPhongMaterial({
             color: 'gray',
             transparent: true,
-            opacity: 0.1,
+            opacity: 0.3,
+            side: THREE.DoubleSide,
         });
 
         const mesh = new THREE.Mesh(geometry, material);
@@ -483,7 +490,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
         if ('point' in shape && 'norm' in shape) {
             let pl: Plane = shape as Plane;
-            geometry = new THREE.PlaneGeometry(12, 12);
+            geometry = new THREE.PlaneGeometry(25, 25);
             mesh = new THREE.Mesh(geometry, material);
             let point = utils3d.convertToVector3(pl.point.x, pl.point.y, pl.point.z ?? 0);
             let norm = utils3d.convertToVector3(
@@ -512,8 +519,41 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const defaultNormal = new THREE.Vector3(0, 1, 0);
             const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, direction.clone().normalize());
             mesh.quaternion.copy(quaternion);
-            
+            mesh.position.copy(start).add(direction.clone().multiplyScalar(0.5));
             labelPosition = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+
+            const base1 = Factory.createCircle(
+                utils.createCircleDefaultShapeProps('', cy.radius),
+                cy.centerBase1,
+                cy.radius,
+                Factory.createVector(
+                    utils.createVectorDefaultShapeProps(''),
+                    cy.centerBase1,
+                    cy.centerBase2
+                )
+            );
+
+            const base2 = Factory.createCircle(
+                utils.createCircleDefaultShapeProps('', cy.radius),
+                cy.centerBase2,
+                cy.radius,
+                Factory.createVector(
+                    utils.createVectorDefaultShapeProps(''),
+                    cy.centerBase2,
+                    cy.centerBase1
+                )
+            );
+
+            base1.props.color = shape.props.color;
+            base2.props.color = shape.props.color;
+
+            const base1Mesh = this.create2DShape(base1);
+            const base2Mesh = this.create2DShape(base2);
+            const cylinderGroup = new THREE.Group();
+            if (base1Mesh) cylinderGroup.add(base1Mesh);
+            if (base2Mesh) cylinderGroup.add(base2Mesh);
+            cylinderGroup.add(mesh);
+            mesh = cylinderGroup as unknown as THREE.Mesh;
         }
         
         else if ('center' in shape && 'apex' in shape && 'radius' in shape) {
@@ -531,6 +571,25 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             mesh.quaternion.copy(quaternion);
             mesh.position.copy(center).add(direction.clone().multiplyScalar(0.5));
             labelPosition = new THREE.Vector3().addVectors(center, apex).multiplyScalar(0.5);
+
+            const base = Factory.createCircle(
+                utils.createCircleDefaultShapeProps('', co.radius),
+                co.center,
+                co.radius,
+                Factory.createVector(
+                    utils.createVectorDefaultShapeProps(''),
+                    co.center,
+                    co.apex
+                )
+            );
+
+            base.props.color = shape.props.color;
+
+            const baseMesh = this.create2DShape(base);
+            const coneGroup = new THREE.Group();
+            if (baseMesh) coneGroup.add(baseMesh);
+            coneGroup.add(mesh);
+            mesh = coneGroup as unknown as THREE.Mesh;
         }
         
         else if ('centerS' in shape && 'radius' in shape) {
@@ -610,60 +669,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             mesh = pyramidGroup as unknown as THREE.Mesh;
         }
         
-        else if ('width' in shape && 'height' in shape && 'depth' in shape) {
-            let cube: Cube = shape as Cube;
-            const width = cube.width;
-            const height = cube.height;
-            const depth = cube.depth;
-
-            geometry = new THREE.BoxGeometry(width, height, depth);
-            mesh = new THREE.Mesh(geometry, material);
-            // 2. Create local axes by rotating using azimuth and polar angles
-            // X axis: axisX, Y axis: axisY, Z axis: cross(X, Y)
-            // Normalize axis vectors
-            const azimuth = (cube.azimuth ?? 0) * Math.PI / 180; // Convert to radians
-            const polar = (cube.polar ?? 90) * Math.PI / 180; // Convert to radians
-            const xAxis = new THREE.Vector3(
-                Math.cos(azimuth), 0, Math.sin(azimuth)
-            ).normalize();
-
-            const yAxis = new THREE.Vector3(
-                Math.cos(azimuth) * Math.cos(polar),
-                Math.sin(polar),
-                Math.sin(azimuth) * Math.cos(polar)
-            ).normalize();
-            
-            const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
-
-            // Re-orthogonalize Y to ensure perfect perpendicularity
-            yAxis.crossVectors(zAxis, xAxis).normalize();
-
-            // 3. Create rotation matrix from axes
-            const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
-
-            // 4. Apply rotation
-            mesh.setRotationFromMatrix(rotationMatrix);
-
-            // 5. Move to center (Three.js BoxGeometry is centered)
-            let pos = utils3d.convertToVector3(cube.origin.x, cube.origin.y, cube.origin.z ?? 0)
-            mesh.position.set(pos.x, pos.y, pos.z);
-
-            labelPosition.copy(mesh.position).add(new THREE.Vector3(0, height / 2 + 0.5, 0));
-        }
-        
-        else if ('shiftVector' in shape && 'base' in shape) {
+        else if ('base1' in shape && 'base2' in shape) {
             let pr: Prism = shape as Prism
-            const direction = utils3d.convertToVector3(
-                pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
-                pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
-                (pr.shiftVector.endVector.z ?? 0) - (pr.shiftVector.startVector.z ?? 0),
-            );
-
             let base: THREE.Vector3[] = [], secondBase: THREE.Vector3[] = [];
-            pr.base.points.forEach(p => {
+            pr.base1.points.forEach(p => {
                 base.push(utils3d.convertToVector3(p.x, p.y, p.z ?? 0));
-                let v = base[base.length - 1].clone()
-                secondBase.push(v.add(direction))
+            })
+
+            pr.base2.points.forEach(p => {
+                secondBase.push(utils3d.convertToVector3(p.x, p.y, p.z ?? 0));
             })
 
             const geometry = new THREE.BufferGeometry();
@@ -806,7 +820,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         if ('centerC' in shape && 'radius' in shape) {
             let c: Circle = shape as Circle;
             // Create points for the circle
-            const points = [];
+            const points: THREE.Vector3[] = [];
             const segments = 64; // Number of segments for the circle
             for (let i = 0; i <= segments; i++) {
                 const theta = (i / segments) * Math.PI * 2;
@@ -834,6 +848,57 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             for (let p of points) {
                 p.add(utils3d.convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0));
             }
+
+            // const frontMaterial = new THREE.LineBasicMaterial({
+            //     color: c.props.color,
+            //     linewidth: c.props.line_size
+            // });
+
+            // const backMaterial = new THREE.LineDashedMaterial({
+            //     color: c.props.color,
+            //     linewidth: c.props.line_size,
+            //     dashSize: 0.1,
+            //     gapSize: 0.05,
+            // });
+
+            // const frontLine = new THREE.Line(
+            //     new THREE.BufferGeometry(),
+            //     frontMaterial
+            // );
+
+            // const backLine = new THREE.Line(
+            //     new THREE.BufferGeometry(),
+            //     backMaterial
+            // );
+
+            // const group = new THREE.Group();
+            // group.add(frontLine);
+            // group.add(backLine);
+
+            // (group as any).updateCircleStyles = (camera: THREE.Camera) => {
+            //     const { front: frontArcs, back: backArcs } = utils3d.splitCurveByPlane(points, camera);
+
+            //     // remove old children
+            //     frontLine.clear();
+            //     backLine.clear();
+
+            //     // add new arcs
+            //     frontArcs.forEach(arc => {
+            //         const g = new THREE.BufferGeometry().setFromPoints(arc);
+            //         frontLine.add(new THREE.Line(g, frontMaterial));
+            //     });
+
+            //     backArcs.forEach(arc => {
+            //         const g = new THREE.BufferGeometry().setFromPoints(arc);
+            //         const dashed = new THREE.Line(g, backMaterial);
+            //         dashed.computeLineDistances();
+            //         backLine.add(dashed);
+            //     });
+            // };
+
+            // group.name = c.props.id;
+            // labelPosition.copy(utils3d.convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0)).add(new THREE.Vector3(0, c.radius + 0.5, 0));
+            // mesh = group as unknown as THREE.Mesh;
 
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const material = new THREE.LineDashedMaterial({
@@ -1036,15 +1101,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
         const visualPriority: Record<string, number> = {
             // Lowest Priority - Foundational 2D and 3D Shapes
-            'Circle': 0,
-            'Circle2Point': 1,
-            'Circumcircle': 2,
-            'Incircle': 3,
-            'Excircle': 4,
-            'SemiCircle': 5,
-            'Polygon': 6,
-            'RegularPolygon': 7,
-            'Plane': 8,
+            'Plane': 0,
+            'Circle': 1,
+            'Circle2Point': 2,
+            'Circumcircle': 3,
+            'Incircle': 4,
+            'Excircle': 5,
+            'SemiCircle': 6,
+            'Polygon': 7,
+            'RegularPolygon': 8,
 
             // Middle Priority - 3D Solids
             'Cylinder': 9,
@@ -1052,35 +1117,34 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             'Sphere': 11,
             'Prism': 12,
             'Pyramid': 13,
-            'Cube': 14,
-            'Tetrahedron': 15,
+            'Tetrahedron': 14,
             
             // Higher Priority - Lines, Segments, etc.
-            'Line': 16,
-            'Ray': 17,
-            'ParallelLine': 18,
-            'Segment': 19,
-            'Vector': 20,
-            'TangentLine': 21,
-            'PerpendicularLine': 22,
-            'PerpendicularBisector': 23,
-            'AngleBisector': 24,
+            'Line': 15,
+            'Ray': 16,
+            'ParallelLine': 17,
+            'Segment': 18,
+            'Vector': 19,
+            'TangentLine': 20,
+            'PerpendicularLine': 21,
+            'PerpendicularBisector': 22,
+            'AngleBisector': 23,
 
             // Highest Priority - Points and Transformations (on top of everything)
-            'Centroid': 25,
-            'Orthocenter': 26,
-            'Circumcenter': 27,
-            'Incenter': 28,
-            'Excenter': 29,
-            'Midpoint': 30,
-            'Intersection': 31,
-            'Projection': 32,
-            'Reflection': 33,
-            'Rotation': 34,
-            'Enlarge': 35,
-            'Translation': 36,
-            'Angle': 37,
-            'Point': 38,
+            'Centroid': 24,
+            'Orthocenter': 25,
+            'Circumcenter': 26,
+            'Incenter': 27,
+            'Excenter': 28,
+            'Midpoint': 29,
+            'Intersection': 30,
+            'Projection': 31,
+            'Reflection': 32,
+            'Rotation': 33,
+            'Enlarge': 34,
+            'Translation': 35,
+            'Angle': 36,
+            'Point': 37,
         };
 
         // Add new shapes
@@ -1088,7 +1152,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             if (shape.defined && shape.type.props.visible.shape && !['line-xAxis', 'line-yAxis', 'line-zAxis', 'plane-OxyPlane'].includes(shape.type.props.id)) {
                 const mesh = this.createShape(shape.type);
                 if (mesh) {
-                    mesh.renderOrder = 38 - (visualPriority[shape.type.type] ?? 0); // Higher priority shapes render on top
+                    mesh.renderOrder = 37 - (visualPriority[shape.type.type] ?? 0); // Higher priority shapes render on top
                     this.sceneRef.current!.add(mesh);
                 }
             }
@@ -1130,7 +1194,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 labelUsed.push(label);
                 const point = Factory.createPoint(
                     utils.createPointDefaultShapeProps(label),
-                    pointData.x, pointData.y, pointData.z
+                    pointData.x, -pointData.y, pointData.z
                 )
 
                 DAG.set(point.props.id, {
@@ -1300,11 +1364,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return;
             }
             
-            let label = utils.getExcelLabel('c', 0);
+            let label = `sphere0`
             let index = 0;
             while (this.props.labelUsed.includes(label)) {
                 index++;
-                label = utils.getExcelLabel('c', index);
+                label = `sphere${index}`;
             }
 
             this.props.onLabelUsed([...this.props.labelUsed, label]);
@@ -1333,14 +1397,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         }
 
         else if (this.props.mode === 'sphere_2_points') {
-            
             const selectedPoints = [...this.props.selectedPoints];
             if (selectedPoints.length !== 2) return;
-            let label = utils.getExcelLabel('c', 0);
+            let label = `sphere0`
             let index = 0;
             while (this.props.labelUsed.includes(label)) {
                 index++;
-                label = utils.getExcelLabel('c', index);
+                label = `sphere${index}`;
             }
 
             this.props.onLabelUsed([...this.props.labelUsed, label]);
@@ -1562,78 +1625,141 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (['parallel', 'perpendicular'].includes(this.props.mode)) {
             const selectedShapes = [...this.props.selectedShapes];
             const selectedPoints = [...this.props.selectedPoints];
-            if (selectedShapes.length !== 1 || selectedPoints.length !== 1) {
-                if (selectedPoints.length === 2) {
+            console.log(selectedShapes, selectedPoints);
+            if (selectedShapes.length !== 1) {
+                this.props.onUpdateLastFailedState();
+                this.props.onSelectedChange({
+                    selectedShapes: [],
+                    selectedPoints: []
+                });
+
+                return;
+            }
+
+            if (!selectedShapes[0].props.id.includes('line-') && !selectedShapes[0].props.id.includes('plane-')) {
+                this.props.onUpdateLastFailedState();
+                this.props.onSelectedChange({
+                    selectedShapes: [],
+                    selectedPoints: []
+                });
+
+                return;
+            }
+
+            if (selectedPoints.length !== 1) return;
+            if (selectedShapes[0].props.id.includes('line-')) {
+                const [start, end] = operation.getStartAndEnd(selectedShapes[0]);
+                let label = `line0`
+                let index = 0;
+                while (this.props.labelUsed.includes(label)) {
+                    index++;
+                    label = `line${index}`;
+                }
+
+                this.props.onLabelUsed([...this.props.labelUsed, label]);
+                let newLine = Factory.createLine(
+                    utils.createLineDefaultShapeProps(label),
+                    selectedPoints[0],
+                    this.props.mode === 'parallel' ? Factory.createPoint(
+                        utils.createPointDefaultShapeProps(''),
+                        selectedPoints[0].x + (end.x - start.x),
+                        selectedPoints[0].y + (end.y - start.y),
+                        (selectedPoints[0].z ?? 0) + ((end.z ?? 0) - (start.z ?? 0))
+                    ) : (() => {
+                        const w = {
+                            x: selectedPoints[0].x - start.x,
+                            y: selectedPoints[0].y - start.y,
+                            z: (selectedPoints[0].z ?? 0) - (start.z ?? 0)
+                        }
+
+                        const v = {
+                            x: end.x - start.x,
+                            y: end.y - start.y,
+                            z: (end.z ?? 0) - (start.z ?? 0)
+                        }
+
+                        const cross = operation.cross(w.x, w.y, w.z, v.x, v.y, v.z);
+                        const dot = operation.dot(v.x, v.y, v.z, v.x, v.y, v.z);
+                        const w_ortho = operation.cross(cross.x / dot, cross.y / dot, cross.z / dot, v.x, v.y, v.z);
+                        return Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            selectedPoints[0].x + (w.x - w_ortho.x),
+                            selectedPoints[0].y + (w.y - w_ortho.y),
+                            (selectedPoints[0].z ?? 0) + (w.z - w_ortho.z)
+                        );
+                    })()
+                );
+
+                DAG.set(newLine.props.id, {
+                    id: newLine.props.id,
+                    dependsOn: [selectedPoints[0].props.id, selectedShapes[0].props.id],
+                    defined: true,
+                    isSelected: false,
+                    type: newLine
+                });
+
+                newLine.type = this.props.mode === 'parallel' ? 'ParallelLine' : 'PerpendicularLine';
+
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+            
+            else {
+                if (this.props.mode === 'parallel') {
+                    // Cannot draw unique parallel line to plane
                     this.props.onUpdateLastFailedState();
                     this.props.onSelectedChange({
                         selectedShapes: [],
                         selectedPoints: []
                     });
+
+                    return;
                 }
 
-                return;
-            }
+                let label = `line0`
+                let index = 0;
+                while (this.props.labelUsed.includes(label)) {
+                    index++;
+                    label = `line${index}`;
+                }
 
-            if (!selectedShapes[0].props.id.includes('line-')) return;
-            const [start, end] = operation.getStartAndEnd(selectedShapes[0]);
-            let label = utils.getExcelLabel('f', 0);
-            let index = 0;
-            while (this.props.labelUsed.includes(label)) {
-                index++;
-                label = utils.getExcelLabel('f', index);
-            }
+                const norm = (selectedShapes[0] as Plane).norm;
 
-            this.props.onLabelUsed([...this.props.labelUsed, label]);
-            let newLine = Factory.createLine(
-                utils.createLineDefaultShapeProps(label),
-                selectedPoints[0],
-                this.props.mode === 'parallel' ? Factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    selectedPoints[0].x + (end.x - start.x),
-                    selectedPoints[0].y + (end.y - start.y),
-                    (selectedPoints[0].z ?? 0) + ((end.z ?? 0) - (start.z ?? 0))
-                ) : (() => {
-                    const w = {
-                        x: selectedPoints[0].x - start.x,
-                        y: selectedPoints[0].y - start.y,
-                        z: (selectedPoints[0].z ?? 0) - (start.z ?? 0)
-                    }
-
-                    const v = {
-                        x: end.x - start.x,
-                        y: end.y - start.y,
-                        z: (end.z ?? 0) - (start.z ?? 0)
-                    }
-
-                    const cross = operation.cross(w.x, w.y, w.z, v.x, v.y, v.z);
-                    const dot = operation.dot(v.x, v.y, v.z, v.x, v.y, v.z);
-                    const w_ortho = operation.cross(cross.x / dot, cross.y / dot, cross.z / dot, v.x, v.y, v.z);
-                    return Factory.createPoint(
+                this.props.onLabelUsed([...this.props.labelUsed, label]);
+                let newLine = Factory.createLine(
+                    utils.createLineDefaultShapeProps(label),
+                    selectedPoints[0],
+                    Factory.createPoint(
                         utils.createPointDefaultShapeProps(''),
-                        selectedPoints[0].x + (w.x - w_ortho.x),
-                        selectedPoints[0].y + (w.y - w_ortho.y),
-                        (selectedPoints[0].z ?? 0) + (w.z - w_ortho.z)
-                    );
-                })()
-            );
+                        selectedPoints[0].x + (norm.endVector.x - norm.startVector.x),
+                        selectedPoints[0].y + (norm.endVector.y - norm.startVector.y),
+                        (selectedPoints[0].z ?? 0) + ((norm.endVector.z ?? 0) - (norm.startVector.z ?? 0))
+                    )
+                );
 
-            DAG.set(newLine.props.id, {
-                id: newLine.props.id,
-                dependsOn: [selectedPoints[0].props.id, selectedShapes[0].props.id],
-                defined: true,
-                isSelected: false,
-                type: newLine
-            });
+                DAG.set(newLine.props.id, {
+                    id: newLine.props.id,
+                    dependsOn: [selectedPoints[0].props.id, selectedShapes[0].props.id],
+                    defined: true,
+                    isSelected: false,
+                    type: newLine
+                });
 
-            newLine.type = this.props.mode === 'parallel' ? 'ParallelLine' : 'PerpendicularLine';
+                newLine.type = 'PerpendicularLine';
 
-            this.props.onUpdateLastFailedState();
-            this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
-                dag: DAG,
-                selectedPoints: [],
-                selectedShapes: []
-            });
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
         }
 
         else if (this.props.mode === 'segment_length') {
@@ -1645,11 +1771,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return;
             }
 
-            let segment_label = utils.getExcelLabel('f', 0);
+            let label = `segment0`
             let index = 0;
-            while (this.props.labelUsed.includes(segment_label)) {
+            while (this.props.labelUsed.includes(label)) {
                 index++;
-                segment_label = utils.getExcelLabel('c', index);
+                label = `segment${index}`;
             }
 
             let point_label = utils.getExcelLabel('A', 0);
@@ -1659,7 +1785,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 point_label = utils.getExcelLabel('A', index);
             }
 
-            this.props.onLabelUsed([...this.props.labelUsed, point_label, segment_label]);
+            this.props.onLabelUsed([...this.props.labelUsed, point_label, label]);
             
             const point: Point = Factory.createPoint(
                 utils.createPointDefaultShapeProps(point_label),
@@ -1669,7 +1795,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             )
 
             const segment: Segment = Factory.createSegment(
-                utils.createLineDefaultShapeProps(segment_label),
+                utils.createLineDefaultShapeProps(label),
                 selectedPoints[0],
                 point
             )
@@ -1705,7 +1831,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (this.props.mode === 'perpendicular_bisector') {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
-            if (selectedPoints.length !== 2 && selectedShapes.length !== 1) return;
             if (selectedShapes.length === 1) {
                 if (selectedPoints.length !== 0 || !('startSegment' in selectedShapes[0])) {
                     this.props.onUpdateLastFailedState();
@@ -1717,17 +1842,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     return;
                 }
 
-                const [start, end] = operation.getStartAndEnd(selectedShapes[0]);
+                const [start, end] = [selectedShapes[0].startSegment, selectedShapes[0].endSegment]
                 const mid = {
                     x: (start.x + end.x) / 2,
                     y: (start.y + end.y) / 2,
                     z: ((start.z ?? 0) + (end.z ?? 0)) / 2
-                }
-
-                const w = {
-                    x: mid.x - start.x,
-                    y: mid.y - start.y,
-                    z: (mid.z ?? 0) - (start.z ?? 0)
                 }
 
                 const v = {
@@ -1736,48 +1855,46 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     z: (end.z ?? 0) - (start.z ?? 0)
                 }
 
-                const cross = operation.cross(w.x, w.y, w.z, v.x, v.y, v.z);
-                const dot = operation.dot(v.x, v.y, v.z, v.x, v.y, v.z);
-                const w_ortho = operation.cross(cross.x / dot, cross.y / dot, cross.z / dot, v.x, v.y, v.z);
-                const dir = {
-                    x: w.x - w_ortho.x,
-                    y: w.y - w_ortho.y,
-                    z: (w.z ?? 0) - w_ortho.z
-                }
-
-                let label = utils.getExcelLabel('f', 0);
+                let label = `plane0`
                 let index = 0;
                 while (this.props.labelUsed.includes(label)) {
                     index++;
-                    label = utils.getExcelLabel('f', index);
+                    label = `plane${index}`;
                 }
 
                 this.props.onLabelUsed([...this.props.labelUsed, label]);
+                const midPoint = Factory.createPoint(
+                    utils.createPointDefaultShapeProps(''),
+                    mid.x,
+                    mid.y,
+                    mid.z
+                )
 
-                const line: Line = Factory.createLine(
-                    utils.createLineDefaultShapeProps(label),
-                    Factory.createPoint(
-                        utils.createPointDefaultShapeProps(''),
-                        mid.x - dir.x,
-                        mid.y - dir.y
-                    ),
-                    Factory.createPoint(
-                        utils.createPointDefaultShapeProps(''),
-                        mid.x + dir.x,
-                        mid.y + dir.y
+                const plane: Plane = Factory.createPlane(
+                    utils.createPlaneDefaultShapeProps(label),
+                    midPoint,
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        midPoint,
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            mid.x + v.x,
+                            mid.y + v.y,
+                            mid.z + v.z
+                        )
                     )
                 );
 
 
-                DAG.set(line.props.id, {
-                    id: line.props.id,
+                DAG.set(plane.props.id, {
+                    id: plane.props.id,
                     dependsOn: [selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false,
-                    type: line,
+                    type: plane,
                 });
 
-                line.type = 'PerpendicularBisector';
+                plane.type = 'PerpendicularBisector';
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
                     gs: {...this.props.geometryState},
@@ -1788,17 +1905,18 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             else {
+                if (selectedPoints.length !== 2) return;
+                if (selectedPoints[0] === selectedPoints[1]) {
+                    selectedPoints.pop();
+                    this.props.onSelectedPointsChange(selectedPoints);
+                    return;
+                }
+
                 const [start, end] = [selectedPoints[0], selectedPoints[1]];
                 const mid = {
                     x: (start.x + end.x) / 2,
                     y: (start.y + end.y) / 2,
                     z: ((start.z ?? 0) + (end.z ?? 0)) / 2
-                }
-
-                const w = {
-                    x: mid.x - start.x,
-                    y: mid.y - start.y,
-                    z: (mid.z ?? 0) - (start.z ?? 0)
                 }
 
                 const v = {
@@ -1807,48 +1925,46 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     z: (end.z ?? 0) - (start.z ?? 0)
                 }
 
-                const cross = operation.cross(w.x, w.y, w.z, v.x, v.y, v.z);
-                const dot = operation.dot(v.x, v.y, v.z, v.x, v.y, v.z);
-                const w_ortho = operation.cross(cross.x / dot, cross.y / dot, cross.z / dot, v.x, v.y, v.z);
-                const dir = {
-                    x: w.x - w_ortho.x,
-                    y: w.y - w_ortho.y,
-                    z: (w.z ?? 0) - w_ortho.z
-                }
-
-                let label = utils.getExcelLabel('f', 0);
+                let label = `plane0`
                 let index = 0;
                 while (this.props.labelUsed.includes(label)) {
                     index++;
-                    label = utils.getExcelLabel('f', index);
+                    label = `plane${index}`;
                 }
 
                 this.props.onLabelUsed([...this.props.labelUsed, label]);
+                const midPoint = Factory.createPoint(
+                    utils.createPointDefaultShapeProps(''),
+                    mid.x,
+                    mid.y,
+                    mid.z
+                )
 
-                const line: Line = Factory.createLine(
-                    utils.createLineDefaultShapeProps(label),
-                    Factory.createPoint(
-                        utils.createPointDefaultShapeProps(''),
-                        mid.x - dir.x,
-                        mid.y - dir.y
-                    ),
-                    Factory.createPoint(
-                        utils.createPointDefaultShapeProps(''),
-                        mid.x + dir.x,
-                        mid.y + dir.y
+                const plane: Plane = Factory.createPlane(
+                    utils.createPlaneDefaultShapeProps(label),
+                    midPoint,
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        midPoint,
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            mid.x + v.x,
+                            mid.y + v.y,
+                            mid.z + v.z
+                        )
                     )
                 );
 
 
-                DAG.set(line.props.id, {
-                    id: line.props.id,
-                    dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id],
+                DAG.set(plane.props.id, {
+                    id: plane.props.id,
+                    dependsOn: [selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false,
-                    type: line
+                    type: plane,
                 });
 
-                line.type = 'PerpendicularBisector';
+                plane.type = 'PerpendicularBisector';
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
                     gs: {...this.props.geometryState},
@@ -1898,7 +2014,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
                     selectedPoints.pop();
                     const labelUsed = [...this.props.labelUsed];
-                    let idx = 1;
+                    let idx = 0;
                     let label = `poly${idx}`;
                     while (labelUsed.includes(label)) {
                         idx += 1;
@@ -1917,11 +2033,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     for (let i = 0; i < selectedPoints.length; i++) {
                         let p = selectedPoints[i];
                         let pNext = selectedPoints[(i + 1) % selectedPoints.length];
-                        let label = utils.getExcelLabel('a', 0);
+                        let label = `segment0`
                         let index = 0;
-                        while (labelUsed.includes(label)) {
+                        while (this.props.labelUsed.includes(label)) {
                             index++;
-                            label = utils.getExcelLabel('a', index);
+                            label = `segment${index}`;
                         }
 
                         labelUsed.push(label);
@@ -2010,11 +2126,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     let bisectors = operation.bisector_angle_line2(tmpSelectedShapes[0], tmpSelectedShapes[1]);
                     const labelUsed = [...this.props.labelUsed];
                     bisectors.forEach((b, i) => {
-                        let label = utils.getExcelLabel('f', 0);
-                        let idx = 0;
-                        while (labelUsed.includes(label)) {
-                            idx++;
-                            label = utils.getExcelLabel('f', idx);
+                        let label = `line0`
+                        let index = 0;
+                        while (this.props.labelUsed.includes(label)) {
+                            index++;
+                            label = `line${index}`;
                         }
 
                         labelUsed.push(label);
@@ -2061,11 +2177,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     // Create 2 perpendicular, undefined lines
                     const labelUsed = [...this.props.labelUsed];
                     for (let i = 0; i < 2; i++) {
-                        let label = utils.getExcelLabel('f', 0);
-                        let idx = 0;
-                        while (labelUsed.includes(label)) {
-                            idx++;
-                            label = utils.getExcelLabel('f', idx);
+                        let label = `line0`
+                        let index = 0;
+                        while (this.props.labelUsed.includes(label)) {
+                            index++;
+                            label = `line${index}`;
                         }
 
                         labelUsed.push(label);
@@ -2165,11 +2281,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
 
                 let line = operation.bisector_angle_line1(point1, point2, point3);
-                let label = utils.getExcelLabel('f', 0);
-                let idx = 0;
+                let label = `line0`
+                let index = 0;
                 while (this.props.labelUsed.includes(label)) {
-                    idx++;
-                    label = utils.getExcelLabel('f', idx);
+                    index++;
+                    label = `line${index}`;
                 }
 
                 this.props.onLabelUsed([...this.props.labelUsed, label]);
@@ -2231,11 +2347,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             let tangentLines = operation.tangentLine(selectedPoints[0], selectedShapes[0] as Circle);
             const labelUsed = [...this.props.labelUsed];
             for (let i = 0; i < 2; i++) {
-                let label = utils.getExcelLabel('f', 0);
-                let idx = 0;
-                while (labelUsed.includes(label)) {
-                    idx++;
-                    label = utils.getExcelLabel('f', idx);
+                let label = `line0`
+                let index = 0;
+                while (this.props.labelUsed.includes(label)) {
+                    index++;
+                    label = `line${index}`;
                 }
 
                 labelUsed.push(label);
@@ -2328,7 +2444,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     points.push(newEnd);
                 }
 
-                let idx = 1;
+                let idx = 0;
                 let poly_label = `regular_poly${idx}`;
                 while (labelUsed.includes(poly_label)) {
                     idx += 1;
@@ -2361,11 +2477,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     if (i === 0) continue;
                     let p = polygonPoints[i];
                     let pNext = polygonPoints[(i + 1) % polygonPoints.length];
-                    let label = utils.getExcelLabel('a', 0);
+                    let label = `segment0`
                     let index = 0;
-                    while (labelUsed.includes(label)) {
+                    while (this.props.labelUsed.includes(label)) {
                         index++;
-                        label = utils.getExcelLabel('a', index);
+                        label = `segment${index}`;
                     }
 
                     labelUsed.push(label);
@@ -2448,7 +2564,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     points.push(newEnd);
                 }
 
-                let idx = 1;
+                let idx = 0;
                 let poly_label = `regular_poly${idx}`;
                 while (labelUsed.includes(poly_label)) {
                     idx += 1;
@@ -2478,11 +2594,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     if (i === 0) continue;
                     let p = polygonPoints[i];
                     let pNext = polygonPoints[(i + 1) % polygonPoints.length];
-                    let label = utils.getExcelLabel('a', 0);
+                    let label = `segment0`
                     let index = 0;
-                    while (labelUsed.includes(label)) {
+                    while (this.props.labelUsed.includes(label)) {
                         index++;
-                        label = utils.getExcelLabel('a', index);
+                        label = `segment${index}`;
                     }
 
                     labelUsed.push(label);
@@ -2627,7 +2743,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 C.x - A.x, C.y - A.y, (C.z ?? 0) - (A.z ?? 0)
             );
 
-            let idx = 1;
+            let idx = 0;
             let plane_label = `plane${idx}`;
             const labelUsed = [...this.props.labelUsed];
             while (labelUsed.includes(plane_label)) {
@@ -2703,7 +2819,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     C.x - A.x, C.y - A.y, (C.z ?? 0) - (A.z ?? 0)
                 );
 
-                let idx = 1;
+                let idx = 0;
                 let plane_label = `plane${idx}`;
                 const labelUsed = [...this.props.labelUsed];
                 while (labelUsed.includes(plane_label)) {
@@ -2800,7 +2916,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     }
 
                     // Point is off the line, form a plane
-                    let idx = 1;
+                    let idx = 0;
                     let plane_label = `plane${idx}`;
                     const labelUsed = [...this.props.labelUsed];
                     while (labelUsed.includes(plane_label)) {
@@ -2863,7 +2979,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         C.x - A.x, C.y - A.y, (C.z ?? 0) - (A.z ?? 0)
                     );
 
-                    let idx = 1;
+                    let idx = 0;
                     let plane_label = `plane${idx}`;
                     const labelUsed = [...this.props.labelUsed];
                     while (labelUsed.includes(plane_label)) {
@@ -2966,7 +3082,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             start1.z ?? 0
                         );
                         
-                        let idx = 1;
+                        let idx = 0;
                         let plane_label = `plane${idx}`;
                         while (labelUsed.includes(plane_label)) {
                             idx += 1;
@@ -3024,7 +3140,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             point.z ?? 0
                         );
                         
-                        let idx = 1;
+                        let idx = 0;
                         let plane_label = `plane${idx}`;
                         while (labelUsed.includes(plane_label)) {
                             idx += 1;
@@ -3117,11 +3233,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 );
 
                 const labelUsed = [...this.props.labelUsed];
-                let label = utils.getExcelLabel('c', 0);
+                let label = `circle0`
                 let index = 0;
-                while (labelUsed.includes(label)) {
+                while (this.props.labelUsed.includes(label)) {
                     index++;
-                    label = utils.getExcelLabel('c', index);
+                    label = `circle${index}`;
                 }
 
                 labelUsed.push(label);
@@ -3171,6 +3287,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (this.props.mode === 'circle_center_direction') {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
+            console.log(selectedPoints, selectedShapes);
             if (selectedPoints.length !== 1) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
@@ -3293,7 +3410,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return;
             }
 
-            let idx = 1;
+            let idx = 0;
             let cylinder_label = `cylinder${idx}`;
             const labelUsed = [...this.props.labelUsed];
             while (labelUsed.includes(cylinder_label)) {
@@ -3348,7 +3465,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return;
             }
 
-            let idx = 1;
+            let idx = 0;
             let cone_label = `cone${idx}`;
             const labelUsed = [...this.props.labelUsed];
             while (labelUsed.includes(cone_label)) {
@@ -3418,7 +3535,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 return;
             }
 
-            let idx = 1;
+            let idx = 0;
             let pyramid_label = `pyramid${idx}`;
             const labelUsed = [...this.props.labelUsed];
             while (labelUsed.includes(pyramid_label)) {
@@ -3439,6 +3556,157 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 isSelected: false,
                 type: pyramid,
                 dependsOn: [polygon.props.id, selectedPoints[0].props.id]
+            });
+
+            this.props.onUpdateLastFailedState();
+            this.props.onLabelUsed(labelUsed);
+            this.props.onUpdateAll({
+                gs: {...this.props.geometryState},
+                dag: DAG,
+                selectedPoints: [],
+                selectedShapes: []
+            });
+        }
+
+        else if (this.props.mode === 'prism') {
+            const selectedPoints = [...this.props.selectedPoints];
+            const selectedShapes = [...this.props.selectedShapes];
+            if (selectedPoints.length > 0) {
+                this.props.onUpdateLastFailedState();
+                this.props.onSelectedChange({
+                    selectedShapes: [],
+                    selectedPoints: []
+                });
+
+                return;
+            }
+
+            const shape = selectedShapes[0];
+            if (!('points' in shape)) {
+                this.props.onUpdateLastFailedState();
+                this.props.onSelectedChange({
+                    selectedShapes: [],
+                    selectedPoints: []
+                });
+
+                return;
+            }
+
+            const height = this.props.data;
+            if (height === undefined || typeof height !== 'number') {
+                this.props.onRenderDialogbox(this.props.mode);
+                return;
+            }
+
+            let idx = 0;
+            let prism_label = `prism${idx}`;
+            const labelUsed = [...this.props.labelUsed];
+            while (labelUsed.includes(prism_label)) {
+                idx += 1;
+                prism_label = `prism${idx}`;
+            }
+
+            labelUsed.push(prism_label);
+
+            // Create a translation vector from the base polygon to the top polygon
+            const base = shape as Polygon;
+            const v1 = {
+                x: base.points[1].x - base.points[0].x,
+                y: base.points[1].y - base.points[0].y,
+                z: (base.points[1].z ?? 0) - (base.points[0].z ?? 0)
+            };
+
+            const v2 = {
+                x: base.points[2].x - base.points[1].x,
+                y: base.points[2].y - base.points[1].y,
+                z: (base.points[2].z ?? 0) - (base.points[1].z ?? 0)
+            }
+
+            let n = operation.cross(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+            n = {
+                x: n.x / Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) * height,
+                y: n.y / Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) * height,
+                z: n.z / Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) * height
+            };
+
+            // Create the top polygon by translating the base polygon along the normal vector
+            const topPoints = base.points.map(pt => {
+                return Factory.createPoint(
+                    utils.createPointDefaultShapeProps(utils.incrementLabel(pt.props.label)),
+                    pt.x + n.x,
+                    pt.y + n.y,
+                    (pt.z ?? 0) + n.z
+                )
+            });
+
+            topPoints.forEach((pt, idx) => {
+                let i = 0;
+                let segment_label = `segment0`;
+                while (labelUsed.includes(segment_label)) {
+                    i += 1;
+                    segment_label = `segment${i}`;
+                }
+
+                labelUsed.push(segment_label);
+                const segment = Factory.createSegment(
+                    utils.createLineDefaultShapeProps(segment_label),
+                    base.points[idx],
+                    pt
+                );
+
+                segment.props.color = '#FF7276';
+
+                DAG.set(pt.props.id, {
+                    id: pt.props.id,
+                    defined: true,
+                    isSelected: false,
+                    type: pt,
+                    dependsOn: [base.points[idx].props.id]
+                });
+
+                DAG.set(segment.props.id, {
+                    id: segment.props.id,
+                    defined: true,
+                    isSelected: false,
+                    type: segment,
+                    dependsOn: [base.points[idx].props.id, pt.props.id]
+                })
+            })
+
+            let polygon_label = `poly0`;
+            idx = 0;
+            while (labelUsed.includes(polygon_label)) {
+                idx += 1;
+                polygon_label = `poly${idx}`;
+            }
+
+            labelUsed.push(polygon_label);
+            const top = Factory.createPolygon(
+                utils.createPolygonDefaultShapeProps(polygon_label),
+                topPoints
+            );
+
+            const prism = Factory.createPrism(
+                utils.createPlaneDefaultShapeProps(prism_label),
+                shape,
+                top
+            );
+
+            prism.props.color = '#FF7276';
+            DAG.set(top.props.id, {
+                id: top.props.id,
+                defined: true,
+                isSelected: false,
+                type: top,
+                dependsOn: [base.props.id]
+            });
+
+            DAG.set(prism.props.id, {
+                id: prism.props.id,
+                defined: true,
+                isSelected: false,
+                type: prism,
+                dependsOn: selectedPoints.map(point => point.props.id)
             });
 
             this.props.onUpdateLastFailedState();
@@ -3489,7 +3757,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             const apex = selectedPoints[selectedPoints.length - 1];
-            let idx = 1;
+            let idx = 0;
             let tetra_label = `tetra${idx}`;
             const labelUsed = [...this.props.labelUsed];
             while (labelUsed.includes(tetra_label)) {
@@ -3524,6 +3792,142 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 selectedShapes: []
             });
         }
+
+        else if (['parallel_plane', 'perpendicular_plane'].includes(this.props.mode)) {
+            const selectedShapes = [...this.props.selectedShapes];
+            const selectedPoints = [...this.props.selectedPoints];
+            if (selectedShapes.length !== 1) {
+                this.props.onUpdateLastFailedState();
+                this.props.onSelectedChange({
+                    selectedShapes: [],
+                    selectedPoints: []
+                });
+
+                return;
+            }
+
+            const shape = selectedShapes[0];
+            console.log(shape, selectedPoints[0]);
+            if ((this.props.mode === 'parallel_plane' && !shape.props.id.includes('plane-')) ||
+                (this.props.mode === 'perpendicular_plane' && !shape.props.id.includes('line-'))) {
+                this.props.onUpdateLastFailedState();
+                this.props.onSelectedChange({
+                    selectedShapes: [],
+                    selectedPoints: []
+                });
+
+                return;
+            }
+
+            if (selectedPoints.length !== 1) return;
+            const labelUsed = [...this.props.labelUsed];
+            if (this.props.mode === 'parallel_plane') {
+                // shape is Plane, no need to check again
+                // If point is on the plane, do nothing
+                const norm = {
+                    x: (shape as Plane).norm.endVector.x - (shape as Plane).norm.startVector.x,
+                    y: (shape as Plane).norm.endVector.y - (shape as Plane).norm.startVector.y,
+                    z: ((shape as Plane).norm.endVector.z ?? 0) - ((shape as Plane).norm.startVector.z ?? 0)
+                }
+
+                const point = selectedPoints[0];
+                const p = (shape as Plane).point;
+                const d = -(norm.x * p.x + norm.y * p.y + norm.z * (p.z ?? 0))
+                if (Math.abs(norm.x * point.x + norm.y * point.y + norm.z * (point.z ?? 0) + d) <= constants.EPSILON) {
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    });
+
+                    return;
+                }
+                
+                let idx = 0;
+                let plane_label = `plane0`;
+                while (labelUsed.includes(plane_label)) {
+                    idx++;
+                    plane_label = `plane${idx}`;
+                }
+
+                labelUsed.push(plane_label);
+                const plane = Factory.createPlane(
+                    utils.createPlaneDefaultShapeProps(plane_label),
+                    selectedPoints[0],
+                    (shape as Plane).norm
+                );
+
+                DAG.set(plane.props.id, {
+                    id: plane.props.id,
+                    defined: true,
+                    isSelected: false,
+                    dependsOn: [shape.props.id, selectedPoints[0].props.id],
+                    type: plane
+                });
+
+                this.props.onUpdateLastFailedState();
+                this.props.onLabelUsed(labelUsed);
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+
+            else {
+                // shape is Line, no need to check again
+                // If point is on the line, do nothing
+                const [start, end] = operation.getStartAndEnd(shape as Line);
+                const point = selectedPoints[0];
+                const v1 = {
+                    x: end.x - start.x,
+                    y: end.y - start.y,
+                    z: (end.z ?? 0) - (start.z ?? 0)
+                }
+
+                let idx = 0;
+                let plane_label = `plane0`;
+                while (labelUsed.includes(plane_label)) {
+                    idx++;
+                    plane_label = `plane${idx}`;
+                }
+
+                labelUsed.push(plane_label);
+
+                const plane = Factory.createPlane(
+                    utils.createPlaneDefaultShapeProps(plane_label),
+                    point,
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        point,
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            point.x + v1.x,
+                            point.y + v1.y,
+                            (point.z ?? 0) + v1.z
+                        )
+                    )
+                );
+
+                DAG.set(plane.props.id, {
+                    id: plane.props.id,
+                    defined: true,
+                    isSelected: false,
+                    dependsOn: [shape.props.id, selectedPoints[0].props.id],
+                    type: plane
+                });
+
+                this.props.onUpdateLastFailedState();
+                this.props.onLabelUsed(labelUsed);
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+        }
     }
 
     private handleMouseDown = (e: MouseEvent) => {
@@ -3548,10 +3952,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             // Intersect with your 3D objects
             let intersects = raycaster.intersectObjects(children, true); // true = check all descendants
             const objects = intersects.filter(item => !(item.object instanceof THREE.Sprite));
-
-            objects.sort((a, b) => {
-                return (b.object.renderOrder ?? 0) - (a.object.renderOrder ?? 0);
-            });
+            objects.sort((a, b) => (b.object.renderOrder ?? 0) - (a.object.renderOrder ?? 0));
 
             const realObjects: THREE.Object3D[] = [];
             objects.forEach(obj => {
@@ -3654,67 +4055,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         }
 
         this.controlsRef.current!.enabled = true;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const rect = this.rendererRef.current.domElement.getBoundingClientRect();
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        raycaster.setFromCamera(mouse, this.cameraRef.current);
-
-        // Intersect with your 3D objects
-        let intersects = raycaster.intersectObjects(this.sceneRef.current.children.filter(obj => !(obj instanceof THREE.GridHelper)), true); // true = check all descendants
-        const objects = intersects.filter(item => !(item.object instanceof THREE.Sprite));
-
-        objects.sort((a, b) => {
-            return (a.object.renderOrder ?? 0) - (b.object.renderOrder ?? 0);
-        });
-
-        const shape = objects.length > 0 ? objects[0].object : undefined;
-        if (shape) {
-            const isCtrl = e.ctrlKey || e.metaKey;
-            let pNode = this.props.dag.get(shape.name);
-            if (!shape.name.includes('point-')) {
-                const selected = this.props.selectedShapes.map(s => s.props.id);
-                const isAlreadySelected = selected.includes(pNode!.type.props.id);
-                let newSelectedShapes = [...this.props.selectedShapes];
-                if (isCtrl) {
-                    if (isAlreadySelected) {
-                        newSelectedShapes = newSelectedShapes.filter(s => s.props.id !== pNode!.type.props.id);
-                    }
-                    
-                    else {
-                        newSelectedShapes.push(pNode!.type);
-                    }
-                }
-                
-                else {
-                    newSelectedShapes = [pNode!.type];
-                }
-
-                this.props.onSelectedShapesChange(newSelectedShapes);
-            }
-
-            else {
-                const selected = this.props.selectedPoints.map(p => p.props.id);
-                const isAlreadySelected = selected.includes(pNode!.type.props.id);
-                let newSelectedPoints = [...this.props.selectedPoints];
-                if (isCtrl) {
-                    if (isAlreadySelected) {
-                        newSelectedPoints = newSelectedPoints.filter(p => p.props.id !== pNode!.type.props.id);
-                    }
-                    
-                    else {
-                        newSelectedPoints.push(pNode!.type as Point);
-                    }
-                }
-                
-                else {
-                    newSelectedPoints = [pNode!.type as Point];
-                }
-                
-                this.props.onSelectedPointsChange(newSelectedPoints);
-            }
-        }
     }
 
     private screenToWorld(screen: THREE.Vector2): THREE.Vector3 {

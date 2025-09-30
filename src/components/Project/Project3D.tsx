@@ -526,6 +526,17 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             });
         }
 
+        else if (mode === 'prism') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Prism',
+                    input_label: 'Height',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
         else if (mode === 'regular_polygon') {
             this.setState({
                 isDialogBox: {
@@ -662,7 +673,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             }
         }
 
-        if (['segment_length', 'sphere', 'circle_center_direction', 'cone', 'cylinder'].includes(this.state.mode)) {
+        if (['segment_length', 'sphere', 'circle_center_direction', 'cone', 'cylinder', 'prism'].includes(this.state.mode)) {
             try {
                 const radius = math.evaluate(value);
                 if (typeof radius !== 'number' || radius <= 0) {

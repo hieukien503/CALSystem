@@ -271,7 +271,7 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     { key: "segment", label: "Segment", onClick: () => this.setActiveTool("segment"), title: "Select 2 points" },
                     { key: "polygon", label: "Polygon", onClick: () => this.setActiveTool("polygon"), title: "Select all vertices, then click on the first point again" },
                     { key: "circle", label: "Circle", onClick: () => this.setActiveTool("circle"), title: "Select a center, then enter its radius" },
-                    { key: "edit", label: "Move", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View" }
+                    { key: "edit", label: "Edit", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View" }
                 ]
             },
             {
@@ -453,7 +453,6 @@ interface GeometryTool3DProps {
     onPolygonClick: () => void;
     onSphere2PointClick: () => void;
     onPlane3PointClick: () => void;
-    onCubeClick: () => void;
     onPyramidClick: () => void;
     onPrismClick: () => void;
     onConeClick: () => void;
@@ -627,10 +626,6 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
             this.props.onReflectPlaneClick();
         }
 
-        else if (toolKey === 'cube') {
-            this.props.onCubeClick();
-        }
-
         else if (toolKey === 'pyramid') {
             this.props.onPyramidClick();
         }
@@ -695,10 +690,9 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 tools: [
                     { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object" },
                     { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex" },
-                    { key: "cube", label: "Cube", onClick: () => this.setActiveTool("cube"), title: "Select a point and enter azimuth and polar angle, then enter 3 dimensions" },
                     { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere" },
                     { key: "plane_3_points", label: "Plane through 3 Points", onClick: () => this.setActiveTool("plane_3_points"), title: "Select 3 points" },
-                    { key: "edit", label: "Move", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View" }
+                    { key: "edit", label: "Edit", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View" }
                 ]
             },
             {
@@ -763,13 +757,12 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 name: "Solids",
                 tools: [
                     { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex" },
-                    { key: "cube", label: "Cube", onClick: () => this.setActiveTool("cube"), title: "Select a point and enter azimuth and polar angle, then enter 3 dimensions" },
                     { key: "tetrahedron", label: "Tetrahedron", onClick: () => this.setActiveTool("tetrahedron"), title: "Select 3 points on the same plane, then apex" },
                     { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere" },
                     { key: "sphere", label: "Sphere: Center & Radius", onClick: () => this.setActiveTool("sphere"), title: "Select a center, then enter radius" },
                     { key: "cone", label: "Cone", onClick: () => this.setActiveTool("cone"), title: "Select a bottom point, then top point, then enter radius" },
                     { key: "cylinder", label: "Cylinder", onClick: () => this.setActiveTool("cylinder"), title: "Select a bottom point, then top point, then enter radius" },
-                    { key: "prism", label: "Prism", onClick: () => this.setActiveTool("prism"), title: "Select a polygon for bottom, then direction" },
+                    { key: "prism", label: "Prism", onClick: () => this.setActiveTool("prism"), title: "Select a polygon for bottom, then enter its height" },
                 ]
             },
             {

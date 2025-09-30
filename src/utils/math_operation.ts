@@ -1979,22 +1979,10 @@ export const inradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
 }
 
 export const volume = (shape: GeometryShape.Shape) => {
-    if ('width' in shape && 'height' in shape && 'depth' in shape) {
-        let cube: GeometryShape.Cube = shape as GeometryShape.Cube;
-        return cube.width * cube.height * cube.depth;
-    }
-
-    if ('base' in shape && 'shiftVector' in shape) {
+    if ('base1' in shape && 'base2' in shape) {
         let pr: GeometryShape.Prism = shape as GeometryShape.Prism;
-        let base_area = getArea(pr.base);
-        let top_point: GeometryShape.Point = Factory.createPoint(
-            {...pr.base.points[0].props},
-            pr.base.points[0].x + pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
-            pr.base.points[0].y + pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
-            (pr.base.points[0].z ?? 0) + (pr.shiftVector.endVector.x ?? 0) - (pr.shiftVector.startVector.x ?? 0)
-        )
-
-        let height = distance(pr.base, top_point);
+        let base_area = getArea(pr.base1);
+        let height = distance(pr.base1, pr.base2.points[0])
         return base_area * height;
     }
 
@@ -2027,23 +2015,11 @@ export const volume = (shape: GeometryShape.Shape) => {
 }
 
 export const surface_area = (shape: GeometryShape.Shape) => {
-    if ('height' in shape && 'width' in shape && 'depth' in shape) {
-        let cube: GeometryShape.Cube = shape as GeometryShape.Cube;
-        return 2 * (cube.width * cube.height + cube.width * cube.depth + cube.height * cube.depth);
-    }
-
-    if ('base' in shape && 'shiftVector' in shape) {
+    if ('base1' in shape && 'base2' in shape) {
         let pr: GeometryShape.Prism = shape as GeometryShape.Prism;
-        let base_area = getArea(pr.base);
-        let top_point: GeometryShape.Point = Factory.createPoint(
-            {...pr.base.points[0].props},
-            pr.base.points[0].x + pr.shiftVector.endVector.x - pr.shiftVector.startVector.x,
-            pr.base.points[0].y + pr.shiftVector.endVector.y - pr.shiftVector.startVector.y,
-            (pr.base.points[0].z ?? 0) + (pr.shiftVector.endVector.x ?? 0) - (pr.shiftVector.startVector.x ?? 0)
-        )
-
-        let height = distance(pr.base, top_point);
-        let perimeter = getPerimeter(pr.base);
+        let base_area = getArea(pr.base1);
+        let height = distance(pr.base1, pr.base2.points[0])
+        let perimeter = getPerimeter(pr.base1);
         return 2 * base_area + perimeter * height;
     }
 
@@ -2739,19 +2715,6 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         return plane;
     }
 
-    else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-        let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
-        const Cube = Factory.createCube(
-            {...cube.props},
-            reflection(cube.origin, o2) as GeometryShape.Point,
-            cube.azimuth, cube.polar,
-            cube.width, cube.height, cube.depth
-        );
-
-        Cube.type = 'Cube';
-        return Cube;
-    }
-
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
         const cylinder = Factory.createCylinder(
@@ -2765,12 +2728,12 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         return cylinder;
     }
 
-    else if ('base' in o1 && 'shiftVector' in o1) {
+    else if ('base1' in o1 && 'base2' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
         const prism = Factory.createPrism(
             {...pr.props},
-            reflection(pr.base, o2) as GeometryShape.Polygon,
-            {...pr.shiftVector}
+            reflection(pr.base1, o2) as GeometryShape.Polygon,
+            reflection(pr.base2, o2) as GeometryShape.Polygon,
         );
 
         prism.type = 'Prism';
@@ -2995,19 +2958,6 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             return polygon;
         }
 
-        else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-            let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
-            const Cube = Factory.createCube(
-                {...cube.props},
-                rotation(cube.origin, o2, degree, CCW) as GeometryShape.Point,
-                cube.azimuth, cube.polar,
-                cube.width, cube.height, cube.depth
-            );
-
-            Cube.type = 'Cube';
-            return Cube;
-        }
-
         else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
             let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
             const cylinder = Factory.createCylinder(
@@ -3021,12 +2971,12 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             return cylinder;
         }
 
-        else if ('base' in o1 && 'shiftVector' in o1) {
+        else if ('base1' in o1 && 'base2' in o1) {
             let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
             const prism = Factory.createPrism(
                 {...pr.props},
-                rotation(pr.base, o2, degree, CCW) as GeometryShape.Polygon,
-                {...pr.shiftVector}
+                rotation(pr.base1, o2, degree, CCW) as GeometryShape.Polygon,
+                rotation(pr.base2, o2, degree, CCW) as GeometryShape.Polygon,
             );
 
             prism.type = 'Prism';
@@ -3164,19 +3114,6 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             return polygon;
         }
 
-        else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-            let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
-            const Cube = Factory.createCube(
-                {...cube.props},
-                rotation(cube.origin, o2, degree, CCW) as GeometryShape.Point,
-                cube.azimuth, cube.polar,
-                cube.width, cube.height, cube.depth
-            );
-
-            Cube.type = 'Cube';
-            return Cube;
-        }
-
         else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
             let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
             const cylinder = Factory.createCylinder(
@@ -3190,12 +3127,12 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             return cylinder;
         }
 
-        else if ('base' in o1 && 'shiftVector' in o1) {
+        else if ('base1' in o1 && 'base2' in o1) {
             let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
             const prism = Factory.createPrism(
                 {...pr.props},
-                rotation(pr.base, o2, degree, CCW) as GeometryShape.Polygon,
-                {...pr.shiftVector}
+                rotation(pr.base1, o2, degree, CCW) as GeometryShape.Polygon,
+                rotation(pr.base2, o2, degree, CCW) as GeometryShape.Polygon,
             );
 
             prism.type = 'Prism';
@@ -3425,19 +3362,6 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         return plane;
     }
 
-    else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-        let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
-        const Cube = Factory.createCube(
-            {...cube.props},
-            enlarge(cube.origin, o2, k) as GeometryShape.Point,
-            cube.azimuth, cube.polar,
-            cube.width * Math.abs(k), cube.height * Math.abs(k), cube.depth * Math.abs(k)
-        );
-
-        Cube.type = 'Cube';
-        return Cube;
-    }
-
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
         const cylinder = Factory.createCylinder(
@@ -3451,12 +3375,12 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         return cylinder;
     }
 
-    else if ('base' in o1 && 'shiftVector' in o1) {
+    else if ('base1' in o1 && 'base2' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
         const prism = Factory.createPrism(
             {...pr.props},
-            enlarge(pr.base, o2, k) as GeometryShape.Polygon,
-            {...pr.shiftVector}
+            enlarge(pr.base1, o2, k) as GeometryShape.Polygon,
+            enlarge(pr.base2, o2, k) as GeometryShape.Polygon,
         );
 
         prism.type = 'Prism';
@@ -3651,19 +3575,6 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         return plane;
     }
 
-    else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-        let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
-        const Cube = Factory.createCube(
-            {...cube.props},
-            translation(cube.origin, o2) as GeometryShape.Point,
-            cube.azimuth, cube.polar,
-            cube.width, cube.height, cube.depth
-        );
-
-        Cube.type = 'Cube';
-        return Cube;
-    }
-
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
         const cylinder = Factory.createCylinder(
@@ -3677,12 +3588,12 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         return cylinder;
     }
 
-    else if ('base' in o1 && 'shiftVector' in o1) {
+    else if ('base1' in o1 && 'base2' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
         const prism = Factory.createPrism(
             {...pr.props},
-            translation(pr.base, o2) as GeometryShape.Polygon,
-            {...pr.shiftVector}
+            translation(pr.base1, o2) as GeometryShape.Polygon,
+            translation(pr.base2, o2) as GeometryShape.Polygon
         );
 
         prism.type = 'Prism';
