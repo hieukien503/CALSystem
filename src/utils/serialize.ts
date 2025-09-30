@@ -37,16 +37,11 @@ export function deserializeDAG(data: Record<string, any>): Map<string, ShapeNode
     const obj = Array.isArray(data) ? data[0] : data;
 
     Object.entries(obj).forEach(([key, value]) => {
-        console.log("Rendering key: ", key);
-
         const v = value as any;
-
-        console.log("v.type: ", v.type);
 
         let konvaNode: Konva.Shape | null = null;
 
         if (v.type.type === "Point") {
-            console.log("Rendering point");
             const point = v.type as Point;
             konvaNode = new Konva.Circle({
                 x: point.x,

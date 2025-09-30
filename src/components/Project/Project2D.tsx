@@ -950,7 +950,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             // force React update
             this.setState((prev) => ({ ...prev }));
 
-            console.log("Updated DAG: ", this.dag);
+            //console.log("Updated DAG: ", this.dag);
 
             //// Restore state
             this.setState({
@@ -976,6 +976,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
                     onSelect={this.handleSelectObject}
                     onSetMode={(mode) => this.setMode(mode)}
+                    selectedPoints={this.state.selectedPoints}
+                    selectedShapes={this.state.selectedShapes}
                 />
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
