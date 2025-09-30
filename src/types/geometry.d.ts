@@ -18,7 +18,7 @@ export interface Shape3D extends BaseShape {
 export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circle' | 'Polygon' | 'Intersection' | 'Midpoint' | 
                         'Centroid' | 'Orthocenter' | 'Circumcenter' | 'Incenter' | 'AngleBisector' | 'PerpendicularBisector' |
                         'PerpendicularLine' | 'TangentLine' | 'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' |
-                        'Circle2Point' | 'Angle' | 'Cuboid' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
+                        'Circle2Point' | 'Angle' | 'Cube' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
                         'Reflection' | 'Rotation' | 'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' |
                         'RegularPolygon' | 'Sphere2Point';
 
@@ -32,7 +32,7 @@ export interface Angle extends BaseShape {
 export interface SemiCircle extends BaseShape {
     start: Point,
     end: Point,
-    normal?: GeometryState.Vector
+    normal?: Vector
 }
 
 // Point type
@@ -103,10 +103,10 @@ export interface Pyramid extends Shape3D {
     base: Polygon;
 }
 
-export interface Cuboid extends Shape3D {
+export interface Cube extends Shape3D {
     origin: Point;
-    axisX: Vector;
-    axisY: Vector;
+    azimuth: number;
+    polar: number;
     width: number;
     height: number;
     depth: number;
@@ -130,7 +130,7 @@ export type Shape =
     | SemiCircle
     | Sphere 
     | Plane 
-    | Cuboid 
+    | Cube
     | Pyramid 
     | Prism 
     | Cone 
@@ -188,7 +188,7 @@ export interface ShapeNode {
     /** Type of shape */
     type: Shape;
     /** Konva node for the shape */
-    node: Konva.Shape;
+    node?: Konva.Shape;
     /** For undefined shape */
     defined: boolean;
     /** IDs of other ShapeNodes this one depends on */
@@ -259,8 +259,8 @@ type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' 
                    'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length' | 'perpendicular_bisector' |
                    'semicircle' | 'reflect_point' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
                    'angle_bisector' | 'reflect_line' | 'sphere' | 'sphere_2_points' | 'circle_axis_point' | 'circle_center_direction' |
-                   'plane' | 'plane_3_points' | 'parallel_plane' | 'perpendicular_plane' | 'cone' | 'cuboid' | 'prism' | 'pyramid' |
-                   'tetrahedron' | 'cylinder' | 'extrude_pyramid' | 'extrude_prism' | 'reflect_plane';
+                   'plane' | 'plane_3_points' | 'parallel_plane' | 'perpendicular_plane' | 'cone' | 'cube' | 'prism' | 'pyramid' |
+                   'tetrahedron' | 'cylinder' | 'extrude_pyramid' | 'extrude_prism' | 'reflect_plane' | 'changeName';
 
 /** History */
 interface HistoryEntry {
@@ -269,7 +269,7 @@ interface HistoryEntry {
     selectedPoints: Point[],
     selectedShapes: Shape[],
     label_used: string[]
-};
+}
 
 interface HistoryEntry3D {
     state: GeometryState,
@@ -277,4 +277,4 @@ interface HistoryEntry3D {
     selectedPoints: Point[],
     selectedShapes: Shape[],
     label_used: string[]
-};
+}

@@ -198,7 +198,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
     private handleClearCanvas = () => {
         this.labelUsed.length = 0;
-        this.dag = new Map<string, ShapeNode3D>();
+        this.dag.forEach((node, key) => {
+            if (!['line-xAxis', 'line-yAxis', 'line-zAxis', 'plane-OxyPlane'].includes(node.type.props.id)) {
+                this.dag.delete(key);
+            }
+        });
+
         this.setState({
             geometryState: {...this.state.geometryState},
             selectedPoints: [],
@@ -354,11 +359,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     };
 
     private setMode = (mode: DrawingMode) => {
-        let isDialogBox: {
-            title: string,
-            input_label: string;
-            angleMode: boolean;
-        } | undefined = undefined;
         if (mode === 'delete') {
             let selected: string[] = [];
             this.dag.forEach((node, key) => {
@@ -394,14 +394,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             else if (mode === 'clear') {
                 this.handleClearCanvas();
             }
-
-            else if (mode === 'point') {
-                isDialogBox = {
-                    title: 'Point',
-                    input_label: 'Enter point in form Point(x, y, z) or (x, y, z)',
-                    angleMode: false
-                }
-            }
         }
         
         this.setState({
@@ -409,7 +401,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             selectedShapes: [],
             mode: mode,
             isMenuRightClick: undefined,
-            isDialogBox: isDialogBox,
             data: undefined
         })
     }
@@ -481,10 +472,53 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private setDialogbox = (mode: DrawingMode): void => {
-        if (mode === 'circle') {
+        if (mode === 'point') {
             this.setState({
                 isDialogBox: {
-                    title: 'Circle: Center & Radius',
+                    title: 'Point',
+                    input_label: 'Enter point in form (x, y, z)',
+                    angleMode: false
+                }
+            });
+        }
+        
+        else if (mode === 'circle_center_direction') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Circle: Center, Radius and Direction',
+                    input_label: 'Radius',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'sphere') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Sphere: Center & Radius',
+                    input_label: 'Radius',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'cone') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Cone',
+                    input_label: 'Radius',
+                    angleMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'cylinder') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Cylinder',
                     input_label: 'Radius',
                     angleMode: false
                 },
@@ -628,7 +662,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             }
         }
 
-        if (['segment_length', 'sphere', 'circle_center_direction'].includes(this.state.mode)) {
+        if (['segment_length', 'sphere', 'circle_center_direction', 'cone', 'cylinder'].includes(this.state.mode)) {
             try {
                 const radius = math.evaluate(value);
                 if (typeof radius !== 'number' || radius <= 0) {

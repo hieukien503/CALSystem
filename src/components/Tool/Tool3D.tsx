@@ -105,7 +105,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     onPerpenPlaneClick={() => this.props.onSetMode('perpendicular_plane')}
                                     onPlane3PointClick={() => this.props.onSetMode('plane_3_points')}
                                     onConeClick={() => this.props.onSetMode('cone')}
-                                    onCuboidClick={() => this.props.onSetMode('cuboid')}
+                                    onCubeClick={() => this.props.onSetMode('cube')}
                                     onCylinderClick={() => this.props.onSetMode('cylinder')}
                                     onExtrudePrismClick={() => this.props.onSetMode('extrude_prism')}
                                     onExtrudePyramidClick={() => this.props.onSetMode('extrude_pyramid')}

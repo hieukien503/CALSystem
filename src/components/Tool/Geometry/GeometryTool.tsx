@@ -1,4 +1,5 @@
 import React from "react";
+import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 
 interface ButtonProps {
     label: string;
@@ -71,14 +72,22 @@ interface GeometryToolProps {
 
 interface GeometryToolState {
     activeButton: string | null;
+    openCategory: string | null;
 }
 
 export class GeometryTool extends React.Component<GeometryToolProps, GeometryToolState> {
     constructor(props: GeometryToolProps) {
         super(props);
         this.state = {
-            activeButton: null
+            activeButton: null,
+            openCategory: null
         }
+    }
+
+    toolCategoryClicked(categoryName: string) {
+        this.setState((prevState) => ({
+            openCategory: prevState.openCategory === categoryName ? null : categoryName
+        }));
     }
 
     setActiveTool(toolKey: string) {
@@ -358,7 +367,8 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     display: 'flex',
                     flexDirection: 'row',
                     backgroundColor: '#f9f9f9',
-                    overflow: 'auto',
+                    overflowY: 'scroll',
+                    overflowX: 'hidden',
                 }}
             >
                 <div
@@ -370,21 +380,33 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     }}
                 >
                 {toolCategories.map((category) => (
-                    <div key={category.name}>
-                        <div className="catLabel text-neutral-900">{category.name}</div>
-                        <div
-                            className="categoryPanel"
+                    <div key={category.name}
+                        className={`tool-category ${this.state.openCategory === category.name ? "open" : ""}`}
+                    >
+                        <div className="catLabel text-neutral-900" 
+                            onClick={() => this.toolCategoryClicked(category.name)}
+                            style={{cursor: 'pointer'}}
                         >
-                            {category.tools.map((tool) => (
-                                <Button
-                                    key={tool.key}
-                                    label={tool.label}
-                                    title={tool.title}
-                                    onClick={tool.onClick}
-                                    selected={this.state.activeButton === tool.key}
-                                />
-                            ))}
+                            <span>{category.name}</span>
+                            <div className={`arrowBox ${this.state.openCategory === category.name ? "open" : ""}`}>
+                                <ArrowRightIcon sx={{ fontSize: 20 }} />
+                            </div>
                         </div>
+                        {this.state.openCategory === category.name && (
+                            <div
+                                className="categoryPanel"
+                            >
+                                {category.tools.map((tool) => (
+                                    <Button
+                                        key={tool.key}
+                                        label={tool.label}
+                                        title={tool.title}
+                                        onClick={tool.onClick}
+                                        selected={this.state.activeButton === tool.key}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ))}
                 </div>
@@ -431,7 +453,7 @@ interface GeometryTool3DProps {
     onPolygonClick: () => void;
     onSphere2PointClick: () => void;
     onPlane3PointClick: () => void;
-    onCuboidClick: () => void;
+    onCubeClick: () => void;
     onPyramidClick: () => void;
     onPrismClick: () => void;
     onConeClick: () => void;
@@ -452,8 +474,15 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
     constructor(props: GeometryTool3DProps) {
         super(props);
         this.state = {
-            activeButton: null
+            activeButton: null,
+            openCategory: null
         }
+    }
+
+    toolCategoryClicked(categoryName: string) {
+        this.setState((prevState) => ({
+            openCategory: prevState.openCategory === categoryName ? null : categoryName
+        }))
     }
 
     setActiveTool(toolKey: string) {
@@ -598,8 +627,8 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
             this.props.onReflectPlaneClick();
         }
 
-        else if (toolKey === 'cuboid') {
-            this.props.onCuboidClick();
+        else if (toolKey === 'cube') {
+            this.props.onCubeClick();
         }
 
         else if (toolKey === 'pyramid') {
@@ -653,6 +682,10 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
         else if (toolKey === 'circle_center_direction') {
             this.props.onCircleDirectionClick();
         }
+
+        else if (toolKey === 'tetrahedron') {
+            this.props.onTetrahedronClick();
+        }
     }
 
     render(): React.ReactNode {
@@ -662,7 +695,7 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 tools: [
                     { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object" },
                     { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex" },
-                    { key: "cuboid", label: "Cuboid", onClick: () => this.setActiveTool("cuboid"), title: "Select 3 points and direction (line, segment, ray or vector), then enter the last 2 dimensions" },
+                    { key: "cube", label: "Cube", onClick: () => this.setActiveTool("cube"), title: "Select a point and enter azimuth and polar angle, then enter 3 dimensions" },
                     { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere" },
                     { key: "plane_3_points", label: "Plane through 3 Points", onClick: () => this.setActiveTool("plane_3_points"), title: "Select 3 points" },
                     { key: "edit", label: "Move", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View" }
@@ -730,7 +763,7 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 name: "Solids",
                 tools: [
                     { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex" },
-                    { key: "cuboid", label: "Cuboid", onClick: () => this.setActiveTool("cuboid"), title: "Select a point, then enter 3 dimensions, then enter azimuth angle and polar angle" },
+                    { key: "cube", label: "Cube", onClick: () => this.setActiveTool("cube"), title: "Select a point and enter azimuth and polar angle, then enter 3 dimensions" },
                     { key: "tetrahedron", label: "Tetrahedron", onClick: () => this.setActiveTool("tetrahedron"), title: "Select 3 points on the same plane, then apex" },
                     { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere" },
                     { key: "sphere", label: "Sphere: Center & Radius", onClick: () => this.setActiveTool("sphere"), title: "Select a center, then enter radius" },
@@ -778,7 +811,8 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                     display: 'flex',
                     flexDirection: 'row',
                     backgroundColor: '#f9f9f9',
-                    overflow: 'auto',
+                    overflowY: 'scroll',
+                    overflowX: 'hidden',
                 }}
             >
                 <div
@@ -790,21 +824,33 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                     }}
                 >
                 {toolCategories.map((category) => (
-                    <div key={category.name}>
-                        <div className="catLabel text-neutral-900">{category.name}</div>
-                        <div
-                            className="categoryPanel"
+                    <div key={category.name}
+                        className={`tool-category ${this.state.openCategory === category.name ? "open" : ""}`}
+                    >
+                        <div className="catLabel text-neutral-900" 
+                            onClick={() => this.toolCategoryClicked(category.name)}
+                            style={{cursor: 'pointer'}}
                         >
-                            {category.tools.map((tool) => (
-                                <Button
-                                    key={tool.key}
-                                    label={tool.label}
-                                    title={tool.title}
-                                    onClick={tool.onClick}
-                                    selected={this.state.activeButton === tool.key}
-                                />
-                            ))}
+                            <span>{category.name}</span>
+                            <div className={`arrowBox ${this.state.openCategory === category.name ? "open" : ""}`}>
+                                <ArrowRightIcon sx={{ fontSize: 20 }} />
+                            </div>
                         </div>
+                        {this.state.openCategory === category.name && (
+                            <div
+                                className="categoryPanel"
+                            >
+                                {category.tools.map((tool) => (
+                                    <Button
+                                        key={tool.key}
+                                        label={tool.label}
+                                        title={tool.title}
+                                        onClick={tool.onClick}
+                                        selected={this.state.activeButton === tool.key}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ))}
                 </div>

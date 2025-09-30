@@ -30,7 +30,7 @@ const SignUp: React.FC = () => {
         }
 
         setLoading(true);
-        console.log("formData: ", formData);
+        
 
         try {
             const res = await fetch("http://localhost:3000/api/auth/signup", {
