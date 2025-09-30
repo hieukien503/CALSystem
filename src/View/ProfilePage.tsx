@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useNavigate } from "react-router-dom";
-import { isUndefined } from "lodash";
+import { useNavigate, useParams } from "react-router-dom";
 
 interface User {
     _id: string;
@@ -18,51 +17,50 @@ interface Project {
 
 const ProfilePage: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
-
+    const { id } = useParams(); // ✅ read from URL: /view/profile/:id
+    const [viewedUser, setViewedUser] = useState<User | null>(null);
     const navigate = useNavigate();
-
+    const loggedInUser = JSON.parse(sessionStorage.getItem("user") || "null");
 
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
+    const token = sessionStorage.getItem("token");
 
+    // ✅ Load user info (either from sessionStorage or fetch by id)
     useEffect(() => {
-        const token = sessionStorage.getItem("token");
+        const userId = id || loggedInUser?._id;
+        if (!userId) return;
 
-        if (!token || !user) {
-            return;
-        }
-
-        fetch(`http://localhost:3000/api/auth/profile/${user._id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+        fetch(`http://localhost:3001/api/auth/profile/${userId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then((res) => res.json())
             .then((data) => {
-                sessionStorage.setItem("user", JSON.stringify(data));
+                setViewedUser(data);
+                // If it's your own profile, update sessionStorage
+                if (!id && loggedInUser && loggedInUser._id === userId) {
+                    sessionStorage.setItem("user", JSON.stringify(data));
+                }
             })
-            .catch((err) => {
-                console.error("Error fetching profile:", err);
-            });
-
-    }, [navigate]);
+            .catch((err) => console.error("Error fetching profile:", err));
+    }, [id, token, loggedInUser]);
 
     useEffect(() => { 
-        if (user && user.project.length > 0) {
-            fetch("http://localhost:3000/api/projects/bulk", {
+        if (viewedUser && viewedUser.project.length > 0) {
+            fetch("http://localhost:3001/api/projects/bulk", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${sessionStorage.getItem("token")}`,
                 },
-                body: JSON.stringify({ ids: user.project }),
+                body: JSON.stringify({ ids: viewedUser.project }),
             })
                 .then((res) => res.json())
                 .then((data) => setProjects(data))
                 .catch((err) => console.error("Error fetching projects:", err));
         }
-    }, [user]);
+    }, [viewedUser]);
 
-    if (!user) {
+    if (!viewedUser) {
         return <div className="p-5 text-center">Loading profile...</div>;
     }
 
@@ -126,17 +124,17 @@ const ProfilePage: React.FC = () => {
                                     borderRadius: "50%",
                                 }}
                             />
-                            <div className="fw-bold fs-4">{user.name}</div>
+                            <div className="fw-bold fs-4">{viewedUser.name}</div>
                         </div>
                     </div>
 
                     {/* User details
                     <div className="p-3 text-start">
                         <p>
-                            <strong>Email:</strong> {user.email}
+                            <strong>Email:</strong> {viewedUser.email}
                         </p>
                         <p>
-                            <strong>Role:</strong> {user.role}
+                            <strong>Role:</strong> {viewedUser.role}
                         </p>
                     </div>
                      */}
@@ -187,7 +185,7 @@ const ProfilePage: React.FC = () => {
 
                         <div className="d-flex flex-wrap gap-3 w-100">
                             {
-                                user.project.length === 0 ? (
+                                viewedUser.project.length === 0 ? (
                                 //<div>No projects yet.</div>
                                 <div></div>
                             ) : (

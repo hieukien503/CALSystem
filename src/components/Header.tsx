@@ -1,71 +1,73 @@
+﻿// Header.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-interface User {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-    project: string[];
-}
 interface HeaderProps {
     selectedTool: string;
     setSelectedTool: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const Header: React.FC<HeaderProps> = ({
-    selectedTool,
-    setSelectedTool
-}) => {
-    const [searchWidth, setSearchWidth] = useState<number>(
-        window.innerWidth * 0.35
-    );
+const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
+    const [searchWidth, setSearchWidth] = useState<number>(window.innerWidth * 0.35);
+    const [searchTerm, setSearchTerm] = useState<string>("");
 
     const navigate = useNavigate();
-
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     useEffect(() => {
+        const handleSearchWidthChange = () => setSearchWidth(window.innerWidth * 0.35);
         window.addEventListener("resize", handleSearchWidthChange);
-        return () => {
-            window.removeEventListener("resize", handleSearchWidthChange);
-        };
+        return () => window.removeEventListener("resize", handleSearchWidthChange);
     }, []);
-
-    const handleSearchWidthChange = () => {
-        setSearchWidth(window.innerWidth * 0.35);
-    };
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedTool(e.target.value);
     };
 
     const handleLogout = () => {
-        sessionStorage.removeItem("token"); // clear auth token
-        sessionStorage.setItem("user", ""); // reset user state
-        navigate("/view/login"); // redirect
+        sessionStorage.removeItem("token");
+        sessionStorage.setItem("user", "");
+        navigate("/view/login");
+    };
+
+    const handleSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && searchTerm.trim()) {
+            navigate(`/view/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        }
     };
 
     return (
         <div className="flex flex-col">
             <header className="flex flex-col justify-center h-20">
-                <div className="logo">
+                <div className="logo flex items-center gap-2">
                     <img src="../image/Menu.svg" alt="Menu" className="menu-icon" />
-                    <span>
-                        <button className="btn" onClick={() => navigate("/")}>
-                            <div className="font-bold text-lg">GRAPHIC CALCULATOR</div>
-                        </button>
-                    </span>
+                    <button className="btn" onClick={() => navigate("/")}>
+                        <div className="font-bold text-lg">GRAPHIC CALCULATOR</div>
+                    </button>
                 </div>
-                <div className="search-wrapper" style={{ width: searchWidth }}>
+
+                <div className="search-wrapper flex items-center gap-2" style={{ width: searchWidth }}>
                     <input
                         type="text"
                         id="search"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={handleSearchKey}
                         placeholder="Search projects or users..."
-                        className="border border-gray-300 px-3 py-1 rounded-full w-52 text-sm focus:outline-none"
+                        className="border border-gray-300 px-3 py-1 rounded-full w-full text-sm focus:outline-none"
                     />
-                    <div id="results"></div>
+                    <button
+                        onClick={() => {
+                            if (searchTerm.trim()) {
+                                navigate(`/view/search?q=${encodeURIComponent(searchTerm.trim())}`);
+                            }
+                        }}
+                        className="text-sm bg-gray-200 px-3 py-1 rounded-full hover:bg-gray-300"
+                    >
+                        🔍
+                    </button>
                 </div>
+
                 <nav>
                     <ul className="flex items-center gap-3">
                         <li>
@@ -89,10 +91,7 @@ const Header: React.FC<HeaderProps> = ({
                         ) : (
                             <>
                                 <li>
-                                    <button
-                                        className="btn"
-                                        onClick={() => navigate("/view/profile")}
-                                    >
+                                    <button className="btn" onClick={() => navigate("/view/profile")}>
                                         Profile
                                     </button>
                                 </li>
