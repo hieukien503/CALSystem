@@ -8,6 +8,7 @@ import CalApp from "./View/CalApp";
 import Login from "./View/Login";
 import ForgotPassword from "./View/ForgotPassword";
 import SignUp from "./View/SignUp";
+import MyProfilePage from "./View/MyProfilePage";
 import ProfilePage from "./View/ProfilePage";
 import SearchResults from "./View/SearchResults";
 import NewCalApp from "./View/NewCalApp";
@@ -23,7 +24,7 @@ interface User {
     project: string[];
 }
 function App() {
-    const [selectedTool, setSelectedTool] = useState<string>('2d-graph');   // Default tool
+    const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
 
     return (
         <Router>
@@ -38,7 +39,8 @@ function App() {
                         <Route path="/view/login" element={<Login />} />
                         <Route path="/view/forgot-password" element={<ForgotPassword />} />
                         <Route path="/view/signup" element={<SignUp />} />
-                        <Route path="/view/profile" element={<ProfilePage />} />
+                        <Route path="/view/profile/:id" element={<ProfilePage />} />
+                        <Route path="/view/myprofile/" element={<MyProfilePage />} />
                         <Route path="/view/search" element={<SearchResults />} />
                         <Route path="*" element={<E404 />} />
                     </Routes>

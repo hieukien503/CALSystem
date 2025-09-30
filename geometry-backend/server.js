@@ -12,7 +12,7 @@ const app = express();
 
 // ✅ allow your React dev origin
 app.use(cors({
-    origin: "http://localhost:3001",  // React frontend
+    origin: "http://localhost:3000",  // React frontend
     methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
@@ -29,7 +29,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api", publicRoutes); // 👈 /api/home and /api/search
 
 // Start server
-const PORT = process.env.PORT || 3000;
+//const PORT = process.env.PORT || 3000;
+const PORT = 3001;
 app.listen(PORT, () => {
     
 });
