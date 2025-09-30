@@ -7,7 +7,7 @@ const projectRoutes = require("./src/routes/projectRoutes");
 const authRoutes = require("./src/routes/authRoutes");
 const publicRoutes = require("./src/routes/publicRoutes"); // 👈 add this
 
-dotenv.config();
+dotenv.config({ path: './geometry-backend/.env' });
 const app = express();
 
 // ✅ allow your React dev origin
@@ -31,5 +31,5 @@ app.use("/api", publicRoutes); // 👈 /api/home and /api/search
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+    
 });
