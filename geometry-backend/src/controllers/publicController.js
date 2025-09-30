@@ -1,4 +1,5 @@
 const Project = require("../models/Project");
+const User = require("../models/User");
 
 // Home.tsx (simple placeholder: latest projects)
 const loadHome = async (req, res) => {
@@ -13,14 +14,15 @@ const loadHome = async (req, res) => {
     }
 };
 
-// SearchResults.tsx (query projects by name or label)
+// Search projects by title
+// http://localhost:3000/api/search?q=keyword
 const searchProjects = async (req, res) => {
     try {
         const { q } = req.query;
         if (!q) return res.status(400).json({ error: "Missing search query" });
 
         const projects = await Project.find({
-            "objects.label": { $regex: q, $options: "i" }
+            title: { $regex: q, $options: "i" } // Search only in the title field
         });
 
         res.json({
@@ -32,4 +34,24 @@ const searchProjects = async (req, res) => {
     }
 };
 
-module.exports = { loadHome, searchProjects };
+// Search users by name 
+// http://localhost:3000/api/search/users?q=keyword
+const searchUsers = async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.status(400).json({ error: "Missing search query" });
+
+        const users = await User.find({
+            name: { $regex: q, $options: "i" } // Search only in the name field
+        });
+
+        res.json({
+            query: q,
+            results: users
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Error searching users", details: err.message });
+    }
+};
+
+module.exports = { loadHome, searchProjects, searchUsers };
