@@ -23,7 +23,7 @@ interface User {
     project: string[];
 }
 function App() {
-    const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
+    const [selectedTool, setSelectedTool] = useState<string>('2d-graph');   // Default tool
 
     return (
         <Router>
