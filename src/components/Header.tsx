@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
                     <input
                         type="text"
                         id="search"
-                        placeholder="Search project..."
+                        placeholder="Search projects or users..."
                         className="border border-gray-300 px-3 py-1 rounded-full w-52 text-sm focus:outline-none"
                     />
                     <div id="results"></div>
