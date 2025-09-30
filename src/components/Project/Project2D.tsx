@@ -1010,7 +1010,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             //
             //
 
-            await fetch(`http://localhost:3000/api/projects/${this.projectId}`, {
+            await fetch(`http://localhost:3001/api/projects/${this.projectId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -1023,7 +1023,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     // Load Project
     public loadProject = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/api/projects/${this.projectId}`);
+            const res = await fetch(`http://localhost:3001/api/projects/${this.projectId}`);
             if (!res.ok) throw new Error("Failed to load project");
 
             const data = await res.json();

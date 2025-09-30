@@ -16,7 +16,7 @@ const NewCalApp: React.FC = () => {
 
     useEffect(() => {
         const createNewProject = async () => {
-            let res = await fetch("http://localhost:3000/api/projects", {
+            let res = await fetch("http://localhost:3001/api/projects", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title: "Untitled Project" })
@@ -24,7 +24,7 @@ const NewCalApp: React.FC = () => {
             const project = await res.json();
 
             if (user) { // add new project to user's project list if new user
-                await fetch(`http://localhost:3000/api/projects/add/`, {
+                await fetch(`http://localhost:3001/api/projects/add/`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

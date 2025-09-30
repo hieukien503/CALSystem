@@ -1,5 +1,7 @@
 ﻿import React from "react";
 import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../../../types/geometry'
+import Dialogbox from "../../Dialogbox/Dialogbox";
+import ErrorDialogbox from "../../Dialogbox/ErrorDialogbox";
 
 interface TimelineItem {
     object: string;
@@ -285,9 +287,11 @@ export class AnimationTool extends React.Component<
         console.log("tween: ", tween);
         console.log("shapeNode: ", shapeNode);
 
-        if (!shapeNode || (shapeNode && !shapeNode.node)) return;
+        if (!shapeNode) return;
 
         const konvaNode = shapeNode.node;
+
+        if (!konvaNode) return;
 
         // ✅ Parse tween like "rotate(90)" or "move(50,30)"
         const tweenRegex = /^(\w+)\((.*)\)$/;
@@ -306,9 +310,9 @@ export class AnimationTool extends React.Component<
                 // move(dx, dy)
                 const dx = parseFloat(args[0] || "0");
                 const dy = parseFloat(args[1] || "0");
-                konvaNode!.to({
-                    x: konvaNode!.x() + dx,
-                    y: konvaNode!.y() + dy,
+                konvaNode.to({
+                    x: konvaNode.x() + dx,
+                    y: konvaNode.y() + dy,
                     duration: 0.5,
                 });
                 break;
@@ -317,8 +321,8 @@ export class AnimationTool extends React.Component<
             case "rotate": {
                 // rotate(degree)
                 const degree = parseFloat(args[0] || "0");
-                konvaNode!.to({
-                    rotation: konvaNode!.rotation() + degree,
+                konvaNode.to({
+                    rotation: konvaNode.rotation() + degree,
                     duration: 0.5,
                 });
 
@@ -333,9 +337,9 @@ export class AnimationTool extends React.Component<
             case "scale": {
                 // scale(factor)
                 const factor = parseFloat(args[0] || "1");
-                konvaNode!.to({
-                    scaleX: konvaNode!.scaleX() * factor,
-                    scaleY: konvaNode!.scaleY() * factor,
+                konvaNode.to({
+                    scaleX: konvaNode.scaleX() * factor,
+                    scaleY: konvaNode.scaleY() * factor,
                     duration: 0.5,
                 });
 
