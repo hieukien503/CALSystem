@@ -113,7 +113,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             this.handleDrawing(); // ✅ call same function again
         }
 
-        else {
+        if (prevProps.dag !== this.props.dag || prevProps.geometryState !== this.props.geometryState) {
             this.updateShapes();
         }
     }
@@ -914,7 +914,25 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             // set a name
             line.name = c.props.id;
             labelPosition.copy(line!.position).add(new THREE.Vector3(0, c.radius + 0.5, 0));
-            return line;
+            const group = new THREE.Group();
+            group.add(line);
+
+            // Add label if visible
+            if (shape.props.visible.label) {
+                const label = utils3d.createLabel(
+                    shape.props.label, 
+                    labelPosition,
+                    shape.props.labelXOffset ?? 0,
+                    shape.props.labelYOffset ?? 0,
+                    shape.props.labelZOffset ?? 0,
+                    constants3d.FONT_DEFAULTS.COLOR
+                );
+                
+                group.add(label);
+            }
+
+            group.name = shape.props.id;
+            return group;
         }
         
         else if ('x' in shape && 'y' in shape) {
@@ -940,7 +958,25 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             const line = utils3d.createDashLine(points, l.props);
             labelPosition.copy(line!.position).add(new THREE.Vector3(0, 0, 0));
-            return line;
+            const group = new THREE.Group();
+            group.add(line);
+
+            // Add label if visible
+            if (shape.props.visible.label) {
+                const label = utils3d.createLabel(
+                    shape.props.label, 
+                    labelPosition,
+                    shape.props.labelXOffset ?? 0,
+                    shape.props.labelYOffset ?? 0,
+                    shape.props.labelZOffset ?? 0,
+                    constants3d.FONT_DEFAULTS.COLOR
+                );
+                
+                group.add(label);
+            }
+
+            group.name = shape.props.id;
+            return group;
         }
 
         else if ('startRay' in shape && 'endRay' in shape) {
@@ -956,7 +992,25 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             const line = utils3d.createDashLine(points, r.props);
             labelPosition.copy(line!.position).add(new THREE.Vector3(0, 0, 0));
-            return line;
+            const group = new THREE.Group();
+            group.add(line);
+
+            // Add label if visible
+            if (shape.props.visible.label) {
+                const label = utils3d.createLabel(
+                    shape.props.label, 
+                    labelPosition,
+                    shape.props.labelXOffset ?? 0,
+                    shape.props.labelYOffset ?? 0,
+                    shape.props.labelZOffset ?? 0,
+                    constants3d.FONT_DEFAULTS.COLOR
+                );
+                
+                group.add(label);
+            }
+
+            group.name = shape.props.id;
+            return group;
         }
         
         else if ('startSegment' in shape && 'endSegment' in shape) {
@@ -970,7 +1024,25 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             const line = utils3d.createDashLine(points, s.props);
             labelPosition.copy(line!.position).add(new THREE.Vector3(0, 0, 0));
-            return line;
+            const group = new THREE.Group();
+            group.add(line);
+
+            // Add label if visible
+            if (shape.props.visible.label) {
+                const label = utils3d.createLabel(
+                    shape.props.label, 
+                    labelPosition,
+                    shape.props.labelXOffset ?? 0,
+                    shape.props.labelYOffset ?? 0,
+                    shape.props.labelZOffset ?? 0,
+                    constants3d.FONT_DEFAULTS.COLOR
+                );
+                
+                group.add(label);
+            }
+
+            group.name = shape.props.id;
+            return group;
         }
         
         else if ("points" in shape) {
@@ -1098,6 +1170,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
             }
         });
+
+        console.log(children);
 
         const visualPriority: Record<string, number> = {
             // Lowest Priority - Foundational 2D and 3D Shapes
@@ -1625,7 +1699,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (['parallel', 'perpendicular'].includes(this.props.mode)) {
             const selectedShapes = [...this.props.selectedShapes];
             const selectedPoints = [...this.props.selectedPoints];
-            console.log(selectedShapes, selectedPoints);
             if (selectedShapes.length !== 1) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
@@ -3287,7 +3360,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (this.props.mode === 'circle_center_direction') {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
-            console.log(selectedPoints, selectedShapes);
             if (selectedPoints.length !== 1) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
@@ -3807,7 +3879,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             const shape = selectedShapes[0];
-            console.log(shape, selectedPoints[0]);
             if ((this.props.mode === 'parallel_plane' && !shape.props.id.includes('plane-')) ||
                 (this.props.mode === 'perpendicular_plane' && !shape.props.id.includes('line-'))) {
                 this.props.onUpdateLastFailedState();
