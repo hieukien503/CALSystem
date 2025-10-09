@@ -523,7 +523,7 @@ export const cloneDAG = (dag: Map<string, ShapeNode>, cloneType: boolean = false
     dag.forEach((node, key) => {
         copyDAG.set(key, {
             id: key,
-            type: cloneType ? structuredClone(node.type) : node.type,
+            type: cloneType === true ? structuredClone(node.type) : node.type,
             scaleFactor: node.scaleFactor,
             rotationFactor: structuredClone(node.rotationFactor),
             dependsOn: Array.from(node.dependsOn),

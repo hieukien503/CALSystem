@@ -415,6 +415,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         });
 
         this.dag = state.dag;
+        console.log(this.dag);
         this.setState({
             geometryState: state.gs,
             selectedPoints: state.selectedPoints,
