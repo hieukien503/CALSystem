@@ -1,4 +1,4 @@
-import React, { createRef, RefObject } from "react";
+import React, { createRef, RefObject, useEffect } from "react";
 import KonvaCanvas from "../Canvas/KonvaRender";
 import Tool from "../Tool/Tool";
 import Dialogbox from "../Dialogbox/Dialogbox";
@@ -9,8 +9,9 @@ import MenuItem from "../MenuItem";
 import Konva from "konva";
 import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
 import { SharingMode } from "../../types/types";
-const math = require('mathjs');
+import { serializeDAG, deserializeDAG } from "../../utils/serialize";
 
+const math = require('mathjs');
 interface Project2DProps {
     id: string;
     title: string;
@@ -49,7 +50,8 @@ interface Project2DState {
     } | undefined;
     /** For user input */
     data: {
-        radius: number | undefined;
+        radius: number | undefined | string;
+        id_to_change?: string;
         vertices: number | undefined;
         rotation: {
             degree: number;
@@ -87,6 +89,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private dialogRef: RefObject<Dialogbox | null>;
     private errorDialogRef: RefObject<ErrorDialogbox | null>;
     private dag: Map<string, ShapeNode> = new Map<string, ShapeNode>();
+    private parts = window.location.pathname.split('/');
+    private projectId = this.parts[this.parts.length - 1]; // last segmen
     constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
@@ -141,6 +145,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     componentDidMount(): void {
         window.addEventListener("resize", this.handleWindowResize);
         window.addEventListener("keydown", this.handleKeyDown);
+
+        this.loadProject();
+
+        // Auto-save every 60 seconds
+        //this.autoSaveInterval = window.setInterval(() => {
+        //    
+        //    this.saveProject();
+        //}, 5000);
     }
 
     componentWillUnmount() {
@@ -175,6 +187,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 }
             }, 0);
         }
+
+        // ✅ Auto-save when DAG or geometry changes
+        if (prevState.geometryState !== this.state.geometryState ||
+            prevState.selectedPoints !== this.state.selectedPoints ||
+            prevState.selectedShapes !== this.state.selectedShapes) {
+            this.saveProject();
+        }
     }
 
     private handleKeyDown = (e: KeyboardEvent): void => {
@@ -192,14 +211,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.dag.forEach((node, key) => {
                 node.isSelected = true;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowColor('gray');
-                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
-                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                    (node.node! as Konva.Circle).shadowColor('gray');
+                    (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
+                    (node.node! as Konva.Circle).shadowOpacity(1.5);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth * 2);
+                    node.node!.strokeWidth(strokeWidth * 2);
                 }
             });
         }
@@ -220,13 +239,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.dag.forEach((node, key) => {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
+                    (node.node! as Konva.Circle).shadowBlur(0);
+                    (node.node! as Konva.Circle).shadowOpacity(0);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
+                    node.node!.strokeWidth(strokeWidth);
                 }
             });
         }
@@ -262,7 +281,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     this.lastFailedState?.selectedShapes.find(shape => shape.props.id === key)
                 ) {
                     this.labelUsed = this.labelUsed.filter(label => label !== dag.get(key)!.type.props.label);
-                    dag.get(key)!.node.destroy();
+                    dag.get(key)!.node!.destroy();
                     dag.delete(key);
                 }
             });
@@ -379,18 +398,18 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         dag: Map<string, ShapeNode>,
         selectedShapes: Shape[],
         selectedPoints: Point[]
-    }) => {
+    }, storeHistory: boolean = true) => {
         state.dag.forEach((node, key) => {
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
+                    (node.node! as Konva.Circle).shadowBlur(0);
+                    (node.node! as Konva.Circle).shadowOpacity(0);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
+                    node.node!.strokeWidth(strokeWidth);
                 }
             }
         });
@@ -411,7 +430,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 message: ''
             }
         }, () => {
-            if (!this.lastFailedState) {
+            if (!this.lastFailedState && storeHistory) {
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
@@ -440,15 +459,15 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         this.dag.forEach((node, key) => {
             if (!selectedPoints.find(value => value.props.id === key)) {
                 node.isSelected = false;
-                (node.node as Konva.Circle).shadowBlur(0);
-                (node.node as Konva.Circle).shadowOpacity(0);
+                (node.node! as Konva.Circle).shadowBlur(0);
+                (node.node! as Konva.Circle).shadowOpacity(0);
             }
 
             else {
                 node.isSelected = true;
-                (node.node as Konva.Circle).shadowColor('gray');
-                (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
-                (node.node as Konva.Circle).shadowOpacity(1.5);
+                (node.node! as Konva.Circle).shadowColor('gray');
+                (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
+                (node.node! as Konva.Circle).shadowOpacity(1.5);
             }
         });
 
@@ -462,13 +481,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (!selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                node.node.strokeWidth(strokeWidth);
+                node.node!.strokeWidth(strokeWidth);
             }
 
             else {
                 node.isSelected = true;
                 const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                node.node.strokeWidth(strokeWidth * 2);
+                node.node!.strokeWidth(strokeWidth * 2);
             }
         });
 
@@ -482,27 +501,27 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
+                    (node.node! as Konva.Circle).shadowBlur(0);
+                    (node.node! as Konva.Circle).shadowOpacity(0);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
+                    node.node!.strokeWidth(strokeWidth);
                 }
             }
 
             else {
                 node.isSelected = true;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowColor('gray');
-                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
-                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                    (node.node! as Konva.Circle).shadowColor('gray');
+                    (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
+                    (node.node! as Konva.Circle).shadowOpacity(1.5);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth * 2);
+                    node.node!.strokeWidth(strokeWidth * 2);
                 }
             }
         });
@@ -534,7 +553,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             label => label !== node.type.props.label
         );
 
-        node.node.destroy();
+        node.node!.destroy();
         state.dag.delete(id);
     };
 
@@ -569,13 +588,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.dag.forEach((node, key) => {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
+                    (node.node! as Konva.Circle).shadowBlur(0);
+                    (node.node! as Konva.Circle).shadowOpacity(0);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
+                    node.node!.strokeWidth(strokeWidth);
                 }
             });
 
@@ -600,7 +619,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         })
     }
 
-    private setDialogbox = (mode: DrawingMode): void => {
+    private setDialogbox = (mode: DrawingMode, id_to_change?: string): void => {
         if (mode === 'circle') {
             this.setState({
                 isDialogBox: {
@@ -656,6 +675,18 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             });
         }
 
+        else if (mode === 'changeName') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Rename',
+                    input_label: 'New name',
+                    angleMode: false,
+                },
+                data: {...this.state.data, id_to_change: id_to_change},
+                isMenuRightClick: undefined
+            });
+        }
+
         else {
             throw new Error('Invalid mode');
         }
@@ -670,26 +701,26 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             node.isSelected = !wasSelected;
             if (node.isSelected) {
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowColor('gray');
-                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
-                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                    (node.node! as Konva.Circle).shadowColor('gray');
+                    (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
+                    (node.node! as Konva.Circle).shadowOpacity(1.5);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth * 2);
+                    node.node!.strokeWidth(strokeWidth * 2);
                 }
             }
 
             else {
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
+                    (node.node! as Konva.Circle).shadowBlur(0);
+                    (node.node! as Konva.Circle).shadowOpacity(0);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
+                    node.node!.strokeWidth(strokeWidth);
                 }
             }
         }
@@ -699,13 +730,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.dag.forEach(node => {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowBlur(0);
-                    (node.node as Konva.Circle).shadowOpacity(0);
+                    (node.node! as Konva.Circle).shadowBlur(0);
+                    (node.node! as Konva.Circle).shadowOpacity(0);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth);
+                    node.node!.strokeWidth(strokeWidth);
                 }
             });
 
@@ -713,14 +744,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (node) {
                 node.isSelected = true;
                 if (node.id.includes('point-')) {
-                    (node.node as Konva.Circle).shadowColor('gray');
-                    (node.node as Konva.Circle).shadowBlur((node.node as Konva.Circle).radius() * 2.5);
-                    (node.node as Konva.Circle).shadowOpacity(1.5);
+                    (node.node! as Konva.Circle).shadowColor('gray');
+                    (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
+                    (node.node! as Konva.Circle).shadowOpacity(1.5);
                 }
                 
                 else {
                     const strokeWidth = node.type.props.line_size / this.state.geometryState.zoom_level;
-                    node.node.strokeWidth(strokeWidth * 2);
+                    node.node!.strokeWidth(strokeWidth * 2);
                 }
             }
         }
@@ -881,7 +912,142 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 })
             }
         }
+
+        else if (this.state.mode === 'edit') {
+            // Check name pattern
+            const newName = value.trim();
+            if (newName.length === 0 || !/^[A-Z][A-Za-z]*(?:'|_[0-9]+|[₀₁₂₃₄₅₆₇₈₉]+)?$/.test(newName)) {
+                this.setState({
+                    error: {
+                        label: 'Invalid name',
+                        message: 'Name must start with a letter and contain only letters, apostrophes, or underscores followed by subscripts.'
+                    }
+                });
+                return;
+            }
+
+            const subscripts: Record<string, string> = {
+                "0": "₀",
+                "1": "₁",
+                "2": "₂",
+                "3": "₃",
+                "4": "₄",
+                "5": "₅",
+                "6": "₆",
+                "7": "₇",
+                "8": "₈",
+                "9": "₉"
+            };
+
+            // Replace _digit(s) with subscript digits
+            const formatName: string = newName.replace(/_(\d+)/g, (_, digits) =>
+                [...digits].map(d => subscripts[d]).join("")
+            );
+
+            // Check for duplicate names
+            if (this.labelUsed.includes(formatName)) {
+                this.setState({
+                    error: {
+                        label: 'Name already used',
+                        message: 'Name already used. Please choose a different name.'
+                    }
+                });
+                return;
+            }
+
+            // Update labelUsed and node properties
+            if (this.state.data.id_to_change) {
+                const node = this.dag.get(this.state.data.id_to_change);
+                if (node) {
+                    const oldLabel = node.type.props.label;
+                    this.labelUsed = this.labelUsed.filter(label => label !== oldLabel);
+                    this.labelUsed.push(formatName);
+                    node.type.props.label = formatName;
+                }
+            }
+
+            this.setState({
+                data: {
+                    radius: undefined,
+                    vertices: undefined,
+                    rotation: undefined,
+                    id_to_change: undefined
+                },
+                error: {
+                    label: '',
+                    message: '',
+                },
+                isDialogBox: undefined,
+                geometryState: {...this.state.geometryState}
+            }, () => {
+                this.pushHistory(utils.clone(
+                    this.state.geometryState,
+                    this.dag,
+                    this.state.selectedPoints,
+                    this.state.selectedShapes,
+                    this.labelUsed
+                ))
+            });
+        }
     }
+
+    // Save Project
+    private saveProject = async () => {
+        try {
+            const payload = {
+                title: this.props.title,
+                description: this.props.description,
+                sharing: this.props.sharing,
+                projectVersion: this.props.projectVersion,
+                collaborators: this.props.collaborators,
+                ownedBy: this.props.ownedBy,
+                geometryState: this.state.geometryState,
+                dag: serializeDAG(this.dag),
+                labelUsed: this.labelUsed,
+            };
+
+            
+            //
+            //
+
+            await fetch(`http://localhost:3000/api/projects/${this.projectId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("Error saving project:", err);
+        }
+    };
+
+    // Load Project
+    public loadProject = async () => {
+        try {
+            const res = await fetch(`http://localhost:3000/api/projects/${this.projectId}`);
+            if (!res.ok) throw new Error("Failed to load project");
+
+            const data = await res.json();
+            // Restore DAG (no Konva nodes yet)
+            this.dag = deserializeDAG(data.dag);
+
+            // force React update
+            this.setState((prev) => ({ ...prev }));
+
+            
+
+            //// Restore state
+            this.setState({
+                geometryState: data.geometryState,
+                selectedPoints: [],
+                selectedShapes: [],
+            });
+
+            this.labelUsed = data.labelUsed;
+
+        } catch (err) {
+            console.error("Error loading project:", err);
+        }
+    };
 
     render(): React.ReactNode {
         return (
@@ -929,7 +1095,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                             this.dag,
                             this.state.selectedPoints,
                             this.state.selectedShapes,
-                            this.labelUsed
+                            this.labelUsed,
+                            true
                         )
                     }}
                     onRenderMenuRightClick={this.setRightMenuClick}

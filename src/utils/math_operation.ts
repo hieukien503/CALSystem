@@ -1980,7 +1980,7 @@ export const inradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
 
 export const volume = (shape: GeometryShape.Shape) => {
     if ('width' in shape && 'height' in shape && 'depth' in shape) {
-        let cube: GeometryShape.Cuboid = shape as GeometryShape.Cuboid;
+        let cube: GeometryShape.Cube = shape as GeometryShape.Cube;
         return cube.width * cube.height * cube.depth;
     }
 
@@ -2028,7 +2028,7 @@ export const volume = (shape: GeometryShape.Shape) => {
 
 export const surface_area = (shape: GeometryShape.Shape) => {
     if ('height' in shape && 'width' in shape && 'depth' in shape) {
-        let cube: GeometryShape.Cuboid = shape as GeometryShape.Cuboid;
+        let cube: GeometryShape.Cube = shape as GeometryShape.Cube;
         return 2 * (cube.width * cube.height + cube.width * cube.depth + cube.height * cube.depth);
     }
 
@@ -2655,7 +2655,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             {...sem.props},
             p1,
             p2,
-            {...sem.normal}
+            sem.normal? {...sem.normal} : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -2740,17 +2740,16 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     }
 
     else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-        let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-        const cuboid = Factory.createCuboid(
+        let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
+        const Cube = Factory.createCube(
             {...cube.props},
             reflection(cube.origin, o2) as GeometryShape.Point,
-            reflection(cube.axisX, o2) as GeometryShape.Vector,
-            reflection(cube.axisY, o2) as GeometryShape.Vector,
+            cube.azimuth, cube.polar,
             cube.width, cube.height, cube.depth
         );
 
-        cuboid.type = 'Cuboid';
-        return cuboid;
+        Cube.type = 'Cube';
+        return Cube;
     }
 
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
@@ -2977,7 +2976,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 {...sem.props},
                 p1,
                 p2,
-                {...sem.normal}
+                sem.normal ? {...sem.normal} : undefined
             );
 
             semi.type = 'SemiCircle';
@@ -2997,17 +2996,16 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         }
 
         else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-            let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-            const cuboid = Factory.createCuboid(
+            let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
+            const Cube = Factory.createCube(
                 {...cube.props},
                 rotation(cube.origin, o2, degree, CCW) as GeometryShape.Point,
-                rotation(cube.axisX, o2, degree, CCW) as GeometryShape.Vector,
-                rotation(cube.axisY, o2, degree, CCW) as GeometryShape.Vector,
+                cube.azimuth, cube.polar,
                 cube.width, cube.height, cube.depth
             );
 
-            cuboid.type = 'Cuboid';
-            return cuboid;
+            Cube.type = 'Cube';
+            return Cube;
         }
 
         else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
@@ -3147,7 +3145,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 {...sem.props},
                 p1,
                 p2,
-                {...sem.normal}
+                sem.normal ? {...sem.normal} : undefined
             );
 
             semi.type = 'SemiCircle';
@@ -3167,17 +3165,16 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         }
 
         else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-            let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-            const cuboid = Factory.createCuboid(
+            let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
+            const Cube = Factory.createCube(
                 {...cube.props},
                 rotation(cube.origin, o2, degree, CCW) as GeometryShape.Point,
-                rotation(cube.axisX, o2, degree, CCW) as GeometryShape.Vector,
-                rotation(cube.axisY, o2, degree, CCW) as GeometryShape.Vector,
+                cube.azimuth, cube.polar,
                 cube.width, cube.height, cube.depth
             );
 
-            cuboid.type = 'Cuboid';
-            return cuboid;
+            Cube.type = 'Cube';
+            return Cube;
         }
 
         else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
@@ -3332,7 +3329,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
             {...sem.props},
             p1,
             p2,
-            {...sem.normal}
+            sem.normal ? {...sem.normal} : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -3429,17 +3426,16 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
     }
 
     else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-        let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-        const cuboid = Factory.createCuboid(
+        let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
+        const Cube = Factory.createCube(
             {...cube.props},
             enlarge(cube.origin, o2, k) as GeometryShape.Point,
-            enlarge(cube.axisX, o2, k) as GeometryShape.Vector,
-            enlarge(cube.axisY, o2, k) as GeometryShape.Vector,
-            cube.width, cube.height, cube.depth
+            cube.azimuth, cube.polar,
+            cube.width * Math.abs(k), cube.height * Math.abs(k), cube.depth * Math.abs(k)
         );
 
-        cuboid.type = 'Cuboid';
-        return cuboid;
+        Cube.type = 'Cube';
+        return Cube;
     }
 
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
@@ -3559,7 +3555,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
             {...sem.props},
             p1,
             p2,
-            {...sem.normal}
+            sem.normal ? {...sem.normal} : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -3656,17 +3652,16 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     }
 
     else if ('width' in o1 && 'height' in o1 && 'depth' in o1) {
-        let cube: GeometryShape.Cuboid = o1 as GeometryShape.Cuboid;
-        const cuboid = Factory.createCuboid(
+        let cube: GeometryShape.Cube = o1 as GeometryShape.Cube;
+        const Cube = Factory.createCube(
             {...cube.props},
             translation(cube.origin, o2) as GeometryShape.Point,
-            translation(cube.axisX, o2) as GeometryShape.Vector,
-            translation(cube.axisY, o2) as GeometryShape.Vector,
+            cube.azimuth, cube.polar,
             cube.width, cube.height, cube.depth
         );
 
-        cuboid.type = 'Cuboid';
-        return cuboid;
+        Cube.type = 'Cube';
+        return Cube;
     }
 
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
