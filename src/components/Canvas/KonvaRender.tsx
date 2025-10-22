@@ -2207,6 +2207,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             label = `segment${index}`;
                         }
 
+                        console.log(label);
+
                         labelUsed.push(label);
                         let segment = Factory.createSegment(
                             utils.createLineDefaultShapeProps(label),
@@ -4635,13 +4637,19 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [(selectedShapes[0] as Polygon).points[i].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: points[i],
-                        node: this.createKonvaShape(points[i])
+                        node: this.createKonvaShape(points[i]),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     };
 
                     points[i].type = shapeType;
                     shapeNode.node!.draggable(false);
                     DAG.set(points[i].props.id, shapeNode);
+                };
 
+                for (let i = 0; i < points.length; i++) {
                     const pNext = points[(i + 1) % points.length];
                     const oldSegment = Array.from(this.props.dag.entries()).find((value: [string, ShapeNode]) => {
                         return 'startSegment' in value[1].type && 
@@ -4653,15 +4661,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                     label = `segment0`;
                     let index = 0;
-                    while (this.props.labelUsed.includes(label)) {
+                    while (labelUsed.includes(label)) {
                         index++;
                         label = `segment${index}`;
                     }
 
                     labelUsed.push(label);
                     const segment = Factory.createSegment(
-                        oldSegment![1].type.props,
-                        points[0],
+                        structuredClone(oldSegment![1].type.props),
+                        points[i],
                         pNext
                     );
 
@@ -4673,13 +4681,17 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [oldSegment![1].id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, points[i].props.id, pNext.props.id, newShape.props.id],
                         type: segment,
-                        node: this.createKonvaShape(segment)
+                        node: this.createKonvaShape(segment),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     };
 
                     segment.type = shapeType;
                     anotherShapeNode.node!.draggable(false);
                     DAG.set(segment.props.id, anotherShapeNode);
-                };
+                }
 
                 let shapeNode = {
                     id: newShape.props.id,
@@ -4687,7 +4699,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     node: this.createKonvaShape(newShape),
                     dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    rotationFactor: this.props.mode === 'rotation' ? {
+                        degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                        CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                    } : undefined
                 };
 
                 shapeNode.node!.draggable(false);
@@ -4732,7 +4748,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Segment).startSegment,
-                        node: this.createKonvaShape((newShape as Segment).startSegment)
+                        node: this.createKonvaShape((newShape as Segment).startSegment),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let shapeNode2: ShapeNode = {
@@ -4741,7 +4761,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Segment).endSegment,
-                        node: this.createKonvaShape((newShape as Segment).endSegment)
+                        node: this.createKonvaShape((newShape as Segment).endSegment),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let anotherShapeNode = {
@@ -4750,7 +4774,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
                         type: newShape,
-                        node: this.createKonvaShape(newShape)
+                        node: this.createKonvaShape(newShape),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     };
 
                     newShape.type = shapeType;
@@ -4789,7 +4817,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Line).startLine,
-                        node: this.createKonvaShape((newShape as Line).startLine)
+                        node: this.createKonvaShape((newShape as Line).startLine),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let shapeNode2: ShapeNode = {
@@ -4798,7 +4830,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Line).endLine,
-                        node: this.createKonvaShape((newShape as Line).endLine)
+                        node: this.createKonvaShape((newShape as Line).endLine),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let anotherShapeNode = {
@@ -4807,7 +4843,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
                         type: newShape,
-                        node: this.createKonvaShape(newShape)
+                        node: this.createKonvaShape(newShape),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     };
 
                     newShape.type = shapeType;
@@ -4846,7 +4886,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Ray).startRay,
-                        node: this.createKonvaShape((newShape as Ray).startRay)
+                        node: this.createKonvaShape((newShape as Ray).startRay),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let shapeNode2: ShapeNode = {
@@ -4855,7 +4899,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Ray).endRay,
-                        node: this.createKonvaShape((newShape as Ray).endRay)
+                        node: this.createKonvaShape((newShape as Ray).endRay),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let anotherShapeNode = {
@@ -4864,7 +4912,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
                         type: newShape,
-                        node: this.createKonvaShape(newShape)
+                        node: this.createKonvaShape(newShape),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     };
 
                     newShape.type = shapeType;
@@ -4903,7 +4955,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Vector).startVector,
-                        node: this.createKonvaShape((newShape as Vector).startVector)
+                        node: this.createKonvaShape((newShape as Vector).startVector),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let shapeNode2: ShapeNode = {
@@ -4912,7 +4968,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Vector).endVector,
-                        node: this.createKonvaShape((newShape as Vector).endVector)
+                        node: this.createKonvaShape((newShape as Vector).endVector),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let anotherShapeNode = {
@@ -4921,7 +4981,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
                         type: newShape,
-                        node: this.createKonvaShape(newShape)
+                        node: this.createKonvaShape(newShape),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     };
 
                     newShape.type = shapeType;
@@ -4957,7 +5021,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [(selectedShapes[0] as Circle).centerC.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
                         type: (newShape as Circle).centerC,
-                        node: this.createKonvaShape((newShape as Circle).centerC)
+                        node: this.createKonvaShape((newShape as Circle).centerC),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     }
 
                     let anotherShapeNode = {
@@ -4966,7 +5034,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id],
                         type: newShape,
-                        node: this.createKonvaShape(newShape)
+                        node: this.createKonvaShape(newShape),
+                        rotationFactor: this.props.mode === 'rotation' ? {
+                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                        } : undefined
                     };
 
                     newShape.type = shapeType;
@@ -4998,7 +5070,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     isSelected: false,
                     dependsOn: [selectedPoints[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[0].props.id : selectedPoints[1].props.id],
                     type: newShape,
-                    node: this.createKonvaShape(newShape)
+                    node: this.createKonvaShape(newShape),
+                    rotationFactor: this.props.mode === 'rotation' ? {
+                        degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+                        CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+                    } : undefined
                 };
 
                 newShape.type = shapeType;
