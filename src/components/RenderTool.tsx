@@ -16,7 +16,6 @@ interface RenderToolProps {
     setSelectedTool: React.Dispatch<React.SetStateAction<string>>;
 }
 
-
 const RenderTool: React.FC<RenderToolProps> = ({
     selectedTool,
     setSelectedTool
