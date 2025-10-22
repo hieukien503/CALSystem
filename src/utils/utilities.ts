@@ -45,7 +45,7 @@ export const createLabelProps = (
     }
 }
 
-export const createPointDefaultShapeProps = _.memoize((label: string, radius: number = 0.05, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createPointDefaultShapeProps = (label: string, radius: number = 0.05, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -59,9 +59,9 @@ export const createPointDefaultShapeProps = _.memoize((label: string, radius: nu
         fill: true,
         id: `point-${uuidv4()}`
     }
-});
+};
 
-export const createLineDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createLineDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         line_size: 1,
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
@@ -69,15 +69,15 @@ export const createLineDefaultShapeProps = _.memoize((label: string, radius: num
         label: label,
         visible: {shape: true, label: false},
         fill: true,
-        color: 'black',
+        color: 'red',
         labelXOffset: labelXOffset,
         labelYOffset: labelYOffset,
         labelZOffset: labelZOffset,
         id: `line-${label}`
     }
-})
+};
 
-export const createVectorDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createVectorDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         line_size: 1,
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
@@ -91,9 +91,9 @@ export const createVectorDefaultShapeProps = _.memoize((label: string, radius: n
         labelZOffset: labelZOffset,
         id: `vector-${label}`
     }
-})
+};
 
-export const createCircleDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createCircleDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -107,9 +107,9 @@ export const createCircleDefaultShapeProps = _.memoize((label: string, radius: n
         fill: true,
         id: `circle-${label}`
     }
-})
+}
 
-export const createSphereDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createSphereDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -123,9 +123,9 @@ export const createSphereDefaultShapeProps = _.memoize((label: string, radius: n
         fill: true,
         id: `sphere-${label}`
     }
-})
+};
 
-export const createSemiCircleDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createSemiCircleDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -139,9 +139,9 @@ export const createSemiCircleDefaultShapeProps = _.memoize((label: string, radiu
         fill: true,
         id: `semi-${label}`
     }
-})
+};
 
-export const createPolygonDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createPolygonDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -156,9 +156,9 @@ export const createPolygonDefaultShapeProps = _.memoize((label: string, radius: 
         id: `polygon-${label}`,
         opacity: 0.1
     }
-})
+};
 
-export const createAngleDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createAngleDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -173,9 +173,9 @@ export const createAngleDefaultShapeProps = _.memoize((label: string, radius: nu
         id: `angle-${label}`,
         opacity: 0.1
     }
-});
+};
 
-export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createPlaneDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -190,9 +190,9 @@ export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: nu
         id: `plane-${label}`,
         opacity: 0.3
     }
-});
+};
 
-export const createCylinderDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createCylinderDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -207,7 +207,7 @@ export const createCylinderDefaultShapeProps = _.memoize((label: string, radius:
         id: `cylinder-${label}`,
         opacity: 0.5
     }
-})
+};
 
 export const snapToGrid = _.memoize((
     pointer: {x: number, y: number},

@@ -406,7 +406,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private handleUndoClick = () => {
-        console.log(this.historyStack);
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {
@@ -442,7 +441,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
         this.dag = copyState.dag;
         this.labelUsed = copyState.label_used;
-        console.log(this.dag);
 
         this.setState({
             mode: 'edit',

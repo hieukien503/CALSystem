@@ -14,7 +14,6 @@ import * as constants3d from '../../types/constants3D';
 import * as operation from '../../utils/math_operation'
 import ThreeAxis from '../../utils/ThreeAxis';
 import ThreeGrid from '../../utils/ThreeGrid';
-const math = require('mathjs');
 
 interface ThreeDCanvasProps {
     width: number;
@@ -132,12 +131,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         requestAnimationFrame(this.animate);
         if (this.controlsRef.current && this.rendererRef.current && this.sceneRef.current && this.cameraRef.current) {
             this.controlsRef.current.update();
-            // this.sceneRef.current.traverse((object) => {
-            //     if ((object as any).updateCircleStyles) {
-            //         (object as any).updateCircleStyles(this.cameraRef.current!);
-            //     }
-            // });
-
             this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current);
         }
 
@@ -207,9 +200,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             pointerLength: 0.4,
             xTickSpacing: constants3d.BASE_SPACING,
             axisInterval: this.props.geometryState.axisTickInterval,
-            ratio: 1
+            ratio: 1,
+            rotation: [0, 0, -Math.PI / 2]
         }).generateAxis(); // Red
-        xAxis.rotation.z = -Math.PI / 2;
 
         const yAxis = new ThreeAxis({
             length: 12,
@@ -219,19 +212,20 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             pointerLength: 0.4,
             xTickSpacing: constants3d.BASE_SPACING,
             axisInterval: this.props.geometryState.axisTickInterval,
-            ratio: 1
+            ratio: 1,
+            rotation: [-Math.PI / 2, 0, 0]
         }).generateAxis(); // Green
-        yAxis.rotation.x = -Math.PI / 2;
         
         const zAxis = new ThreeAxis({
-            length: 7.2,
+            length: 7.4,
             radius: 0.02,
             axisColor: '#0000ff',
             pointerWidth: 0.1,
             pointerLength: 0.4,
             xTickSpacing: constants3d.BASE_SPACING,
             axisInterval: this.props.geometryState.axisTickInterval,
-            ratio: 0.5
+            ratio: 0.51,
+            rotation: [0, 0, 0]
         }).generateAxis(); // Blue
 
         // Grid Helper
@@ -257,10 +251,25 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             transparent: true,
             opacity: 0.3,
             side: THREE.DoubleSide,
+            depthWrite: true
         });
 
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.name = 'plane-OxyPlane'
+        const depthMaterial = new THREE.MeshBasicMaterial({
+            colorWrite: false, // Invisible but writes to depth buffer
+            depthWrite: true,
+            depthTest: true,
+            side: THREE.DoubleSide
+        });
+
+        const visibleMesh = new THREE.Mesh(geometry, material);
+        const depthMesh = new THREE.Mesh(geometry, depthMaterial);
+        const group = new THREE.Group();
+        group.add(visibleMesh);
+        group.add(depthMesh);
+
+        const mesh = group as unknown as THREE.Mesh;
+
+        mesh.name = 'plane-OxyPlane';
         let point = utils3d.convertToVector3(0, 0, 0);
         let norm = utils3d.convertToVector3(0, 0, 1).normalize();
 
@@ -466,12 +475,20 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     create3DMesh (shape: Shape): THREE.Object3D | null {
         if (!shape.props.visible.shape) return null;
 
-        const material = new THREE.MeshBasicMaterial({
+        const material = new THREE.MeshPhongMaterial({
             color: shape.props.color,
             transparent: true,
             opacity: shape.props.opacity ?? 0.5,
             side: THREE.DoubleSide,
+            depthWrite: true
         });
+
+        const depthMaterial = new THREE.MeshBasicMaterial({
+            colorWrite: false, // Invisible but writes to depth buffer
+            depthWrite: true,
+            depthTest: true,
+            side: THREE.DoubleSide
+        })
 
         let geometry: THREE.BufferGeometry | null = null;
         let mesh: THREE.Mesh | THREE.Group | null = null;
@@ -480,18 +497,27 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             material.polygonOffset = true;
             material.polygonOffsetFactor = 1;
             material.polygonOffsetUnits = 1;
+
+            depthMaterial.polygonOffset = true;
+            depthMaterial.polygonOffsetFactor = 1;
+            depthMaterial.polygonOffsetUnits = 1;
         }
 
         else {
             material.polygonOffset = true;
             material.polygonOffsetFactor = -1;
             material.polygonOffsetUnits = -1;
+
+            depthMaterial.polygonOffset = true;
+            depthMaterial.polygonOffsetFactor = -1;
+            depthMaterial.polygonOffsetUnits = -1;
         }
 
         if ('point' in shape && 'norm' in shape) {
             let pl: Plane = shape as Plane;
             geometry = new THREE.PlaneGeometry(25, 25);
-            mesh = new THREE.Mesh(geometry, material);
+            const visibleMesh = new THREE.Mesh(geometry, material);
+            const depthMesh = new THREE.Mesh(geometry, depthMaterial);
             let point = utils3d.convertToVector3(pl.point.x, pl.point.y, pl.point.z ?? 0);
             let norm = utils3d.convertToVector3(
                 pl.norm.endVector.x - pl.norm.startVector.x,
@@ -499,7 +525,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 (pl.norm.endVector.z ?? 0) - (pl.norm.startVector.z ?? 0)
             ).normalize();
 
-            mesh.position.set(point.x, point.y, point.z);
+            const group = new THREE.Group();
+            group.add(visibleMesh);
+            group.add(depthMesh);
+            group.position.set(point.x, point.y, point.z);
+
+            mesh = group as unknown as THREE.Mesh;
             const defaultNormal = utils3d.convertToVector3(0, 1, 0);
             const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, norm);
             mesh.quaternion.copy(quaternion);
@@ -515,7 +546,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const radius = cy.radius;
 
             geometry = new THREE.CylinderGeometry(radius, radius, length, 32);
-            mesh = new THREE.Mesh(geometry, material);
+            const visibleMesh = new THREE.Mesh(geometry, material);
+            const depthMesh = new THREE.Mesh(geometry, depthMaterial);
+            const group = new THREE.Group();
+            group.add(visibleMesh);
+            group.add(depthMesh);
+
+            mesh = group as unknown as THREE.Mesh;
             const defaultNormal = new THREE.Vector3(0, 1, 0);
             const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, direction.clone().normalize());
             mesh.quaternion.copy(quaternion);
@@ -565,7 +602,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const radius = co.radius
 
             geometry = new THREE.ConeGeometry(radius, height, 32);
-            mesh = new THREE.Mesh(geometry, material);
+            const visibleMesh = new THREE.Mesh(geometry, material);
+            const depthMesh = new THREE.Mesh(geometry, depthMaterial);
+            const group = new THREE.Group();
+            group.add(visibleMesh);
+            group.add(depthMesh);
+
+            mesh = group as unknown as THREE.Mesh;
             const defaultNormal = new THREE.Vector3(0, 1, 0);
             const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, direction.clone().normalize());
             mesh.quaternion.copy(quaternion);
@@ -595,7 +638,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if ('centerS' in shape && 'radius' in shape) {
             let sp: Sphere = shape as Sphere;
             geometry = new THREE.SphereGeometry(sp.radius, 32, 32);
-            mesh = new THREE.Mesh(geometry, material);
+            const visibleMesh = new THREE.Mesh(geometry, material);
+            const depthMesh = new THREE.Mesh(geometry, depthMaterial);
+            const group = new THREE.Group();
+            group.add(visibleMesh);
+            group.add(depthMesh);
+
+            mesh = group as unknown as THREE.Mesh;
             let center = utils3d.convertToVector3(sp.centerS.x, sp.centerS.y, sp.centerS.z ?? 0)
             mesh.position.set(center.x, center.y, center.z);
             labelPosition.copy(mesh.position).add(new THREE.Vector3(0, sp.radius + 0.5, 0));
@@ -632,7 +681,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             geometry.setIndex(indices);
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
             geometry.computeVertexNormals();
-            const fillMesh = new THREE.Mesh(geometry, material);
+            const visibleMesh = new THREE.Mesh(geometry, material);
+            const depthMesh = new THREE.Mesh(geometry, depthMaterial);
+            const group = new THREE.Group();
+            group.add(visibleMesh);
+            group.add(depthMesh);
+
+            const fillMesh = group as unknown as THREE.Mesh;
             const pyramidGroup = new THREE.Group();
 
             let baseCenter = new THREE.Vector3();
@@ -647,7 +702,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 props.color = shape.props.color;
 
                 const edge = utils3d.createDashLine([start, end], props);
-                edge.renderOrder = 19; // Ensure edges render above fill
+                edge.renderOrder = 18; // Ensure edges render above fill
                 pyramidGroup.add(edge);
             }
 
@@ -658,7 +713,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 props.color = shape.props.color;
 
                 const edge = utils3d.createDashLine([start, end], props);
-                edge.renderOrder = 19; // Ensure edges render above fill
+                edge.renderOrder = 18; // Ensure edges render above fill
                 pyramidGroup.add(edge);
             }
 
@@ -728,7 +783,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             geometry.computeVertexNormals();
 
             // Mesh
-            mesh = new THREE.Mesh(geometry, material);
+            const visibleMesh = new THREE.Mesh(geometry, material);
+            const depthMesh = new THREE.Mesh(geometry, depthMaterial);
+            const group = new THREE.Group();
+            group.add(visibleMesh);
+            group.add(depthMesh);
+
+            mesh = group as unknown as THREE.Mesh;
             const baseCenter1 = new THREE.Vector3(), baseCenter2 = new THREE.Vector3();
             base.forEach(v => {
                 baseCenter1.add(v);
@@ -848,91 +909,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             for (let p of points) {
                 p.add(utils3d.convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0));
             }
-
-            // const frontMaterial = new THREE.LineBasicMaterial({
-            //     color: c.props.color,
-            //     linewidth: c.props.line_size
-            // });
-
-            // const backMaterial = new THREE.LineDashedMaterial({
-            //     color: c.props.color,
-            //     linewidth: c.props.line_size,
-            //     dashSize: 0.1,
-            //     gapSize: 0.05,
-            // });
-
-            // const frontLine = new THREE.Line(
-            //     new THREE.BufferGeometry(),
-            //     frontMaterial
-            // );
-
-            // const backLine = new THREE.Line(
-            //     new THREE.BufferGeometry(),
-            //     backMaterial
-            // );
-
-            // const group = new THREE.Group();
-            // group.add(frontLine);
-            // group.add(backLine);
-
-            // (group as any).updateCircleStyles = (camera: THREE.Camera) => {
-            //     const { front: frontArcs, back: backArcs } = utils3d.splitCurveByPlane(points, camera);
-
-            //     // remove old children
-            //     frontLine.clear();
-            //     backLine.clear();
-
-            //     // add new arcs
-            //     frontArcs.forEach(arc => {
-            //         const g = new THREE.BufferGeometry().setFromPoints(arc);
-            //         frontLine.add(new THREE.Line(g, frontMaterial));
-            //     });
-
-            //     backArcs.forEach(arc => {
-            //         const g = new THREE.BufferGeometry().setFromPoints(arc);
-            //         const dashed = new THREE.Line(g, backMaterial);
-            //         dashed.computeLineDistances();
-            //         backLine.add(dashed);
-            //     });
-            // };
-
-            // group.name = c.props.id;
-            // labelPosition.copy(utils3d.convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0)).add(new THREE.Vector3(0, c.radius + 0.5, 0));
-            // mesh = group as unknown as THREE.Mesh;
-
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const material = new THREE.LineDashedMaterial({
-                color: c.props.color,
-                linewidth: c.props.line_size,
-                dashSize: c.props.line_style.dash_size,
-                gapSize: c.props.line_style.gap_size,
-            });
         
-            const line = new THREE.LineLoop(geometry, material);
-            line.computeLineDistances();
-        
-            // set a name
-            line.name = c.props.id;
-            labelPosition.copy(line!.position).add(new THREE.Vector3(0, c.radius + 0.5, 0));
-            const group = new THREE.Group();
-            group.add(line);
-
-            // Add label if visible
-            if (shape.props.visible.label) {
-                const label = utils3d.createLabel(
-                    shape.props.label, 
-                    labelPosition,
-                    shape.props.labelXOffset ?? 0,
-                    shape.props.labelYOffset ?? 0,
-                    shape.props.labelZOffset ?? 0,
-                    constants3d.FONT_DEFAULTS.COLOR
-                );
-                
-                group.add(label);
-            }
-
-            group.name = shape.props.id;
-            return group;
+            mesh = utils3d.createDashLine(points, c.props) as unknown as THREE.Mesh;
+            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
         
         else if ('x' in shape && 'y' in shape) {
@@ -956,27 +935,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             points.push(P1)
             points.push(P2)
 
-            const line = utils3d.createDashLine(points, l.props);
-            labelPosition.copy(line!.position).add(new THREE.Vector3(0, 0, 0));
-            const group = new THREE.Group();
-            group.add(line);
-
-            // Add label if visible
-            if (shape.props.visible.label) {
-                const label = utils3d.createLabel(
-                    shape.props.label, 
-                    labelPosition,
-                    shape.props.labelXOffset ?? 0,
-                    shape.props.labelYOffset ?? 0,
-                    shape.props.labelZOffset ?? 0,
-                    constants3d.FONT_DEFAULTS.COLOR
-                );
-                
-                group.add(label);
-            }
-
-            group.name = shape.props.id;
-            return group;
+            mesh = utils3d.createDashLine(points, l.props) as unknown as THREE.Mesh;
+            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
 
         else if ('startRay' in shape && 'endRay' in shape) {
@@ -990,27 +950,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             points.push(P1);
             points.push(P3);
 
-            const line = utils3d.createDashLine(points, r.props);
-            labelPosition.copy(line!.position).add(new THREE.Vector3(0, 0, 0));
-            const group = new THREE.Group();
-            group.add(line);
-
-            // Add label if visible
-            if (shape.props.visible.label) {
-                const label = utils3d.createLabel(
-                    shape.props.label, 
-                    labelPosition,
-                    shape.props.labelXOffset ?? 0,
-                    shape.props.labelYOffset ?? 0,
-                    shape.props.labelZOffset ?? 0,
-                    constants3d.FONT_DEFAULTS.COLOR
-                );
-                
-                group.add(label);
-            }
-
-            group.name = shape.props.id;
-            return group;
+            mesh = utils3d.createDashLine(points, r.props) as unknown as THREE.Mesh;
+            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
         
         else if ('startSegment' in shape && 'endSegment' in shape) {
@@ -1022,27 +963,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             points.push(P1)
             points.push(P2)
 
-            const line = utils3d.createDashLine(points, s.props);
-            labelPosition.copy(line!.position).add(new THREE.Vector3(0, 0, 0));
-            const group = new THREE.Group();
-            group.add(line);
-
-            // Add label if visible
-            if (shape.props.visible.label) {
-                const label = utils3d.createLabel(
-                    shape.props.label, 
-                    labelPosition,
-                    shape.props.labelXOffset ?? 0,
-                    shape.props.labelYOffset ?? 0,
-                    shape.props.labelZOffset ?? 0,
-                    constants3d.FONT_DEFAULTS.COLOR
-                );
-                
-                group.add(label);
-            }
-
-            group.name = shape.props.id;
-            return group;
+            mesh = utils3d.createDashLine(points, s.props) as unknown as THREE.Mesh;
+            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
         }
         
         else if ("points" in shape) {
@@ -1096,7 +1018,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             });
 
             const fillMesh = new THREE.Mesh(fillGeometry, fillMaterial);
-            fillMesh.renderOrder = 30; // Ensure fill renders below edges
+            fillMesh.renderOrder = 7; // Ensure fill renders below edges
 
             // --- Step 6: Borders ---
             const group = new THREE.Group();
@@ -1107,7 +1029,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 props.color = shape.props.color;
 
                 const edge = utils3d.createDashLine([start, end], props);
-                edge.renderOrder = 19; // Ensure edges render above fill
+                edge.renderOrder = 18; // Ensure edges render above fill
                 group.add(edge);
             }
             group.add(fillMesh);
@@ -1118,7 +1040,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             center.divideScalar(points3D.length);
             labelPosition.copy(center);
 
-            mesh = group;
+            mesh = group as unknown as THREE.Mesh;
         }
 
         if (!mesh) return null;
@@ -1170,8 +1092,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
             }
         });
-
-        console.log(children);
 
         const visualPriority: Record<string, number> = {
             // Lowest Priority - Foundational 2D and 3D Shapes
@@ -1226,7 +1146,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             if (shape.defined && shape.type.props.visible.shape && !['line-xAxis', 'line-yAxis', 'line-zAxis', 'plane-OxyPlane'].includes(shape.type.props.id)) {
                 const mesh = this.createShape(shape.type);
                 if (mesh) {
-                    mesh.renderOrder = 37 - (visualPriority[shape.type.type] ?? 0); // Higher priority shapes render on top
+                    mesh.renderOrder = visualPriority[shape.type.type] ?? 0; // Higher priority shapes render on top
                     this.sceneRef.current!.add(mesh);
                 }
             }
@@ -3360,6 +3280,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (this.props.mode === 'circle_center_direction') {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
+            console.log(selectedPoints, selectedShapes);
             if (selectedPoints.length !== 1) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
@@ -4023,8 +3944,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             // Intersect with your 3D objects
             let intersects = raycaster.intersectObjects(children, true); // true = check all descendants
             const objects = intersects.filter(item => !(item.object instanceof THREE.Sprite));
-            objects.sort((a, b) => (b.object.renderOrder ?? 0) - (a.object.renderOrder ?? 0));
-
             const realObjects: THREE.Object3D[] = [];
             objects.forEach(obj => {
                 function getTopParent(object: THREE.Object3D): THREE.Object3D {
@@ -4039,7 +3958,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 realObjects.push(getTopParent(obj.object));
             });
 
-            const shape = realObjects.length > 0 ? realObjects[0] : undefined;
+            const uniqueObjects = Array.from(new Set(realObjects));
+            console.log(uniqueObjects);
+
+            uniqueObjects.sort((a, b) => (b.renderOrder ?? 0) - (a.renderOrder ?? 0)); 
+
+            const shape = uniqueObjects.length > 0 ? uniqueObjects[0] : undefined;
             if (shape && this.props.dag.get(shape.name) && this.props.mode === 'delete') {
                 shape.traverse((child) => {
                     if (child instanceof THREE.Mesh) {

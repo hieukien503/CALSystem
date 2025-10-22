@@ -2,23 +2,72 @@ import * as THREE from 'three';
 import { ShapeNode3D, ShapeProps, GeometryState, Shape, Point, Vector, Ray, Segment, Line } from '../types/geometry';
 import * as constants3d from '../types/constants3D';
 import * as operation from '../utils/math_operation';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 
 // Utility functions
-export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THREE.Line => {
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineDashedMaterial({
+export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THREE.Group => {
+    const positions: number[] = [];
+    points.forEach(p => positions.push(p.x, p.y, p.z));
+
+    // Build LineGeometry
+    const geometry = new LineGeometry();
+    geometry.setPositions(positions);
+
+    // --- Solid line material ---
+    const solidMaterial = new LineMaterial({
         color: props.color,
-        linewidth: props.line_size,
-        dashSize: props.line_style.dash_size,
-        gapSize: props.line_style.gap_size,
+        linewidth: props.line_size, // in world units
+        dashed: false,
+        depthTest: true,
+        depthWrite: true,          // <-- prevent overwriting plane depth
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
     });
 
-    const line = new THREE.Line(geometry, material);
-    line.computeLineDistances();
+    // --- Dashed line material ---
+    const dashedMaterial = new LineMaterial({
+        color: props.color,
+        linewidth: props.line_size,
+        dashed: true,
+        dashSize: props.line_style.dash_size === 0 ? 0.25 : props.line_style.dash_size,
+        gapSize: props.line_style.gap_size === 0 ? 0.15 : props.line_style.gap_size,
+        depthTest: false,
+        depthWrite: false,
+        transparent: true,
+        opacity: 0.6,
+        polygonOffset: true,
+        polygonOffsetFactor: 2,
+        polygonOffsetUnits: 2,
+    });
 
-    // set a name
-    line.name = props.id;
-    return line;
+    // --- Create the solid and dashed Line2 objects ---
+    const solidLine = new Line2(geometry, solidMaterial);
+    const dashedLine = new Line2(geometry, dashedMaterial);
+
+    solidMaterial.resolution.set(window.innerWidth, window.innerHeight);
+    dashedMaterial.resolution.set(window.innerWidth, window.innerHeight);
+
+    // Required for correct dashed rendering
+    solidLine.computeLineDistances();
+    dashedLine.computeLineDistances();
+
+    // Set render order (solid below, dashed above)
+    solidLine.renderOrder = 0;
+    dashedLine.renderOrder = 1;
+
+    // Scale correction (important for LineMaterial)
+    solidLine.scale.set(1, 1, 1);
+    dashedLine.scale.set(1, 1, 1);
+
+    // Group both lines
+    const group = new THREE.Group();
+    group.add(solidLine);
+    group.add(dashedLine);
+
+    return group;
 }
 
 export const convertToVector3 = (x: number, y: number, z: number): THREE.Vector3 => {
