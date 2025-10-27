@@ -62,92 +62,89 @@ export class MathCommandParser extends Parser {
 	public static readonly ABS = 32;
 	public static readonly PI = 33;
 	public static readonly E = 34;
-	public static readonly POINT_ID = 35;
-	public static readonly SHAPE_ID = 36;
-	public static readonly LR = 37;
-	public static readonly RR = 38;
-	public static readonly LC = 39;
-	public static readonly RC = 40;
-	public static readonly COMMA = 41;
-	public static readonly DIVIDE = 42;
-	public static readonly ADD = 43;
-	public static readonly SUB = 44;
-	public static readonly MULTIPLY = 45;
-	public static readonly POWER = 46;
-	public static readonly EQ = 47;
-	public static readonly INT_LIT = 48;
-	public static readonly FLOAT_LIT = 49;
-	public static readonly WS = 50;
+	public static readonly X = 35;
+	public static readonly Y = 36;
+	public static readonly Z = 37;
+	public static readonly POINT_ID = 38;
+	public static readonly SHAPE_ID = 39;
+	public static readonly LR = 40;
+	public static readonly RR = 41;
+	public static readonly LC = 42;
+	public static readonly RC = 43;
+	public static readonly COMMA = 44;
+	public static readonly DIVIDE = 45;
+	public static readonly ADD = 46;
+	public static readonly SUB = 47;
+	public static readonly MULTIPLY = 48;
+	public static readonly POWER = 49;
+	public static readonly INT_LIT = 50;
+	public static readonly FLOAT_LIT = 51;
+	public static readonly WS = 52;
+	public static readonly ERROR_CHAR = 53;
 	public static readonly RULE_program = 0;
 	public static readonly RULE_expr = 1;
-	public static readonly RULE_command = 2;
-	public static readonly RULE_pointDef = 3;
-	public static readonly RULE_sphereDef = 4;
-	public static readonly RULE_planeDef = 5;
-	public static readonly RULE_lineDef = 6;
-	public static readonly RULE_angleDef = 7;
-	public static readonly RULE_vectorDef = 8;
-	public static readonly RULE_polygonDef = 9;
-	public static readonly RULE_pointList = 10;
-	public static readonly RULE_circleDef = 11;
-	public static readonly RULE_segmentDef = 12;
-	public static readonly RULE_rayDef = 13;
-	public static readonly RULE_intersectionDef = 14;
-	public static readonly RULE_transformDef = 15;
-	public static readonly RULE_cylinderDef = 16;
-	public static readonly RULE_tetrahedronDef = 17;
-	public static readonly RULE_coneDef = 18;
-	public static readonly RULE_prismDef = 19;
-	public static readonly RULE_cuboidDef = 20;
-	public static readonly RULE_numberExpr = 21;
-	public static readonly RULE_additiveExpr = 22;
-	public static readonly RULE_multiplicativeExpr = 23;
-	public static readonly RULE_implicitMultiplicativeExpr = 24;
-	public static readonly RULE_exponentialExpr = 25;
-	public static readonly RULE_unaryExpr = 26;
-	public static readonly RULE_primaryExpr = 27;
-	public static readonly RULE_sinExpr = 28;
-	public static readonly RULE_cosExpr = 29;
-	public static readonly RULE_tanExpr = 30;
-	public static readonly RULE_cotExpr = 31;
-	public static readonly RULE_logExpr = 32;
-	public static readonly RULE_lnExpr = 33;
-	public static readonly RULE_cbrtExpr = 34;
-	public static readonly RULE_sqrtExpr = 35;
-	public static readonly RULE_absExpr = 36;
-	public static readonly RULE_expExpr = 37;
-	public static readonly RULE_pointExpr = 38;
-	public static readonly RULE_lineExpr = 39;
+	public static readonly RULE_pointDef = 2;
+	public static readonly RULE_sphereDef = 3;
+	public static readonly RULE_planeDef = 4;
+	public static readonly RULE_lineDef = 5;
+	public static readonly RULE_angleDef = 6;
+	public static readonly RULE_vectorDef = 7;
+	public static readonly RULE_polygonDef = 8;
+	public static readonly RULE_pointList = 9;
+	public static readonly RULE_circleDef = 10;
+	public static readonly RULE_segmentDef = 11;
+	public static readonly RULE_rayDef = 12;
+	public static readonly RULE_intersectionDef = 13;
+	public static readonly RULE_transformDef = 14;
+	public static readonly RULE_cylinderDef = 15;
+	public static readonly RULE_tetrahedronDef = 16;
+	public static readonly RULE_coneDef = 17;
+	public static readonly RULE_prismDef = 18;
+	public static readonly RULE_pyramidDef = 19;
+	public static readonly RULE_numberExpr = 20;
+	public static readonly RULE_additiveExpr = 21;
+	public static readonly RULE_multiplicativeExpr = 22;
+	public static readonly RULE_implicitMultiplicativeExpr = 23;
+	public static readonly RULE_exponentialExpr = 24;
+	public static readonly RULE_unaryExpr = 25;
+	public static readonly RULE_primaryExpr = 26;
+	public static readonly RULE_sinExpr = 27;
+	public static readonly RULE_cosExpr = 28;
+	public static readonly RULE_tanExpr = 29;
+	public static readonly RULE_cotExpr = 30;
+	public static readonly RULE_logExpr = 31;
+	public static readonly RULE_lnExpr = 32;
+	public static readonly RULE_cbrtExpr = 33;
+	public static readonly RULE_sqrtExpr = 34;
+	public static readonly RULE_absExpr = 35;
+	public static readonly RULE_expExpr = 36;
+	public static readonly RULE_pointExpr = 37;
+	public static readonly RULE_lineExpr = 38;
+	public static readonly RULE_dirExpr = 39;
 	public static readonly RULE_vectorExpr = 40;
 	public static readonly RULE_planeExpr = 41;
 	public static readonly RULE_directionExpr = 42;
 	public static readonly RULE_polygonExpr = 43;
-	public static readonly RULE_cuboidExpr = 44;
-	public static readonly RULE_tetrahedronExpr = 45;
-	public static readonly RULE_cylinderExpr = 46;
-	public static readonly RULE_coneExpr = 47;
-	public static readonly RULE_prismExpr = 48;
-	public static readonly RULE_shapeExpr = 49;
-	public static readonly RULE_two_side_expr = 50;
-	public static readonly RULE_varExpr = 51;
-	public static readonly RULE_varMultiplicativeExpr = 52;
-	public static readonly RULE_varImplicitMultiplicativeExpr = 53;
-	public static readonly RULE_varExponentialExpr = 54;
-	public static readonly RULE_varUnaryExpr = 55;
-	public static readonly RULE_varPrimaryExpr = 56;
+	public static readonly RULE_tetrahedronExpr = 44;
+	public static readonly RULE_cylinderExpr = 45;
+	public static readonly RULE_coneExpr = 46;
+	public static readonly RULE_prismExpr = 47;
+	public static readonly RULE_segmentExpr = 48;
+	public static readonly RULE_rayExpr = 49;
+	public static readonly RULE_pyramidExpr = 50;
+	public static readonly RULE_shapeExpr = 51;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"program", "expr", "command", "pointDef", "sphereDef", "planeDef", "lineDef", 
-		"angleDef", "vectorDef", "polygonDef", "pointList", "circleDef", "segmentDef", 
-		"rayDef", "intersectionDef", "transformDef", "cylinderDef", "tetrahedronDef", 
-		"coneDef", "prismDef", "cuboidDef", "numberExpr", "additiveExpr", "multiplicativeExpr", 
+		"program", "expr", "pointDef", "sphereDef", "planeDef", "lineDef", "angleDef", 
+		"vectorDef", "polygonDef", "pointList", "circleDef", "segmentDef", "rayDef", 
+		"intersectionDef", "transformDef", "cylinderDef", "tetrahedronDef", "coneDef", 
+		"prismDef", "pyramidDef", "numberExpr", "additiveExpr", "multiplicativeExpr", 
 		"implicitMultiplicativeExpr", "exponentialExpr", "unaryExpr", "primaryExpr", 
 		"sinExpr", "cosExpr", "tanExpr", "cotExpr", "logExpr", "lnExpr", "cbrtExpr", 
-		"sqrtExpr", "absExpr", "expExpr", "pointExpr", "lineExpr", "vectorExpr", 
-		"planeExpr", "directionExpr", "polygonExpr", "cuboidExpr", "tetrahedronExpr", 
-		"cylinderExpr", "coneExpr", "prismExpr", "shapeExpr", "two_side_expr", 
-		"varExpr", "varMultiplicativeExpr", "varImplicitMultiplicativeExpr", "varExponentialExpr", 
-		"varUnaryExpr", "varPrimaryExpr",
+		"sqrtExpr", "absExpr", "expExpr", "pointExpr", "lineExpr", "dirExpr", 
+		"vectorExpr", "planeExpr", "directionExpr", "polygonExpr", "tetrahedronExpr", 
+		"cylinderExpr", "coneExpr", "prismExpr", "segmentExpr", "rayExpr", "pyramidExpr", 
+		"shapeExpr",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -156,17 +153,17 @@ export class MathCommandParser extends Parser {
 		"'Rotate'", "'Project'", "'Reflect'", "'Enlarge'", "'Cylinder'", "'Tetrahedron'", 
 		"'Prism'", "'Pyramid'", "'Cuboid'", "'Cone'", "'sin'", "'cos'", "'tan'", 
 		"'cot'", "'log'", "'ln'", "'exp'", "'sqrt'", "'cbrt'", "'abs'", "'pi'", 
-		"'e'", undefined, undefined, "'('", "')'", "'{'", "'}'", "','", "'/'", 
-		"'+'", "'-'", "'*'", "'^'", "'='",
+		"'e'", "'x'", "'y'", "'z'", undefined, undefined, "'('", "')'", "'{'", 
+		"'}'", "','", "'/'", "'+'", "'-'", "'*'", "'^'",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
 		undefined, "CIRCLE", "LINE", "VECTOR", "SEGMENT", "RAY", "POLYGON", "POINT", 
 		"SPHERE", "PLANE", "INTERSECT", "ANGLE", "TRANSLATE", "ROTATE", "PROJECT", 
 		"REFLECT", "ENLARGE", "CYLINDER", "TETRAHEDRON", "PRISM", "PYRAMID", "CUBOID", 
 		"CONE", "SIN", "COS", "TAN", "COT", "LOG", "LN", "EXP", "SQRT", "CBRT", 
-		"ABS", "PI", "E", "POINT_ID", "SHAPE_ID", "LR", "RR", "LC", "RC", "COMMA", 
-		"DIVIDE", "ADD", "SUB", "MULTIPLY", "POWER", "EQ", "INT_LIT", "FLOAT_LIT", 
-		"WS",
+		"ABS", "PI", "E", "X", "Y", "Z", "POINT_ID", "SHAPE_ID", "LR", "RR", "LC", 
+		"RC", "COMMA", "DIVIDE", "ADD", "SUB", "MULTIPLY", "POWER", "INT_LIT", 
+		"FLOAT_LIT", "WS", "ERROR_CHAR",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(MathCommandParser._LITERAL_NAMES, MathCommandParser._SYMBOLIC_NAMES, []);
 
@@ -201,9 +198,9 @@ export class MathCommandParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 114;
+			this.state = 104;
 			this.expr();
-			this.state = 115;
+			this.state = 105;
 			this.match(MathCommandParser.EOF);
 			}
 		}
@@ -226,187 +223,10 @@ export class MathCommandParser extends Parser {
 		let _localctx: ExprContext = new ExprContext(this._ctx, this.state);
 		this.enterRule(_localctx, 2, MathCommandParser.RULE_expr);
 		try {
-			this.state = 125;
-			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 0, this._ctx) ) {
-			case 1:
-				this.enterOuterAlt(_localctx, 1);
-				{
-				this.state = 117;
-				this.command();
-				}
-				break;
-
-			case 2:
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 118;
-				this.two_side_expr();
-				}
-				break;
-
-			case 3:
-				this.enterOuterAlt(_localctx, 3);
-				{
-				this.state = 119;
-				this.pointExpr();
-				}
-				break;
-
-			case 4:
-				this.enterOuterAlt(_localctx, 4);
-				{
-				this.state = 120;
-				this.lineExpr();
-				}
-				break;
-
-			case 5:
-				this.enterOuterAlt(_localctx, 5);
-				{
-				this.state = 121;
-				this.vectorExpr();
-				}
-				break;
-
-			case 6:
-				this.enterOuterAlt(_localctx, 6);
-				{
-				this.state = 122;
-				this.planeExpr();
-				}
-				break;
-
-			case 7:
-				this.enterOuterAlt(_localctx, 7);
-				{
-				this.state = 123;
-				this.numberExpr();
-				}
-				break;
-
-			case 8:
-				this.enterOuterAlt(_localctx, 8);
-				{
-				this.state = 124;
-				this.directionExpr();
-				}
-				break;
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public command(): CommandContext {
-		let _localctx: CommandContext = new CommandContext(this._ctx, this.state);
-		this.enterRule(_localctx, 4, MathCommandParser.RULE_command);
-		try {
-			this.state = 139;
-			this._errHandler.sync(this);
-			switch (this._input.LA(1)) {
-			case MathCommandParser.POINT:
-			case MathCommandParser.LR:
-				this.enterOuterAlt(_localctx, 1);
-				{
-				this.state = 127;
-				this.pointDef();
-				}
-				break;
-			case MathCommandParser.SPHERE:
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 128;
-				this.sphereDef();
-				}
-				break;
-			case MathCommandParser.PLANE:
-				this.enterOuterAlt(_localctx, 3);
-				{
-				this.state = 129;
-				this.planeDef();
-				}
-				break;
-			case MathCommandParser.LINE:
-				this.enterOuterAlt(_localctx, 4);
-				{
-				this.state = 130;
-				this.lineDef();
-				}
-				break;
-			case MathCommandParser.ANGLE:
-				this.enterOuterAlt(_localctx, 5);
-				{
-				this.state = 131;
-				this.angleDef();
-				}
-				break;
-			case MathCommandParser.TRANSLATE:
-			case MathCommandParser.ROTATE:
-			case MathCommandParser.PROJECT:
-			case MathCommandParser.REFLECT:
-			case MathCommandParser.ENLARGE:
-				this.enterOuterAlt(_localctx, 6);
-				{
-				this.state = 132;
-				this.transformDef();
-				}
-				break;
-			case MathCommandParser.VECTOR:
-				this.enterOuterAlt(_localctx, 7);
-				{
-				this.state = 133;
-				this.vectorDef();
-				}
-				break;
-			case MathCommandParser.POLYGON:
-				this.enterOuterAlt(_localctx, 8);
-				{
-				this.state = 134;
-				this.polygonDef();
-				}
-				break;
-			case MathCommandParser.CIRCLE:
-				this.enterOuterAlt(_localctx, 9);
-				{
-				this.state = 135;
-				this.circleDef();
-				}
-				break;
-			case MathCommandParser.SEGMENT:
-				this.enterOuterAlt(_localctx, 10);
-				{
-				this.state = 136;
-				this.segmentDef();
-				}
-				break;
-			case MathCommandParser.RAY:
-				this.enterOuterAlt(_localctx, 11);
-				{
-				this.state = 137;
-				this.rayDef();
-				}
-				break;
-			case MathCommandParser.INTERSECT:
-				this.enterOuterAlt(_localctx, 12);
-				{
-				this.state = 138;
-				this.intersectionDef();
-				}
-				break;
-			default:
-				throw new NoViableAltException(this);
+			this.enterOuterAlt(_localctx, 1);
+			{
+			this.state = 107;
+			this.shapeExpr();
 			}
 		}
 		catch (re) {
@@ -426,36 +246,36 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public pointDef(): PointDefContext {
 		let _localctx: PointDefContext = new PointDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 6, MathCommandParser.RULE_pointDef);
+		this.enterRule(_localctx, 4, MathCommandParser.RULE_pointDef);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 142;
+			this.state = 110;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la === MathCommandParser.POINT) {
 				{
-				this.state = 141;
+				this.state = 109;
 				this.match(MathCommandParser.POINT);
 				}
 			}
 
-			this.state = 144;
+			this.state = 112;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 145;
+			this.state = 113;
 			this.numberExpr();
-			this.state = 146;
+			this.state = 114;
 			this.match(MathCommandParser.COMMA);
-			this.state = 147;
+			this.state = 115;
 			this.numberExpr();
-			this.state = 148;
+			this.state = 116;
 			this.match(MathCommandParser.COMMA);
-			this.state = 149;
+			this.state = 117;
 			this.numberExpr();
 			}
-			this.state = 151;
+			this.state = 119;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -476,38 +296,38 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public sphereDef(): SphereDefContext {
 		let _localctx: SphereDefContext = new SphereDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 8, MathCommandParser.RULE_sphereDef);
+		this.enterRule(_localctx, 6, MathCommandParser.RULE_sphereDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 153;
+			this.state = 121;
 			this.match(MathCommandParser.SPHERE);
-			this.state = 154;
+			this.state = 122;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 155;
+			this.state = 123;
 			this.pointExpr();
-			this.state = 156;
+			this.state = 124;
 			this.match(MathCommandParser.COMMA);
-			this.state = 159;
+			this.state = 127;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 3, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 1, this._ctx) ) {
 			case 1:
 				{
-				this.state = 157;
+				this.state = 125;
 				this.pointExpr();
 				}
 				break;
 
 			case 2:
 				{
-				this.state = 158;
+				this.state = 126;
 				this.numberExpr();
 				}
 				break;
 			}
 			}
-			this.state = 161;
+			this.state = 129;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -528,20 +348,20 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public planeDef(): PlaneDefContext {
 		let _localctx: PlaneDefContext = new PlaneDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 10, MathCommandParser.RULE_planeDef);
+		this.enterRule(_localctx, 8, MathCommandParser.RULE_planeDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 163;
+			this.state = 131;
 			this.match(MathCommandParser.PLANE);
-			this.state = 164;
+			this.state = 132;
 			this.match(MathCommandParser.LR);
-			this.state = 188;
+			this.state = 156;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 5, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 3, this._ctx) ) {
 			case 1:
 				{
-				this.state = 165;
+				this.state = 133;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
@@ -549,23 +369,23 @@ export class MathCommandParser extends Parser {
 			case 2:
 				{
 				{
-				this.state = 166;
+				this.state = 134;
 				this.pointExpr();
-				this.state = 167;
+				this.state = 135;
 				this.match(MathCommandParser.COMMA);
-				this.state = 170;
+				this.state = 138;
 				this._errHandler.sync(this);
-				switch ( this.interpreter.adaptivePredict(this._input, 4, this._ctx) ) {
+				switch ( this.interpreter.adaptivePredict(this._input, 2, this._ctx) ) {
 				case 1:
 					{
-					this.state = 168;
+					this.state = 136;
 					this.planeExpr();
 					}
 					break;
 
 				case 2:
 					{
-					this.state = 169;
+					this.state = 137;
 					this.lineExpr();
 					}
 					break;
@@ -577,11 +397,11 @@ export class MathCommandParser extends Parser {
 			case 3:
 				{
 				{
-				this.state = 172;
+				this.state = 140;
 				this.lineExpr();
-				this.state = 173;
+				this.state = 141;
 				this.match(MathCommandParser.COMMA);
-				this.state = 174;
+				this.state = 142;
 				this.lineExpr();
 				}
 				}
@@ -590,15 +410,15 @@ export class MathCommandParser extends Parser {
 			case 4:
 				{
 				{
-				this.state = 176;
+				this.state = 144;
 				this.pointExpr();
-				this.state = 177;
+				this.state = 145;
 				this.match(MathCommandParser.COMMA);
-				this.state = 178;
+				this.state = 146;
 				this.vectorExpr();
-				this.state = 179;
+				this.state = 147;
 				this.match(MathCommandParser.COMMA);
-				this.state = 180;
+				this.state = 148;
 				this.vectorExpr();
 				}
 				}
@@ -607,21 +427,21 @@ export class MathCommandParser extends Parser {
 			case 5:
 				{
 				{
-				this.state = 182;
+				this.state = 150;
 				this.pointExpr();
-				this.state = 183;
+				this.state = 151;
 				this.match(MathCommandParser.COMMA);
-				this.state = 184;
+				this.state = 152;
 				this.pointExpr();
-				this.state = 185;
+				this.state = 153;
 				this.match(MathCommandParser.COMMA);
-				this.state = 186;
+				this.state = 154;
 				this.pointExpr();
 				}
 				}
 				break;
 			}
-			this.state = 190;
+			this.state = 158;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -642,25 +462,25 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public lineDef(): LineDefContext {
 		let _localctx: LineDefContext = new LineDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 12, MathCommandParser.RULE_lineDef);
+		this.enterRule(_localctx, 10, MathCommandParser.RULE_lineDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 192;
+			this.state = 160;
 			this.match(MathCommandParser.LINE);
-			this.state = 193;
+			this.state = 161;
 			this.match(MathCommandParser.LR);
-			this.state = 206;
+			this.state = 174;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 6, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 4, this._ctx) ) {
 			case 1:
 				{
 				{
-				this.state = 194;
+				this.state = 162;
 				this.pointExpr();
-				this.state = 195;
+				this.state = 163;
 				this.match(MathCommandParser.COMMA);
-				this.state = 196;
+				this.state = 164;
 				this.pointExpr();
 				}
 				}
@@ -669,11 +489,11 @@ export class MathCommandParser extends Parser {
 			case 2:
 				{
 				{
-				this.state = 198;
+				this.state = 166;
 				this.pointExpr();
-				this.state = 199;
+				this.state = 167;
 				this.match(MathCommandParser.COMMA);
-				this.state = 200;
+				this.state = 168;
 				this.lineExpr();
 				}
 				}
@@ -682,17 +502,17 @@ export class MathCommandParser extends Parser {
 			case 3:
 				{
 				{
-				this.state = 202;
+				this.state = 170;
 				this.pointExpr();
-				this.state = 203;
+				this.state = 171;
 				this.match(MathCommandParser.COMMA);
-				this.state = 204;
+				this.state = 172;
 				this.vectorExpr();
 				}
 				}
 				break;
 			}
-			this.state = 208;
+			this.state = 176;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -713,27 +533,27 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public angleDef(): AngleDefContext {
 		let _localctx: AngleDefContext = new AngleDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 14, MathCommandParser.RULE_angleDef);
+		this.enterRule(_localctx, 12, MathCommandParser.RULE_angleDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 210;
+			this.state = 178;
 			this.match(MathCommandParser.ANGLE);
-			this.state = 211;
+			this.state = 179;
 			this.match(MathCommandParser.LR);
-			this.state = 236;
+			this.state = 204;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 7, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 5, this._ctx) ) {
 			case 1:
 				{
-				this.state = 212;
+				this.state = 180;
 				this.vectorExpr();
 				}
 				break;
 
 			case 2:
 				{
-				this.state = 213;
+				this.state = 181;
 				this.pointExpr();
 				}
 				break;
@@ -741,11 +561,11 @@ export class MathCommandParser extends Parser {
 			case 3:
 				{
 				{
-				this.state = 214;
+				this.state = 182;
 				this.vectorExpr();
-				this.state = 215;
+				this.state = 183;
 				this.match(MathCommandParser.COMMA);
-				this.state = 216;
+				this.state = 184;
 				this.vectorExpr();
 				}
 				}
@@ -754,11 +574,11 @@ export class MathCommandParser extends Parser {
 			case 4:
 				{
 				{
-				this.state = 218;
+				this.state = 186;
 				this.lineExpr();
-				this.state = 219;
+				this.state = 187;
 				this.match(MathCommandParser.COMMA);
-				this.state = 220;
+				this.state = 188;
 				this.lineExpr();
 				}
 				}
@@ -767,11 +587,11 @@ export class MathCommandParser extends Parser {
 			case 5:
 				{
 				{
-				this.state = 222;
+				this.state = 190;
 				this.lineExpr();
-				this.state = 223;
+				this.state = 191;
 				this.match(MathCommandParser.COMMA);
-				this.state = 224;
+				this.state = 192;
 				this.planeExpr();
 				}
 				}
@@ -780,11 +600,11 @@ export class MathCommandParser extends Parser {
 			case 6:
 				{
 				{
-				this.state = 226;
+				this.state = 194;
 				this.planeExpr();
-				this.state = 227;
+				this.state = 195;
 				this.match(MathCommandParser.COMMA);
-				this.state = 228;
+				this.state = 196;
 				this.planeExpr();
 				}
 				}
@@ -793,21 +613,21 @@ export class MathCommandParser extends Parser {
 			case 7:
 				{
 				{
-				this.state = 230;
+				this.state = 198;
 				this.pointExpr();
-				this.state = 231;
+				this.state = 199;
 				this.match(MathCommandParser.COMMA);
-				this.state = 232;
+				this.state = 200;
 				this.pointExpr();
-				this.state = 233;
+				this.state = 201;
 				this.match(MathCommandParser.COMMA);
-				this.state = 234;
+				this.state = 202;
 				this.pointExpr();
 				}
 				}
 				break;
 			}
-			this.state = 238;
+			this.state = 206;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -828,20 +648,20 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public vectorDef(): VectorDefContext {
 		let _localctx: VectorDefContext = new VectorDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 16, MathCommandParser.RULE_vectorDef);
+		this.enterRule(_localctx, 14, MathCommandParser.RULE_vectorDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 240;
+			this.state = 208;
 			this.match(MathCommandParser.VECTOR);
-			this.state = 241;
+			this.state = 209;
 			this.match(MathCommandParser.LR);
-			this.state = 247;
+			this.state = 215;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 8, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 6, this._ctx) ) {
 			case 1:
 				{
-				this.state = 242;
+				this.state = 210;
 				this.pointExpr();
 				}
 				break;
@@ -849,17 +669,17 @@ export class MathCommandParser extends Parser {
 			case 2:
 				{
 				{
-				this.state = 243;
+				this.state = 211;
 				this.pointExpr();
-				this.state = 244;
+				this.state = 212;
 				this.match(MathCommandParser.COMMA);
-				this.state = 245;
+				this.state = 213;
 				this.pointExpr();
 				}
 				}
 				break;
 			}
-			this.state = 249;
+			this.state = 217;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -880,17 +700,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public polygonDef(): PolygonDefContext {
 		let _localctx: PolygonDefContext = new PolygonDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 18, MathCommandParser.RULE_polygonDef);
+		this.enterRule(_localctx, 16, MathCommandParser.RULE_polygonDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 251;
+			this.state = 219;
 			this.match(MathCommandParser.POLYGON);
-			this.state = 252;
+			this.state = 220;
 			this.match(MathCommandParser.LR);
-			this.state = 253;
+			this.state = 221;
 			this.pointList();
-			this.state = 254;
+			this.state = 222;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -911,19 +731,19 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public pointList(): PointListContext {
 		let _localctx: PointListContext = new PointListContext(this._ctx, this.state);
-		this.enterRule(_localctx, 20, MathCommandParser.RULE_pointList);
+		this.enterRule(_localctx, 18, MathCommandParser.RULE_pointList);
 		try {
-			this.state = 261;
+			this.state = 229;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 9, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 7, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 256;
+				this.state = 224;
 				this.pointExpr();
-				this.state = 257;
+				this.state = 225;
 				this.match(MathCommandParser.COMMA);
-				this.state = 258;
+				this.state = 226;
 				this.pointList();
 				}
 				break;
@@ -931,7 +751,7 @@ export class MathCommandParser extends Parser {
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 260;
+				this.state = 228;
 				this.pointExpr();
 				}
 				break;
@@ -954,25 +774,25 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public circleDef(): CircleDefContext {
 		let _localctx: CircleDefContext = new CircleDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 22, MathCommandParser.RULE_circleDef);
+		this.enterRule(_localctx, 20, MathCommandParser.RULE_circleDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 263;
+			this.state = 231;
 			this.match(MathCommandParser.CIRCLE);
-			this.state = 264;
+			this.state = 232;
 			this.match(MathCommandParser.LR);
-			this.state = 291;
+			this.state = 259;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 10, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 8, this._ctx) ) {
 			case 1:
 				{
 				{
-				this.state = 265;
+				this.state = 233;
 				this.pointExpr();
-				this.state = 266;
+				this.state = 234;
 				this.match(MathCommandParser.COMMA);
-				this.state = 267;
+				this.state = 235;
 				this.numberExpr();
 				}
 				}
@@ -981,11 +801,11 @@ export class MathCommandParser extends Parser {
 			case 2:
 				{
 				{
-				this.state = 269;
+				this.state = 237;
 				this.pointExpr();
-				this.state = 270;
+				this.state = 238;
 				this.match(MathCommandParser.COMMA);
-				this.state = 271;
+				this.state = 239;
 				this.pointExpr();
 				}
 				}
@@ -994,15 +814,15 @@ export class MathCommandParser extends Parser {
 			case 3:
 				{
 				{
-				this.state = 273;
+				this.state = 241;
 				this.pointExpr();
-				this.state = 274;
+				this.state = 242;
 				this.match(MathCommandParser.COMMA);
-				this.state = 275;
+				this.state = 243;
 				this.pointExpr();
-				this.state = 276;
+				this.state = 244;
 				this.match(MathCommandParser.COMMA);
-				this.state = 277;
+				this.state = 245;
 				this.pointExpr();
 				}
 				}
@@ -1011,15 +831,15 @@ export class MathCommandParser extends Parser {
 			case 4:
 				{
 				{
-				this.state = 279;
+				this.state = 247;
 				this.pointExpr();
-				this.state = 280;
+				this.state = 248;
 				this.match(MathCommandParser.COMMA);
-				this.state = 281;
+				this.state = 249;
 				this.numberExpr();
-				this.state = 282;
+				this.state = 250;
 				this.match(MathCommandParser.COMMA);
-				this.state = 283;
+				this.state = 251;
 				this.directionExpr();
 				}
 				}
@@ -1028,21 +848,21 @@ export class MathCommandParser extends Parser {
 			case 5:
 				{
 				{
-				this.state = 285;
+				this.state = 253;
 				this.pointExpr();
-				this.state = 286;
+				this.state = 254;
 				this.match(MathCommandParser.COMMA);
-				this.state = 287;
+				this.state = 255;
 				this.pointExpr();
-				this.state = 288;
+				this.state = 256;
 				this.match(MathCommandParser.COMMA);
-				this.state = 289;
+				this.state = 257;
 				this.directionExpr();
 				}
 				}
 				break;
 			}
-			this.state = 293;
+			this.state = 261;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1063,38 +883,38 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public segmentDef(): SegmentDefContext {
 		let _localctx: SegmentDefContext = new SegmentDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 24, MathCommandParser.RULE_segmentDef);
+		this.enterRule(_localctx, 22, MathCommandParser.RULE_segmentDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 295;
+			this.state = 263;
 			this.match(MathCommandParser.SEGMENT);
-			this.state = 296;
+			this.state = 264;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 297;
+			this.state = 265;
 			this.pointExpr();
-			this.state = 298;
+			this.state = 266;
 			this.match(MathCommandParser.COMMA);
-			this.state = 301;
+			this.state = 269;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 11, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 9, this._ctx) ) {
 			case 1:
 				{
-				this.state = 299;
+				this.state = 267;
 				this.pointExpr();
 				}
 				break;
 
 			case 2:
 				{
-				this.state = 300;
+				this.state = 268;
 				this.numberExpr();
 				}
 				break;
 			}
 			}
-			this.state = 303;
+			this.state = 271;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1115,34 +935,34 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public rayDef(): RayDefContext {
 		let _localctx: RayDefContext = new RayDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 26, MathCommandParser.RULE_rayDef);
+		this.enterRule(_localctx, 24, MathCommandParser.RULE_rayDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 305;
+			this.state = 273;
 			this.match(MathCommandParser.RAY);
-			this.state = 306;
+			this.state = 274;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 307;
+			this.state = 275;
 			this.pointExpr();
-			this.state = 308;
+			this.state = 276;
 			this.match(MathCommandParser.COMMA);
-			this.state = 311;
+			this.state = 279;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.POINT:
 			case MathCommandParser.POINT_ID:
 			case MathCommandParser.LR:
 				{
-				this.state = 309;
+				this.state = 277;
 				this.pointExpr();
 				}
 				break;
 			case MathCommandParser.VECTOR:
 			case MathCommandParser.SHAPE_ID:
 				{
-				this.state = 310;
+				this.state = 278;
 				this.vectorExpr();
 				}
 				break;
@@ -1150,7 +970,7 @@ export class MathCommandParser extends Parser {
 				throw new NoViableAltException(this);
 			}
 			}
-			this.state = 313;
+			this.state = 281;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1171,32 +991,23 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public intersectionDef(): IntersectionDefContext {
 		let _localctx: IntersectionDefContext = new IntersectionDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 28, MathCommandParser.RULE_intersectionDef);
+		this.enterRule(_localctx, 26, MathCommandParser.RULE_intersectionDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 315;
+			this.state = 283;
 			this.match(MathCommandParser.INTERSECT);
-			this.state = 316;
+			this.state = 284;
 			this.match(MathCommandParser.LR);
-			this.state = 319;
-			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 13, this._ctx) ) {
-			case 1:
-				{
-				this.state = 317;
-				this.expr();
-				}
-				break;
-
-			case 2:
-				{
-				this.state = 318;
-				this.expr();
-				}
-				break;
+			{
+			this.state = 285;
+			this.expr();
+			this.state = 286;
+			this.match(MathCommandParser.COMMA);
+			this.state = 287;
+			this.expr();
 			}
-			this.state = 321;
+			this.state = 289;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1217,30 +1028,29 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public transformDef(): TransformDefContext {
 		let _localctx: TransformDefContext = new TransformDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 30, MathCommandParser.RULE_transformDef);
-		let _la: number;
+		this.enterRule(_localctx, 28, MathCommandParser.RULE_transformDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 373;
+			this.state = 346;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.TRANSLATE:
 				{
 				{
-				this.state = 323;
+				this.state = 291;
 				this.match(MathCommandParser.TRANSLATE);
-				this.state = 324;
+				this.state = 292;
 				this.match(MathCommandParser.LR);
 				{
-				this.state = 325;
-				this.pointExpr();
-				this.state = 326;
+				this.state = 293;
+				this.shapeExpr();
+				this.state = 294;
 				this.match(MathCommandParser.COMMA);
-				this.state = 327;
+				this.state = 295;
 				this.vectorExpr();
 				}
-				this.state = 329;
+				this.state = 297;
 				this.match(MathCommandParser.RR);
 				}
 				}
@@ -1248,31 +1058,59 @@ export class MathCommandParser extends Parser {
 			case MathCommandParser.ROTATE:
 				{
 				{
-				this.state = 331;
+				this.state = 299;
 				this.match(MathCommandParser.ROTATE);
-				this.state = 332;
+				this.state = 300;
 				this.match(MathCommandParser.LR);
 				{
-				this.state = 333;
+				this.state = 301;
 				this.shapeExpr();
-				this.state = 334;
+				this.state = 302;
 				this.match(MathCommandParser.COMMA);
-				this.state = 335;
+				this.state = 303;
 				this.numberExpr();
-				this.state = 338;
+				this.state = 313;
 				this._errHandler.sync(this);
-				_la = this._input.LA(1);
-				if (_la === MathCommandParser.COMMA) {
+				switch ( this.interpreter.adaptivePredict(this._input, 11, this._ctx) ) {
+				case 1:
 					{
-					this.state = 336;
+					{
+					this.state = 304;
 					this.match(MathCommandParser.COMMA);
-					this.state = 337;
-					this.shapeExpr();
+					this.state = 305;
+					this.pointExpr();
 					}
-				}
+					}
+					break;
 
+				case 2:
+					{
+					{
+					this.state = 306;
+					this.match(MathCommandParser.COMMA);
+					this.state = 307;
+					this.directionExpr();
+					}
+					}
+					break;
+
+				case 3:
+					{
+					{
+					this.state = 308;
+					this.match(MathCommandParser.COMMA);
+					this.state = 309;
+					this.pointExpr();
+					this.state = 310;
+					this.match(MathCommandParser.COMMA);
+					this.state = 311;
+					this.directionExpr();
+					}
+					}
+					break;
 				}
-				this.state = 340;
+				}
+				this.state = 315;
 				this.match(MathCommandParser.RR);
 				}
 				}
@@ -1280,34 +1118,19 @@ export class MathCommandParser extends Parser {
 			case MathCommandParser.PROJECT:
 				{
 				{
-				this.state = 342;
+				this.state = 317;
 				this.match(MathCommandParser.PROJECT);
-				this.state = 343;
+				this.state = 318;
 				this.match(MathCommandParser.LR);
 				{
-				this.state = 344;
+				this.state = 319;
 				this.pointExpr();
-				this.state = 345;
+				this.state = 320;
 				this.match(MathCommandParser.COMMA);
-				this.state = 348;
-				this._errHandler.sync(this);
-				switch ( this.interpreter.adaptivePredict(this._input, 15, this._ctx) ) {
-				case 1:
-					{
-					this.state = 346;
-					this.planeExpr();
-					}
-					break;
-
-				case 2:
-					{
-					this.state = 347;
-					this.lineExpr();
-					}
-					break;
+				this.state = 321;
+				this.planeExpr();
 				}
-				}
-				this.state = 350;
+				this.state = 323;
 				this.match(MathCommandParser.RR);
 				}
 				}
@@ -1315,41 +1138,41 @@ export class MathCommandParser extends Parser {
 			case MathCommandParser.REFLECT:
 				{
 				{
-				this.state = 352;
+				this.state = 325;
 				this.match(MathCommandParser.REFLECT);
-				this.state = 353;
+				this.state = 326;
 				this.match(MathCommandParser.LR);
 				{
-				this.state = 354;
-				this.pointExpr();
-				this.state = 355;
+				this.state = 327;
+				this.shapeExpr();
+				this.state = 328;
 				this.match(MathCommandParser.COMMA);
-				this.state = 359;
+				this.state = 332;
 				this._errHandler.sync(this);
-				switch ( this.interpreter.adaptivePredict(this._input, 16, this._ctx) ) {
+				switch ( this.interpreter.adaptivePredict(this._input, 12, this._ctx) ) {
 				case 1:
 					{
-					this.state = 356;
+					this.state = 329;
 					this.planeExpr();
 					}
 					break;
 
 				case 2:
 					{
-					this.state = 357;
+					this.state = 330;
 					this.lineExpr();
 					}
 					break;
 
 				case 3:
 					{
-					this.state = 358;
+					this.state = 331;
 					this.pointExpr();
 					}
 					break;
 				}
 				}
-				this.state = 361;
+				this.state = 334;
 				this.match(MathCommandParser.RR);
 				}
 				}
@@ -1357,23 +1180,23 @@ export class MathCommandParser extends Parser {
 			case MathCommandParser.ENLARGE:
 				{
 				{
-				this.state = 363;
+				this.state = 336;
 				this.match(MathCommandParser.ENLARGE);
-				this.state = 364;
+				this.state = 337;
 				this.match(MathCommandParser.LR);
 				{
-				this.state = 365;
+				this.state = 338;
 				this.shapeExpr();
-				this.state = 366;
+				this.state = 339;
 				this.match(MathCommandParser.COMMA);
-				this.state = 367;
+				this.state = 340;
 				this.numberExpr();
-				this.state = 368;
+				this.state = 341;
 				this.match(MathCommandParser.COMMA);
-				this.state = 369;
+				this.state = 342;
 				this.pointExpr();
 				}
-				this.state = 371;
+				this.state = 344;
 				this.match(MathCommandParser.RR);
 				}
 				}
@@ -1400,27 +1223,27 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public cylinderDef(): CylinderDefContext {
 		let _localctx: CylinderDefContext = new CylinderDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 32, MathCommandParser.RULE_cylinderDef);
+		this.enterRule(_localctx, 30, MathCommandParser.RULE_cylinderDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 375;
+			this.state = 348;
 			this.match(MathCommandParser.CYLINDER);
-			this.state = 376;
+			this.state = 349;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 377;
+			this.state = 350;
 			this.pointExpr();
-			this.state = 378;
+			this.state = 351;
 			this.match(MathCommandParser.COMMA);
-			this.state = 379;
+			this.state = 352;
 			this.pointExpr();
-			this.state = 380;
+			this.state = 353;
 			this.match(MathCommandParser.COMMA);
-			this.state = 381;
+			this.state = 354;
 			this.numberExpr();
 			}
-			this.state = 383;
+			this.state = 356;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1441,23 +1264,52 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public tetrahedronDef(): TetrahedronDefContext {
 		let _localctx: TetrahedronDefContext = new TetrahedronDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 34, MathCommandParser.RULE_tetrahedronDef);
+		this.enterRule(_localctx, 32, MathCommandParser.RULE_tetrahedronDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 385;
+			this.state = 358;
 			this.match(MathCommandParser.TETRAHEDRON);
-			this.state = 386;
+			this.state = 359;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 387;
-			this.polygonExpr();
-			this.state = 388;
+			this.state = 367;
+			this._errHandler.sync(this);
+			switch (this._input.LA(1)) {
+			case MathCommandParser.POLYGON:
+			case MathCommandParser.SHAPE_ID:
+				{
+				this.state = 360;
+				this.polygonExpr();
+				}
+				break;
+			case MathCommandParser.POINT:
+			case MathCommandParser.POINT_ID:
+			case MathCommandParser.LR:
+				{
+				{
+				this.state = 361;
+				this.pointExpr();
+				this.state = 362;
+				this.match(MathCommandParser.COMMA);
+				this.state = 363;
+				this.pointExpr();
+				this.state = 364;
+				this.match(MathCommandParser.COMMA);
+				this.state = 365;
+				this.pointExpr();
+				}
+				}
+				break;
+			default:
+				throw new NoViableAltException(this);
+			}
+			this.state = 369;
 			this.match(MathCommandParser.COMMA);
-			this.state = 389;
+			this.state = 370;
 			this.pointExpr();
 			}
-			this.state = 391;
+			this.state = 372;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1478,27 +1330,27 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public coneDef(): ConeDefContext {
 		let _localctx: ConeDefContext = new ConeDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 36, MathCommandParser.RULE_coneDef);
+		this.enterRule(_localctx, 34, MathCommandParser.RULE_coneDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 393;
+			this.state = 374;
 			this.match(MathCommandParser.CONE);
-			this.state = 394;
+			this.state = 375;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 395;
+			this.state = 376;
 			this.pointExpr();
-			this.state = 396;
+			this.state = 377;
 			this.match(MathCommandParser.COMMA);
-			this.state = 397;
+			this.state = 378;
 			this.numberExpr();
-			this.state = 398;
+			this.state = 379;
 			this.match(MathCommandParser.COMMA);
-			this.state = 399;
+			this.state = 380;
 			this.pointExpr();
 			}
-			this.state = 401;
+			this.state = 382;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1519,23 +1371,23 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public prismDef(): PrismDefContext {
 		let _localctx: PrismDefContext = new PrismDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 38, MathCommandParser.RULE_prismDef);
+		this.enterRule(_localctx, 36, MathCommandParser.RULE_prismDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 403;
+			this.state = 384;
 			this.match(MathCommandParser.PRISM);
-			this.state = 404;
+			this.state = 385;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 405;
+			this.state = 386;
 			this.polygonExpr();
-			this.state = 406;
+			this.state = 387;
 			this.match(MathCommandParser.COMMA);
-			this.state = 407;
+			this.state = 388;
 			this.directionExpr();
 			}
-			this.state = 409;
+			this.state = 390;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1554,46 +1406,25 @@ export class MathCommandParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public cuboidDef(): CuboidDefContext {
-		let _localctx: CuboidDefContext = new CuboidDefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 40, MathCommandParser.RULE_cuboidDef);
-		let _la: number;
+	public pyramidDef(): PyramidDefContext {
+		let _localctx: PyramidDefContext = new PyramidDefContext(this._ctx, this.state);
+		this.enterRule(_localctx, 38, MathCommandParser.RULE_pyramidDef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 411;
-			this.match(MathCommandParser.CUBOID);
-			this.state = 412;
+			this.state = 392;
+			this.match(MathCommandParser.PYRAMID);
+			this.state = 393;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 413;
-			this.pointExpr();
-			this.state = 414;
+			this.state = 394;
+			this.polygonExpr();
+			this.state = 395;
 			this.match(MathCommandParser.COMMA);
-			this.state = 415;
-			this.numberExpr();
-			this.state = 423;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			if (_la === MathCommandParser.COMMA) {
-				{
-				this.state = 416;
-				this.match(MathCommandParser.COMMA);
-				this.state = 417;
-				this.numberExpr();
-				this.state = 418;
-				this.match(MathCommandParser.COMMA);
-				this.state = 419;
-				this.numberExpr();
-				this.state = 420;
-				this.match(MathCommandParser.COMMA);
-				this.state = 421;
-				this.numberExpr();
-				}
+			this.state = 396;
+			this.pointExpr();
 			}
-
-			}
-			this.state = 425;
+			this.state = 398;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -1614,11 +1445,11 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public numberExpr(): NumberExprContext {
 		let _localctx: NumberExprContext = new NumberExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 42, MathCommandParser.RULE_numberExpr);
+		this.enterRule(_localctx, 40, MathCommandParser.RULE_numberExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 427;
+			this.state = 400;
 			this.additiveExpr(0);
 			}
 		}
@@ -1649,20 +1480,20 @@ export class MathCommandParser extends Parser {
 		let _parentState: number = this.state;
 		let _localctx: AdditiveExprContext = new AdditiveExprContext(this._ctx, _parentState);
 		let _prevctx: AdditiveExprContext = _localctx;
-		let _startState: number = 44;
-		this.enterRecursionRule(_localctx, 44, MathCommandParser.RULE_additiveExpr, _p);
+		let _startState: number = 42;
+		this.enterRecursionRule(_localctx, 42, MathCommandParser.RULE_additiveExpr, _p);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(_localctx, 1);
 			{
 			{
-			this.state = 430;
+			this.state = 403;
 			this.multiplicativeExpr(0);
 			}
 			this._ctx._stop = this._input.tryLT(-1);
-			this.state = 440;
+			this.state = 413;
 			this._errHandler.sync(this);
-			_alt = this.interpreter.adaptivePredict(this._input, 20, this._ctx);
+			_alt = this.interpreter.adaptivePredict(this._input, 16, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					if (this._parseListeners != null) {
@@ -1670,20 +1501,20 @@ export class MathCommandParser extends Parser {
 					}
 					_prevctx = _localctx;
 					{
-					this.state = 438;
+					this.state = 411;
 					this._errHandler.sync(this);
-					switch ( this.interpreter.adaptivePredict(this._input, 19, this._ctx) ) {
+					switch ( this.interpreter.adaptivePredict(this._input, 15, this._ctx) ) {
 					case 1:
 						{
 						_localctx = new AdditiveExprContext(_parentctx, _parentState);
 						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_additiveExpr);
-						this.state = 432;
+						this.state = 405;
 						if (!(this.precpred(this._ctx, 3))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 3)");
 						}
-						this.state = 433;
+						this.state = 406;
 						this.match(MathCommandParser.ADD);
-						this.state = 434;
+						this.state = 407;
 						this.multiplicativeExpr(0);
 						}
 						break;
@@ -1692,22 +1523,22 @@ export class MathCommandParser extends Parser {
 						{
 						_localctx = new AdditiveExprContext(_parentctx, _parentState);
 						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_additiveExpr);
-						this.state = 435;
+						this.state = 408;
 						if (!(this.precpred(this._ctx, 2))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 2)");
 						}
-						this.state = 436;
+						this.state = 409;
 						this.match(MathCommandParser.SUB);
-						this.state = 437;
+						this.state = 410;
 						this.multiplicativeExpr(0);
 						}
 						break;
 					}
 					}
 				}
-				this.state = 442;
+				this.state = 415;
 				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 20, this._ctx);
+				_alt = this.interpreter.adaptivePredict(this._input, 16, this._ctx);
 			}
 			}
 		}
@@ -1738,33 +1569,33 @@ export class MathCommandParser extends Parser {
 		let _parentState: number = this.state;
 		let _localctx: MultiplicativeExprContext = new MultiplicativeExprContext(this._ctx, _parentState);
 		let _prevctx: MultiplicativeExprContext = _localctx;
-		let _startState: number = 46;
-		this.enterRecursionRule(_localctx, 46, MathCommandParser.RULE_multiplicativeExpr, _p);
+		let _startState: number = 44;
+		this.enterRecursionRule(_localctx, 44, MathCommandParser.RULE_multiplicativeExpr, _p);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 446;
+			this.state = 419;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 21, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 17, this._ctx) ) {
 			case 1:
 				{
-				this.state = 444;
+				this.state = 417;
 				this.implicitMultiplicativeExpr();
 				}
 				break;
 
 			case 2:
 				{
-				this.state = 445;
+				this.state = 418;
 				this.exponentialExpr();
 				}
 				break;
 			}
 			this._ctx._stop = this._input.tryLT(-1);
-			this.state = 456;
+			this.state = 429;
 			this._errHandler.sync(this);
-			_alt = this.interpreter.adaptivePredict(this._input, 23, this._ctx);
+			_alt = this.interpreter.adaptivePredict(this._input, 19, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					if (this._parseListeners != null) {
@@ -1772,20 +1603,20 @@ export class MathCommandParser extends Parser {
 					}
 					_prevctx = _localctx;
 					{
-					this.state = 454;
+					this.state = 427;
 					this._errHandler.sync(this);
-					switch ( this.interpreter.adaptivePredict(this._input, 22, this._ctx) ) {
+					switch ( this.interpreter.adaptivePredict(this._input, 18, this._ctx) ) {
 					case 1:
 						{
 						_localctx = new MultiplicativeExprContext(_parentctx, _parentState);
 						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_multiplicativeExpr);
-						this.state = 448;
+						this.state = 421;
 						if (!(this.precpred(this._ctx, 4))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 4)");
 						}
-						this.state = 449;
+						this.state = 422;
 						this.match(MathCommandParser.MULTIPLY);
-						this.state = 450;
+						this.state = 423;
 						this.exponentialExpr();
 						}
 						break;
@@ -1794,22 +1625,22 @@ export class MathCommandParser extends Parser {
 						{
 						_localctx = new MultiplicativeExprContext(_parentctx, _parentState);
 						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_multiplicativeExpr);
-						this.state = 451;
+						this.state = 424;
 						if (!(this.precpred(this._ctx, 3))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 3)");
 						}
-						this.state = 452;
+						this.state = 425;
 						this.match(MathCommandParser.DIVIDE);
-						this.state = 453;
+						this.state = 426;
 						this.exponentialExpr();
 						}
 						break;
 					}
 					}
 				}
-				this.state = 458;
+				this.state = 431;
 				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 23, this._ctx);
+				_alt = this.interpreter.adaptivePredict(this._input, 19, this._ctx);
 			}
 			}
 		}
@@ -1830,14 +1661,14 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public implicitMultiplicativeExpr(): ImplicitMultiplicativeExprContext {
 		let _localctx: ImplicitMultiplicativeExprContext = new ImplicitMultiplicativeExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 48, MathCommandParser.RULE_implicitMultiplicativeExpr);
+		this.enterRule(_localctx, 46, MathCommandParser.RULE_implicitMultiplicativeExpr);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 459;
+			this.state = 432;
 			this.primaryExpr();
-			this.state = 461;
+			this.state = 434;
 			this._errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -1845,7 +1676,7 @@ export class MathCommandParser extends Parser {
 				case 1:
 					{
 					{
-					this.state = 460;
+					this.state = 433;
 					this.primaryExpr();
 					}
 					}
@@ -1853,9 +1684,9 @@ export class MathCommandParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				this.state = 463;
+				this.state = 436;
 				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 24, this._ctx);
+				_alt = this.interpreter.adaptivePredict(this._input, 20, this._ctx);
 			} while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
 			}
 		}
@@ -1876,19 +1707,19 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public exponentialExpr(): ExponentialExprContext {
 		let _localctx: ExponentialExprContext = new ExponentialExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 50, MathCommandParser.RULE_exponentialExpr);
+		this.enterRule(_localctx, 48, MathCommandParser.RULE_exponentialExpr);
 		try {
-			this.state = 470;
+			this.state = 443;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 25, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 21, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 465;
+				this.state = 438;
 				this.unaryExpr();
-				this.state = 466;
+				this.state = 439;
 				this.match(MathCommandParser.POWER);
-				this.state = 467;
+				this.state = 440;
 				this.exponentialExpr();
 				}
 				break;
@@ -1896,7 +1727,7 @@ export class MathCommandParser extends Parser {
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 469;
+				this.state = 442;
 				this.unaryExpr();
 				}
 				break;
@@ -1919,26 +1750,26 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public unaryExpr(): UnaryExprContext {
 		let _localctx: UnaryExprContext = new UnaryExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 52, MathCommandParser.RULE_unaryExpr);
+		this.enterRule(_localctx, 50, MathCommandParser.RULE_unaryExpr);
 		try {
-			this.state = 477;
+			this.state = 450;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.SUB:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 472;
+				this.state = 445;
 				this.match(MathCommandParser.SUB);
-				this.state = 473;
+				this.state = 446;
 				this.unaryExpr();
 				}
 				break;
 			case MathCommandParser.ADD:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 474;
+				this.state = 447;
 				this.match(MathCommandParser.ADD);
-				this.state = 475;
+				this.state = 448;
 				this.unaryExpr();
 				}
 				break;
@@ -1959,7 +1790,7 @@ export class MathCommandParser extends Parser {
 			case MathCommandParser.FLOAT_LIT:
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 476;
+				this.state = 449;
 				this.primaryExpr();
 				}
 				break;
@@ -1984,117 +1815,117 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public primaryExpr(): PrimaryExprContext {
 		let _localctx: PrimaryExprContext = new PrimaryExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 54, MathCommandParser.RULE_primaryExpr);
+		this.enterRule(_localctx, 52, MathCommandParser.RULE_primaryExpr);
 		try {
-			this.state = 497;
+			this.state = 470;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.INT_LIT:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 479;
+				this.state = 452;
 				this.match(MathCommandParser.INT_LIT);
 				}
 				break;
 			case MathCommandParser.FLOAT_LIT:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 480;
+				this.state = 453;
 				this.match(MathCommandParser.FLOAT_LIT);
 				}
 				break;
 			case MathCommandParser.PI:
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 481;
+				this.state = 454;
 				this.match(MathCommandParser.PI);
 				}
 				break;
 			case MathCommandParser.E:
 				this.enterOuterAlt(_localctx, 4);
 				{
-				this.state = 482;
+				this.state = 455;
 				this.match(MathCommandParser.E);
 				}
 				break;
 			case MathCommandParser.LR:
 				this.enterOuterAlt(_localctx, 5);
 				{
-				this.state = 483;
+				this.state = 456;
 				this.match(MathCommandParser.LR);
-				this.state = 484;
+				this.state = 457;
 				this.numberExpr();
-				this.state = 485;
+				this.state = 458;
 				this.match(MathCommandParser.RR);
 				}
 				break;
 			case MathCommandParser.SIN:
 				this.enterOuterAlt(_localctx, 6);
 				{
-				this.state = 487;
+				this.state = 460;
 				this.sinExpr();
 				}
 				break;
 			case MathCommandParser.COS:
 				this.enterOuterAlt(_localctx, 7);
 				{
-				this.state = 488;
+				this.state = 461;
 				this.cosExpr();
 				}
 				break;
 			case MathCommandParser.TAN:
 				this.enterOuterAlt(_localctx, 8);
 				{
-				this.state = 489;
+				this.state = 462;
 				this.tanExpr();
 				}
 				break;
 			case MathCommandParser.COT:
 				this.enterOuterAlt(_localctx, 9);
 				{
-				this.state = 490;
+				this.state = 463;
 				this.cotExpr();
 				}
 				break;
 			case MathCommandParser.LOG:
 				this.enterOuterAlt(_localctx, 10);
 				{
-				this.state = 491;
+				this.state = 464;
 				this.logExpr();
 				}
 				break;
 			case MathCommandParser.LN:
 				this.enterOuterAlt(_localctx, 11);
 				{
-				this.state = 492;
+				this.state = 465;
 				this.lnExpr();
 				}
 				break;
 			case MathCommandParser.EXP:
 				this.enterOuterAlt(_localctx, 12);
 				{
-				this.state = 493;
+				this.state = 466;
 				this.expExpr();
 				}
 				break;
 			case MathCommandParser.ABS:
 				this.enterOuterAlt(_localctx, 13);
 				{
-				this.state = 494;
+				this.state = 467;
 				this.absExpr();
 				}
 				break;
 			case MathCommandParser.SQRT:
 				this.enterOuterAlt(_localctx, 14);
 				{
-				this.state = 495;
+				this.state = 468;
 				this.sqrtExpr();
 				}
 				break;
 			case MathCommandParser.CBRT:
 				this.enterOuterAlt(_localctx, 15);
 				{
-				this.state = 496;
+				this.state = 469;
 				this.cbrtExpr();
 				}
 				break;
@@ -2119,17 +1950,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public sinExpr(): SinExprContext {
 		let _localctx: SinExprContext = new SinExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 56, MathCommandParser.RULE_sinExpr);
+		this.enterRule(_localctx, 54, MathCommandParser.RULE_sinExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 499;
+			this.state = 472;
 			this.match(MathCommandParser.SIN);
-			this.state = 500;
+			this.state = 473;
 			this.match(MathCommandParser.LR);
-			this.state = 501;
+			this.state = 474;
 			this.numberExpr();
-			this.state = 502;
+			this.state = 475;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2150,17 +1981,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public cosExpr(): CosExprContext {
 		let _localctx: CosExprContext = new CosExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 58, MathCommandParser.RULE_cosExpr);
+		this.enterRule(_localctx, 56, MathCommandParser.RULE_cosExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 504;
+			this.state = 477;
 			this.match(MathCommandParser.COS);
-			this.state = 505;
+			this.state = 478;
 			this.match(MathCommandParser.LR);
-			this.state = 506;
+			this.state = 479;
 			this.numberExpr();
-			this.state = 507;
+			this.state = 480;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2181,17 +2012,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public tanExpr(): TanExprContext {
 		let _localctx: TanExprContext = new TanExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 60, MathCommandParser.RULE_tanExpr);
+		this.enterRule(_localctx, 58, MathCommandParser.RULE_tanExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 509;
+			this.state = 482;
 			this.match(MathCommandParser.TAN);
-			this.state = 510;
+			this.state = 483;
 			this.match(MathCommandParser.LR);
-			this.state = 511;
+			this.state = 484;
 			this.numberExpr();
-			this.state = 512;
+			this.state = 485;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2212,17 +2043,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public cotExpr(): CotExprContext {
 		let _localctx: CotExprContext = new CotExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 62, MathCommandParser.RULE_cotExpr);
+		this.enterRule(_localctx, 60, MathCommandParser.RULE_cotExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 514;
+			this.state = 487;
 			this.match(MathCommandParser.COT);
-			this.state = 515;
+			this.state = 488;
 			this.match(MathCommandParser.LR);
-			this.state = 516;
+			this.state = 489;
 			this.numberExpr();
-			this.state = 517;
+			this.state = 490;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2243,23 +2074,23 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public logExpr(): LogExprContext {
 		let _localctx: LogExprContext = new LogExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 64, MathCommandParser.RULE_logExpr);
+		this.enterRule(_localctx, 62, MathCommandParser.RULE_logExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 519;
+			this.state = 492;
 			this.match(MathCommandParser.LOG);
-			this.state = 520;
+			this.state = 493;
 			this.match(MathCommandParser.LR);
 			{
-			this.state = 521;
+			this.state = 494;
 			this.numberExpr();
-			this.state = 522;
+			this.state = 495;
 			this.match(MathCommandParser.COMMA);
-			this.state = 523;
+			this.state = 496;
 			this.numberExpr();
 			}
-			this.state = 525;
+			this.state = 498;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2280,17 +2111,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public lnExpr(): LnExprContext {
 		let _localctx: LnExprContext = new LnExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 66, MathCommandParser.RULE_lnExpr);
+		this.enterRule(_localctx, 64, MathCommandParser.RULE_lnExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 527;
+			this.state = 500;
 			this.match(MathCommandParser.LN);
-			this.state = 528;
+			this.state = 501;
 			this.match(MathCommandParser.LR);
-			this.state = 529;
+			this.state = 502;
 			this.numberExpr();
-			this.state = 530;
+			this.state = 503;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2311,17 +2142,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public cbrtExpr(): CbrtExprContext {
 		let _localctx: CbrtExprContext = new CbrtExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 68, MathCommandParser.RULE_cbrtExpr);
+		this.enterRule(_localctx, 66, MathCommandParser.RULE_cbrtExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 532;
+			this.state = 505;
 			this.match(MathCommandParser.CBRT);
-			this.state = 533;
+			this.state = 506;
 			this.match(MathCommandParser.LR);
-			this.state = 534;
+			this.state = 507;
 			this.numberExpr();
-			this.state = 535;
+			this.state = 508;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2342,17 +2173,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public sqrtExpr(): SqrtExprContext {
 		let _localctx: SqrtExprContext = new SqrtExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 70, MathCommandParser.RULE_sqrtExpr);
+		this.enterRule(_localctx, 68, MathCommandParser.RULE_sqrtExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 537;
+			this.state = 510;
 			this.match(MathCommandParser.SQRT);
-			this.state = 538;
+			this.state = 511;
 			this.match(MathCommandParser.LR);
-			this.state = 539;
+			this.state = 512;
 			this.numberExpr();
-			this.state = 540;
+			this.state = 513;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2373,17 +2204,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public absExpr(): AbsExprContext {
 		let _localctx: AbsExprContext = new AbsExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 72, MathCommandParser.RULE_absExpr);
+		this.enterRule(_localctx, 70, MathCommandParser.RULE_absExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 542;
+			this.state = 515;
 			this.match(MathCommandParser.ABS);
-			this.state = 543;
+			this.state = 516;
 			this.match(MathCommandParser.LR);
-			this.state = 544;
+			this.state = 517;
 			this.numberExpr();
-			this.state = 545;
+			this.state = 518;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2404,17 +2235,17 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public expExpr(): ExpExprContext {
 		let _localctx: ExpExprContext = new ExpExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 74, MathCommandParser.RULE_expExpr);
+		this.enterRule(_localctx, 72, MathCommandParser.RULE_expExpr);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 547;
+			this.state = 520;
 			this.match(MathCommandParser.EXP);
-			this.state = 548;
+			this.state = 521;
 			this.match(MathCommandParser.LR);
-			this.state = 549;
+			this.state = 522;
 			this.numberExpr();
-			this.state = 550;
+			this.state = 523;
 			this.match(MathCommandParser.RR);
 			}
 		}
@@ -2435,15 +2266,15 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public pointExpr(): PointExprContext {
 		let _localctx: PointExprContext = new PointExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 76, MathCommandParser.RULE_pointExpr);
+		this.enterRule(_localctx, 74, MathCommandParser.RULE_pointExpr);
 		try {
-			this.state = 554;
+			this.state = 527;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.POINT_ID:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 552;
+				this.state = 525;
 				this.match(MathCommandParser.POINT_ID);
 				}
 				break;
@@ -2451,7 +2282,7 @@ export class MathCommandParser extends Parser {
 			case MathCommandParser.LR:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 553;
+				this.state = 526;
 				this.pointDef();
 				}
 				break;
@@ -2476,180 +2307,86 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public lineExpr(): LineExprContext {
 		let _localctx: LineExprContext = new LineExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 78, MathCommandParser.RULE_lineExpr);
-		let _la: number;
+		this.enterRule(_localctx, 76, MathCommandParser.RULE_lineExpr);
 		try {
-			this.state = 602;
+			this.state = 531;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 33, this._ctx) ) {
+			switch (this._input.LA(1)) {
+			case MathCommandParser.LINE:
+				this.enterOuterAlt(_localctx, 1);
+				{
+				this.state = 529;
+				this.lineDef();
+				}
+				break;
+			case MathCommandParser.SHAPE_ID:
+				this.enterOuterAlt(_localctx, 2);
+				{
+				this.state = 530;
+				this.match(MathCommandParser.SHAPE_ID);
+				}
+				break;
+			default:
+				throw new NoViableAltException(this);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
+	public dirExpr(): DirExprContext {
+		let _localctx: DirExprContext = new DirExprContext(this._ctx, this.state);
+		this.enterRule(_localctx, 78, MathCommandParser.RULE_dirExpr);
+		try {
+			this.state = 544;
+			this._errHandler.sync(this);
+			switch ( this.interpreter.adaptivePredict(this._input, 26, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 556;
-				this.lineDef();
+				this.state = 533;
+				this.pointExpr();
 				}
 				break;
 
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 557;
-				this.match(MathCommandParser.SHAPE_ID);
+				this.state = 534;
+				this.vectorExpr();
 				}
 				break;
 
 			case 3:
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 600;
-				this._errHandler.sync(this);
-				switch ( this.interpreter.adaptivePredict(this._input, 32, this._ctx) ) {
-				case 1:
-					{
-					this.state = 567;
-					this._errHandler.sync(this);
-					switch ( this.interpreter.adaptivePredict(this._input, 29, this._ctx) ) {
-					case 1:
-						{
-						this.state = 558;
-						this.pointExpr();
-						}
-						break;
-
-					case 2:
-						{
-						this.state = 559;
-						this.vectorDef();
-						}
-						break;
-
-					case 3:
-						{
-						this.state = 560;
-						this.match(MathCommandParser.LR);
-						{
-						this.state = 561;
-						this.numberExpr();
-						this.state = 562;
-						this.match(MathCommandParser.COMMA);
-						this.state = 563;
-						this.numberExpr();
-						this.state = 564;
-						this.match(MathCommandParser.COMMA);
-						this.state = 565;
-						this.numberExpr();
-						}
-						}
-						break;
-					}
-					this.state = 569;
-					_la = this._input.LA(1);
-					if (!(_la === MathCommandParser.ADD || _la === MathCommandParser.SUB)) {
-					this._errHandler.recoverInline(this);
-					} else {
-						if (this._input.LA(1) === Token.EOF) {
-							this.matchedEOF = true;
-						}
-
-						this._errHandler.reportMatch(this);
-						this.consume();
-					}
-					{
-					this.state = 570;
-					this.match(MathCommandParser.SHAPE_ID);
-					this.state = 571;
-					this.match(MathCommandParser.MULTIPLY);
-					this.state = 583;
-					this._errHandler.sync(this);
-					switch (this._input.LA(1)) {
-					case MathCommandParser.VECTOR:
-						{
-						this.state = 572;
-						this.vectorDef();
-						}
-						break;
-					case MathCommandParser.SHAPE_ID:
-						{
-						this.state = 573;
-						this.match(MathCommandParser.SHAPE_ID);
-						}
-						break;
-					case MathCommandParser.LR:
-						{
-						this.state = 574;
-						this.match(MathCommandParser.LR);
-						{
-						this.state = 575;
-						this.numberExpr();
-						this.state = 576;
-						this.match(MathCommandParser.COMMA);
-						this.state = 577;
-						this.numberExpr();
-						this.state = 578;
-						this.match(MathCommandParser.COMMA);
-						this.state = 579;
-						this.numberExpr();
-						}
-						this.state = 581;
-						this.match(MathCommandParser.RR);
-						}
-						break;
-					default:
-						throw new NoViableAltException(this);
-					}
-					}
-					}
-					break;
-
-				case 2:
-					{
-					{
-					this.state = 596;
-					this._errHandler.sync(this);
-					switch (this._input.LA(1)) {
-					case MathCommandParser.VECTOR:
-						{
-						this.state = 585;
-						this.vectorDef();
-						}
-						break;
-					case MathCommandParser.SHAPE_ID:
-						{
-						this.state = 586;
-						this.match(MathCommandParser.SHAPE_ID);
-						}
-						break;
-					case MathCommandParser.LR:
-						{
-						this.state = 587;
-						this.match(MathCommandParser.LR);
-						{
-						this.state = 588;
-						this.numberExpr();
-						this.state = 589;
-						this.match(MathCommandParser.COMMA);
-						this.state = 590;
-						this.numberExpr();
-						this.state = 591;
-						this.match(MathCommandParser.COMMA);
-						this.state = 592;
-						this.numberExpr();
-						}
-						this.state = 594;
-						this.match(MathCommandParser.RR);
-						}
-						break;
-					default:
-						throw new NoViableAltException(this);
-					}
-					this.state = 598;
-					this.match(MathCommandParser.MULTIPLY);
-					this.state = 599;
-					this.match(MathCommandParser.SHAPE_ID);
-					}
-					}
-					break;
+				this.state = 535;
+				this.match(MathCommandParser.LR);
+				{
+				this.state = 536;
+				this.numberExpr();
+				this.state = 537;
+				this.match(MathCommandParser.COMMA);
+				this.state = 538;
+				this.numberExpr();
+				this.state = 539;
+				this.match(MathCommandParser.COMMA);
+				this.state = 540;
+				this.numberExpr();
 				}
+				this.state = 542;
+				this.match(MathCommandParser.RR);
 				}
 				break;
 			}
@@ -2673,20 +2410,20 @@ export class MathCommandParser extends Parser {
 		let _localctx: VectorExprContext = new VectorExprContext(this._ctx, this.state);
 		this.enterRule(_localctx, 80, MathCommandParser.RULE_vectorExpr);
 		try {
-			this.state = 606;
+			this.state = 548;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.VECTOR:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 604;
+				this.state = 546;
 				this.vectorDef();
 				}
 				break;
 			case MathCommandParser.SHAPE_ID:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 605;
+				this.state = 547;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
@@ -2713,20 +2450,20 @@ export class MathCommandParser extends Parser {
 		let _localctx: PlaneExprContext = new PlaneExprContext(this._ctx, this.state);
 		this.enterRule(_localctx, 82, MathCommandParser.RULE_planeExpr);
 		try {
-			this.state = 610;
+			this.state = 552;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.PLANE:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 608;
+				this.state = 550;
 				this.planeDef();
 				}
 				break;
 			case MathCommandParser.SHAPE_ID:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 609;
+				this.state = 551;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
@@ -2753,25 +2490,56 @@ export class MathCommandParser extends Parser {
 		let _localctx: DirectionExprContext = new DirectionExprContext(this._ctx, this.state);
 		this.enterRule(_localctx, 84, MathCommandParser.RULE_directionExpr);
 		try {
-			this.state = 614;
+			this.state = 560;
 			this._errHandler.sync(this);
-			switch (this._input.LA(1)) {
-			case MathCommandParser.SHAPE_ID:
+			switch ( this.interpreter.adaptivePredict(this._input, 29, this._ctx) ) {
+			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 612;
+				this.state = 554;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
-			case MathCommandParser.VECTOR:
+
+			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 613;
-				this.vectorDef();
+				this.state = 555;
+				this.vectorExpr();
 				}
 				break;
-			default:
-				throw new NoViableAltException(this);
+
+			case 3:
+				this.enterOuterAlt(_localctx, 3);
+				{
+				this.state = 556;
+				this.lineExpr();
+				}
+				break;
+
+			case 4:
+				this.enterOuterAlt(_localctx, 4);
+				{
+				this.state = 557;
+				this.segmentExpr();
+				}
+				break;
+
+			case 5:
+				this.enterOuterAlt(_localctx, 5);
+				{
+				this.state = 558;
+				this.rayExpr();
+				}
+				break;
+
+			case 6:
+				this.enterOuterAlt(_localctx, 6);
+				{
+				this.state = 559;
+				this.planeExpr();
+				}
+				break;
 			}
 		}
 		catch (re) {
@@ -2793,61 +2561,21 @@ export class MathCommandParser extends Parser {
 		let _localctx: PolygonExprContext = new PolygonExprContext(this._ctx, this.state);
 		this.enterRule(_localctx, 86, MathCommandParser.RULE_polygonExpr);
 		try {
-			this.state = 618;
+			this.state = 564;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.SHAPE_ID:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 616;
+				this.state = 562;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
 			case MathCommandParser.POLYGON:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 617;
+				this.state = 563;
 				this.polygonDef();
-				}
-				break;
-			default:
-				throw new NoViableAltException(this);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public cuboidExpr(): CuboidExprContext {
-		let _localctx: CuboidExprContext = new CuboidExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 88, MathCommandParser.RULE_cuboidExpr);
-		try {
-			this.state = 622;
-			this._errHandler.sync(this);
-			switch (this._input.LA(1)) {
-			case MathCommandParser.SHAPE_ID:
-				this.enterOuterAlt(_localctx, 1);
-				{
-				this.state = 620;
-				this.match(MathCommandParser.SHAPE_ID);
-				}
-				break;
-			case MathCommandParser.CUBOID:
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 621;
-				this.cuboidDef();
 				}
 				break;
 			default:
@@ -2871,22 +2599,22 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public tetrahedronExpr(): TetrahedronExprContext {
 		let _localctx: TetrahedronExprContext = new TetrahedronExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 90, MathCommandParser.RULE_tetrahedronExpr);
+		this.enterRule(_localctx, 88, MathCommandParser.RULE_tetrahedronExpr);
 		try {
-			this.state = 626;
+			this.state = 568;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.SHAPE_ID:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 624;
+				this.state = 566;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
 			case MathCommandParser.TETRAHEDRON:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 625;
+				this.state = 567;
 				this.tetrahedronDef();
 				}
 				break;
@@ -2911,22 +2639,22 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public cylinderExpr(): CylinderExprContext {
 		let _localctx: CylinderExprContext = new CylinderExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 92, MathCommandParser.RULE_cylinderExpr);
+		this.enterRule(_localctx, 90, MathCommandParser.RULE_cylinderExpr);
 		try {
-			this.state = 630;
+			this.state = 572;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.SHAPE_ID:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 628;
+				this.state = 570;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
 			case MathCommandParser.CYLINDER:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 629;
+				this.state = 571;
 				this.cylinderDef();
 				}
 				break;
@@ -2951,22 +2679,22 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public coneExpr(): ConeExprContext {
 		let _localctx: ConeExprContext = new ConeExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 94, MathCommandParser.RULE_coneExpr);
+		this.enterRule(_localctx, 92, MathCommandParser.RULE_coneExpr);
 		try {
-			this.state = 634;
+			this.state = 576;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.SHAPE_ID:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 632;
+				this.state = 574;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
 			case MathCommandParser.CONE:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 633;
+				this.state = 575;
 				this.coneDef();
 				}
 				break;
@@ -2991,23 +2719,143 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public prismExpr(): PrismExprContext {
 		let _localctx: PrismExprContext = new PrismExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 96, MathCommandParser.RULE_prismExpr);
+		this.enterRule(_localctx, 94, MathCommandParser.RULE_prismExpr);
 		try {
-			this.state = 638;
+			this.state = 580;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case MathCommandParser.SHAPE_ID:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 636;
+				this.state = 578;
 				this.match(MathCommandParser.SHAPE_ID);
 				}
 				break;
 			case MathCommandParser.PRISM:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 637;
+				this.state = 579;
 				this.prismDef();
+				}
+				break;
+			default:
+				throw new NoViableAltException(this);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
+	public segmentExpr(): SegmentExprContext {
+		let _localctx: SegmentExprContext = new SegmentExprContext(this._ctx, this.state);
+		this.enterRule(_localctx, 96, MathCommandParser.RULE_segmentExpr);
+		try {
+			this.state = 584;
+			this._errHandler.sync(this);
+			switch (this._input.LA(1)) {
+			case MathCommandParser.SHAPE_ID:
+				this.enterOuterAlt(_localctx, 1);
+				{
+				this.state = 582;
+				this.match(MathCommandParser.SHAPE_ID);
+				}
+				break;
+			case MathCommandParser.SEGMENT:
+				this.enterOuterAlt(_localctx, 2);
+				{
+				this.state = 583;
+				this.segmentDef();
+				}
+				break;
+			default:
+				throw new NoViableAltException(this);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
+	public rayExpr(): RayExprContext {
+		let _localctx: RayExprContext = new RayExprContext(this._ctx, this.state);
+		this.enterRule(_localctx, 98, MathCommandParser.RULE_rayExpr);
+		try {
+			this.state = 588;
+			this._errHandler.sync(this);
+			switch (this._input.LA(1)) {
+			case MathCommandParser.SHAPE_ID:
+				this.enterOuterAlt(_localctx, 1);
+				{
+				this.state = 586;
+				this.match(MathCommandParser.SHAPE_ID);
+				}
+				break;
+			case MathCommandParser.RAY:
+				this.enterOuterAlt(_localctx, 2);
+				{
+				this.state = 587;
+				this.rayDef();
+				}
+				break;
+			default:
+				throw new NoViableAltException(this);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
+	public pyramidExpr(): PyramidExprContext {
+		let _localctx: PyramidExprContext = new PyramidExprContext(this._ctx, this.state);
+		this.enterRule(_localctx, 100, MathCommandParser.RULE_pyramidExpr);
+		try {
+			this.state = 592;
+			this._errHandler.sync(this);
+			switch (this._input.LA(1)) {
+			case MathCommandParser.SHAPE_ID:
+				this.enterOuterAlt(_localctx, 1);
+				{
+				this.state = 590;
+				this.match(MathCommandParser.SHAPE_ID);
+				}
+				break;
+			case MathCommandParser.PYRAMID:
+				this.enterOuterAlt(_localctx, 2);
+				{
+				this.state = 591;
+				this.pyramidDef();
 				}
 				break;
 			default:
@@ -3031,47 +2879,47 @@ export class MathCommandParser extends Parser {
 	// @RuleVersion(0)
 	public shapeExpr(): ShapeExprContext {
 		let _localctx: ShapeExprContext = new ShapeExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 98, MathCommandParser.RULE_shapeExpr);
+		this.enterRule(_localctx, 102, MathCommandParser.RULE_shapeExpr);
 		try {
-			this.state = 651;
+			this.state = 611;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 43, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 38, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 640;
-				this.pointExpr();
+				this.state = 594;
+				this.rayExpr();
 				}
 				break;
 
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 641;
-				this.lineExpr();
+				this.state = 595;
+				this.coneExpr();
 				}
 				break;
 
 			case 3:
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 642;
-				this.vectorExpr();
+				this.state = 596;
+				this.lineExpr();
 				}
 				break;
 
 			case 4:
 				this.enterOuterAlt(_localctx, 4);
 				{
-				this.state = 643;
-				this.polygonExpr();
+				this.state = 597;
+				this.angleDef();
 				}
 				break;
 
 			case 5:
 				this.enterOuterAlt(_localctx, 5);
 				{
-				this.state = 644;
+				this.state = 598;
 				this.planeExpr();
 				}
 				break;
@@ -3079,589 +2927,96 @@ export class MathCommandParser extends Parser {
 			case 6:
 				this.enterOuterAlt(_localctx, 6);
 				{
-				this.state = 645;
-				this.directionExpr();
+				this.state = 599;
+				this.pointExpr();
 				}
 				break;
 
 			case 7:
 				this.enterOuterAlt(_localctx, 7);
 				{
-				this.state = 646;
-				this.cuboidExpr();
-				}
-				break;
-
-			case 8:
-				this.enterOuterAlt(_localctx, 8);
-				{
-				this.state = 647;
-				this.tetrahedronExpr();
-				}
-				break;
-
-			case 9:
-				this.enterOuterAlt(_localctx, 9);
-				{
-				this.state = 648;
-				this.cylinderExpr();
-				}
-				break;
-
-			case 10:
-				this.enterOuterAlt(_localctx, 10);
-				{
-				this.state = 649;
-				this.coneExpr();
-				}
-				break;
-
-			case 11:
-				this.enterOuterAlt(_localctx, 11);
-				{
-				this.state = 650;
+				this.state = 600;
 				this.prismExpr();
 				}
 				break;
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public two_side_expr(): Two_side_exprContext {
-		let _localctx: Two_side_exprContext = new Two_side_exprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 100, MathCommandParser.RULE_two_side_expr);
-		try {
-			this.enterOuterAlt(_localctx, 1);
-			{
-			this.state = 653;
-			this.varExpr(0);
-			this.state = 654;
-			this.match(MathCommandParser.EQ);
-			this.state = 655;
-			this.varExpr(0);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-
-	public varExpr(): VarExprContext;
-	public varExpr(_p: number): VarExprContext;
-	// @RuleVersion(0)
-	public varExpr(_p?: number): VarExprContext {
-		if (_p === undefined) {
-			_p = 0;
-		}
-
-		let _parentctx: ParserRuleContext = this._ctx;
-		let _parentState: number = this.state;
-		let _localctx: VarExprContext = new VarExprContext(this._ctx, _parentState);
-		let _prevctx: VarExprContext = _localctx;
-		let _startState: number = 102;
-		this.enterRecursionRule(_localctx, 102, MathCommandParser.RULE_varExpr, _p);
-		try {
-			let _alt: number;
-			this.enterOuterAlt(_localctx, 1);
-			{
-			{
-			this.state = 658;
-			this.varMultiplicativeExpr(0);
-			}
-			this._ctx._stop = this._input.tryLT(-1);
-			this.state = 668;
-			this._errHandler.sync(this);
-			_alt = this.interpreter.adaptivePredict(this._input, 45, this._ctx);
-			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-				if (_alt === 1) {
-					if (this._parseListeners != null) {
-						this.triggerExitRuleEvent();
-					}
-					_prevctx = _localctx;
-					{
-					this.state = 666;
-					this._errHandler.sync(this);
-					switch ( this.interpreter.adaptivePredict(this._input, 44, this._ctx) ) {
-					case 1:
-						{
-						_localctx = new VarExprContext(_parentctx, _parentState);
-						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_varExpr);
-						this.state = 660;
-						if (!(this.precpred(this._ctx, 3))) {
-							throw this.createFailedPredicateException("this.precpred(this._ctx, 3)");
-						}
-						this.state = 661;
-						this.match(MathCommandParser.ADD);
-						this.state = 662;
-						this.varMultiplicativeExpr(0);
-						}
-						break;
-
-					case 2:
-						{
-						_localctx = new VarExprContext(_parentctx, _parentState);
-						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_varExpr);
-						this.state = 663;
-						if (!(this.precpred(this._ctx, 2))) {
-							throw this.createFailedPredicateException("this.precpred(this._ctx, 2)");
-						}
-						this.state = 664;
-						this.match(MathCommandParser.SUB);
-						this.state = 665;
-						this.varMultiplicativeExpr(0);
-						}
-						break;
-					}
-					}
-				}
-				this.state = 670;
-				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 45, this._ctx);
-			}
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.unrollRecursionContexts(_parentctx);
-		}
-		return _localctx;
-	}
-
-	public varMultiplicativeExpr(): VarMultiplicativeExprContext;
-	public varMultiplicativeExpr(_p: number): VarMultiplicativeExprContext;
-	// @RuleVersion(0)
-	public varMultiplicativeExpr(_p?: number): VarMultiplicativeExprContext {
-		if (_p === undefined) {
-			_p = 0;
-		}
-
-		let _parentctx: ParserRuleContext = this._ctx;
-		let _parentState: number = this.state;
-		let _localctx: VarMultiplicativeExprContext = new VarMultiplicativeExprContext(this._ctx, _parentState);
-		let _prevctx: VarMultiplicativeExprContext = _localctx;
-		let _startState: number = 104;
-		this.enterRecursionRule(_localctx, 104, MathCommandParser.RULE_varMultiplicativeExpr, _p);
-		try {
-			let _alt: number;
-			this.enterOuterAlt(_localctx, 1);
-			{
-			this.state = 674;
-			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 46, this._ctx) ) {
-			case 1:
-				{
-				this.state = 672;
-				this.varImplicitMultiplicativeExpr();
-				}
-				break;
-
-			case 2:
-				{
-				this.state = 673;
-				this.varExponentialExpr();
-				}
-				break;
-			}
-			this._ctx._stop = this._input.tryLT(-1);
-			this.state = 684;
-			this._errHandler.sync(this);
-			_alt = this.interpreter.adaptivePredict(this._input, 48, this._ctx);
-			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-				if (_alt === 1) {
-					if (this._parseListeners != null) {
-						this.triggerExitRuleEvent();
-					}
-					_prevctx = _localctx;
-					{
-					this.state = 682;
-					this._errHandler.sync(this);
-					switch ( this.interpreter.adaptivePredict(this._input, 47, this._ctx) ) {
-					case 1:
-						{
-						_localctx = new VarMultiplicativeExprContext(_parentctx, _parentState);
-						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_varMultiplicativeExpr);
-						this.state = 676;
-						if (!(this.precpred(this._ctx, 4))) {
-							throw this.createFailedPredicateException("this.precpred(this._ctx, 4)");
-						}
-						this.state = 677;
-						this.match(MathCommandParser.MULTIPLY);
-						this.state = 678;
-						this.varExponentialExpr();
-						}
-						break;
-
-					case 2:
-						{
-						_localctx = new VarMultiplicativeExprContext(_parentctx, _parentState);
-						this.pushNewRecursionContext(_localctx, _startState, MathCommandParser.RULE_varMultiplicativeExpr);
-						this.state = 679;
-						if (!(this.precpred(this._ctx, 3))) {
-							throw this.createFailedPredicateException("this.precpred(this._ctx, 3)");
-						}
-						this.state = 680;
-						this.match(MathCommandParser.DIVIDE);
-						this.state = 681;
-						this.varExponentialExpr();
-						}
-						break;
-					}
-					}
-				}
-				this.state = 686;
-				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 48, this._ctx);
-			}
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.unrollRecursionContexts(_parentctx);
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public varImplicitMultiplicativeExpr(): VarImplicitMultiplicativeExprContext {
-		let _localctx: VarImplicitMultiplicativeExprContext = new VarImplicitMultiplicativeExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 106, MathCommandParser.RULE_varImplicitMultiplicativeExpr);
-		try {
-			let _alt: number;
-			this.enterOuterAlt(_localctx, 1);
-			{
-			this.state = 687;
-			this.varPrimaryExpr();
-			this.state = 689;
-			this._errHandler.sync(this);
-			_alt = 1;
-			do {
-				switch (_alt) {
-				case 1:
-					{
-					{
-					this.state = 688;
-					this.varPrimaryExpr();
-					}
-					}
-					break;
-				default:
-					throw new NoViableAltException(this);
-				}
-				this.state = 691;
-				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 49, this._ctx);
-			} while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public varExponentialExpr(): VarExponentialExprContext {
-		let _localctx: VarExponentialExprContext = new VarExponentialExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 108, MathCommandParser.RULE_varExponentialExpr);
-		try {
-			this.state = 698;
-			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 50, this._ctx) ) {
-			case 1:
-				this.enterOuterAlt(_localctx, 1);
-				{
-				this.state = 693;
-				this.varUnaryExpr();
-				this.state = 694;
-				this.match(MathCommandParser.POWER);
-				this.state = 695;
-				this.varExponentialExpr();
-				}
-				break;
-
-			case 2:
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 697;
-				this.varUnaryExpr();
-				}
-				break;
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public varUnaryExpr(): VarUnaryExprContext {
-		let _localctx: VarUnaryExprContext = new VarUnaryExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 110, MathCommandParser.RULE_varUnaryExpr);
-		try {
-			this.state = 705;
-			this._errHandler.sync(this);
-			switch (this._input.LA(1)) {
-			case MathCommandParser.SUB:
-				this.enterOuterAlt(_localctx, 1);
-				{
-				this.state = 700;
-				this.match(MathCommandParser.SUB);
-				this.state = 701;
-				this.varUnaryExpr();
-				}
-				break;
-			case MathCommandParser.ADD:
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 702;
-				this.match(MathCommandParser.ADD);
-				this.state = 703;
-				this.varUnaryExpr();
-				}
-				break;
-			case MathCommandParser.LINE:
-			case MathCommandParser.VECTOR:
-			case MathCommandParser.POLYGON:
-			case MathCommandParser.POINT:
-			case MathCommandParser.PLANE:
-			case MathCommandParser.CYLINDER:
-			case MathCommandParser.TETRAHEDRON:
-			case MathCommandParser.PRISM:
-			case MathCommandParser.CUBOID:
-			case MathCommandParser.CONE:
-			case MathCommandParser.SIN:
-			case MathCommandParser.COS:
-			case MathCommandParser.TAN:
-			case MathCommandParser.COT:
-			case MathCommandParser.LOG:
-			case MathCommandParser.LN:
-			case MathCommandParser.EXP:
-			case MathCommandParser.SQRT:
-			case MathCommandParser.CBRT:
-			case MathCommandParser.ABS:
-			case MathCommandParser.PI:
-			case MathCommandParser.E:
-			case MathCommandParser.POINT_ID:
-			case MathCommandParser.SHAPE_ID:
-			case MathCommandParser.LR:
-			case MathCommandParser.INT_LIT:
-			case MathCommandParser.FLOAT_LIT:
-				this.enterOuterAlt(_localctx, 3);
-				{
-				this.state = 704;
-				this.varPrimaryExpr();
-				}
-				break;
-			default:
-				throw new NoViableAltException(this);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public varPrimaryExpr(): VarPrimaryExprContext {
-		let _localctx: VarPrimaryExprContext = new VarPrimaryExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 112, MathCommandParser.RULE_varPrimaryExpr);
-		try {
-			this.state = 726;
-			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 52, this._ctx) ) {
-			case 1:
-				this.enterOuterAlt(_localctx, 1);
-				{
-				this.state = 707;
-				this.match(MathCommandParser.INT_LIT);
-				}
-				break;
-
-			case 2:
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 708;
-				this.match(MathCommandParser.FLOAT_LIT);
-				}
-				break;
-
-			case 3:
-				this.enterOuterAlt(_localctx, 3);
-				{
-				this.state = 709;
-				this.match(MathCommandParser.PI);
-				}
-				break;
-
-			case 4:
-				this.enterOuterAlt(_localctx, 4);
-				{
-				this.state = 710;
-				this.match(MathCommandParser.E);
-				}
-				break;
-
-			case 5:
-				this.enterOuterAlt(_localctx, 5);
-				{
-				this.state = 711;
-				this.shapeExpr();
-				}
-				break;
-
-			case 6:
-				this.enterOuterAlt(_localctx, 6);
-				{
-				this.state = 712;
-				this.match(MathCommandParser.LR);
-				this.state = 713;
-				this.varExpr(0);
-				this.state = 714;
-				this.match(MathCommandParser.RR);
-				}
-				break;
-
-			case 7:
-				this.enterOuterAlt(_localctx, 7);
-				{
-				this.state = 716;
-				this.sinExpr();
-				}
-				break;
 
 			case 8:
 				this.enterOuterAlt(_localctx, 8);
 				{
-				this.state = 717;
-				this.cosExpr();
+				this.state = 601;
+				this.circleDef();
 				}
 				break;
 
 			case 9:
 				this.enterOuterAlt(_localctx, 9);
 				{
-				this.state = 718;
-				this.tanExpr();
+				this.state = 602;
+				this.sphereDef();
 				}
 				break;
 
 			case 10:
 				this.enterOuterAlt(_localctx, 10);
 				{
-				this.state = 719;
-				this.cotExpr();
+				this.state = 603;
+				this.vectorExpr();
 				}
 				break;
 
 			case 11:
 				this.enterOuterAlt(_localctx, 11);
 				{
-				this.state = 720;
-				this.logExpr();
+				this.state = 604;
+				this.polygonExpr();
 				}
 				break;
 
 			case 12:
 				this.enterOuterAlt(_localctx, 12);
 				{
-				this.state = 721;
-				this.lnExpr();
+				this.state = 605;
+				this.segmentExpr();
 				}
 				break;
 
 			case 13:
 				this.enterOuterAlt(_localctx, 13);
 				{
-				this.state = 722;
-				this.expExpr();
+				this.state = 606;
+				this.cylinderExpr();
 				}
 				break;
 
 			case 14:
 				this.enterOuterAlt(_localctx, 14);
 				{
-				this.state = 723;
-				this.absExpr();
+				this.state = 607;
+				this.transformDef();
 				}
 				break;
 
 			case 15:
 				this.enterOuterAlt(_localctx, 15);
 				{
-				this.state = 724;
-				this.sqrtExpr();
+				this.state = 608;
+				this.tetrahedronExpr();
 				}
 				break;
 
 			case 16:
 				this.enterOuterAlt(_localctx, 16);
 				{
-				this.state = 725;
-				this.cbrtExpr();
+				this.state = 609;
+				this.intersectionDef();
+				}
+				break;
+
+			case 17:
+				this.enterOuterAlt(_localctx, 17);
+				{
+				this.state = 610;
+				this.pyramidExpr();
 				}
 				break;
 			}
@@ -3683,17 +3038,11 @@ export class MathCommandParser extends Parser {
 
 	public sempred(_localctx: RuleContext, ruleIndex: number, predIndex: number): boolean {
 		switch (ruleIndex) {
-		case 22:
+		case 21:
 			return this.additiveExpr_sempred(_localctx as AdditiveExprContext, predIndex);
 
-		case 23:
+		case 22:
 			return this.multiplicativeExpr_sempred(_localctx as MultiplicativeExprContext, predIndex);
-
-		case 51:
-			return this.varExpr_sempred(_localctx as VarExprContext, predIndex);
-
-		case 52:
-			return this.varMultiplicativeExpr_sempred(_localctx as VarMultiplicativeExprContext, predIndex);
 		}
 		return true;
 	}
@@ -3717,30 +3066,10 @@ export class MathCommandParser extends Parser {
 		}
 		return true;
 	}
-	private varExpr_sempred(_localctx: VarExprContext, predIndex: number): boolean {
-		switch (predIndex) {
-		case 4:
-			return this.precpred(this._ctx, 3);
-
-		case 5:
-			return this.precpred(this._ctx, 2);
-		}
-		return true;
-	}
-	private varMultiplicativeExpr_sempred(_localctx: VarMultiplicativeExprContext, predIndex: number): boolean {
-		switch (predIndex) {
-		case 6:
-			return this.precpred(this._ctx, 4);
-
-		case 7:
-			return this.precpred(this._ctx, 3);
-		}
-		return true;
-	}
 
 	private static readonly _serializedATNSegments: number = 2;
 	private static readonly _serializedATNSegment0: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x034\u02DB\x04\x02" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x037\u0268\x04\x02" +
 		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07" +
 		"\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r\x04" +
 		"\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x04\x12\t\x12\x04" +
@@ -3749,356 +3078,291 @@ export class MathCommandParser extends Parser {
 		"\x1D\t\x1D\x04\x1E\t\x1E\x04\x1F\t\x1F\x04 \t \x04!\t!\x04\"\t\"\x04#" +
 		"\t#\x04$\t$\x04%\t%\x04&\t&\x04\'\t\'\x04(\t(\x04)\t)\x04*\t*\x04+\t+" +
 		"\x04,\t,\x04-\t-\x04.\t.\x04/\t/\x040\t0\x041\t1\x042\t2\x043\t3\x044" +
-		"\t4\x045\t5\x046\t6\x047\t7\x048\t8\x049\t9\x04:\t:\x03\x02\x03\x02\x03" +
-		"\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x05" +
-		"\x03\x80\n\x03\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04" +
-		"\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04\x8E\n\x04\x03\x05\x05" +
-		"\x05\x91\n\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05" +
-		"\x03\x05\x03\x05\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x05\x06" +
-		"\xA2\n\x06\x03\x06\x03\x06\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03" +
-		"\x07\x03\x07\x05\x07\xAD\n\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07" +
+		"\t4\x045\t5\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x04\x05\x04q\n" +
+		"\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03" +
+		"\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x05\x05\x82\n\x05" +
+		"\x03\x05\x03\x05\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06" +
+		"\x05\x06\x8D\n\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03" +
+		"\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03" +
+		"\x06\x05\x06\x9F\n\x06\x03\x06\x03\x06\x03\x07\x03\x07\x03\x07\x03\x07" +
 		"\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07" +
-		"\x03\x07\x03\x07\x05\x07\xBF\n\x07\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03" +
-		"\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x05\b\xD1" +
-		"\n\b\x03\b\x03\b\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t" +
-		"\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03" +
-		"\t\x03\t\x03\t\x03\t\x03\t\x03\t\x05\t\xEF\n\t\x03\t\x03\t\x03\n\x03\n" +
-		"\x03\n\x03\n\x03\n\x03\n\x03\n\x05\n\xFA\n\n\x03\n\x03\n\x03\v\x03\v\x03" +
-		"\v\x03\v\x03\v\x03\f\x03\f\x03\f\x03\f\x03\f\x05\f\u0108\n\f\x03\r\x03" +
-		"\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03" +
-		"\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03\r\x03" +
-		"\r\x03\r\x03\r\x05\r\u0126\n\r\x03\r\x03\r\x03\x0E\x03\x0E\x03\x0E\x03" +
-		"\x0E\x03\x0E\x03\x0E\x05\x0E\u0130\n\x0E\x03\x0E\x03\x0E\x03\x0F\x03\x0F" +
-		"\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x05\x0F\u013A\n\x0F\x03\x0F\x03\x0F\x03" +
-		"\x10\x03\x10\x03\x10\x03\x10\x05\x10\u0142\n\x10\x03\x10\x03\x10\x03\x11" +
-		"\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11" +
-		"\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x05\x11\u0155\n\x11\x03\x11\x03" +
-		"\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x05\x11\u015F\n\x11" +
-		"\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11" +
-		"\x05\x11\u016A\n\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03" +
-		"\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x05\x11\u0178\n\x11\x03\x12" +
-		"\x03\x12\x03\x12\x03\x12\x03\x12\x03\x12\x03\x12\x03\x12\x03\x12\x03\x12" +
-		"\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x14" +
-		"\x03\x14\x03\x14\x03\x14\x03\x14\x03\x14\x03\x14\x03\x14\x03\x14\x03\x14" +
-		"\x03\x15\x03\x15\x03\x15\x03\x15\x03\x15\x03\x15\x03\x15\x03\x15\x03\x16" +
-		"\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16" +
-		"\x03\x16\x03\x16\x05\x16\u01AA\n\x16\x03\x16\x03\x16\x03\x17\x03\x17\x03" +
-		"\x18\x03\x18\x03\x18\x03\x18\x03\x18\x03\x18\x03\x18\x03\x18\x03\x18\x07" +
-		"\x18\u01B9\n\x18\f\x18\x0E\x18\u01BC\v\x18\x03\x19\x03\x19\x03\x19\x05" +
-		"\x19\u01C1\n\x19\x03\x19\x03\x19\x03\x19\x03\x19\x03\x19\x03\x19\x07\x19" +
-		"\u01C9\n\x19\f\x19\x0E\x19\u01CC\v\x19\x03\x1A\x03\x1A\x06\x1A\u01D0\n" +
-		"\x1A\r\x1A\x0E\x1A\u01D1\x03\x1B\x03\x1B\x03\x1B\x03\x1B\x03\x1B\x05\x1B" +
-		"\u01D9\n\x1B\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x05\x1C\u01E0\n\x1C" +
-		"\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D" +
-		"\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x03\x1D" +
-		"\x05\x1D\u01F4\n\x1D\x03\x1E\x03\x1E\x03\x1E\x03\x1E\x03\x1E\x03\x1F\x03" +
-		"\x1F\x03\x1F\x03\x1F\x03\x1F\x03 \x03 \x03 \x03 \x03 \x03!\x03!\x03!\x03" +
-		"!\x03!\x03\"\x03\"\x03\"\x03\"\x03\"\x03\"\x03\"\x03\"\x03#\x03#\x03#" +
-		"\x03#\x03#\x03$\x03$\x03$\x03$\x03$\x03%\x03%\x03%\x03%\x03%\x03&\x03" +
-		"&\x03&\x03&\x03&\x03\'\x03\'\x03\'\x03\'\x03\'\x03(\x03(\x05(\u022D\n" +
-		"(\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x05)\u023A\n" +
-		")\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03" +
-		")\x05)\u024A\n)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03" +
-		")\x05)\u0257\n)\x03)\x03)\x05)\u025B\n)\x05)\u025D\n)\x03*\x03*\x05*\u0261" +
-		"\n*\x03+\x03+\x05+\u0265\n+\x03,\x03,\x05,\u0269\n,\x03-\x03-\x05-\u026D" +
-		"\n-\x03.\x03.\x05.\u0271\n.\x03/\x03/\x05/\u0275\n/\x030\x030\x050\u0279" +
-		"\n0\x031\x031\x051\u027D\n1\x032\x032\x052\u0281\n2\x033\x033\x033\x03" +
-		"3\x033\x033\x033\x033\x033\x033\x033\x053\u028E\n3\x034\x034\x034\x03" +
-		"4\x035\x035\x035\x035\x035\x035\x035\x035\x035\x075\u029D\n5\f5\x0E5\u02A0" +
-		"\v5\x036\x036\x036\x056\u02A5\n6\x036\x036\x036\x036\x036\x036\x076\u02AD" +
-		"\n6\f6\x0E6\u02B0\v6\x037\x037\x067\u02B4\n7\r7\x0E7\u02B5\x038\x038\x03" +
-		"8\x038\x038\x058\u02BD\n8\x039\x039\x039\x039\x039\x059\u02C4\n9\x03:" +
-		"\x03:\x03:\x03:\x03:\x03:\x03:\x03:\x03:\x03:\x03:\x03:\x03:\x03:\x03" +
-		":\x03:\x03:\x03:\x03:\x05:\u02D9\n:\x03:\x02\x02\x06.0hj;\x02\x02\x04" +
-		"\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02" +
-		"\x18\x02\x1A\x02\x1C\x02\x1E\x02 \x02\"\x02$\x02&\x02(\x02*\x02,\x02." +
-		"\x020\x022\x024\x026\x028\x02:\x02<\x02>\x02@\x02B\x02D\x02F\x02H\x02" +
-		"J\x02L\x02N\x02P\x02R\x02T\x02V\x02X\x02Z\x02\\\x02^\x02`\x02b\x02d\x02" +
-		"f\x02h\x02j\x02l\x02n\x02p\x02r\x02\x02\x03\x03\x02-.\x02\u0320\x02t\x03" +
-		"\x02\x02\x02\x04\x7F\x03\x02\x02\x02\x06\x8D\x03\x02\x02\x02\b\x90\x03" +
-		"\x02\x02\x02\n\x9B\x03\x02\x02\x02\f\xA5\x03\x02\x02\x02\x0E\xC2\x03\x02" +
-		"\x02\x02\x10\xD4\x03\x02\x02\x02\x12\xF2\x03\x02\x02\x02\x14\xFD\x03\x02" +
-		"\x02\x02\x16\u0107\x03\x02\x02\x02\x18\u0109\x03\x02\x02\x02\x1A\u0129" +
-		"\x03\x02\x02\x02\x1C\u0133\x03\x02\x02\x02\x1E\u013D\x03\x02\x02\x02 " +
-		"\u0177\x03\x02\x02\x02\"\u0179\x03\x02\x02\x02$\u0183\x03\x02\x02\x02" +
-		"&\u018B\x03\x02\x02\x02(\u0195\x03\x02\x02\x02*\u019D\x03\x02\x02\x02" +
-		",\u01AD\x03\x02\x02\x02.\u01AF\x03\x02\x02\x020\u01C0\x03\x02\x02\x02" +
-		"2\u01CD\x03\x02\x02\x024\u01D8\x03\x02\x02\x026\u01DF\x03\x02\x02\x02" +
-		"8\u01F3\x03\x02\x02\x02:\u01F5\x03\x02\x02\x02<\u01FA\x03\x02\x02\x02" +
-		">\u01FF\x03\x02\x02\x02@\u0204\x03\x02\x02\x02B\u0209\x03\x02\x02\x02" +
-		"D\u0211\x03\x02\x02\x02F\u0216\x03\x02\x02\x02H\u021B\x03\x02\x02\x02" +
-		"J\u0220\x03\x02\x02\x02L\u0225\x03\x02\x02\x02N\u022C\x03\x02\x02\x02" +
-		"P\u025C\x03\x02\x02\x02R\u0260\x03\x02\x02\x02T\u0264\x03\x02\x02\x02" +
-		"V\u0268\x03\x02\x02\x02X\u026C\x03\x02\x02\x02Z\u0270\x03\x02\x02\x02" +
-		"\\\u0274\x03\x02\x02\x02^\u0278\x03\x02\x02\x02`\u027C\x03\x02\x02\x02" +
-		"b\u0280\x03\x02\x02\x02d\u028D\x03\x02\x02\x02f\u028F\x03\x02\x02\x02" +
-		"h\u0293\x03\x02\x02\x02j\u02A4\x03\x02\x02\x02l\u02B1\x03\x02\x02\x02" +
-		"n\u02BC\x03\x02\x02\x02p\u02C3\x03\x02\x02\x02r\u02D8\x03\x02\x02\x02" +
-		"tu\x05\x04\x03\x02uv\x07\x02\x02\x03v\x03\x03\x02\x02\x02w\x80\x05\x06" +
-		"\x04\x02x\x80\x05f4\x02y\x80\x05N(\x02z\x80\x05P)\x02{\x80\x05R*\x02|" +
-		"\x80\x05T+\x02}\x80\x05,\x17\x02~\x80\x05V,\x02\x7Fw\x03\x02\x02\x02\x7F" +
-		"x\x03\x02\x02\x02\x7Fy\x03\x02\x02\x02\x7Fz\x03\x02\x02\x02\x7F{\x03\x02" +
-		"\x02\x02\x7F|\x03\x02\x02\x02\x7F}\x03\x02\x02\x02\x7F~\x03\x02\x02\x02" +
-		"\x80\x05\x03\x02\x02\x02\x81\x8E\x05\b\x05\x02\x82\x8E\x05\n\x06\x02\x83" +
-		"\x8E\x05\f\x07\x02\x84\x8E\x05\x0E\b\x02\x85\x8E\x05\x10\t\x02\x86\x8E" +
-		"\x05 \x11\x02\x87\x8E\x05\x12\n\x02\x88\x8E\x05\x14\v\x02\x89\x8E\x05" +
-		"\x18\r\x02\x8A\x8E\x05\x1A\x0E\x02\x8B\x8E\x05\x1C\x0F\x02\x8C\x8E\x05" +
-		"\x1E\x10\x02\x8D\x81\x03\x02\x02\x02\x8D\x82\x03\x02\x02\x02\x8D\x83\x03" +
-		"\x02\x02\x02\x8D\x84\x03\x02\x02\x02\x8D\x85\x03\x02\x02\x02\x8D\x86\x03" +
-		"\x02\x02\x02\x8D\x87\x03\x02\x02\x02\x8D\x88\x03\x02\x02\x02\x8D\x89\x03" +
-		"\x02\x02\x02\x8D\x8A\x03\x02\x02\x02\x8D\x8B\x03\x02\x02\x02\x8D\x8C\x03" +
-		"\x02\x02\x02\x8E\x07\x03\x02\x02\x02\x8F\x91\x07\t\x02\x02\x90\x8F\x03" +
-		"\x02\x02\x02\x90\x91\x03\x02\x02\x02\x91\x92\x03\x02\x02\x02\x92\x93\x07" +
-		"\'\x02\x02\x93\x94\x05,\x17\x02\x94\x95\x07+\x02\x02\x95\x96\x05,\x17" +
-		"\x02\x96\x97\x07+\x02\x02\x97\x98\x05,\x17\x02\x98\x99\x03\x02\x02\x02" +
-		"\x99\x9A\x07(\x02\x02\x9A\t\x03\x02\x02\x02\x9B\x9C\x07\n\x02\x02\x9C" +
-		"\x9D\x07\'\x02\x02\x9D\x9E\x05N(\x02\x9E\xA1\x07+\x02\x02\x9F\xA2\x05" +
-		"N(\x02\xA0\xA2\x05,\x17\x02\xA1\x9F\x03\x02\x02\x02\xA1\xA0\x03\x02\x02" +
-		"\x02\xA2\xA3\x03\x02\x02\x02\xA3\xA4\x07(\x02\x02\xA4\v\x03\x02\x02\x02" +
-		"\xA5\xA6\x07\v\x02\x02\xA6\xBE\x07\'\x02\x02\xA7\xBF\x07&\x02\x02\xA8" +
-		"\xA9\x05N(\x02\xA9\xAC\x07+\x02\x02\xAA\xAD\x05T+\x02\xAB\xAD\x05P)\x02" +
-		"\xAC\xAA\x03\x02\x02\x02\xAC\xAB\x03\x02\x02\x02\xAD\xBF\x03\x02\x02\x02" +
-		"\xAE\xAF\x05P)\x02\xAF\xB0\x07+\x02\x02\xB0\xB1\x05P)\x02\xB1\xBF\x03" +
-		"\x02\x02\x02\xB2\xB3\x05N(\x02\xB3\xB4\x07+\x02\x02\xB4\xB5\x05R*\x02" +
-		"\xB5\xB6\x07+\x02\x02\xB6\xB7\x05R*\x02\xB7\xBF\x03\x02\x02\x02\xB8\xB9" +
-		"\x05N(\x02\xB9\xBA\x07+\x02\x02\xBA\xBB\x05N(\x02\xBB\xBC\x07+\x02\x02" +
-		"\xBC\xBD\x05N(\x02\xBD\xBF\x03\x02\x02\x02\xBE\xA7\x03\x02\x02\x02\xBE" +
-		"\xA8\x03\x02\x02\x02\xBE\xAE\x03\x02\x02\x02\xBE\xB2\x03\x02\x02\x02\xBE" +
-		"\xB8\x03\x02\x02\x02\xBF\xC0\x03\x02\x02\x02\xC0\xC1\x07(\x02\x02\xC1" +
-		"\r\x03\x02\x02\x02\xC2\xC3\x07\x04\x02\x02\xC3\xD0\x07\'\x02\x02\xC4\xC5" +
-		"\x05N(\x02\xC5\xC6\x07+\x02\x02\xC6\xC7\x05N(\x02\xC7\xD1\x03\x02\x02" +
-		"\x02\xC8\xC9\x05N(\x02\xC9\xCA\x07+\x02\x02\xCA\xCB\x05P)\x02\xCB\xD1" +
-		"\x03\x02\x02\x02\xCC\xCD\x05N(\x02\xCD\xCE\x07+\x02\x02\xCE\xCF\x05R*" +
-		"\x02\xCF\xD1\x03\x02\x02\x02\xD0\xC4\x03\x02\x02\x02\xD0\xC8\x03\x02\x02" +
-		"\x02\xD0\xCC\x03\x02\x02\x02\xD1\xD2\x03\x02\x02\x02\xD2\xD3\x07(\x02" +
-		"\x02\xD3\x0F\x03\x02\x02\x02\xD4\xD5\x07\r\x02\x02\xD5\xEE\x07\'\x02\x02" +
-		"\xD6\xEF\x05R*\x02\xD7\xEF\x05N(\x02\xD8\xD9\x05R*\x02\xD9\xDA\x07+\x02" +
-		"\x02\xDA\xDB\x05R*\x02\xDB\xEF\x03\x02\x02\x02\xDC\xDD\x05P)\x02\xDD\xDE" +
-		"\x07+\x02\x02\xDE\xDF\x05P)\x02\xDF\xEF\x03\x02\x02\x02\xE0\xE1\x05P)" +
-		"\x02\xE1\xE2\x07+\x02\x02\xE2\xE3\x05T+\x02\xE3\xEF\x03\x02\x02\x02\xE4" +
-		"\xE5\x05T+\x02\xE5\xE6\x07+\x02\x02\xE6\xE7\x05T+\x02\xE7\xEF\x03\x02" +
-		"\x02\x02\xE8\xE9\x05N(\x02\xE9\xEA\x07+\x02\x02\xEA\xEB\x05N(\x02\xEB" +
-		"\xEC\x07+\x02\x02\xEC\xED\x05N(\x02\xED\xEF\x03\x02\x02\x02\xEE\xD6\x03" +
-		"\x02\x02\x02\xEE\xD7\x03\x02\x02\x02\xEE\xD8\x03\x02\x02\x02\xEE\xDC\x03" +
-		"\x02\x02\x02\xEE\xE0\x03\x02\x02\x02\xEE\xE4\x03\x02\x02\x02\xEE\xE8\x03" +
-		"\x02\x02\x02\xEF\xF0\x03\x02\x02\x02\xF0\xF1\x07(\x02\x02\xF1\x11\x03" +
-		"\x02\x02\x02\xF2\xF3\x07\x05\x02\x02\xF3\xF9\x07\'\x02\x02\xF4\xFA\x05" +
-		"N(\x02\xF5\xF6\x05N(\x02\xF6\xF7\x07+\x02\x02\xF7\xF8\x05N(\x02\xF8\xFA" +
-		"\x03\x02\x02\x02\xF9\xF4\x03\x02\x02\x02\xF9\xF5\x03\x02\x02\x02\xFA\xFB" +
-		"\x03\x02\x02\x02\xFB\xFC\x07(\x02\x02\xFC\x13\x03\x02\x02\x02\xFD\xFE" +
-		"\x07\b\x02\x02\xFE\xFF\x07\'\x02\x02\xFF\u0100\x05\x16\f\x02\u0100\u0101" +
-		"\x07(\x02\x02\u0101\x15\x03\x02\x02\x02\u0102\u0103\x05N(\x02\u0103\u0104" +
-		"\x07+\x02\x02\u0104\u0105\x05\x16\f\x02\u0105\u0108\x03\x02\x02\x02\u0106" +
-		"\u0108\x05N(\x02\u0107\u0102\x03\x02\x02\x02\u0107\u0106\x03\x02\x02\x02" +
-		"\u0108\x17\x03\x02\x02\x02\u0109\u010A\x07\x03\x02\x02\u010A\u0125\x07" +
-		"\'\x02\x02\u010B\u010C\x05N(\x02\u010C\u010D\x07+\x02\x02\u010D\u010E" +
-		"\x05,\x17\x02\u010E\u0126\x03\x02\x02\x02\u010F\u0110\x05N(\x02\u0110" +
-		"\u0111\x07+\x02\x02\u0111\u0112\x05N(\x02\u0112\u0126\x03\x02\x02\x02" +
-		"\u0113\u0114\x05N(\x02\u0114\u0115\x07+\x02\x02\u0115\u0116\x05N(\x02" +
-		"\u0116\u0117\x07+\x02\x02\u0117\u0118\x05N(\x02\u0118\u0126\x03\x02\x02" +
-		"\x02\u0119\u011A\x05N(\x02\u011A\u011B\x07+\x02\x02\u011B\u011C\x05,\x17" +
-		"\x02\u011C\u011D\x07+\x02\x02\u011D\u011E\x05V,\x02\u011E\u0126\x03\x02" +
-		"\x02\x02\u011F\u0120\x05N(\x02\u0120\u0121\x07+\x02\x02\u0121\u0122\x05" +
-		"N(\x02\u0122\u0123\x07+\x02\x02\u0123\u0124\x05V,\x02\u0124\u0126\x03" +
-		"\x02\x02\x02\u0125\u010B\x03\x02\x02\x02\u0125\u010F\x03\x02\x02\x02\u0125" +
-		"\u0113\x03\x02\x02\x02\u0125\u0119\x03\x02\x02\x02\u0125\u011F\x03\x02" +
-		"\x02\x02\u0126\u0127\x03\x02\x02\x02\u0127\u0128\x07(\x02\x02\u0128\x19" +
-		"\x03\x02\x02\x02\u0129\u012A\x07\x06\x02\x02\u012A\u012B\x07\'\x02\x02" +
-		"\u012B\u012C\x05N(\x02\u012C\u012F\x07+\x02\x02\u012D\u0130\x05N(\x02" +
-		"\u012E\u0130\x05,\x17\x02\u012F\u012D\x03\x02\x02\x02\u012F\u012E\x03" +
-		"\x02\x02\x02\u0130\u0131\x03\x02\x02\x02\u0131\u0132\x07(\x02\x02\u0132" +
-		"\x1B\x03\x02\x02\x02\u0133\u0134\x07\x07\x02\x02\u0134\u0135\x07\'\x02" +
-		"\x02\u0135\u0136\x05N(\x02\u0136\u0139\x07+\x02\x02\u0137\u013A\x05N(" +
-		"\x02\u0138\u013A\x05R*\x02\u0139\u0137\x03\x02\x02\x02\u0139\u0138\x03" +
-		"\x02\x02\x02\u013A\u013B\x03\x02\x02\x02\u013B\u013C\x07(\x02\x02\u013C" +
-		"\x1D\x03\x02\x02\x02\u013D\u013E\x07\f\x02\x02\u013E\u0141\x07\'\x02\x02" +
-		"\u013F\u0142\x05\x04\x03\x02\u0140\u0142\x05\x04\x03\x02\u0141\u013F\x03" +
-		"\x02\x02\x02\u0141\u0140\x03\x02\x02\x02\u0142\u0143\x03\x02\x02\x02\u0143" +
-		"\u0144\x07(\x02\x02\u0144\x1F\x03\x02\x02\x02\u0145\u0146\x07\x0E\x02" +
-		"\x02\u0146\u0147\x07\'\x02\x02\u0147\u0148\x05N(\x02\u0148\u0149\x07+" +
-		"\x02\x02\u0149\u014A\x05R*\x02\u014A\u014B\x03\x02\x02\x02\u014B\u014C" +
-		"\x07(\x02\x02\u014C\u0178\x03\x02\x02\x02\u014D\u014E\x07\x0F\x02\x02" +
-		"\u014E\u014F\x07\'\x02\x02\u014F\u0150\x05d3\x02\u0150\u0151\x07+\x02" +
-		"\x02\u0151\u0154\x05,\x17\x02\u0152\u0153\x07+\x02\x02\u0153\u0155\x05" +
-		"d3\x02\u0154\u0152\x03\x02\x02\x02\u0154\u0155\x03\x02\x02\x02\u0155\u0156" +
-		"\x03\x02\x02\x02\u0156\u0157\x07(\x02\x02\u0157\u0178\x03\x02\x02\x02" +
-		"\u0158\u0159\x07\x10\x02\x02\u0159\u015A\x07\'\x02\x02\u015A\u015B\x05" +
-		"N(\x02\u015B\u015E\x07+\x02\x02\u015C\u015F\x05T+\x02\u015D\u015F\x05" +
-		"P)\x02\u015E\u015C\x03\x02\x02\x02\u015E\u015D\x03\x02\x02\x02\u015F\u0160" +
-		"\x03\x02\x02\x02\u0160\u0161\x07(\x02\x02\u0161\u0178\x03\x02\x02\x02" +
-		"\u0162\u0163\x07\x11\x02\x02\u0163\u0164\x07\'\x02\x02\u0164\u0165\x05" +
-		"N(\x02\u0165\u0169\x07+\x02\x02\u0166\u016A\x05T+\x02\u0167\u016A\x05" +
-		"P)\x02\u0168\u016A\x05N(\x02\u0169\u0166\x03\x02\x02\x02\u0169\u0167\x03" +
-		"\x02\x02\x02\u0169\u0168\x03\x02\x02\x02\u016A\u016B\x03\x02\x02\x02\u016B" +
-		"\u016C\x07(\x02\x02\u016C\u0178\x03\x02\x02\x02\u016D\u016E\x07\x12\x02" +
-		"\x02\u016E\u016F\x07\'\x02\x02\u016F\u0170\x05d3\x02\u0170\u0171\x07+" +
-		"\x02\x02\u0171\u0172\x05,\x17\x02\u0172\u0173\x07+\x02\x02\u0173\u0174" +
-		"\x05N(\x02\u0174\u0175\x03\x02\x02\x02\u0175\u0176\x07(\x02\x02\u0176" +
-		"\u0178\x03\x02\x02\x02\u0177\u0145\x03\x02\x02\x02\u0177\u014D\x03\x02" +
-		"\x02\x02\u0177\u0158\x03\x02\x02\x02\u0177\u0162\x03\x02\x02\x02\u0177" +
-		"\u016D\x03\x02\x02\x02\u0178!\x03\x02\x02\x02\u0179\u017A\x07\x13\x02" +
-		"\x02\u017A\u017B\x07\'\x02\x02\u017B\u017C\x05N(\x02\u017C\u017D\x07+" +
-		"\x02\x02\u017D\u017E\x05N(\x02\u017E\u017F\x07+\x02\x02\u017F\u0180\x05" +
-		",\x17\x02\u0180\u0181\x03\x02\x02\x02\u0181\u0182\x07(\x02\x02\u0182#" +
-		"\x03\x02\x02\x02\u0183\u0184\x07\x14\x02\x02\u0184\u0185\x07\'\x02\x02" +
-		"\u0185\u0186\x05X-\x02\u0186\u0187\x07+\x02\x02\u0187\u0188\x05N(\x02" +
-		"\u0188\u0189\x03\x02\x02\x02\u0189\u018A\x07(\x02\x02\u018A%\x03\x02\x02" +
-		"\x02\u018B\u018C\x07\x18\x02\x02\u018C\u018D\x07\'\x02\x02\u018D\u018E" +
-		"\x05N(\x02\u018E\u018F\x07+\x02\x02\u018F\u0190\x05,\x17\x02\u0190\u0191" +
-		"\x07+\x02\x02\u0191\u0192\x05N(\x02\u0192\u0193\x03\x02\x02\x02\u0193" +
-		"\u0194\x07(\x02\x02\u0194\'\x03\x02\x02\x02\u0195\u0196\x07\x15\x02\x02" +
-		"\u0196\u0197\x07\'\x02\x02\u0197\u0198\x05X-\x02\u0198\u0199\x07+\x02" +
-		"\x02\u0199\u019A\x05V,\x02\u019A\u019B\x03\x02\x02\x02\u019B\u019C\x07" +
-		"(\x02\x02\u019C)\x03\x02\x02\x02\u019D\u019E\x07\x17\x02\x02\u019E\u019F" +
-		"\x07\'\x02\x02\u019F\u01A0\x05N(\x02\u01A0\u01A1\x07+\x02\x02\u01A1\u01A9" +
-		"\x05,\x17\x02\u01A2\u01A3\x07+\x02\x02\u01A3\u01A4\x05,\x17\x02\u01A4" +
-		"\u01A5\x07+\x02\x02\u01A5\u01A6\x05,\x17\x02\u01A6\u01A7\x07+\x02\x02" +
-		"\u01A7\u01A8\x05,\x17\x02\u01A8\u01AA\x03\x02\x02\x02\u01A9\u01A2\x03" +
-		"\x02\x02\x02\u01A9\u01AA\x03\x02\x02\x02\u01AA\u01AB\x03\x02\x02\x02\u01AB" +
-		"\u01AC\x07(\x02\x02\u01AC+\x03\x02\x02\x02\u01AD\u01AE\x05.\x18\x02\u01AE" +
-		"-\x03\x02\x02\x02\u01AF\u01B0\b\x18\x01\x02\u01B0\u01B1\x050\x19\x02\u01B1" +
-		"\u01BA\x03\x02\x02\x02\u01B2\u01B3\f\x05\x02\x02\u01B3\u01B4\x07-\x02" +
-		"\x02\u01B4\u01B9\x050\x19\x02\u01B5\u01B6\f\x04\x02\x02\u01B6\u01B7\x07" +
-		".\x02\x02\u01B7\u01B9\x050\x19\x02\u01B8\u01B2\x03\x02\x02\x02\u01B8\u01B5" +
-		"\x03\x02\x02\x02\u01B9\u01BC\x03\x02\x02\x02\u01BA\u01B8\x03\x02\x02\x02" +
-		"\u01BA\u01BB\x03\x02\x02\x02\u01BB/\x03\x02\x02\x02\u01BC\u01BA\x03\x02" +
-		"\x02\x02\u01BD\u01BE\b\x19\x01\x02\u01BE\u01C1\x052\x1A\x02\u01BF\u01C1" +
-		"\x054\x1B\x02\u01C0\u01BD\x03\x02\x02\x02\u01C0\u01BF\x03\x02\x02\x02" +
-		"\u01C1\u01CA\x03\x02\x02\x02\u01C2\u01C3\f\x06\x02\x02\u01C3\u01C4\x07" +
-		"/\x02\x02\u01C4\u01C9\x054\x1B\x02\u01C5\u01C6\f\x05\x02\x02\u01C6\u01C7" +
-		"\x07,\x02\x02\u01C7\u01C9\x054\x1B\x02\u01C8\u01C2\x03\x02\x02\x02\u01C8" +
-		"\u01C5\x03\x02\x02\x02\u01C9\u01CC\x03\x02\x02\x02\u01CA\u01C8\x03\x02" +
-		"\x02\x02\u01CA\u01CB\x03\x02\x02\x02\u01CB1\x03\x02\x02\x02\u01CC\u01CA" +
-		"\x03\x02\x02\x02\u01CD\u01CF\x058\x1D\x02\u01CE\u01D0\x058\x1D\x02\u01CF" +
-		"\u01CE\x03\x02\x02\x02\u01D0\u01D1\x03\x02\x02\x02\u01D1\u01CF\x03\x02" +
-		"\x02\x02\u01D1\u01D2\x03\x02\x02\x02\u01D23\x03\x02\x02\x02\u01D3\u01D4" +
-		"\x056\x1C\x02\u01D4\u01D5\x070\x02\x02\u01D5\u01D6\x054\x1B\x02\u01D6" +
-		"\u01D9\x03\x02\x02\x02\u01D7\u01D9\x056\x1C\x02\u01D8\u01D3\x03\x02\x02" +
-		"\x02\u01D8\u01D7\x03\x02\x02\x02\u01D95\x03\x02\x02\x02\u01DA\u01DB\x07" +
-		".\x02\x02\u01DB\u01E0\x056\x1C\x02\u01DC\u01DD\x07-\x02\x02\u01DD\u01E0" +
-		"\x056\x1C\x02\u01DE\u01E0\x058\x1D\x02\u01DF\u01DA\x03\x02\x02\x02\u01DF" +
-		"\u01DC\x03\x02\x02\x02\u01DF\u01DE\x03\x02\x02\x02\u01E07\x03\x02\x02" +
-		"\x02\u01E1\u01F4\x072\x02\x02\u01E2\u01F4\x073\x02\x02\u01E3\u01F4\x07" +
-		"#\x02\x02\u01E4\u01F4\x07$\x02\x02\u01E5\u01E6\x07\'\x02\x02\u01E6\u01E7" +
-		"\x05,\x17\x02\u01E7\u01E8\x07(\x02\x02\u01E8\u01F4\x03\x02\x02\x02\u01E9" +
-		"\u01F4\x05:\x1E\x02\u01EA\u01F4\x05<\x1F\x02\u01EB\u01F4\x05> \x02\u01EC" +
-		"\u01F4\x05@!\x02\u01ED\u01F4\x05B\"\x02\u01EE\u01F4\x05D#\x02\u01EF\u01F4" +
-		"\x05L\'\x02\u01F0\u01F4\x05J&\x02\u01F1\u01F4\x05H%\x02\u01F2\u01F4\x05" +
-		"F$\x02\u01F3\u01E1\x03\x02\x02\x02\u01F3\u01E2\x03\x02\x02\x02\u01F3\u01E3" +
-		"\x03\x02\x02\x02\u01F3\u01E4\x03\x02\x02\x02\u01F3\u01E5\x03\x02\x02\x02" +
-		"\u01F3\u01E9\x03\x02\x02\x02\u01F3\u01EA\x03\x02\x02\x02\u01F3\u01EB\x03" +
-		"\x02\x02\x02\u01F3\u01EC\x03\x02\x02\x02\u01F3\u01ED\x03\x02\x02\x02\u01F3" +
-		"\u01EE\x03\x02\x02\x02\u01F3\u01EF\x03\x02\x02\x02\u01F3\u01F0\x03\x02" +
-		"\x02\x02\u01F3\u01F1\x03\x02\x02\x02\u01F3\u01F2\x03\x02\x02\x02\u01F4" +
-		"9\x03\x02\x02\x02\u01F5\u01F6\x07\x19\x02\x02\u01F6\u01F7\x07\'\x02\x02" +
-		"\u01F7\u01F8\x05,\x17\x02\u01F8\u01F9\x07(\x02\x02\u01F9;\x03\x02\x02" +
-		"\x02\u01FA\u01FB\x07\x1A\x02\x02\u01FB\u01FC\x07\'\x02\x02\u01FC\u01FD" +
-		"\x05,\x17\x02\u01FD\u01FE\x07(\x02\x02\u01FE=\x03\x02\x02\x02\u01FF\u0200" +
-		"\x07\x1B\x02\x02\u0200\u0201\x07\'\x02\x02\u0201\u0202\x05,\x17\x02\u0202" +
-		"\u0203\x07(\x02\x02\u0203?\x03\x02\x02\x02\u0204\u0205\x07\x1C\x02\x02" +
-		"\u0205\u0206\x07\'\x02\x02\u0206\u0207\x05,\x17\x02\u0207\u0208\x07(\x02" +
-		"\x02\u0208A\x03\x02\x02\x02\u0209\u020A\x07\x1D\x02\x02\u020A\u020B\x07" +
-		"\'\x02\x02\u020B\u020C\x05,\x17\x02\u020C\u020D\x07+\x02\x02\u020D\u020E" +
-		"\x05,\x17\x02\u020E\u020F\x03\x02\x02\x02\u020F\u0210\x07(\x02\x02\u0210" +
-		"C\x03\x02\x02\x02\u0211\u0212\x07\x1E\x02\x02\u0212\u0213\x07\'\x02\x02" +
-		"\u0213\u0214\x05,\x17\x02\u0214\u0215\x07(\x02\x02\u0215E\x03\x02\x02" +
-		"\x02\u0216\u0217\x07!\x02\x02\u0217\u0218\x07\'\x02\x02\u0218\u0219\x05" +
-		",\x17\x02\u0219\u021A\x07(\x02\x02\u021AG\x03\x02\x02\x02\u021B\u021C" +
-		"\x07 \x02\x02\u021C\u021D\x07\'\x02\x02\u021D\u021E\x05,\x17\x02\u021E" +
-		"\u021F\x07";
+		"\x03\x07\x05\x07\xB1\n\x07\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\b\x03" +
+		"\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03" +
+		"\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x05\b\xCF\n\b" +
+		"\x03\b\x03\b\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x05\t\xDA\n\t\x03" +
+		"\t\x03\t\x03\n\x03\n\x03\n\x03\n\x03\n\x03\v\x03\v\x03\v\x03\v\x03\v\x05" +
+		"\v\xE8\n\v\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f" +
+		"\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03" +
+		"\f\x03\f\x03\f\x03\f\x03\f\x03\f\x03\f\x05\f\u0106\n\f\x03\f\x03\f\x03" +
+		"\r\x03\r\x03\r\x03\r\x03\r\x03\r\x05\r\u0110\n\r\x03\r\x03\r\x03\x0E\x03" +
+		"\x0E\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x05\x0E\u011A\n\x0E\x03\x0E\x03\x0E" +
+		"\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x10" +
+		"\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10" +
+		"\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10" +
+		"\x03\x10\x03\x10\x03\x10\x05\x10\u013C\n\x10\x03\x10\x03\x10\x03\x10\x03" +
+		"\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03" +
+		"\x10\x03\x10\x03\x10\x03\x10\x03\x10\x05\x10\u014F\n\x10\x03\x10\x03\x10" +
+		"\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10\x03\x10" +
+		"\x03\x10\x05\x10\u015D\n\x10\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03" +
+		"\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x12\x03\x12\x03\x12\x03\x12\x03" +
+		"\x12\x03\x12\x03\x12\x03\x12\x03\x12\x05\x12\u0172\n\x12\x03\x12\x03\x12" +
+		"\x03\x12\x03\x12\x03\x12\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13" +
+		"\x03\x13\x03\x13\x03\x13\x03\x13\x03\x14\x03\x14\x03\x14\x03\x14\x03\x14" +
+		"\x03\x14\x03\x14\x03\x14\x03\x15\x03\x15\x03\x15\x03\x15\x03\x15\x03\x15" +
+		"\x03\x15\x03\x15\x03\x16\x03\x16\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17" +
+		"\x03\x17\x03\x17\x03\x17\x03\x17\x07\x17\u019E\n\x17\f\x17\x0E\x17\u01A1" +
+		"\v\x17\x03\x18\x03\x18\x03\x18\x05\x18\u01A6\n\x18\x03\x18\x03\x18\x03" +
+		"\x18\x03\x18\x03\x18\x03\x18\x07\x18\u01AE\n\x18\f\x18\x0E\x18\u01B1\v" +
+		"\x18\x03\x19\x03\x19\x06\x19\u01B5\n\x19\r\x19\x0E\x19\u01B6\x03\x1A\x03" +
+		"\x1A\x03\x1A\x03\x1A\x03\x1A\x05\x1A\u01BE\n\x1A\x03\x1B\x03\x1B\x03\x1B" +
+		"\x03\x1B\x03\x1B\x05\x1B\u01C5\n\x1B\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x03" +
+		"\x1C\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x03" +
+		"\x1C\x03\x1C\x03\x1C\x03\x1C\x03\x1C\x05\x1C\u01D9\n\x1C\x03\x1D\x03\x1D" +
+		"\x03\x1D\x03\x1D\x03\x1D\x03\x1E\x03\x1E\x03\x1E\x03\x1E\x03\x1E\x03\x1F" +
+		"\x03\x1F\x03\x1F\x03\x1F\x03\x1F\x03 \x03 \x03 \x03 \x03 \x03!\x03!\x03" +
+		"!\x03!\x03!\x03!\x03!\x03!\x03\"\x03\"\x03\"\x03\"\x03\"\x03#\x03#\x03" +
+		"#\x03#\x03#\x03$\x03$\x03$\x03$\x03$\x03%\x03%\x03%\x03%\x03%\x03&\x03" +
+		"&\x03&\x03&\x03&\x03\'\x03\'\x05\'\u0212\n\'\x03(\x03(\x05(\u0216\n(\x03" +
+		")\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x03)\x05)\u0223\n)\x03" +
+		"*\x03*\x05*\u0227\n*\x03+\x03+\x05+\u022B\n+\x03,\x03,\x03,\x03,\x03," +
+		"\x03,\x05,\u0233\n,\x03-\x03-\x05-\u0237\n-\x03.\x03.\x05.\u023B\n.\x03" +
+		"/\x03/\x05/\u023F\n/\x030\x030\x050\u0243\n0\x031\x031\x051\u0247\n1\x03" +
+		"2\x032\x052\u024B\n2\x033\x033\x053\u024F\n3\x034\x034\x054\u0253\n4\x03" +
+		"5\x035\x035\x035\x035\x035\x035\x035\x035\x035\x035\x035\x035\x035\x03" +
+		"5\x035\x035\x055\u0266\n5\x035\x02\x02\x04,.6\x02\x02\x04\x02\x06\x02" +
+		"\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02\x18\x02\x1A" +
+		"\x02\x1C\x02\x1E\x02 \x02\"\x02$\x02&\x02(\x02*\x02,\x02.\x020\x022\x02" +
+		"4\x026\x028\x02:\x02<\x02>\x02@\x02B\x02D\x02F\x02H\x02J\x02L\x02N\x02" +
+		"P\x02R\x02T\x02V\x02X\x02Z\x02\\\x02^\x02`\x02b\x02d\x02f\x02h\x02\x02" +
+		"\x02\x02\u028E\x02j\x03\x02\x02\x02\x04m\x03\x02\x02\x02\x06p\x03\x02" +
+		"\x02\x02\b{\x03\x02\x02\x02\n\x85\x03\x02\x02\x02\f\xA2\x03\x02\x02\x02" +
+		"\x0E\xB4\x03\x02\x02\x02\x10\xD2\x03\x02\x02\x02\x12\xDD\x03\x02\x02\x02" +
+		"\x14\xE7\x03\x02\x02\x02\x16\xE9\x03\x02\x02\x02\x18\u0109\x03\x02\x02" +
+		"\x02\x1A\u0113\x03\x02\x02\x02\x1C\u011D\x03\x02\x02\x02\x1E\u015C\x03" +
+		"\x02\x02\x02 \u015E\x03\x02\x02\x02\"\u0168\x03\x02\x02\x02$\u0178\x03" +
+		"\x02\x02\x02&\u0182\x03\x02\x02\x02(\u018A\x03\x02\x02\x02*\u0192\x03" +
+		"\x02\x02\x02,\u0194\x03\x02\x02\x02.\u01A5\x03\x02\x02\x020\u01B2\x03" +
+		"\x02\x02\x022\u01BD\x03\x02\x02\x024\u01C4\x03\x02\x02\x026\u01D8\x03" +
+		"\x02\x02\x028\u01DA\x03\x02\x02\x02:\u01DF\x03\x02\x02\x02<\u01E4\x03" +
+		"\x02\x02\x02>\u01E9\x03\x02\x02\x02@\u01EE\x03\x02\x02\x02B\u01F6\x03" +
+		"\x02\x02\x02D\u01FB\x03\x02\x02\x02F\u0200\x03\x02\x02\x02H\u0205\x03" +
+		"\x02\x02\x02J\u020A\x03\x02\x02\x02L\u0211\x03\x02\x02\x02N\u0215\x03" +
+		"\x02\x02\x02P\u0222\x03\x02\x02\x02R\u0226\x03\x02\x02\x02T\u022A\x03" +
+		"\x02\x02\x02V\u0232\x03\x02\x02\x02X\u0236\x03\x02\x02\x02Z\u023A\x03" +
+		"\x02\x02\x02\\\u023E\x03\x02\x02\x02^\u0242\x03\x02\x02\x02`\u0246\x03" +
+		"\x02\x02\x02b\u024A\x03\x02\x02\x02d\u024E\x03\x02\x02\x02f\u0252\x03" +
+		"\x02\x02\x02h\u0265\x03\x02\x02\x02jk\x05\x04\x03\x02kl\x07\x02\x02\x03" +
+		"l\x03\x03\x02\x02\x02mn\x05h5\x02n\x05\x03\x02\x02\x02oq\x07\t\x02\x02" +
+		"po\x03\x02\x02\x02pq\x03\x02\x02\x02qr\x03\x02\x02\x02rs\x07*\x02\x02" +
+		"st\x05*\x16\x02tu\x07.\x02\x02uv\x05*\x16\x02vw\x07.\x02\x02wx\x05*\x16" +
+		"\x02xy\x03\x02\x02\x02yz\x07+\x02\x02z\x07\x03\x02\x02\x02{|\x07\n\x02" +
+		"\x02|}\x07*\x02\x02}~\x05L\'\x02~\x81\x07.\x02\x02\x7F\x82\x05L\'\x02" +
+		"\x80\x82\x05*\x16\x02\x81\x7F\x03\x02\x02\x02\x81\x80\x03\x02\x02\x02" +
+		"\x82\x83\x03\x02\x02\x02\x83\x84\x07+\x02\x02\x84\t\x03\x02\x02\x02\x85" +
+		"\x86\x07\v\x02\x02\x86\x9E\x07*\x02\x02\x87\x9F\x07)\x02\x02\x88\x89\x05" +
+		"L\'\x02\x89\x8C\x07.\x02\x02\x8A\x8D\x05T+\x02\x8B\x8D\x05N(\x02\x8C\x8A" +
+		"\x03\x02\x02\x02\x8C\x8B\x03\x02\x02\x02\x8D\x9F\x03\x02\x02\x02\x8E\x8F" +
+		"\x05N(\x02\x8F\x90\x07.\x02\x02\x90\x91\x05N(\x02\x91\x9F\x03\x02\x02" +
+		"\x02\x92\x93\x05L\'\x02\x93\x94\x07.\x02\x02\x94\x95\x05R*\x02\x95\x96" +
+		"\x07.\x02\x02\x96\x97\x05R*\x02\x97\x9F\x03\x02\x02\x02\x98\x99\x05L\'" +
+		"\x02\x99\x9A\x07.\x02\x02\x9A\x9B\x05L\'\x02\x9B\x9C\x07.\x02\x02\x9C" +
+		"\x9D\x05L\'\x02\x9D\x9F\x03\x02\x02\x02\x9E\x87\x03\x02\x02\x02\x9E\x88" +
+		"\x03\x02\x02\x02\x9E\x8E\x03\x02\x02\x02\x9E\x92\x03\x02\x02\x02\x9E\x98" +
+		"\x03\x02\x02\x02\x9F\xA0\x03\x02\x02\x02\xA0\xA1\x07+\x02\x02\xA1\v\x03" +
+		"\x02\x02\x02\xA2\xA3\x07\x04\x02\x02\xA3\xB0\x07*\x02\x02\xA4\xA5\x05" +
+		"L\'\x02\xA5\xA6\x07.\x02\x02\xA6\xA7\x05L\'\x02\xA7\xB1\x03\x02\x02\x02" +
+		"\xA8\xA9\x05L\'\x02\xA9\xAA\x07.\x02\x02\xAA\xAB\x05N(\x02\xAB\xB1\x03" +
+		"\x02\x02\x02\xAC\xAD\x05L\'\x02\xAD\xAE\x07.\x02\x02\xAE\xAF\x05R*\x02" +
+		"\xAF\xB1\x03\x02\x02\x02\xB0\xA4\x03\x02\x02\x02\xB0\xA8\x03\x02\x02\x02" +
+		"\xB0\xAC\x03\x02\x02\x02\xB1\xB2\x03\x02\x02\x02\xB2\xB3\x07+\x02\x02" +
+		"\xB3\r\x03\x02\x02\x02\xB4\xB5\x07\r\x02\x02\xB5\xCE\x07*\x02\x02\xB6" +
+		"\xCF\x05R*\x02\xB7\xCF\x05L\'\x02\xB8\xB9\x05R*\x02\xB9\xBA\x07.\x02\x02" +
+		"\xBA\xBB\x05R*\x02\xBB\xCF\x03\x02\x02\x02\xBC\xBD\x05N(\x02\xBD\xBE\x07" +
+		".\x02\x02\xBE\xBF\x05N(\x02\xBF\xCF\x03\x02\x02\x02\xC0\xC1\x05N(\x02" +
+		"\xC1\xC2\x07.\x02\x02\xC2\xC3\x05T+\x02\xC3\xCF\x03\x02\x02\x02\xC4\xC5" +
+		"\x05T+\x02\xC5\xC6\x07.\x02\x02\xC6\xC7\x05T+\x02\xC7\xCF\x03\x02\x02" +
+		"\x02\xC8\xC9\x05L\'\x02\xC9\xCA\x07.\x02\x02\xCA\xCB\x05L\'\x02\xCB\xCC" +
+		"\x07.\x02\x02\xCC\xCD\x05L\'\x02\xCD\xCF\x03\x02\x02\x02\xCE\xB6\x03\x02" +
+		"\x02\x02\xCE\xB7\x03\x02\x02\x02\xCE\xB8\x03\x02\x02\x02\xCE\xBC\x03\x02" +
+		"\x02\x02\xCE\xC0\x03\x02\x02\x02\xCE\xC4\x03\x02\x02\x02\xCE\xC8\x03\x02" +
+		"\x02\x02\xCF\xD0\x03\x02\x02\x02\xD0\xD1\x07+\x02\x02\xD1\x0F\x03\x02" +
+		"\x02\x02\xD2\xD3\x07\x05\x02\x02\xD3\xD9\x07*\x02\x02\xD4\xDA\x05L\'\x02" +
+		"\xD5\xD6\x05L\'\x02\xD6\xD7\x07.\x02\x02\xD7\xD8\x05L\'\x02\xD8\xDA\x03" +
+		"\x02\x02\x02\xD9\xD4\x03\x02\x02\x02\xD9\xD5\x03\x02\x02\x02\xDA\xDB\x03" +
+		"\x02\x02\x02\xDB\xDC\x07+\x02\x02\xDC\x11\x03\x02\x02\x02\xDD\xDE\x07" +
+		"\b\x02\x02\xDE\xDF\x07*\x02\x02\xDF\xE0\x05\x14\v\x02\xE0\xE1\x07+\x02" +
+		"\x02\xE1\x13\x03\x02\x02\x02\xE2\xE3\x05L\'\x02\xE3\xE4\x07.\x02\x02\xE4" +
+		"\xE5\x05\x14\v\x02\xE5\xE8\x03\x02\x02\x02\xE6\xE8\x05L\'\x02\xE7\xE2" +
+		"\x03\x02\x02\x02\xE7\xE6\x03\x02\x02\x02\xE8\x15\x03\x02\x02\x02\xE9\xEA" +
+		"\x07\x03\x02\x02\xEA\u0105\x07*\x02\x02\xEB\xEC\x05L\'\x02\xEC\xED\x07" +
+		".\x02\x02\xED\xEE\x05*\x16\x02\xEE\u0106\x03\x02\x02\x02\xEF\xF0\x05L" +
+		"\'\x02\xF0\xF1\x07.\x02\x02\xF1\xF2\x05L\'\x02\xF2\u0106\x03\x02\x02\x02" +
+		"\xF3\xF4\x05L\'\x02\xF4\xF5\x07.\x02\x02\xF5\xF6\x05L\'\x02\xF6\xF7\x07" +
+		".\x02\x02\xF7\xF8\x05L\'\x02\xF8\u0106\x03\x02\x02\x02\xF9\xFA\x05L\'" +
+		"\x02\xFA\xFB\x07.\x02\x02\xFB\xFC\x05*\x16\x02\xFC\xFD\x07.\x02\x02\xFD" +
+		"\xFE\x05V,\x02\xFE\u0106\x03\x02\x02\x02\xFF\u0100\x05L\'\x02\u0100\u0101" +
+		"\x07.\x02\x02\u0101\u0102\x05L\'\x02\u0102\u0103\x07.\x02\x02\u0103\u0104" +
+		"\x05V,\x02\u0104\u0106\x03\x02\x02\x02\u0105\xEB\x03\x02\x02\x02\u0105" +
+		"\xEF\x03\x02\x02\x02\u0105\xF3\x03\x02\x02\x02\u0105\xF9\x03\x02\x02\x02" +
+		"\u0105\xFF\x03\x02\x02\x02\u0106\u0107\x03\x02\x02\x02\u0107\u0108\x07" +
+		"+\x02\x02\u0108\x17\x03\x02\x02\x02\u0109\u010A\x07\x06\x02\x02\u010A" +
+		"\u010B\x07*\x02\x02\u010B\u010C\x05L\'\x02\u010C\u010F\x07.\x02\x02\u010D" +
+		"\u0110\x05L\'\x02\u010E\u0110\x05*\x16\x02\u010F\u010D\x03\x02\x02\x02" +
+		"\u010F\u010E\x03\x02\x02\x02\u0110\u0111\x03\x02\x02\x02\u0111\u0112\x07" +
+		"+\x02\x02\u0112\x19\x03\x02\x02\x02\u0113\u0114\x07\x07\x02\x02\u0114" +
+		"\u0115\x07*\x02\x02\u0115\u0116\x05L\'\x02\u0116\u0119\x07.\x02\x02\u0117" +
+		"\u011A\x05L\'\x02\u0118\u011A\x05R*\x02\u0119\u0117\x03\x02\x02\x02\u0119" +
+		"\u0118\x03\x02\x02\x02\u011A\u011B\x03\x02\x02\x02\u011B\u011C\x07+\x02" +
+		"\x02\u011C\x1B\x03\x02\x02\x02\u011D\u011E\x07\f\x02\x02\u011E\u011F\x07" +
+		"*\x02\x02\u011F\u0120\x05\x04\x03\x02\u0120\u0121\x07.\x02\x02\u0121\u0122" +
+		"\x05\x04\x03\x02\u0122\u0123\x03\x02\x02\x02\u0123\u0124\x07+\x02\x02" +
+		"\u0124\x1D\x03\x02\x02\x02\u0125\u0126\x07\x0E\x02\x02\u0126\u0127\x07" +
+		"*\x02\x02\u0127\u0128\x05h5\x02\u0128\u0129\x07.\x02\x02\u0129\u012A\x05" +
+		"R*\x02\u012A\u012B\x03\x02\x02\x02\u012B\u012C\x07+\x02\x02\u012C\u015D" +
+		"\x03\x02\x02\x02\u012D\u012E\x07\x0F\x02\x02\u012E\u012F\x07*\x02\x02" +
+		"\u012F\u0130\x05h5\x02\u0130\u0131\x07.\x02\x02\u0131\u013B\x05*\x16\x02" +
+		"\u0132\u0133\x07.\x02\x02\u0133\u013C\x05L\'\x02\u0134\u0135\x07.\x02" +
+		"\x02\u0135\u013C\x05V,\x02\u0136\u0137\x07.\x02\x02\u0137\u0138\x05L\'" +
+		"\x02\u0138\u0139\x07.\x02\x02\u0139\u013A\x05V,\x02\u013A\u013C\x03\x02" +
+		"\x02\x02\u013B\u0132\x03\x02\x02\x02\u013B\u0134\x03\x02\x02\x02\u013B" +
+		"\u0136\x03\x02\x02\x02\u013B\u013C\x03\x02\x02\x02\u013C\u013D\x03\x02" +
+		"\x02\x02\u013D\u013E\x07+\x02\x02\u013E\u015D\x03\x02\x02\x02\u013F\u0140" +
+		"\x07\x10\x02\x02\u0140\u0141\x07*\x02\x02\u0141\u0142\x05L\'\x02\u0142" +
+		"\u0143\x07.\x02\x02\u0143\u0144\x05T+\x02\u0144\u0145\x03\x02\x02\x02" +
+		"\u0145\u0146\x07+\x02\x02\u0146\u015D\x03\x02\x02\x02\u0147\u0148\x07" +
+		"\x11\x02\x02\u0148\u0149\x07*\x02\x02\u0149\u014A\x05h5\x02\u014A\u014E" +
+		"\x07.\x02\x02\u014B\u014F\x05T+\x02\u014C\u014F\x05N(\x02\u014D\u014F" +
+		"\x05L\'\x02\u014E\u014B\x03\x02\x02\x02\u014E\u014C\x03\x02\x02\x02\u014E" +
+		"\u014D\x03\x02\x02\x02\u014F\u0150\x03\x02\x02\x02\u0150\u0151\x07+\x02" +
+		"\x02\u0151\u015D\x03\x02\x02\x02\u0152\u0153\x07\x12\x02\x02\u0153\u0154" +
+		"\x07*\x02\x02\u0154\u0155\x05h5\x02\u0155\u0156\x07.\x02\x02\u0156\u0157" +
+		"\x05*\x16\x02\u0157\u0158\x07.\x02\x02\u0158\u0159\x05L\'\x02\u0159\u015A" +
+		"\x03\x02\x02\x02\u015A\u015B\x07+\x02\x02\u015B\u015D\x03\x02\x02\x02" +
+		"\u015C\u0125\x03\x02\x02\x02\u015C\u012D\x03\x02\x02\x02\u015C\u013F\x03" +
+		"\x02\x02\x02\u015C\u0147\x03\x02\x02\x02\u015C\u0152\x03\x02\x02\x02\u015D" +
+		"\x1F\x03\x02\x02\x02\u015E\u015F\x07\x13\x02\x02\u015F\u0160\x07*\x02" +
+		"\x02\u0160\u0161\x05L\'\x02\u0161\u0162\x07.\x02\x02\u0162\u0163\x05L" +
+		"\'\x02\u0163\u0164\x07.\x02\x02\u0164\u0165\x05*\x16\x02\u0165\u0166\x03" +
+		"\x02\x02\x02\u0166\u0167\x07+\x02\x02\u0167!\x03\x02\x02\x02\u0168\u0169" +
+		"\x07\x14\x02\x02\u0169\u0171\x07*\x02\x02\u016A\u0172\x05X-\x02\u016B" +
+		"\u016C\x05L\'\x02\u016C\u016D\x07.\x02\x02\u016D\u016E\x05L\'\x02\u016E" +
+		"\u016F\x07.\x02\x02\u016F\u0170\x05L\'\x02\u0170\u0172\x03\x02\x02\x02" +
+		"\u0171\u016A\x03\x02\x02\x02\u0171\u016B\x03\x02\x02\x02\u0172\u0173\x03" +
+		"\x02\x02\x02\u0173\u0174\x07.\x02\x02\u0174\u0175\x05L\'\x02\u0175\u0176" +
+		"\x03\x02\x02\x02\u0176\u0177\x07+\x02\x02\u0177#\x03\x02\x02\x02\u0178" +
+		"\u0179\x07\x18\x02\x02\u0179\u017A\x07*\x02\x02\u017A\u017B\x05L\'\x02" +
+		"\u017B\u017C\x07.\x02\x02\u017C\u017D\x05*\x16\x02\u017D\u017E\x07.\x02" +
+		"\x02\u017E\u017F\x05L\'\x02\u017F\u0180\x03\x02\x02\x02\u0180\u0181\x07" +
+		"+\x02\x02\u0181%\x03\x02\x02\x02\u0182\u0183\x07\x15\x02\x02\u0183\u0184" +
+		"\x07*\x02\x02\u0184\u0185\x05X-\x02\u0185\u0186\x07.\x02\x02\u0186\u0187" +
+		"\x05V,\x02\u0187\u0188\x03\x02\x02\x02\u0188\u0189\x07+\x02\x02\u0189" +
+		"\'\x03\x02\x02\x02\u018A\u018B\x07\x16\x02\x02\u018B\u018C\x07*\x02\x02" +
+		"\u018C\u018D\x05X-\x02\u018D\u018E\x07.\x02\x02\u018E\u018F\x05L\'\x02" +
+		"\u018F\u0190\x03\x02\x02\x02\u0190\u0191\x07+\x02\x02\u0191)\x03\x02\x02" +
+		"\x02\u0192\u0193\x05,\x17\x02\u0193+\x03\x02\x02\x02\u0194\u0195\b\x17" +
+		"\x01\x02\u0195\u0196\x05.\x18\x02\u0196\u019F\x03\x02\x02\x02\u0197\u0198" +
+		"\f\x05\x02\x02\u0198\u0199\x070\x02\x02\u0199\u019E\x05.\x18\x02\u019A" +
+		"\u019B\f\x04\x02\x02\u019B\u019C\x071\x02\x02\u019C\u019E\x05.\x18\x02" +
+		"\u019D\u0197\x03\x02\x02\x02\u019D\u019A\x03\x02\x02\x02\u019E\u01A1\x03" +
+		"\x02\x02\x02\u019F\u019D\x03\x02\x02\x02\u019F\u01A0\x03\x02\x02\x02\u01A0" +
+		"-\x03\x02\x02\x02\u01A1\u019F\x03\x02\x02\x02\u01A2\u01A3\b\x18\x01\x02" +
+		"\u01A3\u01A6\x050\x19\x02\u01A4\u01A6\x052\x1A\x02\u01A5\u01A2\x03\x02" +
+		"\x02\x02\u01A5\u01A4\x03\x02\x02\x02\u01A6\u01AF\x03\x02\x02\x02\u01A7" +
+		"\u01A8\f\x06\x02\x02\u01A8\u01A9\x072\x02\x02\u01A9\u01AE\x052\x1A\x02" +
+		"\u01AA\u01AB\f\x05\x02\x02\u01AB\u01AC\x07/\x02\x02\u01AC\u01AE\x052\x1A" +
+		"\x02\u01AD\u01A7\x03\x02\x02\x02\u01AD\u01AA\x03\x02\x02\x02\u01AE\u01B1" +
+		"\x03\x02\x02\x02\u01AF\u01AD\x03\x02\x02\x02\u01AF\u01B0\x03\x02\x02\x02" +
+		"\u01B0/\x03\x02\x02\x02\u01B1\u01AF\x03\x02\x02\x02\u01B2\u01B4\x056\x1C" +
+		"\x02\u01B3\u01B5\x056\x1C\x02\u01B4\u01B3\x03\x02\x02\x02\u01B5\u01B6" +
+		"\x03\x02\x02\x02\u01B6\u01B4\x03\x02\x02\x02\u01B6\u01B7\x03\x02\x02\x02" +
+		"\u01B71\x03\x02\x02\x02\u01B8\u01B9\x054\x1B\x02\u01B9\u01BA\x073\x02" +
+		"\x02\u01BA\u01BB\x052\x1A\x02\u01BB\u01BE\x03\x02\x02\x02\u01BC\u01BE" +
+		"\x054\x1B\x02\u01BD\u01B8\x03\x02\x02\x02\u01BD\u01BC\x03\x02\x02\x02" +
+		"\u01BE3\x03\x02\x02\x02\u01BF\u01C0\x071\x02\x02\u01C0\u01C5\x054\x1B" +
+		"\x02\u01C1\u01C2\x070\x02\x02\u01C2\u01C5\x054\x1B\x02\u01C3\u01C5\x05" +
+		"6\x1C\x02\u01C4\u01BF\x03\x02\x02\x02\u01C4\u01C1\x03\x02\x02\x02\u01C4" +
+		"\u01C3\x03\x02\x02\x02\u01C55\x03\x02\x02\x02\u01C6\u01D9\x074\x02\x02" +
+		"\u01C7\u01D9\x075\x02\x02\u01C8\u01D9\x07#\x02\x02\u01C9\u01D9\x07$\x02" +
+		"\x02\u01CA\u01CB\x07*\x02\x02\u01CB\u01CC\x05*\x16\x02\u01CC\u01CD\x07" +
+		"+\x02\x02\u01CD\u01D9\x03\x02\x02\x02\u01CE\u01D9\x058\x1D\x02\u01CF\u01D9" +
+		"\x05:\x1E\x02\u01D0\u01D9\x05<\x1F\x02\u01D1\u01D9\x05> \x02\u01D2\u01D9" +
+		"\x05@!\x02\u01D3\u01D9\x05B\"\x02\u01D4\u01D9\x05J&\x02\u01D5\u01D9\x05" +
+		"H%\x02\u01D6\u01D9\x05F$\x02\u01D7\u01D9\x05D#\x02\u01D8\u01C6\x03\x02" +
+		"\x02\x02\u01D8\u01C7\x03\x02\x02\x02\u01D8\u01C8\x03\x02\x02\x02\u01D8" +
+		"\u01C9\x03\x02\x02\x02\u01D8\u01CA\x03\x02\x02\x02\u01D8\u01CE\x03\x02" +
+		"\x02\x02\u01D8\u01CF\x03\x02\x02\x02\u01D8\u01D0\x03\x02\x02\x02\u01D8" +
+		"\u01D1\x03\x02\x02\x02\u01D8\u01D2\x03\x02\x02\x02\u01D8\u01D3\x03\x02" +
+		"\x02\x02\u01D8\u01D4\x03\x02\x02\x02\u01D8\u01D5\x03\x02\x02\x02\u01D8" +
+		"\u01D6\x03\x02\x02\x02\u01D8\u01D7\x03\x02\x02\x02\u01D97\x03\x02\x02" +
+		"\x02\u01DA\u01DB\x07\x19\x02\x02\u01DB\u01DC\x07*\x02\x02\u01DC\u01DD" +
+		"\x05*\x16\x02\u01DD\u01DE\x07+\x02\x02\u01DE9\x03\x02\x02\x02\u01DF\u01E0" +
+		"\x07\x1A\x02\x02\u01E0\u01E1\x07*\x02\x02\u01E1\u01E2\x05*\x16\x02\u01E2" +
+		"\u01E3\x07+\x02\x02\u01E3;\x03\x02\x02\x02\u01E4\u01E5\x07\x1B\x02\x02" +
+		"\u01E5\u01E6\x07*\x02\x02\u01E6\u01E7\x05*\x16\x02\u01E7\u01E8\x07+\x02" +
+		"\x02\u01E8=\x03\x02\x02\x02\u01E9\u01EA\x07\x1C\x02\x02\u01EA\u01EB\x07" +
+		"*\x02\x02\u01EB\u01EC\x05*\x16\x02\u01EC\u01ED\x07+\x02\x02\u01ED?\x03" +
+		"\x02\x02\x02\u01EE\u01EF\x07\x1D\x02\x02\u01EF\u01F0\x07*\x02\x02\u01F0" +
+		"\u01F1\x05*\x16\x02\u01F1\u01F2\x07.\x02\x02\u01F2\u01F3\x05*\x16\x02" +
+		"\u01F3\u01F4\x03\x02\x02\x02\u01F4\u01F5\x07+\x02\x02\u01F5A\x03\x02\x02" +
+		"\x02\u01F6\u01F7\x07\x1E\x02\x02\u01F7\u01F8\x07*\x02\x02\u01F8\u01F9" +
+		"\x05*\x16\x02\u01F9\u01FA\x07+\x02\x02\u01FAC\x03\x02\x02\x02\u01FB\u01FC" +
+		"\x07!\x02\x02\u01FC\u01FD\x07*\x02\x02\u01FD\u01FE\x05*\x16\x02\u01FE" +
+		"\u01FF\x07+\x02\x02\u01FFE\x03\x02\x02\x02\u0200\u0201\x07 \x02\x02\u0201" +
+		"\u0202\x07*\x02\x02\u0202\u0203\x05*\x16\x02\u0203\u0204\x07+\x02\x02" +
+		"\u0204G\x03\x02\x02\x02\u0205\u0206\x07\"\x02\x02\u0206\u0207\x07*\x02" +
+		"\x02\u0207\u0208\x05*\x16\x02\u0208\u0209\x07+\x02\x02\u0209I\x03\x02" +
+		"\x02\x02\u020A\u020B\x07\x1F\x02\x02\u020B\u020C\x07*\x02\x02\u020C\u020D" +
+		"\x05*\x16\x02\u020D\u020E\x07+\x02\x02\u020EK\x03\x02\x02\x02\u020F\u0212" +
+		"\x07(\x02\x02\u0210\u0212\x05\x06\x04\x02\u0211\u020F\x03\x02\x02\x02" +
+		"\u0211\u0210\x03\x02\x02\x02\u0212M\x03\x02\x02\x02\u0213\u0216\x05\f" +
+		"\x07\x02\u0214\u0216\x07)\x02\x02\u0215\u0213\x03\x02\x02\x02\u0215\u0214" +
+		"\x03\x02\x02\x02\u0216O\x03\x02\x02\x02\u0217\u0223\x05L\'\x02\u0218\u0223" +
+		"\x05R*\x02\u0219\u021A\x07*\x02\x02\u021A\u021B\x05*\x16\x02\u021B\u021C" +
+		"\x07.\x02\x02\u021C\u021D\x05*\x16\x02\u021D\u021E\x07.\x02\x02\u021E" +
+		"\u021F\x05*\x16\x02\u021F\u0220\x03\x02\x02\x02\u0220\u0221\x07+\x02\x02" +
+		"\u0221\u0223\x03\x02\x02\x02\u0222\u0217\x03\x02\x02\x02\u0222\u0218\x03" +
+		"\x02\x02\x02\u0222\u0219\x03\x02\x02\x02\u0223Q\x03\x02\x02\x02\u0224" +
+		"\u0227\x05\x10\t\x02\u0225\u0227\x07)\x02\x02\u0226\u0224\x03\x02\x02" +
+		"\x02\u0226\u0225\x03\x02\x02\x02\u0227S\x03\x02\x02\x02\u0228\u022B\x05" +
+		"\n\x06\x02\u0229\u022B\x07)\x02\x02\u022A\u0228\x03\x02\x02\x02\u022A" +
+		"\u0229\x03\x02\x02\x02\u022BU\x03\x02\x02\x02\u022C\u0233\x07)\x02\x02" +
+		"\u022D\u0233\x05R*\x02\u022E\u0233\x05N(\x02\u022F\u0233\x05b2\x02\u0230" +
+		"\u0233\x05d3\x02\u0231\u0233\x05T+\x02\u0232\u022C\x03\x02\x02\x02\u0232" +
+		"\u022D\x03\x02\x02\x02\u0232\u022E\x03\x02\x02\x02\u0232\u022F\x03\x02" +
+		"\x02\x02\u0232\u0230\x03\x02\x02\x02\u0232\u0231\x03\x02\x02\x02\u0233" +
+		"W\x03\x02\x02\x02\u0234\u0237\x07)\x02\x02\u0235\u0237\x05\x12\n\x02\u0236" +
+		"\u0234\x03\x02\x02\x02\u0236\u0235\x03\x02\x02\x02\u0237Y\x03\x02\x02" +
+		"\x02\u0238\u023B\x07)\x02\x02\u0239\u023B\x05\"\x12\x02\u023A\u0238\x03" +
+		"\x02\x02\x02\u023A\u0239\x03\x02\x02\x02\u023B[\x03\x02\x02\x02\u023C" +
+		"\u023F\x07)\x02\x02\u023D\u023F\x05 \x11\x02\u023E\u023C\x03\x02\x02\x02" +
+		"\u023E\u023D\x03\x02\x02\x02\u023F]\x03\x02\x02\x02\u0240\u0243\x07)\x02" +
+		"\x02\u0241\u0243\x05$\x13\x02\u0242\u0240\x03\x02\x02\x02\u0242\u0241" +
+		"\x03\x02\x02\x02\u0243_\x03\x02\x02\x02\u0244\u0247\x07)\x02\x02\u0245" +
+		"\u0247\x05&\x14\x02\u0246\u0244\x03\x02\x02\x02\u0246\u0245\x03\x02\x02" +
+		"\x02";
 	private static readonly _serializedATNSegment1: string =
-		"(\x02\x02\u021FI\x03\x02\x02\x02\u0220\u0221\x07\"\x02\x02\u0221\u0222" +
-		"\x07\'\x02\x02\u0222\u0223\x05,\x17\x02\u0223\u0224\x07(\x02\x02\u0224" +
-		"K\x03\x02\x02\x02\u0225\u0226\x07\x1F\x02\x02\u0226\u0227\x07\'\x02\x02" +
-		"\u0227\u0228\x05,\x17\x02\u0228\u0229\x07(\x02\x02\u0229M\x03\x02\x02" +
-		"\x02\u022A\u022D\x07%\x02\x02\u022B\u022D\x05\b\x05\x02\u022C\u022A\x03" +
-		"\x02\x02\x02\u022C\u022B\x03\x02\x02\x02\u022DO\x03\x02\x02\x02\u022E" +
-		"\u025D\x05\x0E\b\x02\u022F\u025D\x07&\x02\x02\u0230\u023A\x05N(\x02\u0231" +
-		"\u023A\x05\x12\n\x02\u0232\u0233\x07\'\x02\x02\u0233\u0234\x05,\x17\x02" +
-		"\u0234\u0235\x07+\x02\x02\u0235\u0236\x05,\x17\x02\u0236\u0237\x07+\x02" +
-		"\x02\u0237\u0238\x05,\x17\x02\u0238\u023A\x03\x02\x02\x02\u0239\u0230" +
-		"\x03\x02\x02\x02\u0239\u0231\x03\x02\x02\x02\u0239\u0232\x03\x02\x02\x02" +
-		"\u023A\u023B\x03\x02\x02\x02\u023B\u023C\t\x02\x02\x02\u023C\u023D\x07" +
-		"&\x02\x02\u023D\u0249\x07/\x02\x02\u023E\u024A\x05\x12\n\x02\u023F\u024A" +
-		"\x07&\x02\x02\u0240\u0241\x07\'\x02\x02\u0241\u0242\x05,\x17\x02\u0242" +
-		"\u0243\x07+\x02\x02\u0243\u0244\x05,\x17\x02\u0244\u0245\x07+\x02\x02" +
-		"\u0245\u0246\x05,\x17\x02\u0246\u0247\x03\x02\x02\x02\u0247\u0248\x07" +
-		"(\x02\x02\u0248\u024A\x03\x02\x02\x02\u0249\u023E\x03\x02\x02\x02\u0249" +
-		"\u023F\x03\x02\x02\x02\u0249\u0240\x03\x02\x02\x02\u024A\u025B\x03\x02" +
-		"\x02\x02\u024B\u0257\x05\x12\n\x02\u024C\u0257\x07&\x02\x02\u024D\u024E" +
-		"\x07\'\x02\x02\u024E\u024F\x05,\x17\x02\u024F\u0250\x07+\x02\x02\u0250" +
-		"\u0251\x05,\x17\x02\u0251\u0252\x07+\x02\x02\u0252\u0253\x05,\x17\x02" +
-		"\u0253\u0254\x03\x02\x02\x02\u0254\u0255\x07(\x02\x02\u0255\u0257\x03" +
-		"\x02\x02\x02\u0256\u024B\x03\x02\x02\x02\u0256\u024C\x03\x02\x02\x02\u0256" +
-		"\u024D\x03\x02\x02\x02\u0257\u0258\x03\x02\x02\x02\u0258\u0259\x07/\x02" +
-		"\x02\u0259\u025B\x07&\x02\x02\u025A\u0239\x03\x02\x02\x02\u025A\u0256" +
-		"\x03\x02\x02\x02\u025B\u025D\x03\x02\x02\x02\u025C\u022E\x03\x02\x02\x02" +
-		"\u025C\u022F\x03\x02\x02\x02\u025C\u025A\x03\x02\x02\x02\u025DQ\x03\x02" +
-		"\x02\x02\u025E\u0261\x05\x12\n\x02\u025F\u0261\x07&\x02\x02\u0260\u025E" +
-		"\x03\x02\x02\x02\u0260\u025F\x03\x02\x02\x02\u0261S\x03\x02\x02\x02\u0262" +
-		"\u0265\x05\f\x07\x02\u0263\u0265\x07&\x02\x02\u0264\u0262\x03\x02\x02" +
-		"\x02\u0264\u0263\x03\x02\x02\x02\u0265U\x03\x02\x02\x02\u0266\u0269\x07" +
-		"&\x02\x02\u0267\u0269\x05\x12\n\x02\u0268\u0266\x03\x02\x02\x02\u0268" +
-		"\u0267\x03\x02\x02\x02\u0269W\x03\x02\x02\x02\u026A\u026D\x07&\x02\x02" +
-		"\u026B\u026D\x05\x14\v\x02\u026C\u026A\x03\x02\x02\x02\u026C\u026B\x03" +
-		"\x02\x02\x02\u026DY\x03\x02\x02\x02\u026E\u0271\x07&\x02\x02\u026F\u0271" +
-		"\x05*\x16\x02\u0270\u026E\x03\x02\x02\x02\u0270\u026F\x03\x02\x02\x02" +
-		"\u0271[\x03\x02\x02\x02\u0272\u0275\x07&\x02\x02\u0273\u0275\x05$\x13" +
-		"\x02\u0274\u0272\x03\x02\x02\x02\u0274\u0273\x03\x02\x02\x02\u0275]\x03" +
-		"\x02\x02\x02\u0276\u0279\x07&\x02\x02\u0277\u0279\x05\"\x12\x02\u0278" +
-		"\u0276\x03\x02\x02\x02\u0278\u0277\x03\x02\x02\x02\u0279_\x03\x02\x02" +
-		"\x02\u027A\u027D\x07&\x02\x02\u027B\u027D\x05&\x14\x02\u027C\u027A\x03" +
-		"\x02\x02\x02\u027C\u027B\x03\x02\x02\x02\u027Da\x03\x02\x02\x02\u027E" +
-		"\u0281\x07&\x02\x02\u027F\u0281\x05(\x15\x02\u0280\u027E\x03\x02\x02\x02" +
-		"\u0280\u027F\x03\x02\x02\x02\u0281c\x03\x02\x02\x02\u0282\u028E\x05N(" +
-		"\x02\u0283\u028E\x05P)\x02\u0284\u028E\x05R*\x02\u0285\u028E\x05X-\x02" +
-		"\u0286\u028E\x05T+\x02\u0287\u028E\x05V,\x02\u0288\u028E\x05Z.\x02\u0289" +
-		"\u028E\x05\\/\x02\u028A\u028E\x05^0\x02\u028B\u028E\x05`1\x02\u028C\u028E" +
-		"\x05b2\x02\u028D\u0282\x03\x02\x02\x02\u028D\u0283\x03\x02\x02\x02\u028D" +
-		"\u0284\x03\x02\x02\x02\u028D\u0285\x03\x02\x02\x02\u028D\u0286\x03\x02" +
-		"\x02\x02\u028D\u0287\x03\x02\x02\x02\u028D\u0288\x03\x02\x02\x02\u028D" +
-		"\u0289\x03\x02\x02\x02\u028D\u028A\x03\x02\x02\x02\u028D\u028B\x03\x02" +
-		"\x02\x02\u028D\u028C\x03\x02\x02\x02\u028Ee\x03\x02\x02\x02\u028F\u0290" +
-		"\x05h5\x02\u0290\u0291\x071\x02\x02\u0291\u0292\x05h5\x02\u0292g\x03\x02" +
-		"\x02\x02\u0293\u0294\b5\x01\x02\u0294\u0295\x05j6\x02\u0295\u029E\x03" +
-		"\x02\x02\x02\u0296\u0297\f\x05\x02\x02\u0297\u0298\x07-\x02\x02\u0298" +
-		"\u029D\x05j6\x02\u0299\u029A\f\x04\x02\x02\u029A\u029B\x07.\x02\x02\u029B" +
-		"\u029D\x05j6\x02\u029C\u0296\x03\x02\x02\x02\u029C\u0299\x03\x02\x02\x02" +
-		"\u029D\u02A0\x03\x02\x02\x02\u029E\u029C\x03\x02\x02\x02\u029E\u029F\x03" +
-		"\x02\x02\x02\u029Fi\x03\x02\x02\x02\u02A0\u029E\x03\x02\x02\x02\u02A1" +
-		"\u02A2\b6\x01\x02\u02A2\u02A5\x05l7\x02\u02A3\u02A5\x05n8\x02\u02A4\u02A1" +
-		"\x03\x02\x02\x02\u02A4\u02A3\x03\x02\x02\x02\u02A5\u02AE\x03\x02\x02\x02" +
-		"\u02A6\u02A7\f\x06\x02\x02\u02A7\u02A8\x07/\x02\x02\u02A8\u02AD\x05n8" +
-		"\x02\u02A9\u02AA\f\x05\x02\x02\u02AA\u02AB\x07,\x02\x02\u02AB\u02AD\x05" +
-		"n8\x02\u02AC\u02A6\x03\x02\x02\x02\u02AC\u02A9\x03\x02\x02\x02\u02AD\u02B0" +
-		"\x03\x02\x02\x02\u02AE\u02AC\x03\x02\x02\x02\u02AE\u02AF\x03\x02\x02\x02" +
-		"\u02AFk\x03\x02\x02\x02\u02B0\u02AE\x03\x02\x02\x02\u02B1\u02B3\x05r:" +
-		"\x02\u02B2\u02B4\x05r:\x02\u02B3\u02B2\x03\x02\x02\x02\u02B4\u02B5\x03" +
-		"\x02\x02\x02\u02B5\u02B3\x03\x02\x02\x02\u02B5\u02B6\x03\x02\x02\x02\u02B6" +
-		"m\x03\x02\x02\x02\u02B7\u02B8\x05p9\x02\u02B8\u02B9\x070\x02\x02\u02B9" +
-		"\u02BA\x05n8\x02\u02BA\u02BD\x03\x02\x02\x02\u02BB\u02BD\x05p9\x02\u02BC" +
-		"\u02B7\x03\x02\x02\x02\u02BC\u02BB\x03\x02\x02\x02\u02BDo\x03\x02\x02" +
-		"\x02\u02BE\u02BF\x07.\x02\x02\u02BF\u02C4\x05p9\x02\u02C0\u02C1\x07-\x02" +
-		"\x02\u02C1\u02C4\x05p9\x02\u02C2\u02C4\x05r:\x02\u02C3\u02BE\x03\x02\x02" +
-		"\x02\u02C3\u02C0\x03\x02\x02\x02\u02C3\u02C2\x03\x02\x02\x02\u02C4q\x03" +
-		"\x02\x02\x02\u02C5\u02D9\x072\x02\x02\u02C6\u02D9\x073\x02\x02\u02C7\u02D9" +
-		"\x07#\x02\x02\u02C8\u02D9\x07$\x02\x02\u02C9\u02D9\x05d3\x02\u02CA\u02CB" +
-		"\x07\'\x02\x02\u02CB\u02CC\x05h5\x02\u02CC\u02CD\x07(\x02\x02\u02CD\u02D9" +
-		"\x03\x02\x02\x02\u02CE\u02D9\x05:\x1E\x02\u02CF\u02D9\x05<\x1F\x02\u02D0" +
-		"\u02D9\x05> \x02\u02D1\u02D9\x05@!\x02\u02D2\u02D9\x05B\"\x02\u02D3\u02D9" +
-		"\x05D#\x02\u02D4\u02D9\x05L\'\x02\u02D5\u02D9\x05J&\x02\u02D6\u02D9\x05" +
-		"H%\x02\u02D7\u02D9\x05F$\x02\u02D8\u02C5\x03\x02\x02\x02\u02D8\u02C6\x03" +
-		"\x02\x02\x02\u02D8\u02C7\x03\x02\x02\x02\u02D8\u02C8\x03\x02\x02\x02\u02D8" +
-		"\u02C9\x03\x02\x02\x02\u02D8\u02CA\x03\x02\x02\x02\u02D8\u02CE\x03\x02" +
-		"\x02\x02\u02D8\u02CF\x03\x02\x02\x02\u02D8\u02D0\x03\x02\x02\x02\u02D8" +
-		"\u02D1\x03\x02\x02\x02\u02D8\u02D2\x03\x02\x02\x02\u02D8\u02D3\x03\x02" +
-		"\x02\x02\u02D8\u02D4\x03\x02\x02\x02\u02D8\u02D5\x03\x02\x02\x02\u02D8" +
-		"\u02D6\x03\x02\x02\x02\u02D8\u02D7\x03\x02\x02\x02\u02D9s\x03\x02\x02" +
-		"\x027\x7F\x8D\x90\xA1\xAC\xBE\xD0\xEE\xF9\u0107\u0125\u012F\u0139\u0141" +
-		"\u0154\u015E\u0169\u0177\u01A9\u01B8\u01BA\u01C0\u01C8\u01CA\u01D1\u01D8" +
-		"\u01DF\u01F3\u022C\u0239\u0249\u0256\u025A\u025C\u0260\u0264\u0268\u026C" +
-		"\u0270\u0274\u0278\u027C\u0280\u028D\u029C\u029E\u02A4\u02AC\u02AE\u02B5" +
-		"\u02BC\u02C3\u02D8";
+		"\u0247a\x03\x02\x02\x02\u0248\u024B\x07)\x02\x02\u0249\u024B\x05\x18\r" +
+		"\x02\u024A\u0248\x03\x02\x02\x02\u024A\u0249\x03\x02\x02\x02\u024Bc\x03" +
+		"\x02\x02\x02\u024C\u024F\x07)\x02\x02\u024D\u024F\x05\x1A\x0E\x02\u024E" +
+		"\u024C\x03\x02\x02\x02\u024E\u024D\x03\x02\x02\x02\u024Fe\x03\x02\x02" +
+		"\x02\u0250\u0253\x07)\x02\x02\u0251\u0253\x05(\x15\x02\u0252\u0250\x03" +
+		"\x02\x02\x02\u0252\u0251\x03\x02\x02\x02\u0253g\x03\x02\x02\x02\u0254" +
+		"\u0266\x05d3\x02\u0255\u0266\x05^0\x02\u0256\u0266\x05N(\x02\u0257\u0266" +
+		"\x05\x0E\b\x02\u0258\u0266\x05T+\x02\u0259\u0266\x05L\'\x02\u025A\u0266" +
+		"\x05`1\x02\u025B\u0266\x05\x16\f\x02\u025C\u0266\x05\b\x05\x02\u025D\u0266" +
+		"\x05R*\x02\u025E\u0266\x05X-\x02\u025F\u0266\x05b2\x02\u0260\u0266\x05" +
+		"\\/\x02\u0261\u0266\x05\x1E\x10\x02\u0262\u0266\x05Z.\x02\u0263\u0266" +
+		"\x05\x1C\x0F\x02\u0264\u0266\x05f4\x02\u0265\u0254\x03\x02\x02\x02\u0265" +
+		"\u0255\x03\x02\x02\x02\u0265\u0256\x03\x02\x02\x02\u0265\u0257\x03\x02" +
+		"\x02\x02\u0265\u0258\x03\x02\x02\x02\u0265\u0259\x03\x02\x02\x02\u0265" +
+		"\u025A\x03\x02\x02\x02\u0265\u025B\x03\x02\x02\x02\u0265\u025C\x03\x02" +
+		"\x02\x02\u0265\u025D\x03\x02\x02\x02\u0265\u025E\x03\x02\x02\x02\u0265" +
+		"\u025F\x03\x02\x02\x02\u0265\u0260\x03\x02\x02\x02\u0265\u0261\x03\x02" +
+		"\x02\x02\u0265\u0262\x03\x02\x02\x02\u0265\u0263\x03\x02\x02\x02\u0265" +
+		"\u0264\x03\x02\x02\x02\u0266i\x03\x02\x02\x02)p\x81\x8C\x9E\xB0\xCE\xD9" +
+		"\xE7\u0105\u010F\u0119\u013B\u014E\u015C\u0171\u019D\u019F\u01A5\u01AD" +
+		"\u01AF\u01B6\u01BD\u01C4\u01D8\u0211\u0215\u0222\u0226\u022A\u0232\u0236" +
+		"\u023A\u023E\u0242\u0246\u024A\u024E\u0252\u0265";
 	public static readonly _serializedATN: string = Utils.join(
 		[
 			MathCommandParser._serializedATNSegment0,
@@ -4151,29 +3415,8 @@ export class ProgramContext extends ParserRuleContext {
 
 
 export class ExprContext extends ParserRuleContext {
-	public command(): CommandContext | undefined {
-		return this.tryGetRuleContext(0, CommandContext);
-	}
-	public two_side_expr(): Two_side_exprContext | undefined {
-		return this.tryGetRuleContext(0, Two_side_exprContext);
-	}
-	public pointExpr(): PointExprContext | undefined {
-		return this.tryGetRuleContext(0, PointExprContext);
-	}
-	public lineExpr(): LineExprContext | undefined {
-		return this.tryGetRuleContext(0, LineExprContext);
-	}
-	public vectorExpr(): VectorExprContext | undefined {
-		return this.tryGetRuleContext(0, VectorExprContext);
-	}
-	public planeExpr(): PlaneExprContext | undefined {
-		return this.tryGetRuleContext(0, PlaneExprContext);
-	}
-	public numberExpr(): NumberExprContext | undefined {
-		return this.tryGetRuleContext(0, NumberExprContext);
-	}
-	public directionExpr(): DirectionExprContext | undefined {
-		return this.tryGetRuleContext(0, DirectionExprContext);
+	public shapeExpr(): ShapeExprContext {
+		return this.getRuleContext(0, ShapeExprContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -4196,71 +3439,6 @@ export class ExprContext extends ParserRuleContext {
 	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
 		if (visitor.visitExpr) {
 			return visitor.visitExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class CommandContext extends ParserRuleContext {
-	public pointDef(): PointDefContext | undefined {
-		return this.tryGetRuleContext(0, PointDefContext);
-	}
-	public sphereDef(): SphereDefContext | undefined {
-		return this.tryGetRuleContext(0, SphereDefContext);
-	}
-	public planeDef(): PlaneDefContext | undefined {
-		return this.tryGetRuleContext(0, PlaneDefContext);
-	}
-	public lineDef(): LineDefContext | undefined {
-		return this.tryGetRuleContext(0, LineDefContext);
-	}
-	public angleDef(): AngleDefContext | undefined {
-		return this.tryGetRuleContext(0, AngleDefContext);
-	}
-	public transformDef(): TransformDefContext | undefined {
-		return this.tryGetRuleContext(0, TransformDefContext);
-	}
-	public vectorDef(): VectorDefContext | undefined {
-		return this.tryGetRuleContext(0, VectorDefContext);
-	}
-	public polygonDef(): PolygonDefContext | undefined {
-		return this.tryGetRuleContext(0, PolygonDefContext);
-	}
-	public circleDef(): CircleDefContext | undefined {
-		return this.tryGetRuleContext(0, CircleDefContext);
-	}
-	public segmentDef(): SegmentDefContext | undefined {
-		return this.tryGetRuleContext(0, SegmentDefContext);
-	}
-	public rayDef(): RayDefContext | undefined {
-		return this.tryGetRuleContext(0, RayDefContext);
-	}
-	public intersectionDef(): IntersectionDefContext | undefined {
-		return this.tryGetRuleContext(0, IntersectionDefContext);
-	}
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_command; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterCommand) {
-			listener.enterCommand(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitCommand) {
-			listener.exitCommand(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitCommand) {
-			return visitor.visitCommand(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -4823,9 +4001,16 @@ export class IntersectionDefContext extends ParserRuleContext {
 	public INTERSECT(): TerminalNode { return this.getToken(MathCommandParser.INTERSECT, 0); }
 	public LR(): TerminalNode { return this.getToken(MathCommandParser.LR, 0); }
 	public RR(): TerminalNode { return this.getToken(MathCommandParser.RR, 0); }
-	public expr(): ExprContext | undefined {
-		return this.tryGetRuleContext(0, ExprContext);
+	public expr(): ExprContext[];
+	public expr(i: number): ExprContext;
+	public expr(i?: number): ExprContext | ExprContext[] {
+		if (i === undefined) {
+			return this.getRuleContexts(ExprContext);
+		} else {
+			return this.getRuleContext(i, ExprContext);
+		}
 	}
+	public COMMA(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.COMMA, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
@@ -4862,14 +4047,8 @@ export class TransformDefContext extends ParserRuleContext {
 	public PROJECT(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.PROJECT, 0); }
 	public REFLECT(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.REFLECT, 0); }
 	public ENLARGE(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.ENLARGE, 0); }
-	public pointExpr(): PointExprContext[];
-	public pointExpr(i: number): PointExprContext;
-	public pointExpr(i?: number): PointExprContext | PointExprContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(PointExprContext);
-		} else {
-			return this.getRuleContext(i, PointExprContext);
-		}
+	public shapeExpr(): ShapeExprContext | undefined {
+		return this.tryGetRuleContext(0, ShapeExprContext);
 	}
 	public COMMA(): TerminalNode[];
 	public COMMA(i: number): TerminalNode;
@@ -4883,23 +4062,20 @@ export class TransformDefContext extends ParserRuleContext {
 	public vectorExpr(): VectorExprContext | undefined {
 		return this.tryGetRuleContext(0, VectorExprContext);
 	}
-	public shapeExpr(): ShapeExprContext[];
-	public shapeExpr(i: number): ShapeExprContext;
-	public shapeExpr(i?: number): ShapeExprContext | ShapeExprContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(ShapeExprContext);
-		} else {
-			return this.getRuleContext(i, ShapeExprContext);
-		}
-	}
 	public numberExpr(): NumberExprContext | undefined {
 		return this.tryGetRuleContext(0, NumberExprContext);
+	}
+	public pointExpr(): PointExprContext | undefined {
+		return this.tryGetRuleContext(0, PointExprContext);
 	}
 	public planeExpr(): PlaneExprContext | undefined {
 		return this.tryGetRuleContext(0, PlaneExprContext);
 	}
 	public lineExpr(): LineExprContext | undefined {
 		return this.tryGetRuleContext(0, LineExprContext);
+	}
+	public directionExpr(): DirectionExprContext | undefined {
+		return this.tryGetRuleContext(0, DirectionExprContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -4986,12 +4162,26 @@ export class TetrahedronDefContext extends ParserRuleContext {
 	public TETRAHEDRON(): TerminalNode { return this.getToken(MathCommandParser.TETRAHEDRON, 0); }
 	public LR(): TerminalNode { return this.getToken(MathCommandParser.LR, 0); }
 	public RR(): TerminalNode { return this.getToken(MathCommandParser.RR, 0); }
+	public COMMA(): TerminalNode[];
+	public COMMA(i: number): TerminalNode;
+	public COMMA(i?: number): TerminalNode | TerminalNode[] {
+		if (i === undefined) {
+			return this.getTokens(MathCommandParser.COMMA);
+		} else {
+			return this.getToken(MathCommandParser.COMMA, i);
+		}
+	}
+	public pointExpr(): PointExprContext[];
+	public pointExpr(i: number): PointExprContext;
+	public pointExpr(i?: number): PointExprContext | PointExprContext[] {
+		if (i === undefined) {
+			return this.getRuleContexts(PointExprContext);
+		} else {
+			return this.getRuleContext(i, PointExprContext);
+		}
+	}
 	public polygonExpr(): PolygonExprContext | undefined {
 		return this.tryGetRuleContext(0, PolygonExprContext);
-	}
-	public COMMA(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.COMMA, 0); }
-	public pointExpr(): PointExprContext | undefined {
-		return this.tryGetRuleContext(0, PointExprContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -5113,52 +4303,38 @@ export class PrismDefContext extends ParserRuleContext {
 }
 
 
-export class CuboidDefContext extends ParserRuleContext {
-	public CUBOID(): TerminalNode { return this.getToken(MathCommandParser.CUBOID, 0); }
+export class PyramidDefContext extends ParserRuleContext {
+	public PYRAMID(): TerminalNode { return this.getToken(MathCommandParser.PYRAMID, 0); }
 	public LR(): TerminalNode { return this.getToken(MathCommandParser.LR, 0); }
 	public RR(): TerminalNode { return this.getToken(MathCommandParser.RR, 0); }
+	public polygonExpr(): PolygonExprContext | undefined {
+		return this.tryGetRuleContext(0, PolygonExprContext);
+	}
+	public COMMA(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.COMMA, 0); }
 	public pointExpr(): PointExprContext | undefined {
 		return this.tryGetRuleContext(0, PointExprContext);
-	}
-	public COMMA(): TerminalNode[];
-	public COMMA(i: number): TerminalNode;
-	public COMMA(i?: number): TerminalNode | TerminalNode[] {
-		if (i === undefined) {
-			return this.getTokens(MathCommandParser.COMMA);
-		} else {
-			return this.getToken(MathCommandParser.COMMA, i);
-		}
-	}
-	public numberExpr(): NumberExprContext[];
-	public numberExpr(i: number): NumberExprContext;
-	public numberExpr(i?: number): NumberExprContext | NumberExprContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(NumberExprContext);
-		} else {
-			return this.getRuleContext(i, NumberExprContext);
-		}
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_cuboidDef; }
+	public get ruleIndex(): number { return MathCommandParser.RULE_pyramidDef; }
 	// @Override
 	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterCuboidDef) {
-			listener.enterCuboidDef(this);
+		if (listener.enterPyramidDef) {
+			listener.enterPyramidDef(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitCuboidDef) {
-			listener.exitCuboidDef(this);
+		if (listener.exitPyramidDef) {
+			listener.exitPyramidDef(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitCuboidDef) {
-			return visitor.visitCuboidDef(this);
+		if (visitor.visitPyramidDef) {
+			return visitor.visitPyramidDef(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -5848,58 +5024,7 @@ export class LineExprContext extends ParserRuleContext {
 	public lineDef(): LineDefContext | undefined {
 		return this.tryGetRuleContext(0, LineDefContext);
 	}
-	public SHAPE_ID(): TerminalNode[];
-	public SHAPE_ID(i: number): TerminalNode;
-	public SHAPE_ID(i?: number): TerminalNode | TerminalNode[] {
-		if (i === undefined) {
-			return this.getTokens(MathCommandParser.SHAPE_ID);
-		} else {
-			return this.getToken(MathCommandParser.SHAPE_ID, i);
-		}
-	}
-	public ADD(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.ADD, 0); }
-	public SUB(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SUB, 0); }
-	public pointExpr(): PointExprContext | undefined {
-		return this.tryGetRuleContext(0, PointExprContext);
-	}
-	public vectorDef(): VectorDefContext[];
-	public vectorDef(i: number): VectorDefContext;
-	public vectorDef(i?: number): VectorDefContext | VectorDefContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(VectorDefContext);
-		} else {
-			return this.getRuleContext(i, VectorDefContext);
-		}
-	}
-	public LR(): TerminalNode[];
-	public LR(i: number): TerminalNode;
-	public LR(i?: number): TerminalNode | TerminalNode[] {
-		if (i === undefined) {
-			return this.getTokens(MathCommandParser.LR);
-		} else {
-			return this.getToken(MathCommandParser.LR, i);
-		}
-	}
-	public MULTIPLY(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.MULTIPLY, 0); }
-	public numberExpr(): NumberExprContext[];
-	public numberExpr(i: number): NumberExprContext;
-	public numberExpr(i?: number): NumberExprContext | NumberExprContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(NumberExprContext);
-		} else {
-			return this.getRuleContext(i, NumberExprContext);
-		}
-	}
-	public COMMA(): TerminalNode[];
-	public COMMA(i: number): TerminalNode;
-	public COMMA(i?: number): TerminalNode | TerminalNode[] {
-		if (i === undefined) {
-			return this.getTokens(MathCommandParser.COMMA);
-		} else {
-			return this.getToken(MathCommandParser.COMMA, i);
-		}
-	}
-	public RR(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.RR, 0); }
+	public SHAPE_ID(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SHAPE_ID, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
@@ -5921,6 +5046,61 @@ export class LineExprContext extends ParserRuleContext {
 	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
 		if (visitor.visitLineExpr) {
 			return visitor.visitLineExpr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
+export class DirExprContext extends ParserRuleContext {
+	public pointExpr(): PointExprContext | undefined {
+		return this.tryGetRuleContext(0, PointExprContext);
+	}
+	public vectorExpr(): VectorExprContext | undefined {
+		return this.tryGetRuleContext(0, VectorExprContext);
+	}
+	public LR(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.LR, 0); }
+	public RR(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.RR, 0); }
+	public numberExpr(): NumberExprContext[];
+	public numberExpr(i: number): NumberExprContext;
+	public numberExpr(i?: number): NumberExprContext | NumberExprContext[] {
+		if (i === undefined) {
+			return this.getRuleContexts(NumberExprContext);
+		} else {
+			return this.getRuleContext(i, NumberExprContext);
+		}
+	}
+	public COMMA(): TerminalNode[];
+	public COMMA(i: number): TerminalNode;
+	public COMMA(i?: number): TerminalNode | TerminalNode[] {
+		if (i === undefined) {
+			return this.getTokens(MathCommandParser.COMMA);
+		} else {
+			return this.getToken(MathCommandParser.COMMA, i);
+		}
+	}
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return MathCommandParser.RULE_dirExpr; }
+	// @Override
+	public enterRule(listener: MathCommandListener): void {
+		if (listener.enterDirExpr) {
+			listener.enterDirExpr(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: MathCommandListener): void {
+		if (listener.exitDirExpr) {
+			listener.exitDirExpr(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
+		if (visitor.visitDirExpr) {
+			return visitor.visitDirExpr(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -5996,8 +5176,20 @@ export class PlaneExprContext extends ParserRuleContext {
 
 export class DirectionExprContext extends ParserRuleContext {
 	public SHAPE_ID(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SHAPE_ID, 0); }
-	public vectorDef(): VectorDefContext | undefined {
-		return this.tryGetRuleContext(0, VectorDefContext);
+	public vectorExpr(): VectorExprContext | undefined {
+		return this.tryGetRuleContext(0, VectorExprContext);
+	}
+	public lineExpr(): LineExprContext | undefined {
+		return this.tryGetRuleContext(0, LineExprContext);
+	}
+	public segmentExpr(): SegmentExprContext | undefined {
+		return this.tryGetRuleContext(0, SegmentExprContext);
+	}
+	public rayExpr(): RayExprContext | undefined {
+		return this.tryGetRuleContext(0, RayExprContext);
+	}
+	public planeExpr(): PlaneExprContext | undefined {
+		return this.tryGetRuleContext(0, PlaneExprContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -6053,39 +5245,6 @@ export class PolygonExprContext extends ParserRuleContext {
 	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
 		if (visitor.visitPolygonExpr) {
 			return visitor.visitPolygonExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class CuboidExprContext extends ParserRuleContext {
-	public SHAPE_ID(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SHAPE_ID, 0); }
-	public cuboidDef(): CuboidDefContext | undefined {
-		return this.tryGetRuleContext(0, CuboidDefContext);
-	}
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_cuboidExpr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterCuboidExpr) {
-			listener.enterCuboidExpr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitCuboidExpr) {
-			listener.exitCuboidExpr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitCuboidExpr) {
-			return visitor.visitCuboidExpr(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -6225,12 +5384,132 @@ export class PrismExprContext extends ParserRuleContext {
 }
 
 
+export class SegmentExprContext extends ParserRuleContext {
+	public SHAPE_ID(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SHAPE_ID, 0); }
+	public segmentDef(): SegmentDefContext | undefined {
+		return this.tryGetRuleContext(0, SegmentDefContext);
+	}
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return MathCommandParser.RULE_segmentExpr; }
+	// @Override
+	public enterRule(listener: MathCommandListener): void {
+		if (listener.enterSegmentExpr) {
+			listener.enterSegmentExpr(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: MathCommandListener): void {
+		if (listener.exitSegmentExpr) {
+			listener.exitSegmentExpr(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
+		if (visitor.visitSegmentExpr) {
+			return visitor.visitSegmentExpr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
+export class RayExprContext extends ParserRuleContext {
+	public SHAPE_ID(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SHAPE_ID, 0); }
+	public rayDef(): RayDefContext | undefined {
+		return this.tryGetRuleContext(0, RayDefContext);
+	}
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return MathCommandParser.RULE_rayExpr; }
+	// @Override
+	public enterRule(listener: MathCommandListener): void {
+		if (listener.enterRayExpr) {
+			listener.enterRayExpr(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: MathCommandListener): void {
+		if (listener.exitRayExpr) {
+			listener.exitRayExpr(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
+		if (visitor.visitRayExpr) {
+			return visitor.visitRayExpr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
+export class PyramidExprContext extends ParserRuleContext {
+	public SHAPE_ID(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SHAPE_ID, 0); }
+	public pyramidDef(): PyramidDefContext | undefined {
+		return this.tryGetRuleContext(0, PyramidDefContext);
+	}
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return MathCommandParser.RULE_pyramidExpr; }
+	// @Override
+	public enterRule(listener: MathCommandListener): void {
+		if (listener.enterPyramidExpr) {
+			listener.enterPyramidExpr(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: MathCommandListener): void {
+		if (listener.exitPyramidExpr) {
+			listener.exitPyramidExpr(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
+		if (visitor.visitPyramidExpr) {
+			return visitor.visitPyramidExpr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
 export class ShapeExprContext extends ParserRuleContext {
-	public pointExpr(): PointExprContext | undefined {
-		return this.tryGetRuleContext(0, PointExprContext);
+	public rayExpr(): RayExprContext | undefined {
+		return this.tryGetRuleContext(0, RayExprContext);
+	}
+	public coneExpr(): ConeExprContext | undefined {
+		return this.tryGetRuleContext(0, ConeExprContext);
 	}
 	public lineExpr(): LineExprContext | undefined {
 		return this.tryGetRuleContext(0, LineExprContext);
+	}
+	public angleDef(): AngleDefContext | undefined {
+		return this.tryGetRuleContext(0, AngleDefContext);
+	}
+	public planeExpr(): PlaneExprContext | undefined {
+		return this.tryGetRuleContext(0, PlaneExprContext);
+	}
+	public pointExpr(): PointExprContext | undefined {
+		return this.tryGetRuleContext(0, PointExprContext);
+	}
+	public prismExpr(): PrismExprContext | undefined {
+		return this.tryGetRuleContext(0, PrismExprContext);
+	}
+	public circleDef(): CircleDefContext | undefined {
+		return this.tryGetRuleContext(0, CircleDefContext);
+	}
+	public sphereDef(): SphereDefContext | undefined {
+		return this.tryGetRuleContext(0, SphereDefContext);
 	}
 	public vectorExpr(): VectorExprContext | undefined {
 		return this.tryGetRuleContext(0, VectorExprContext);
@@ -6238,26 +5517,23 @@ export class ShapeExprContext extends ParserRuleContext {
 	public polygonExpr(): PolygonExprContext | undefined {
 		return this.tryGetRuleContext(0, PolygonExprContext);
 	}
-	public planeExpr(): PlaneExprContext | undefined {
-		return this.tryGetRuleContext(0, PlaneExprContext);
-	}
-	public directionExpr(): DirectionExprContext | undefined {
-		return this.tryGetRuleContext(0, DirectionExprContext);
-	}
-	public cuboidExpr(): CuboidExprContext | undefined {
-		return this.tryGetRuleContext(0, CuboidExprContext);
-	}
-	public tetrahedronExpr(): TetrahedronExprContext | undefined {
-		return this.tryGetRuleContext(0, TetrahedronExprContext);
+	public segmentExpr(): SegmentExprContext | undefined {
+		return this.tryGetRuleContext(0, SegmentExprContext);
 	}
 	public cylinderExpr(): CylinderExprContext | undefined {
 		return this.tryGetRuleContext(0, CylinderExprContext);
 	}
-	public coneExpr(): ConeExprContext | undefined {
-		return this.tryGetRuleContext(0, ConeExprContext);
+	public transformDef(): TransformDefContext | undefined {
+		return this.tryGetRuleContext(0, TransformDefContext);
 	}
-	public prismExpr(): PrismExprContext | undefined {
-		return this.tryGetRuleContext(0, PrismExprContext);
+	public tetrahedronExpr(): TetrahedronExprContext | undefined {
+		return this.tryGetRuleContext(0, TetrahedronExprContext);
+	}
+	public intersectionDef(): IntersectionDefContext | undefined {
+		return this.tryGetRuleContext(0, IntersectionDefContext);
+	}
+	public pyramidExpr(): PyramidExprContext | undefined {
+		return this.tryGetRuleContext(0, PyramidExprContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -6280,304 +5556,6 @@ export class ShapeExprContext extends ParserRuleContext {
 	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
 		if (visitor.visitShapeExpr) {
 			return visitor.visitShapeExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class Two_side_exprContext extends ParserRuleContext {
-	public varExpr(): VarExprContext[];
-	public varExpr(i: number): VarExprContext;
-	public varExpr(i?: number): VarExprContext | VarExprContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(VarExprContext);
-		} else {
-			return this.getRuleContext(i, VarExprContext);
-		}
-	}
-	public EQ(): TerminalNode { return this.getToken(MathCommandParser.EQ, 0); }
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_two_side_expr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterTwo_side_expr) {
-			listener.enterTwo_side_expr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitTwo_side_expr) {
-			listener.exitTwo_side_expr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitTwo_side_expr) {
-			return visitor.visitTwo_side_expr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class VarExprContext extends ParserRuleContext {
-	public varExpr(): VarExprContext | undefined {
-		return this.tryGetRuleContext(0, VarExprContext);
-	}
-	public ADD(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.ADD, 0); }
-	public varMultiplicativeExpr(): VarMultiplicativeExprContext {
-		return this.getRuleContext(0, VarMultiplicativeExprContext);
-	}
-	public SUB(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SUB, 0); }
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_varExpr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterVarExpr) {
-			listener.enterVarExpr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitVarExpr) {
-			listener.exitVarExpr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitVarExpr) {
-			return visitor.visitVarExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class VarMultiplicativeExprContext extends ParserRuleContext {
-	public varMultiplicativeExpr(): VarMultiplicativeExprContext | undefined {
-		return this.tryGetRuleContext(0, VarMultiplicativeExprContext);
-	}
-	public MULTIPLY(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.MULTIPLY, 0); }
-	public varExponentialExpr(): VarExponentialExprContext | undefined {
-		return this.tryGetRuleContext(0, VarExponentialExprContext);
-	}
-	public DIVIDE(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.DIVIDE, 0); }
-	public varImplicitMultiplicativeExpr(): VarImplicitMultiplicativeExprContext | undefined {
-		return this.tryGetRuleContext(0, VarImplicitMultiplicativeExprContext);
-	}
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_varMultiplicativeExpr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterVarMultiplicativeExpr) {
-			listener.enterVarMultiplicativeExpr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitVarMultiplicativeExpr) {
-			listener.exitVarMultiplicativeExpr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitVarMultiplicativeExpr) {
-			return visitor.visitVarMultiplicativeExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class VarImplicitMultiplicativeExprContext extends ParserRuleContext {
-	public varPrimaryExpr(): VarPrimaryExprContext[];
-	public varPrimaryExpr(i: number): VarPrimaryExprContext;
-	public varPrimaryExpr(i?: number): VarPrimaryExprContext | VarPrimaryExprContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(VarPrimaryExprContext);
-		} else {
-			return this.getRuleContext(i, VarPrimaryExprContext);
-		}
-	}
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_varImplicitMultiplicativeExpr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterVarImplicitMultiplicativeExpr) {
-			listener.enterVarImplicitMultiplicativeExpr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitVarImplicitMultiplicativeExpr) {
-			listener.exitVarImplicitMultiplicativeExpr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitVarImplicitMultiplicativeExpr) {
-			return visitor.visitVarImplicitMultiplicativeExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class VarExponentialExprContext extends ParserRuleContext {
-	public varUnaryExpr(): VarUnaryExprContext {
-		return this.getRuleContext(0, VarUnaryExprContext);
-	}
-	public POWER(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.POWER, 0); }
-	public varExponentialExpr(): VarExponentialExprContext | undefined {
-		return this.tryGetRuleContext(0, VarExponentialExprContext);
-	}
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_varExponentialExpr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterVarExponentialExpr) {
-			listener.enterVarExponentialExpr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitVarExponentialExpr) {
-			listener.exitVarExponentialExpr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitVarExponentialExpr) {
-			return visitor.visitVarExponentialExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class VarUnaryExprContext extends ParserRuleContext {
-	public SUB(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.SUB, 0); }
-	public varUnaryExpr(): VarUnaryExprContext | undefined {
-		return this.tryGetRuleContext(0, VarUnaryExprContext);
-	}
-	public ADD(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.ADD, 0); }
-	public varPrimaryExpr(): VarPrimaryExprContext | undefined {
-		return this.tryGetRuleContext(0, VarPrimaryExprContext);
-	}
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_varUnaryExpr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterVarUnaryExpr) {
-			listener.enterVarUnaryExpr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitVarUnaryExpr) {
-			listener.exitVarUnaryExpr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitVarUnaryExpr) {
-			return visitor.visitVarUnaryExpr(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class VarPrimaryExprContext extends ParserRuleContext {
-	public INT_LIT(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.INT_LIT, 0); }
-	public FLOAT_LIT(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.FLOAT_LIT, 0); }
-	public PI(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.PI, 0); }
-	public E(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.E, 0); }
-	public shapeExpr(): ShapeExprContext | undefined {
-		return this.tryGetRuleContext(0, ShapeExprContext);
-	}
-	public LR(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.LR, 0); }
-	public varExpr(): VarExprContext | undefined {
-		return this.tryGetRuleContext(0, VarExprContext);
-	}
-	public RR(): TerminalNode | undefined { return this.tryGetToken(MathCommandParser.RR, 0); }
-	public sinExpr(): SinExprContext | undefined {
-		return this.tryGetRuleContext(0, SinExprContext);
-	}
-	public cosExpr(): CosExprContext | undefined {
-		return this.tryGetRuleContext(0, CosExprContext);
-	}
-	public tanExpr(): TanExprContext | undefined {
-		return this.tryGetRuleContext(0, TanExprContext);
-	}
-	public cotExpr(): CotExprContext | undefined {
-		return this.tryGetRuleContext(0, CotExprContext);
-	}
-	public logExpr(): LogExprContext | undefined {
-		return this.tryGetRuleContext(0, LogExprContext);
-	}
-	public lnExpr(): LnExprContext | undefined {
-		return this.tryGetRuleContext(0, LnExprContext);
-	}
-	public expExpr(): ExpExprContext | undefined {
-		return this.tryGetRuleContext(0, ExpExprContext);
-	}
-	public absExpr(): AbsExprContext | undefined {
-		return this.tryGetRuleContext(0, AbsExprContext);
-	}
-	public sqrtExpr(): SqrtExprContext | undefined {
-		return this.tryGetRuleContext(0, SqrtExprContext);
-	}
-	public cbrtExpr(): CbrtExprContext | undefined {
-		return this.tryGetRuleContext(0, CbrtExprContext);
-	}
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return MathCommandParser.RULE_varPrimaryExpr; }
-	// @Override
-	public enterRule(listener: MathCommandListener): void {
-		if (listener.enterVarPrimaryExpr) {
-			listener.enterVarPrimaryExpr(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: MathCommandListener): void {
-		if (listener.exitVarPrimaryExpr) {
-			listener.exitVarPrimaryExpr(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: MathCommandVisitor<Result>): Result {
-		if (visitor.visitVarPrimaryExpr) {
-			return visitor.visitVarPrimaryExpr(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

@@ -2,7 +2,7 @@ import React, { RefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Shape, Sphere, GeometryState, ShapeNode3D, Vector, Plane, Cylinder, Cone, Pyramid, Prism, 
-        Polygon, Segment, Ray, Circle, Point, Line, 
+        Polygon, Segment, Ray, Circle, Point, Line, Angle,
         DrawingMode,
         HistoryEntry3D
     } from '../../types/geometry';
@@ -213,7 +213,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             xTickSpacing: constants3d.BASE_SPACING,
             axisInterval: this.props.geometryState.axisTickInterval,
             ratio: 1,
-            rotation: [-Math.PI / 2, 0, 0]
+            rotation: [Math.PI / 2, 0, 0]
         }).generateAxis(); // Green
         
         const zAxis = new ThreeAxis({
@@ -230,8 +230,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
         // Grid Helper
         const grid = new ThreeGrid({
-            size: this.props.geometryState.spacing,
-            gridSpacing: this.props.geometryState.axisTickInterval,
+            size: constants3d.BASE_SPACING,
+            gridSpacing: 1,
             originX: 0,
             originY: 0,
             originZ: 0
@@ -249,7 +249,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         const material = new THREE.MeshPhongMaterial({
             color: 'gray',
             transparent: true,
-            opacity: 0.3,
+            opacity: 0.2,
             side: THREE.DoubleSide,
             depthWrite: true
         });
@@ -1040,6 +1040,49 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             center.divideScalar(points3D.length);
             labelPosition.copy(center);
 
+            mesh = group as unknown as THREE.Mesh;
+        }
+
+        else if ('vector1' in shape && 'vector2' in shape) {
+            let a: Angle = shape as Angle;
+            const startDir = utils3d.convertToVector3(
+                a.vector1.endVector.x - a.vector1.startVector.x,
+                a.vector1.endVector.y - a.vector1.startVector.y,
+                (a.vector1.endVector.z ?? 0) - (a.vector1.startVector.z ?? 0)
+            );
+            
+            const endDir = utils3d.convertToVector3(
+                a.vector2.endVector.x - a.vector2.startVector.x,
+                a.vector2.endVector.y - a.vector2.startVector.y,
+                (a.vector2.endVector.z ?? 0) - (a.vector2.startVector.z ?? 0)
+            );
+
+            const vertex = (a.vertex === undefined ? new THREE.Vector3(0, 0, 0) : utils3d.convertToVector3(
+                a.vertex.x, a.vertex.y, a.vertex.z ?? 0
+            ))
+
+            const angle = startDir.angleTo(endDir);
+            const rotationAxis = new THREE.Vector3().crossVectors(startDir, endDir).normalize();
+
+            const points = [];
+            const segments = 32, radius = 0.1;
+            
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const currentAngle = angle * t;
+                
+                const direction = startDir.clone();
+                direction.applyAxisAngle(rotationAxis, currentAngle);
+                
+                const point = direction.multiplyScalar(radius).add(vertex);
+                points.push(point);
+            }
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: a.props.color, linewidth: a.props.line_size });
+            const arc = new THREE.Line(geometry, material);
+            const group = new THREE.Group();
+            group.add(arc);
             mesh = group as unknown as THREE.Mesh;
         }
 
@@ -2028,7 +2071,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         let pNext = selectedPoints[(i + 1) % selectedPoints.length];
                         let label = `segment0`
                         let index = 0;
-                        while (this.props.labelUsed.includes(label)) {
+                        while (labelUsed.includes(label)) {
                             index++;
                             label = `segment${index}`;
                         }
@@ -3253,7 +3296,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 const shapeNode: ShapeNode3D = {
                     id: circle.props.id,
                     type: circle,
-                    dependsOn: [selectedShapes[0].props.id, center.props.id],
+                    dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false,
                     rotationFactor: {
@@ -3280,7 +3323,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (this.props.mode === 'circle_center_direction') {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
-            console.log(selectedPoints, selectedShapes);
             if (selectedPoints.length !== 1) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
@@ -3292,7 +3334,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             if (selectedShapes.length === 0) return;
-            if (selectedShapes[0].props.id.includes('line-') === false && selectedShapes[0].props.id.includes('vector-') === false) {
+            if (!selectedShapes[0].props.id.includes('line-') && !selectedShapes[0].props.id.includes('vector-') && !selectedShapes[0].props.id.includes('plane-')) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
                     selectedShapes: [],
@@ -3330,7 +3372,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 DAG.set(circle.props.id, {
                     id: circle.props.id,
                     type: circle,
-                    dependsOn: [center.props.id, vector.props.id],
+                    dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false,
                 });
@@ -3345,7 +3387,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 })
             }
 
-            else {
+            else if (selectedShapes[0].props.id.includes('line-')) {
                 const [start, end] = operation.getStartAndEnd(selectedShapes[0]);
                 const vector = Factory.createVector(
                     utils.createVectorDefaultShapeProps(''),
@@ -3368,7 +3410,35 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 const shapeNode: ShapeNode3D = {
                     id: circle.props.id,
                     type: circle,
-                    dependsOn: [center.props.id, vector.props.id],
+                    dependsOn: [center.props.id, selectedShapes[0].props.id],
+                    defined: true,
+                    isSelected: false
+                };
+
+                DAG.set(circle.props.id, shapeNode);
+                this.props.onLabelUsed(labelUsed);
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+
+            else {
+                const vector = (selectedShapes[0] as Plane).norm;
+                const circle = Factory.createCircle(
+                    utils.createCircleDefaultShapeProps(label, radius),
+                    center,
+                    radius,
+                    vector
+                );
+
+                const shapeNode: ShapeNode3D = {
+                    id: circle.props.id,
+                    type: circle,
+                    dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false
                 };
@@ -3920,6 +3990,221 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 });
             }
         }
+
+        else if (this.props.mode === 'angle') {
+            const [selectedPoints, selectedShapes] = [[...this.props.selectedPoints], [...this.props.selectedShapes]];
+            if (selectedPoints.length === 0) {
+                if (selectedShapes.length !== 2) return;
+                if (!(selectedShapes[0].props.id.includes('line-')) || !(selectedShapes[1].props.id.includes('line-'))) {
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    })
+
+                    return;
+                }
+                // 2 lines
+                // convert them to Line
+                let [start1, end1] = operation.getStartAndEnd(selectedShapes[0]);
+                let [start2, end2] = operation.getStartAndEnd(selectedShapes[1]);
+
+                let tmpSelectedShapes = [
+                    Factory.createLine(
+                        selectedShapes[0].props,
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            start1.x,
+                            start1.y,
+                            start1.z
+                        ),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            end1.x,
+                            end1.y,
+                            end1.z
+                        ),
+                    ),
+                    Factory.createLine(
+                        selectedShapes[1].props,
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            start2.x,
+                            start2.y
+                        ),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            end2.x,
+                            end2.y
+                        ),
+                    )
+                ]
+                
+                let vertex = operation.getIntersections2D(
+                    tmpSelectedShapes[0],
+                    tmpSelectedShapes[1]
+                )
+
+                let tmpVertex = Factory.createPoint(
+                    utils.createPointDefaultShapeProps(''),
+                    vertex[0].coors ? vertex[0].coors.x : 0,
+                    vertex[0].coors ? vertex[0].coors.y : 0
+                )
+
+                let label = utils.getAngleLabel(0);
+                let idx = 0;
+                while (this.props.labelUsed.includes(label)) {
+                    idx++;
+                    label = utils.getAngleLabel(idx);
+                }
+
+                this.props.onLabelUsed([...this.props.labelUsed, label]);
+
+                let a = Factory.createAngle(
+                    utils.createAngleDefaultShapeProps(`${label}`),
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            start1.x, start1.y, (start1.z ?? 0)
+                        ),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            end1.x, end1.y, (end1.z ?? 0)
+                        )
+                    ),
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            start2.x, start2.y, (start2.z ?? 0)
+                        ),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            end2.x, end2.y, (end2.z ?? 0)
+                        )
+                    ),
+                    tmpVertex
+                )
+
+
+                let shapeNode: ShapeNode3D = {
+                    id: a.props.id,
+                    dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
+                    type: a,
+                    defined: vertex[0].coors !== undefined && vertex[0].ambiguous === false,
+                    isSelected: false
+                }
+
+                DAG.set(a.props.id, shapeNode);
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+
+            else {
+                if (selectedPoints.length !== 3) {
+                    if (selectedShapes.length > 0) {
+                        this.props.onUpdateLastFailedState();
+                        this.props.onSelectedChange({
+                            selectedShapes: [],
+                            selectedPoints: []
+                        });
+                    }
+
+                    return;
+                }
+
+                let [point1, point2, point3] = [
+                    selectedPoints[0],
+                    selectedPoints[1],
+                    selectedPoints[2],
+                ]
+
+                if (point3 === point1) {
+                    this.props.onUpdateLastFailedState({
+                        selectedPoints: selectedPoints,
+                        selectedShapes: selectedShapes
+                    });
+
+                    selectedPoints.splice(0, 1);
+                    selectedPoints.pop();
+                    this.props.onUpdateAll({
+                        gs: this.props.geometryState,
+                        dag: DAG,
+                        selectedPoints: selectedPoints,
+                        selectedShapes: selectedShapes
+                    });
+
+                    return;
+                }
+
+                else if (point3 === point2) {
+                    this.props.onUpdateLastFailedState({
+                        selectedPoints: selectedPoints,
+                        selectedShapes: selectedShapes
+                    });
+
+                    selectedPoints.splice(1);
+                    this.props.onUpdateAll({
+                        gs: this.props.geometryState,
+                        dag: DAG,
+                        selectedPoints: selectedPoints,
+                        selectedShapes: selectedShapes
+                    });
+
+                    return;
+                }
+
+                let label = utils.getAngleLabel(0);
+                let idx = 0;
+                while (this.props.labelUsed.includes(label)) {
+                    idx++;
+                    label = utils.getAngleLabel(idx);
+                }
+
+                this.props.onLabelUsed([...this.props.labelUsed, label]);
+
+                let a = Factory.createAngle(
+                    utils.createAngleDefaultShapeProps(`${label}`),
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        point2,
+                        point1
+                    ),
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        point2,
+                        point3
+                    ),
+                    point2
+                )
+
+
+                let shapeNode: ShapeNode3D = {
+                    id: a.props.id,
+                    dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id],
+                    type: a,
+                    defined: true,
+                    isSelected: false
+                };
+
+        
+                DAG.set(a.props.id, shapeNode);
+
+                this.props.onUpdateLastFailedState();
+                this.props.onUpdateAll({
+                    gs: {...this.props.geometryState},
+                    dag: DAG,
+                    selectedPoints: [],
+                    selectedShapes: []
+                });
+            }
+        }
     }
 
     private handleMouseDown = (e: MouseEvent) => {
@@ -3959,7 +4244,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             });
 
             const uniqueObjects = Array.from(new Set(realObjects));
-            console.log(uniqueObjects);
 
             uniqueObjects.sort((a, b) => (b.renderOrder ?? 0) - (a.renderOrder ?? 0)); 
 

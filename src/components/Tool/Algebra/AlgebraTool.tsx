@@ -114,8 +114,21 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
 
         else if (shape === 'Intersection') {
             let str = `$${formatLabel} = ${shape}\\left(`
-            let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
-            labels.forEach(label => {
+            let labels = shapeNode.dependsOn.map(id => {
+                const node = this.props.dag.get(id)!;
+                let label = node.type.props.label;
+                const subscriptMap: Record<string, string> = {
+                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+                };
+
+                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                    return `${letter}_{${normal}}`;
+                });
+            });
+            
+            labels.slice(0, 2).forEach(label => {
                 str += label + ",";
             });
 
@@ -133,8 +146,21 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
 
         else if (!(['Translation', 'Rotation', 'Reflection', 'Enlarge'].includes(shape))) {
             let str = `$${formatLabel} = ${shape}\\left(`;
-            let labels = shapeNode.dependsOn.map(id => id.split('-').at(-1));
-            labels.forEach(label => {
+            let labels = shapeNode.dependsOn.map(id => {
+                const node = this.props.dag.get(id)!;
+                let label = node.type.props.label;
+                const subscriptMap: Record<string, string> = {
+                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+                };
+
+                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                    return `${letter}_{${normal}}`;
+                });
+            });
+            
+            labels.slice(0, 2).forEach(label => {
                 str += label + ",";
             });
 

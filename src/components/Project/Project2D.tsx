@@ -90,7 +90,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private errorDialogRef: RefObject<ErrorDialogbox | null>;
     private dag: Map<string, ShapeNode> = new Map<string, ShapeNode>();
     private parts = window.location.pathname.split('/');
-    private projectId = this.parts[this.parts.length - 1]; // last segmen
+    private projectId = this.parts[this.parts.length - 1]; // last segment
     constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
@@ -129,14 +129,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         }
 
         this.lastFailedState = null;
-        this.historyStack = new Array<HistoryEntry>(utils.clone(
-            this.state.geometryState,
-            this.dag,
-            this.state.selectedPoints,
-            this.state.selectedShapes,
-            this.labelUsed
-        )); // Initialize history stack
-        
+        this.historyStack = []; // Initialize history stack
         this.futureStack = new Array<HistoryEntry>();
         this.dialogRef = createRef<Dialogbox | null>();
         this.errorDialogRef = createRef<ErrorDialogbox | null>();
@@ -147,12 +140,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         window.addEventListener("keydown", this.handleKeyDown);
 
         this.loadProject();
-
-        // Auto-save every 60 seconds
-        //this.autoSaveInterval = window.setInterval(() => {
-        //    
-        //    this.saveProject();
-        //}, 5000);
     }
 
     componentWillUnmount() {
@@ -186,13 +173,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     this.setState({position: {errorDialogPos: {x: x, y: y}, dialogPos: this.state.position.dialogPos}});
                 }
             }, 0);
-        }
-
-        // ✅ Auto-save when DAG or geometry changes
-        if (prevState.geometryState !== this.state.geometryState ||
-            prevState.selectedPoints !== this.state.selectedPoints ||
-            prevState.selectedShapes !== this.state.selectedShapes) {
-            this.saveProject();
         }
     }
 
@@ -431,6 +411,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }, () => {
             if (!this.lastFailedState && storeHistory) {
+                this.saveProject();
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
@@ -1006,10 +987,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 labelUsed: this.labelUsed,
             };
 
-            
-            //
-            //
-
             await fetch(`http://localhost:3001/api/projects/${this.projectId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -1034,10 +1011,19 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.setState((prev) => ({ ...prev }));
           
             //console.log("Updated DAG: ", this.dag);
+            
 
             //// Restore state
             this.setState({
-                geometryState: data.geometryState,
+                geometryState: data.geometryState ?? {
+                    numLoops: 1,
+                    axisTickInterval: 1,
+                    spacing: constants.BASE_SPACING,
+                    gridVisible: true,
+                    zoom_level: 1,
+                    axesVisible: true,
+                    panning: false,
+                },
                 selectedPoints: [],
                 selectedShapes: [],
             });

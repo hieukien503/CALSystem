@@ -25,8 +25,8 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
 export interface Angle extends BaseShape {
     // Use degree for angle
     vertex?: Point;
-    startAngle: number;
-    degree: number;
+    vector1: Vector;
+    vector2: Vector;
 }
 
 export interface SemiCircle extends BaseShape {

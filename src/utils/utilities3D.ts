@@ -162,8 +162,10 @@ export const createLabel = (
 
     // 2. Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
-    texture.format = THREE.RGBAFormat;
-    texture.minFilter = THREE.LinearFilter;
+    texture.colorSpace = THREE.SRGBColorSpace; // fix color shift
+    texture.minFilter = THREE.NearestFilter;
+    texture.magFilter = THREE.NearestFilter;
+    texture.generateMipmaps = false;
     texture.needsUpdate = true;
 
     // 3. Create sprite material and sprite

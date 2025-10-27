@@ -276,14 +276,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         utils.createLineDefaultShapeProps(shape.id()),
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
-                            this.stageRef.current.width() / 2,
-                            this.stageRef.current.height() / 2
+                            0, 0
                         ),
 
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
-                            this.stageRef.current.width() / 2 + (shape.id().includes('x-axis') ? 1 : 0),
-                            this.stageRef.current.height() / 2 + (shape.id().includes('y-axis') ? 1 : 0)
+                            0 + (shape.id().includes('x-axis') ? 1 : 0),
+                            0 + (shape.id().includes('y-axis') ? 1 : 0)
                         ),
                     )
 
@@ -315,6 +314,28 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
             }
 
+            else if (['show_label', 'show_object'].includes(this.props.mode)) {
+                if (!shape) return;
+                let shapeNode = this.props.dag.get(shape.id());
+                if (!shapeNode) return;
+                if (this.props.mode === 'show_object') {
+                    shapeNode.type.props.visible.shape = !shapeNode.type.props.visible.shape;
+                    if (!shapeNode.type.props.visible.shape && shapeNode.type.props.visible.label) {
+                        shapeNode.type.props.visible.label = false;
+                    }
+
+                    shapeNode.type.props.visible.shape ? shapeNode.node!.show() : shapeNode.node!.hide();
+                }
+
+                else {
+                    shapeNode.type.props.visible.label = !shapeNode.type.props.visible.label;
+                }
+
+                let text = this.layerUnchangeVisualRef.current?.findOne(`#label-${shape.id()}`);
+                if (!text) return;
+                shapeNode.type.props.visible.label ? text.show() : text.hide();
+            }
+
             else if (!shape || (shape && !shape.id().includes('point-'))) {
                 if (!['length', 'area', 'tangent_line'].includes(this.props.mode) && 
                     !(shape && shape.id().includes('polygon-') && this.props.selectedPoints.length === 0 && ['orthocenter', 'centroid', 'circumcenter', 'incenter', 'excenter', 'circumcircle', 'incircle', 'excircle'].includes(this.props.mode)) &&
@@ -325,33 +346,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 ) {
                     this.createPoint(position, children);
                 }
-            }
-
-            else if (['show_label', 'show_object'].includes(this.props.mode)) {
-                if (!shape) return;
-                let shapeNode = this.props.dag.get(shape.id());
-                if (!shapeNode) return;
-                if (this.props.mode === 'show_object') {
-                    let prevState = shapeNode.type.props.visible;
-                    if (prevState.label === prevState.shape) {
-                        shapeNode.type.props.visible.shape = !prevState.shape;
-                        shapeNode.type.props.visible.label = !prevState.label;
-                    }
-
-                    else {
-                        shapeNode.type.props.visible.shape = !prevState.shape;
-                    }
-
-                    shape.visible(shapeNode.type.props.visible.shape);
-                }
-
-                else {
-                    shapeNode.type.props.visible.label = !shapeNode.type.props.visible.label;
-                }
-
-                let text = this.layerUnchangeVisualRef.current?.findOne(`#label-${shape.id()}`);
-                if (!text) return;
-                text.visible(shapeNode.type.props.visible.label);
             }
 
             requestAnimationFrame(() => this.handleDrawing());
@@ -431,6 +425,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         }
 
         this.moveFrameId = requestAnimationFrame(() => {
+            console.log('Hi');
             const layer = this.layerMathObjectRef.current;
             const stage = this.stageRef.current;
             if (!layer || !stage) return null;
@@ -529,9 +524,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
     private handleMouseUp = () => {
         if (this.props.geometryState.panning) {
-                this.props.onGeometryStateChange({
-                ...this.props.geometryState,
-                panning: false
+            this.props.onUpdateAll({
+                gs: {...this.props.geometryState, panning: false},
+                dag: this.props.dag,
+                selectedShapes: [],
+                selectedPoints: []
             });
         }
         
@@ -759,66 +756,46 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 pos = stage.getPointerPosition() ?? pos;
             }
 
-            this.updateAndPropagate(c.id(), (node: ShapeNode): ShapeNode => {
-                if (node.rotationFactor && node.scaleFactor) {
-                    const anchor = this.props.dag.get(node.dependsOn[0]);
-                    if (anchor) {
-                        let aPos = anchor.node!.position();
-                        let offset = this.layerMathObjectRef.current!.position();
-                        let scale = this.layerMathObjectRef.current!.scaleX() ?? 1;
-                        const screenX = aPos.x * scale + offset.x;
-                        const screenY = aPos.y * scale + offset.y;
+            const updateFn = (node: ShapeNode): ShapeNode => {
+                let shape: Konva.Shape | undefined;
+                if (node.dependsOn.length > 0) {
+                    if (['x-axis', 'y-axis'].includes(node.dependsOn[0])) {
+                        shape = this.createKonvaShape(
+                            Factory.createLine(
+                                utils.createLineDefaultShapeProps(node.dependsOn[0]),
+                                Factory.createPoint(
+                                    utils.createPointDefaultShapeProps(''),
+                                    0, 0
+                                ),
 
-                        const dx = pos.x - screenX;
-                        const dy = pos.y - screenY;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        const r = node.scaleFactor! * this.props.geometryState.spacing;
-                        const moveX = dx * (r / dist);
-                        const moveY = dy * (r / dist);
-
-                        const angleFromXAxis = (v: {x: number, y: number}) => {
-                            return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
-                        }
-
-                        const cleanAngle = (angle: number) => {
-                            return (angle + 360) % 360;
-                        }
-    
-                        node.node!.position({
-                            x: aPos.x + moveX,
-                            y: aPos.y + moveY,
-                        });
-    
-                        node.rotationFactor = {
-                            degree: cleanAngle(angleFromXAxis({x: dx, y: dy})),
-                            CCW: true 
-                        };
-
-                        if (this.layerUnchangeVisualRef.current) {
-                            let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
-                            if (label) {
-                                label.setAttrs(this.createLabel(node).getAttrs());
-                            }
-                        }
+                                Factory.createPoint(
+                                    utils.createPointDefaultShapeProps(''),
+                                    0 + (node.dependsOn[0].includes('x-axis') ? 1 : 0),
+                                    0 + (node.dependsOn[0].includes('y-axis') ? 1 : 0)
+                                ),
+                            )
+                        )
                     }
 
-                    return { ...node! };
+                    else shape = this.props.dag.get(node.dependsOn[0])?.node;
                 }
 
-                const finalMathPos = this.props.isSnapToGrid ? utils.snapToGrid(
-                    pos,
-                    this.props.geometryState.spacing,
-                    this.props.geometryState.axisTickInterval,
-                    this.stageRef.current!.width() / 2,
-                    this.stageRef.current!.height() / 2,
-                    this.layerMathObjectRef.current!
-                ) : {
-                    x: (pos.x - this.layerMathObjectRef.current!.x()) / this.layerMathObjectRef.current!.scaleX(),
-                    y: (pos.y - this.layerMathObjectRef.current!.y()) / this.layerMathObjectRef.current!.scaleY()
-                };
+                let posInfo = utils.snapToShape(
+                    this.props.dag, shape, pos, this.layerMathObjectRef.current!, this.props.isSnapToGrid,
+                    this.stageRef.current!, this.props.geometryState.axisTickInterval
+                );
 
-                node.node!.position({x: finalMathPos.x, y: finalMathPos.y});
-                this.updatePointPos(point, finalMathPos.x, finalMathPos.y);
+                if (!shape) {
+                    posInfo.position = {
+                        x: (posInfo.position.x - this.layerMathObjectRef.current!.x())/this.layerMathObjectRef.current!.scaleX(),
+                        y: (posInfo.position.y - this.layerMathObjectRef.current!.y())/this.layerMathObjectRef.current!.scaleY(),
+                    }
+                }
+                
+                node.node!.position(posInfo.position);
+                this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
+                node.rotationFactor = posInfo.rotFactor;
+                node.scaleFactor = posInfo.scaleFactor;
 
                 if (this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -827,8 +804,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
                 }
 
-                return { ...node };
-            });
+                return {...node};
+            };
+
+            this.updateAndPropagate(c.id(), updateFn);
         });
 
         c.on('dragend', (e) => {
@@ -1543,8 +1522,28 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const [r, g, b] = utils.convert2RGB(props.color);
         const scale = (this.layerMathObjectRef.current!.scaleX() ?? 1);
         const scaledStrokeWidth = props.line_size / scale;
+        const angle = (x: number, y: number): number => {
+            let degree = (math.parse('atan2(y, x)').evaluate({x: x, y: y})) * 180 / Math.PI;
+            if (degree < 0) {
+                degree += 360;
+            }
 
-        let a = (shape.degree !== 90) ? new Konva.Shape({
+            return degree;
+        }
+
+        const startAngle = angle(
+            shape.vector1.endVector.x - shape.vector1.startVector.x,
+            shape.vector1.endVector.y - shape.vector1.startVector.y,
+        )
+
+        const endAngle = angle(
+            shape.vector2.endVector.x - shape.vector2.startVector.x,
+            shape.vector2.endVector.y - shape.vector2.startVector.y,
+        )
+
+        const degree = endAngle - startAngle;
+
+        let a = (degree !== 90) ? new Konva.Shape({
             sceneFunc: function (context, shape) {
                 const r = shape.attrs.radius;
                 const x = 0;
@@ -1562,8 +1561,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             x: screenPos.x,
             y: screenPos.y,
             radius: 10,
-            startAngle: shape.startAngle,
-            angle: shape.degree,
+            startAngle: -startAngle,
+            angle: degree,
             fill: `rgba(${r},${g},${b},${opacity})`,
             stroke: props.color,
             strokeWidth: scaledStrokeWidth,
@@ -1586,10 +1585,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             id: props.id,
             hitStrokeWidth: 2,
             draggable: false,
-            rotation: shape.startAngle,
+            rotation: startAngle,
         })
 
-        a.visible(props.visible.shape && shape.degree !== 0);
+        a.visible(props.visible.shape && degree !== 0);
 
         a.on('mousedown', (e) => {
             if (this.props.mode !== 'delete') {
@@ -1767,7 +1766,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             y /= (shape as Polygon).points.length;
         }
 
-        else if ('startAngle' in shape && 'degree' in shape) {
+        else if ('vector1' in shape && 'vector2' in shape) {
             x = shapeNode.node!.x();
             y = shapeNode.node!.y();
         }
@@ -1792,7 +1791,27 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         text.id(`label-${shape.props.id}`);
         if (shape.type === 'Angle') {
-            text.visible(shape.props.visible.shape && shape.props.visible.label && (shape as Angle).degree !== 0);
+            const angle = (x: number, y: number): number => {
+                let degree = (math.parse('atan2(y, x)').evaluate({x: x, y: y})) * 180 / Math.PI;
+                if (degree < 0) {
+                    degree += 360;
+                }
+
+                return degree;
+            }
+
+            const startAngle = angle(
+                (shape as Angle).vector1.endVector.x - (shape as Angle).vector1.startVector.x,
+                (shape as Angle).vector1.endVector.y - (shape as Angle).vector1.startVector.y,
+            );
+
+            const endAngle = angle(
+                (shape as Angle).vector2.endVector.x - (shape as Angle).vector2.startVector.x,
+                (shape as Angle).vector2.endVector.y - (shape as Angle).vector2.startVector.y,
+            )
+
+            const degree = endAngle - startAngle;
+            text.visible(shape.props.visible.shape && shape.props.visible.label && degree !== 0);
         }
 
         else {
@@ -1954,6 +1973,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 
         else {
             konvaShape = this.drawAngle(shape as Angle);
+        }
+
+        if (shape.type === 'Translation' || shape.type === 'Projection' || shape.type === 'Reflection' ||
+            shape.type === 'Rotation' || shape.type === 'Enlarge'
+        ) {
+            konvaShape.draggable(false);
         }
 
         return konvaShape;
@@ -2207,8 +2232,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             label = `segment${index}`;
                         }
 
-                        console.log(label);
-
                         labelUsed.push(label);
                         let segment = Factory.createSegment(
                             utils.createLineDefaultShapeProps(label),
@@ -2311,20 +2334,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     vertex[0].coors ? vertex[0].coors.y : 0
                 )
 
-                const angleFromXAxis = (v: {x: number, y: number}) => {
-                    return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
-                }
-
-                let startAngle = utils.cleanAngle(angleFromXAxis({
-                    x: (end1.x - start1.x) / math.parse('sqrt(x^2 + y^2)').evaluate({x: end1.x - start1.x, y: end1.y - start1.y}),
-                    y: (end1.y - start1.y) / math.parse('sqrt(x^2 + y^2)').evaluate({x: end1.x - start1.x, y: end1.y - start1.y}),
-                }));
-
-                let degree = utils.cleanAngle(operation.angleBetweenLines(
-                    tmpSelectedShapes[0],
-                    tmpSelectedShapes[1]
-                ));
-
                 let label = utils.getAngleLabel(0);
                 let idx = 0;
                 while (this.props.labelUsed.includes(label)) {
@@ -2336,9 +2345,29 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 let a = Factory.createAngle(
                     utils.createAngleDefaultShapeProps(`${label}`),
-                    tmpVertex,
-                    startAngle,
-                    degree
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            start1.x, start1.y, (start1.z ?? 0)
+                        ),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            end1.x, end1.y, (end1.z ?? 0)
+                        )
+                    ),
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            start2.x, start2.y, (start2.z ?? 0)
+                        ),
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            end2.x, end2.y, (end2.z ?? 0)
+                        )
+                    ),
+                    tmpVertex
                 )
 
 
@@ -2415,17 +2444,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     return;
                 }
 
-                const angleFromXAxis = (v: {x: number, y: number}) => {
-                    return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
-                }
-
-                let startAngle = utils.cleanAngle(angleFromXAxis({
-                    x: (point1.x - point2.x) / math.parse('sqrt(x^2 + y^2)').evaluate({x: point1.x - point2.x, y: point1.y - point2.y}),
-                    y: (point1.y - point2.y) / math.parse('sqrt(x^2 + y^2)').evaluate({x: point1.x - point2.x, y: point1.y - point2.y}),
-                }));
-
-                let angle = utils.cleanAngle(operation.angleBetween3Points(point1, point2, point3));
-
                 let label = utils.getAngleLabel(0);
                 let idx = 0;
                 while (this.props.labelUsed.includes(label)) {
@@ -2437,9 +2455,17 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 let a = Factory.createAngle(
                     utils.createAngleDefaultShapeProps(`${label}`),
-                    point2,
-                    startAngle,
-                    angle
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        point2,
+                        point1
+                    ),
+                    Factory.createVector(
+                        utils.createVectorDefaultShapeProps(''),
+                        point2,
+                        point3
+                    ),
+                    point2
                 )
 
 
@@ -4467,6 +4493,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if (['reflect_point', 'reflect_line', 'rotation', 'enlarge', 'translation'].includes(this.props.mode)) {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
+            let shape: Shape;
+            let transformObject: Shape | undefined = undefined;
             if ((['reflect_line', 'translation'].includes(this.props.mode) && selectedPoints.length > 1) || (['reflect_point', 'rotation', 'enlarge'].includes(this.props.mode) && selectedShapes.length > 1)) {
                 this.props.onUpdateLastFailedState();
                 this.props.onSelectedChange({
@@ -4501,6 +4529,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 newShape = this.props.mode === 'reflect_line' ? operation.reflection(selectedShapes[0], selectedShapes[1]) : 
                                                                 operation.translation(selectedShapes[0], selectedShapes[1] as Vector);
+                shape = selectedShapes[0];
+                transformObject = selectedShapes[1];
             }
 
             else if (selectedShapes.length === 1) {
@@ -4513,6 +4543,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
 
                     newShape = operation.rotation(selectedShapes[0], selectedPoints[0], rotation.degree, rotation.CCW);
+                    shape = selectedShapes[0];
+                    transformObject = selectedPoints[0];
                 }
 
                 else if (this.props.mode === 'enlarge') {
@@ -4523,6 +4555,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
 
                     newShape = operation.enlarge(selectedShapes[0], selectedPoints[0], scaleFactor);
+                    shape = selectedShapes[0];
+                    transformObject = selectedPoints[0];
                 }
 
                 else {
@@ -4538,6 +4572,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         }
 
                         newShape = operation.reflection(selectedPoints[0], selectedShapes[0]) as Point;
+                        shape = selectedPoints[0];
+                        transformObject = selectedShapes[0];
                     }
 
                     else if (this.props.mode === 'translation') {
@@ -4552,10 +4588,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         }
 
                         newShape = operation.translation(selectedPoints[0], selectedShapes[0] as Vector) as Point;
+                        shape = selectedPoints[0];
+                        transformObject = selectedShapes[0];
                     }
                     
                     else {
                         newShape = operation.reflection(selectedShapes[0], selectedPoints[0]);
+                        transformObject = selectedPoints[0];
+                        shape = selectedShapes[0];
                     }
                 }
             }
@@ -4582,6 +4622,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
 
                     newShape = operation.rotation(selectedPoints[0], selectedPoints[1], rotation.degree, rotation.CCW) as Point;
+                    shape = selectedPoints[0];
+                    transformObject = selectedPoints[1];
                 }
 
                 else if (this.props.mode === 'enlarge') {
@@ -4592,503 +4634,527 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
 
                     newShape = operation.enlarge(selectedPoints[0], selectedPoints[1], scaleFactor) as Point;
+                    shape = selectedPoints[0];
+                    transformObject = selectedPoints[1];
                 }
 
                 else {
                     newShape = operation.reflection(selectedPoints[0], selectedPoints[1]) as Point;
+                    shape = selectedPoints[0];
+                    transformObject = selectedPoints[1];
                 }
             }
 
             if (!newShape) return;
             const labelUsed = [...this.props.labelUsed];
-            const getNewLabel = (oldLabel: string) => {
-                let label = utils.incrementLabel(oldLabel);
-                while (labelUsed.includes(label)) {
-                    label = utils.incrementLabel(label);
-                }
+            utils.updateShapeAfterTransform(
+                shape,
+                newShape,
+                labelUsed,
+                DAG,
+                this.props.mode,
+                {rotation: this.props.data.rotation, scale_factor: this.props.data.radius as number},
+                transformObject
+            );
 
-                return label;
-            }
+            this.props.onLabelUsed(labelUsed);
+            this.props.onUpdateLastFailedState();
+            this.props.onUpdateAll({
+                gs: {
+                    ...this.props.geometryState
+                },
+                dag: DAG,
+                selectedPoints: [],
+                selectedShapes: []
+            });
+            // const getNewLabel = (oldLabel: string) => {
+            //     let label = utils.incrementLabel(oldLabel);
+            //     while (labelUsed.includes(label)) {
+            //         label = utils.incrementLabel(label);
+            //     }
 
-            const shapeType: ShapeType = (this.props.mode === 'rotation' ? 'Rotation' : 
-                (this.props.mode === 'enlarge' ? 'Enlarge' : (this.props.mode === 'translation' ? 'Translation' : 'Reflection')));
+            //     return label;
+            // }
 
-            if ('points' in newShape) {
-                let idx = 1;
-                let label = `poly${idx}`;
-                while (labelUsed.includes(label)) {
-                    idx += 1;
-                    label = `poly${idx}`;
-                }
+            // const shapeType: ShapeType = (this.props.mode === 'rotation' ? 'Rotation' : 
+            //     (this.props.mode === 'enlarge' ? 'Enlarge' : (this.props.mode === 'translation' ? 'Translation' : 'Reflection')));
 
-                labelUsed.push(label);
-                newShape.props.label = label;
-                newShape.props.id = `polygon-${label}`;
-                const points = (newShape as Polygon).points;
-                for(let i = 0; i < points.length; i++) {
-                    let label = getNewLabel((selectedShapes[0] as Polygon).points[i].props.label);
-                    labelUsed.push(label);
-                    points[i].props.label = label;
-                    points[i].props.id = `point-${uuidv4()}`;
+            // if ('points' in newShape) {
+            //     let idx = 1;
+            //     let label = `poly${idx}`;
+            //     while (labelUsed.includes(label)) {
+            //         idx += 1;
+            //         label = `poly${idx}`;
+            //     }
 
-                    let shapeNode = {
-                        id: points[i].props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [(selectedShapes[0] as Polygon).points[i].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: points[i],
-                        node: this.createKonvaShape(points[i]),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    };
+            //     labelUsed.push(label);
+            //     newShape.props.label = label;
+            //     newShape.props.id = `polygon-${label}`;
+            //     const points = (newShape as Polygon).points;
+            //     for(let i = 0; i < points.length; i++) {
+            //         let label = getNewLabel((selectedShapes[0] as Polygon).points[i].props.label);
+            //         labelUsed.push(label);
+            //         points[i].props.label = label;
+            //         points[i].props.id = `point-${uuidv4()}`;
 
-                    points[i].type = shapeType;
-                    shapeNode.node!.draggable(false);
-                    DAG.set(points[i].props.id, shapeNode);
-                };
+            //         let shapeNode = {
+            //             id: points[i].props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [(selectedShapes[0] as Polygon).points[i].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: points[i],
+            //             node: this.createKonvaShape(points[i]),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         };
 
-                for (let i = 0; i < points.length; i++) {
-                    const pNext = points[(i + 1) % points.length];
-                    const oldSegment = Array.from(this.props.dag.entries()).find((value: [string, ShapeNode]) => {
-                        return 'startSegment' in value[1].type && 
-                        (
-                            (value[1].type.endSegment.props.id === (selectedShapes[0] as Polygon).points[i].props.id && (value[1].type.startSegment.props.id === (selectedShapes[0] as Polygon).points[(i + 1) % points.length].props.id)) ||
-                            (value[1].type.startSegment.props.id === (selectedShapes[0] as Polygon).points[i].props.id && (value[1].type.endSegment.props.id === (selectedShapes[0] as Polygon).points[(i + 1) % points.length].props.id))
-                        )
-                    });
+            //         points[i].type = shapeType;
+            //         shapeNode.node!.draggable(false);
+            //         DAG.set(points[i].props.id, shapeNode);
+            //     };
 
-                    label = `segment0`;
-                    let index = 0;
-                    while (labelUsed.includes(label)) {
-                        index++;
-                        label = `segment${index}`;
-                    }
+            //     for (let i = 0; i < points.length; i++) {
+            //         const pNext = points[(i + 1) % points.length];
+            //         const oldSegment = Array.from(this.props.dag.entries()).find((value: [string, ShapeNode]) => {
+            //             return 'startSegment' in value[1].type && 
+            //             (
+            //                 (value[1].type.endSegment.props.id === (selectedShapes[0] as Polygon).points[i].props.id && (value[1].type.startSegment.props.id === (selectedShapes[0] as Polygon).points[(i + 1) % points.length].props.id)) ||
+            //                 (value[1].type.startSegment.props.id === (selectedShapes[0] as Polygon).points[i].props.id && (value[1].type.endSegment.props.id === (selectedShapes[0] as Polygon).points[(i + 1) % points.length].props.id))
+            //             )
+            //         });
 
-                    labelUsed.push(label);
-                    const segment = Factory.createSegment(
-                        structuredClone(oldSegment![1].type.props),
-                        points[i],
-                        pNext
-                    );
+            //         label = `segment0`;
+            //         let index = 0;
+            //         while (labelUsed.includes(label)) {
+            //             index++;
+            //             label = `segment${index}`;
+            //         }
 
-                    segment.props.label = label;
-                    segment.props.id = `line-${label}`
-                    let anotherShapeNode = {
-                        id: segment.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [oldSegment![1].id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, points[i].props.id, pNext.props.id, newShape.props.id],
-                        type: segment,
-                        node: this.createKonvaShape(segment),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    };
+            //         labelUsed.push(label);
+            //         const segment = Factory.createSegment(
+            //             structuredClone(oldSegment![1].type.props),
+            //             points[i],
+            //             pNext
+            //         );
 
-                    segment.type = shapeType;
-                    anotherShapeNode.node!.draggable(false);
-                    DAG.set(segment.props.id, anotherShapeNode);
-                }
+            //         segment.props.label = label;
+            //         segment.props.id = `line-${label}`
+            //         let anotherShapeNode = {
+            //             id: segment.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [oldSegment![1].id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, points[i].props.id, pNext.props.id, newShape.props.id],
+            //             type: segment,
+            //             node: this.createKonvaShape(segment),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         };
 
-                let shapeNode = {
-                    id: newShape.props.id,
-                    type: newShape,
-                    node: this.createKonvaShape(newShape),
-                    dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                    defined: true,
-                    isSelected: false,
-                    rotationFactor: this.props.mode === 'rotation' ? {
-                        degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                        CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                    } : undefined
-                };
+            //         segment.type = shapeType;
+            //         anotherShapeNode.node!.draggable(false);
+            //         DAG.set(segment.props.id, anotherShapeNode);
+            //     }
 
-                shapeNode.node!.draggable(false);
-                DAG.set(newShape.props.id, shapeNode);
-                newShape.type = shapeType;
+            //     let shapeNode = {
+            //         id: newShape.props.id,
+            //         type: newShape,
+            //         node: this.createKonvaShape(newShape),
+            //         dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //         defined: true,
+            //         isSelected: false,
+            //         rotationFactor: this.props.mode === 'rotation' ? {
+            //             degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //             CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //         } : undefined
+            //     };
 
-                this.props.onLabelUsed(labelUsed);
-                this.props.onUpdateLastFailedState();
-                this.props.onUpdateAll({
-                    gs: {
-                        ...this.props.geometryState
-                    },
-                    dag: DAG,
-                    selectedPoints: [],
-                    selectedShapes: []
-                });
-            }
+            //     shapeNode.node!.draggable(false);
+            //     DAG.set(newShape.props.id, shapeNode);
+            //     newShape.type = shapeType;
 
-            else if (!('x' in newShape && 'y' in newShape)) {
-                if ('startSegment' in selectedShapes[0]) {
-                    const [start, end] = [(selectedShapes[0] as Segment).startSegment, (selectedShapes[0] as Segment).endSegment];
-                    (newShape as Segment).startSegment.props.label = getNewLabel(start.props.label);
-                    (newShape as Segment).startSegment.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Segment).startSegment.props.label);
-                    (newShape as Segment).endSegment.props.label = getNewLabel(end.props.label);
-                    (newShape as Segment).endSegment.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Segment).endSegment.props.label);
-                    let segment_label = `segment0`;
-                    let index = 0;
-                    while (this.props.labelUsed.includes(segment_label)) {
-                        index++;
-                        segment_label = `segment${index}`;
-                    }
+            //     this.props.onLabelUsed(labelUsed);
+            //     this.props.onUpdateLastFailedState();
+            //     this.props.onUpdateAll({
+            //         gs: {
+            //             ...this.props.geometryState
+            //         },
+            //         dag: DAG,
+            //         selectedPoints: [],
+            //         selectedShapes: []
+            //     });
+            // }
 
-                    labelUsed.push(segment_label);
-                    newShape.props.label = segment_label;
-                    newShape.props.id = `line-${segment_label}`;
+            // else if (!('x' in newShape && 'y' in newShape)) {
+            //     if ('startSegment' in selectedShapes[0]) {
+            //         const [start, end] = [(selectedShapes[0] as Segment).startSegment, (selectedShapes[0] as Segment).endSegment];
+            //         (newShape as Segment).startSegment.props.label = getNewLabel(start.props.label);
+            //         (newShape as Segment).startSegment.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Segment).startSegment.props.label);
+            //         (newShape as Segment).endSegment.props.label = getNewLabel(end.props.label);
+            //         (newShape as Segment).endSegment.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Segment).endSegment.props.label);
+            //         let segment_label = `segment0`;
+            //         let index = 0;
+            //         while (this.props.labelUsed.includes(segment_label)) {
+            //             index++;
+            //             segment_label = `segment${index}`;
+            //         }
 
-                    let shapeNode1: ShapeNode = {
-                        id: (newShape as Segment).startSegment.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Segment).startSegment,
-                        node: this.createKonvaShape((newShape as Segment).startSegment),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         labelUsed.push(segment_label);
+            //         newShape.props.label = segment_label;
+            //         newShape.props.id = `line-${segment_label}`;
 
-                    let shapeNode2: ShapeNode = {
-                        id: (newShape as Segment).endSegment.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Segment).endSegment,
-                        node: this.createKonvaShape((newShape as Segment).endSegment),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         let shapeNode1: ShapeNode = {
+            //             id: (newShape as Segment).startSegment.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Segment).startSegment,
+            //             node: this.createKonvaShape((newShape as Segment).startSegment),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    let anotherShapeNode = {
-                        id: newShape.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
-                        type: newShape,
-                        node: this.createKonvaShape(newShape),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    };
+            //         let shapeNode2: ShapeNode = {
+            //             id: (newShape as Segment).endSegment.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Segment).endSegment,
+            //             node: this.createKonvaShape((newShape as Segment).endSegment),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    newShape.type = shapeType;
-                    shapeNode1.type.type = shapeType;
-                    shapeNode2.type.type = shapeType;
-                    anotherShapeNode.node!.draggable(false);
-                    shapeNode1.node!.draggable(false);
-                    shapeNode2.node!.draggable(false);
-                    DAG.set(shapeNode1.id, shapeNode1);
-                    DAG.set(shapeNode2.id, shapeNode2);
-                    DAG.set(newShape.props.id, anotherShapeNode);
-                }
+            //         let anotherShapeNode = {
+            //             id: newShape.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
+            //             type: newShape,
+            //             node: this.createKonvaShape(newShape),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         };
 
-                else if ('startLine' in selectedShapes[0]) {
-                    const [start, end] = [(selectedShapes[0] as Line).startLine, (selectedShapes[0] as Line).endLine];
-                    (newShape as Line).startLine.props.label = getNewLabel(start.props.label);
-                    (newShape as Line).startLine.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Line).startLine.props.label);
-                    (newShape as Line).endLine.props.label = getNewLabel(end.props.label);
-                    (newShape as Line).endLine.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Line).endLine.props.label);
-                    let line_label = `line0`;
-                    let index = 0;
-                    while (this.props.labelUsed.includes(line_label)) {
-                        index++;
-                        line_label = `line${index}`;
-                    }
+            //         newShape.type = shapeType;
+            //         shapeNode1.type.type = shapeType;
+            //         shapeNode2.type.type = shapeType;
+            //         anotherShapeNode.node!.draggable(false);
+            //         shapeNode1.node!.draggable(false);
+            //         shapeNode2.node!.draggable(false);
+            //         DAG.set(shapeNode1.id, shapeNode1);
+            //         DAG.set(shapeNode2.id, shapeNode2);
+            //         DAG.set(newShape.props.id, anotherShapeNode);
+            //     }
 
-                    labelUsed.push(line_label);
-                    newShape.props.label = line_label;
-                    newShape.props.id = `line-${line_label}`;
+            //     else if ('startLine' in selectedShapes[0]) {
+            //         const [start, end] = [(selectedShapes[0] as Line).startLine, (selectedShapes[0] as Line).endLine];
+            //         (newShape as Line).startLine.props.label = getNewLabel(start.props.label);
+            //         (newShape as Line).startLine.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Line).startLine.props.label);
+            //         (newShape as Line).endLine.props.label = getNewLabel(end.props.label);
+            //         (newShape as Line).endLine.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Line).endLine.props.label);
+            //         let line_label = `line0`;
+            //         let index = 0;
+            //         while (this.props.labelUsed.includes(line_label)) {
+            //             index++;
+            //             line_label = `line${index}`;
+            //         }
 
-                    let shapeNode1: ShapeNode = {
-                        id: (newShape as Line).startLine.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Line).startLine,
-                        node: this.createKonvaShape((newShape as Line).startLine),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         labelUsed.push(line_label);
+            //         newShape.props.label = line_label;
+            //         newShape.props.id = `line-${line_label}`;
 
-                    let shapeNode2: ShapeNode = {
-                        id: (newShape as Line).endLine.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Line).endLine,
-                        node: this.createKonvaShape((newShape as Line).endLine),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         let shapeNode1: ShapeNode = {
+            //             id: (newShape as Line).startLine.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Line).startLine,
+            //             node: this.createKonvaShape((newShape as Line).startLine),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    let anotherShapeNode = {
-                        id: newShape.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
-                        type: newShape,
-                        node: this.createKonvaShape(newShape),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    };
+            //         let shapeNode2: ShapeNode = {
+            //             id: (newShape as Line).endLine.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Line).endLine,
+            //             node: this.createKonvaShape((newShape as Line).endLine),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    newShape.type = shapeType;
-                    shapeNode1.type.type = shapeType;
-                    shapeNode2.type.type = shapeType;
-                    anotherShapeNode.node!.draggable(false);
-                    shapeNode1.node!.draggable(false);
-                    shapeNode2.node!.draggable(false);
-                    DAG.set(shapeNode1.id, shapeNode1);
-                    DAG.set(shapeNode2.id, shapeNode2);
-                    DAG.set(newShape.props.id, anotherShapeNode);
-                }
+            //         let anotherShapeNode = {
+            //             id: newShape.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
+            //             type: newShape,
+            //             node: this.createKonvaShape(newShape),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         };
 
-                else if ('startRay' in selectedShapes[0]) {
-                    const [start, end] = [(selectedShapes[0] as Ray).startRay, (selectedShapes[0] as Ray).endRay];
-                    (newShape as Ray).startRay.props.label = getNewLabel(start.props.label);
-                    (newShape as Ray).startRay.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Ray).startRay.props.label);
-                    (newShape as Ray).endRay.props.label = getNewLabel(end.props.label);
-                    (newShape as Ray).endRay.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Ray).endRay.props.label);
-                    let ray_label = `ray0`;
-                    let index = 0;
-                    while (this.props.labelUsed.includes(ray_label)) {
-                        index++;
-                        ray_label = `ray${index}`;
-                    }
+            //         newShape.type = shapeType;
+            //         shapeNode1.type.type = shapeType;
+            //         shapeNode2.type.type = shapeType;
+            //         anotherShapeNode.node!.draggable(false);
+            //         shapeNode1.node!.draggable(false);
+            //         shapeNode2.node!.draggable(false);
+            //         DAG.set(shapeNode1.id, shapeNode1);
+            //         DAG.set(shapeNode2.id, shapeNode2);
+            //         DAG.set(newShape.props.id, anotherShapeNode);
+            //     }
 
-                    labelUsed.push(ray_label);
-                    newShape.props.label = ray_label;
-                    newShape.props.id = `line-${ray_label}`;
+            //     else if ('startRay' in selectedShapes[0]) {
+            //         const [start, end] = [(selectedShapes[0] as Ray).startRay, (selectedShapes[0] as Ray).endRay];
+            //         (newShape as Ray).startRay.props.label = getNewLabel(start.props.label);
+            //         (newShape as Ray).startRay.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Ray).startRay.props.label);
+            //         (newShape as Ray).endRay.props.label = getNewLabel(end.props.label);
+            //         (newShape as Ray).endRay.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Ray).endRay.props.label);
+            //         let ray_label = `ray0`;
+            //         let index = 0;
+            //         while (this.props.labelUsed.includes(ray_label)) {
+            //             index++;
+            //             ray_label = `ray${index}`;
+            //         }
 
-                    let shapeNode1: ShapeNode = {
-                        id: (newShape as Ray).startRay.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Ray).startRay,
-                        node: this.createKonvaShape((newShape as Ray).startRay),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         labelUsed.push(ray_label);
+            //         newShape.props.label = ray_label;
+            //         newShape.props.id = `line-${ray_label}`;
 
-                    let shapeNode2: ShapeNode = {
-                        id: (newShape as Ray).endRay.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Ray).endRay,
-                        node: this.createKonvaShape((newShape as Ray).endRay),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         let shapeNode1: ShapeNode = {
+            //             id: (newShape as Ray).startRay.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Ray).startRay,
+            //             node: this.createKonvaShape((newShape as Ray).startRay),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    let anotherShapeNode = {
-                        id: newShape.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
-                        type: newShape,
-                        node: this.createKonvaShape(newShape),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    };
+            //         let shapeNode2: ShapeNode = {
+            //             id: (newShape as Ray).endRay.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Ray).endRay,
+            //             node: this.createKonvaShape((newShape as Ray).endRay),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    newShape.type = shapeType;
-                    shapeNode1.type.type = shapeType;
-                    shapeNode2.type.type = shapeType;
-                    anotherShapeNode.node!.draggable(false);
-                    shapeNode1.node!.draggable(false);
-                    shapeNode2.node!.draggable(false);
-                    DAG.set(shapeNode1.id, shapeNode1);
-                    DAG.set(shapeNode2.id, shapeNode2);
-                    DAG.set(newShape.props.id, anotherShapeNode);
-                }
+            //         let anotherShapeNode = {
+            //             id: newShape.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
+            //             type: newShape,
+            //             node: this.createKonvaShape(newShape),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         };
 
-                else if ('startVector' in selectedShapes[0]) {
-                    const [start, end] = [(selectedShapes[0] as Vector).startVector, (selectedShapes[0] as Vector).endVector];
-                    (newShape as Vector).startVector.props.label = getNewLabel(start.props.label);
-                    (newShape as Vector).startVector.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Vector).startVector.props.label);
-                    (newShape as Vector).endVector.props.label = getNewLabel(end.props.label);
-                    (newShape as Vector).endVector.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Vector).endVector.props.label);
-                    let vector_label = `vector0`;
-                    let index = 0;
-                    while (this.props.labelUsed.includes(vector_label)) {
-                        index++;
-                        vector_label = `vector${index}`;
-                    }
+            //         newShape.type = shapeType;
+            //         shapeNode1.type.type = shapeType;
+            //         shapeNode2.type.type = shapeType;
+            //         anotherShapeNode.node!.draggable(false);
+            //         shapeNode1.node!.draggable(false);
+            //         shapeNode2.node!.draggable(false);
+            //         DAG.set(shapeNode1.id, shapeNode1);
+            //         DAG.set(shapeNode2.id, shapeNode2);
+            //         DAG.set(newShape.props.id, anotherShapeNode);
+            //     }
 
-                    labelUsed.push(vector_label);
-                    newShape.props.label = vector_label;
-                    newShape.props.id = `vector-${vector_label}`;
+            //     else if ('startVector' in selectedShapes[0]) {
+            //         const [start, end] = [(selectedShapes[0] as Vector).startVector, (selectedShapes[0] as Vector).endVector];
+            //         (newShape as Vector).startVector.props.label = getNewLabel(start.props.label);
+            //         (newShape as Vector).startVector.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Vector).startVector.props.label);
+            //         (newShape as Vector).endVector.props.label = getNewLabel(end.props.label);
+            //         (newShape as Vector).endVector.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Vector).endVector.props.label);
+            //         let vector_label = `vector0`;
+            //         let index = 0;
+            //         while (this.props.labelUsed.includes(vector_label)) {
+            //             index++;
+            //             vector_label = `vector${index}`;
+            //         }
 
-                    let shapeNode1: ShapeNode = {
-                        id: (newShape as Vector).startVector.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Vector).startVector,
-                        node: this.createKonvaShape((newShape as Vector).startVector),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         labelUsed.push(vector_label);
+            //         newShape.props.label = vector_label;
+            //         newShape.props.id = `vector-${vector_label}`;
 
-                    let shapeNode2: ShapeNode = {
-                        id: (newShape as Vector).endVector.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Vector).endVector,
-                        node: this.createKonvaShape((newShape as Vector).endVector),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         let shapeNode1: ShapeNode = {
+            //             id: (newShape as Vector).startVector.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [start.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Vector).startVector,
+            //             node: this.createKonvaShape((newShape as Vector).startVector),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    let anotherShapeNode = {
-                        id: newShape.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
-                        type: newShape,
-                        node: this.createKonvaShape(newShape),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    };
+            //         let shapeNode2: ShapeNode = {
+            //             id: (newShape as Vector).endVector.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [end.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Vector).endVector,
+            //             node: this.createKonvaShape((newShape as Vector).endVector),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    newShape.type = shapeType;
-                    shapeNode1.type.type = shapeType;
-                    shapeNode2.type.type = shapeType;
-                    anotherShapeNode.node!.draggable(false);
-                    shapeNode1.node!.draggable(false);
-                    shapeNode2.node!.draggable(false);
-                    DAG.set(shapeNode1.id, shapeNode1);
-                    DAG.set(shapeNode2.id, shapeNode2);
-                    DAG.set(newShape.props.id, anotherShapeNode);
-                }
+            //         let anotherShapeNode = {
+            //             id: newShape.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id, shapeNode2.id],
+            //             type: newShape,
+            //             node: this.createKonvaShape(newShape),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         };
 
-                else if ('centerC' in selectedShapes[0] && 'radius' in selectedShapes[0]) {
-                    const center = (selectedShapes[0] as Circle).centerC;
-                    (newShape as Circle).centerC.props.label = getNewLabel(center.props.label);
-                    (newShape as Circle).centerC.props.id = `point-${uuidv4()}`
-                    labelUsed.push((newShape as Circle).centerC.props.label);
-                    let circle_label = `circle0`;
-                    let index = 0;
-                    while (this.props.labelUsed.includes(circle_label)) {
-                        index++;
-                        circle_label = `circle${index}`;
-                    }
+            //         newShape.type = shapeType;
+            //         shapeNode1.type.type = shapeType;
+            //         shapeNode2.type.type = shapeType;
+            //         anotherShapeNode.node!.draggable(false);
+            //         shapeNode1.node!.draggable(false);
+            //         shapeNode2.node!.draggable(false);
+            //         DAG.set(shapeNode1.id, shapeNode1);
+            //         DAG.set(shapeNode2.id, shapeNode2);
+            //         DAG.set(newShape.props.id, anotherShapeNode);
+            //     }
 
-                    labelUsed.push(circle_label);
-                    newShape.props.label = circle_label;
-                    newShape.props.id = `circle-${circle_label}`;
+            //     else if ('centerC' in selectedShapes[0] && 'radius' in selectedShapes[0]) {
+            //         const center = (selectedShapes[0] as Circle).centerC;
+            //         (newShape as Circle).centerC.props.label = getNewLabel(center.props.label);
+            //         (newShape as Circle).centerC.props.id = `point-${uuidv4()}`
+            //         labelUsed.push((newShape as Circle).centerC.props.label);
+            //         let circle_label = `circle0`;
+            //         let index = 0;
+            //         while (this.props.labelUsed.includes(circle_label)) {
+            //             index++;
+            //             circle_label = `circle${index}`;
+            //         }
 
-                    let shapeNode1: ShapeNode = {
-                        id: (newShape as Circle).centerC.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [(selectedShapes[0] as Circle).centerC.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
-                        type: (newShape as Circle).centerC,
-                        node: this.createKonvaShape((newShape as Circle).centerC),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    }
+            //         labelUsed.push(circle_label);
+            //         newShape.props.label = circle_label;
+            //         newShape.props.id = `circle-${circle_label}`;
 
-                    let anotherShapeNode = {
-                        id: newShape.props.id,
-                        defined: true,
-                        isSelected: false,
-                        dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id],
-                        type: newShape,
-                        node: this.createKonvaShape(newShape),
-                        rotationFactor: this.props.mode === 'rotation' ? {
-                            degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                            CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                        } : undefined
-                    };
+            //         let shapeNode1: ShapeNode = {
+            //             id: (newShape as Circle).centerC.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [(selectedShapes[0] as Circle).centerC.props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id],
+            //             type: (newShape as Circle).centerC,
+            //             node: this.createKonvaShape((newShape as Circle).centerC),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         }
 
-                    newShape.type = shapeType;
-                    shapeNode1.type.type = shapeType;
-                    anotherShapeNode.node!.draggable(false);
-                    shapeNode1.node!.draggable(false);
-                    DAG.set(shapeNode1.id, shapeNode1);
-                    DAG.set(newShape.props.id, anotherShapeNode);
-                }
+            //         let anotherShapeNode = {
+            //             id: newShape.props.id,
+            //             defined: true,
+            //             isSelected: false,
+            //             dependsOn: [selectedShapes[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[1].props.id : selectedPoints[0].props.id, shapeNode1.id],
+            //             type: newShape,
+            //             node: this.createKonvaShape(newShape),
+            //             rotationFactor: this.props.mode === 'rotation' ? {
+            //                 degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //                 CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //             } : undefined
+            //         };
 
-                this.props.onLabelUsed(labelUsed);
-                this.props.onUpdateLastFailedState();
-                this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
-                    dag: DAG,
-                    selectedPoints: [],
-                    selectedShapes: []
-                });
-            }
+            //         newShape.type = shapeType;
+            //         shapeNode1.type.type = shapeType;
+            //         anotherShapeNode.node!.draggable(false);
+            //         shapeNode1.node!.draggable(false);
+            //         DAG.set(shapeNode1.id, shapeNode1);
+            //         DAG.set(newShape.props.id, anotherShapeNode);
+            //     }
 
-            else {
-                newShape.props.label = getNewLabel(selectedPoints[0].props.label);
-                newShape.props.id = `point-${uuidv4()}`
-                labelUsed.push(newShape.props.label);
+            //     this.props.onLabelUsed(labelUsed);
+            //     this.props.onUpdateLastFailedState();
+            //     this.props.onUpdateAll({
+            //         gs: {...this.props.geometryState},
+            //         dag: DAG,
+            //         selectedPoints: [],
+            //         selectedShapes: []
+            //     });
+            // }
 
-                let anotherShapeNode = {
-                    id: newShape.props.id,
-                    defined: true,
-                    isSelected: false,
-                    dependsOn: [selectedPoints[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[0].props.id : selectedPoints[1].props.id],
-                    type: newShape,
-                    node: this.createKonvaShape(newShape),
-                    rotationFactor: this.props.mode === 'rotation' ? {
-                        degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
-                        CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
-                    } : undefined
-                };
+            // else {
+            //     newShape.props.label = getNewLabel(selectedPoints[0].props.label);
+            //     newShape.props.id = `point-${uuidv4()}`
+            //     labelUsed.push(newShape.props.label);
 
-                newShape.type = shapeType;
-                anotherShapeNode.node!.draggable(false);
-                DAG.set(newShape.props.id, anotherShapeNode);
-                this.props.onLabelUsed(labelUsed);
-                this.props.onUpdateLastFailedState();
-                this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
-                    dag: DAG,
-                    selectedPoints: [],
-                    selectedShapes: []
-                });
-            }
+            //     let anotherShapeNode = {
+            //         id: newShape.props.id,
+            //         defined: true,
+            //         isSelected: false,
+            //         dependsOn: [selectedPoints[0].props.id, ['reflect_line', 'translation'].includes(this.props.mode) ? selectedShapes[0].props.id : selectedPoints[1].props.id],
+            //         type: newShape,
+            //         node: this.createKonvaShape(newShape),
+            //         rotationFactor: this.props.mode === 'rotation' ? {
+            //             degree: (this.props.data.rotation ? this.props.data.rotation.degree : 0),
+            //             CCW: (this.props.data.rotation ? this.props.data.rotation.CCW : true)
+            //         } : undefined
+            //     };
+
+            //     newShape.type = shapeType;
+            //     anotherShapeNode.node!.draggable(false);
+            //     DAG.set(newShape.props.id, anotherShapeNode);
+            //     this.props.onLabelUsed(labelUsed);
+            //     this.props.onUpdateLastFailedState();
+            //     this.props.onUpdateAll({
+            //         gs: {...this.props.geometryState},
+            //         dag: DAG,
+            //         selectedPoints: [],
+            //         selectedShapes: []
+            //     });
+            // }
         }
 
         else if (this.props.mode === 'projection') {
@@ -5200,7 +5266,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         });
 
         this.props.onUpdateAll({
-            gs: this.props.geometryState,
+            gs: {...this.props.geometryState},
             dag: DAG,
             selectedPoints: this.props.selectedPoints,
             selectedShapes: this.props.selectedShapes
@@ -5308,6 +5374,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
 
                 node.node!.position({x: l.points()[0] + node.scaleFactor * d.x, y: l.points()[1] + node.scaleFactor * d.y});
+                this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
             }
 
             else if (node.rotationFactor) {
@@ -5334,6 +5401,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     const newY = cy - r * Math.sin(angle);
                     node.node!.position({ x: newX, y: newY });
                 }
+
+                this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
             }
 
             if ('startSegment' in shape.type || 'points' in shape.type || 'centerC' in shape.type || ('start' in shape.type && 'end' in shape.type)) {
@@ -5363,7 +5432,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
         }
 
-        this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
         return { ...node! }
     }
 
@@ -6057,8 +6125,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             this.updatePointPos((node.type as Angle).vertex!, B.x, B.y);
-            (node.type as Angle).startAngle = startAngle;
-            (node.type as Angle).degree = angle;
+            this.updatePointPos((node.type as Angle).vector1.startVector, B.x, B.y);
+            this.updatePointPos((node.type as Angle).vector1.endVector, A.x, A.y);
+            this.updatePointPos((node.type as Angle).vector2.startVector, B.x, B.y);
+            this.updatePointPos((node.type as Angle).vector2.endVector, C.x, C.y);
         }
 
         else if (ids.length === 2) {
@@ -6202,8 +6272,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.updatePointPos((node.type as Angle).vertex!, vertex!.x, vertex!.y);
             }
 
-            (node.type as Angle).startAngle = startAngle;
-            (node.type as Angle).degree = angle;
+            this.updatePointPos((node.type as Angle).vector1.startVector, 0, 0);
+            this.updatePointPos((node.type as Angle).vector1.endVector, start.x + (node.type as Angle).vector1.startVector.x, start.y + (node.type as Angle).vector1.startVector.y);
+            this.updatePointPos((node.type as Angle).vector2.startVector, 0, 0);
+            this.updatePointPos((node.type as Angle).vector2.endVector, (tmpShape2.endLine.x - tmpShape2.startLine.x) + (node.type as Angle).vector2.startVector.x, (tmpShape2.endLine.y - tmpShape2.startLine.y) + (node.type as Angle).vector2.startVector.y);
         }
 
         return { ...node! };
@@ -7553,6 +7625,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         const selectedPoints = [...this.props.selectedPoints];
         let label = utils.getExcelLabel('A', 0);
+        console.log(this.props.labelUsed);
         let index = 0;
         while (this.props.labelUsed.includes(label)) {
             index++;
@@ -7602,17 +7675,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         this.stageRef.current!, this.props.geometryState.axisTickInterval
                     );
 
-                    const newPos = utils.convertToCustomCoords(
-                        posInfo.position, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
-                        this.props.geometryState.spacing
-                    );
-
-                    position = newPos;
+                    position = posInfo.position;
                     rotFactor = posInfo.rotFactor;
                     scaleFactor = posInfo.scaleFactor;
                     node.node!.position(position);
-                    point.x = position.x;
-                    point.y = position.y;
+                    this.updatePointPos(node.type as Point, position.x, position.y);
 
                     if (this.layerUnchangeVisualRef.current) {
                         let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -7621,7 +7688,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         }
                     }
 
-                    return node;
+                    return {...node};
                 };
 
                 this.updateAndPropagate(pNode.id(), updateFn);

@@ -5,7 +5,6 @@ import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 
 import { ProgramContext } from "./MathCommandParser";
 import { ExprContext } from "./MathCommandParser";
-import { CommandContext } from "./MathCommandParser";
 import { PointDefContext } from "./MathCommandParser";
 import { SphereDefContext } from "./MathCommandParser";
 import { PlaneDefContext } from "./MathCommandParser";
@@ -23,7 +22,7 @@ import { CylinderDefContext } from "./MathCommandParser";
 import { TetrahedronDefContext } from "./MathCommandParser";
 import { ConeDefContext } from "./MathCommandParser";
 import { PrismDefContext } from "./MathCommandParser";
-import { CuboidDefContext } from "./MathCommandParser";
+import { PyramidDefContext } from "./MathCommandParser";
 import { NumberExprContext } from "./MathCommandParser";
 import { AdditiveExprContext } from "./MathCommandParser";
 import { MultiplicativeExprContext } from "./MathCommandParser";
@@ -43,23 +42,19 @@ import { AbsExprContext } from "./MathCommandParser";
 import { ExpExprContext } from "./MathCommandParser";
 import { PointExprContext } from "./MathCommandParser";
 import { LineExprContext } from "./MathCommandParser";
+import { DirExprContext } from "./MathCommandParser";
 import { VectorExprContext } from "./MathCommandParser";
 import { PlaneExprContext } from "./MathCommandParser";
 import { DirectionExprContext } from "./MathCommandParser";
 import { PolygonExprContext } from "./MathCommandParser";
-import { CuboidExprContext } from "./MathCommandParser";
 import { TetrahedronExprContext } from "./MathCommandParser";
 import { CylinderExprContext } from "./MathCommandParser";
 import { ConeExprContext } from "./MathCommandParser";
 import { PrismExprContext } from "./MathCommandParser";
+import { SegmentExprContext } from "./MathCommandParser";
+import { RayExprContext } from "./MathCommandParser";
+import { PyramidExprContext } from "./MathCommandParser";
 import { ShapeExprContext } from "./MathCommandParser";
-import { Two_side_exprContext } from "./MathCommandParser";
-import { VarExprContext } from "./MathCommandParser";
-import { VarMultiplicativeExprContext } from "./MathCommandParser";
-import { VarImplicitMultiplicativeExprContext } from "./MathCommandParser";
-import { VarExponentialExprContext } from "./MathCommandParser";
-import { VarUnaryExprContext } from "./MathCommandParser";
-import { VarPrimaryExprContext } from "./MathCommandParser";
 
 
 /**
@@ -88,17 +83,6 @@ export interface MathCommandListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitExpr?: (ctx: ExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.command`.
-	 * @param ctx the parse tree
-	 */
-	enterCommand?: (ctx: CommandContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.command`.
-	 * @param ctx the parse tree
-	 */
-	exitCommand?: (ctx: CommandContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `MathCommandParser.pointDef`.
@@ -288,15 +272,15 @@ export interface MathCommandListener extends ParseTreeListener {
 	exitPrismDef?: (ctx: PrismDefContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `MathCommandParser.cuboidDef`.
+	 * Enter a parse tree produced by `MathCommandParser.pyramidDef`.
 	 * @param ctx the parse tree
 	 */
-	enterCuboidDef?: (ctx: CuboidDefContext) => void;
+	enterPyramidDef?: (ctx: PyramidDefContext) => void;
 	/**
-	 * Exit a parse tree produced by `MathCommandParser.cuboidDef`.
+	 * Exit a parse tree produced by `MathCommandParser.pyramidDef`.
 	 * @param ctx the parse tree
 	 */
-	exitCuboidDef?: (ctx: CuboidDefContext) => void;
+	exitPyramidDef?: (ctx: PyramidDefContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `MathCommandParser.numberExpr`.
@@ -508,6 +492,17 @@ export interface MathCommandListener extends ParseTreeListener {
 	exitLineExpr?: (ctx: LineExprContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `MathCommandParser.dirExpr`.
+	 * @param ctx the parse tree
+	 */
+	enterDirExpr?: (ctx: DirExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `MathCommandParser.dirExpr`.
+	 * @param ctx the parse tree
+	 */
+	exitDirExpr?: (ctx: DirExprContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `MathCommandParser.vectorExpr`.
 	 * @param ctx the parse tree
 	 */
@@ -550,17 +545,6 @@ export interface MathCommandListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitPolygonExpr?: (ctx: PolygonExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.cuboidExpr`.
-	 * @param ctx the parse tree
-	 */
-	enterCuboidExpr?: (ctx: CuboidExprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.cuboidExpr`.
-	 * @param ctx the parse tree
-	 */
-	exitCuboidExpr?: (ctx: CuboidExprContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `MathCommandParser.tetrahedronExpr`.
@@ -607,6 +591,39 @@ export interface MathCommandListener extends ParseTreeListener {
 	exitPrismExpr?: (ctx: PrismExprContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `MathCommandParser.segmentExpr`.
+	 * @param ctx the parse tree
+	 */
+	enterSegmentExpr?: (ctx: SegmentExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `MathCommandParser.segmentExpr`.
+	 * @param ctx the parse tree
+	 */
+	exitSegmentExpr?: (ctx: SegmentExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `MathCommandParser.rayExpr`.
+	 * @param ctx the parse tree
+	 */
+	enterRayExpr?: (ctx: RayExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `MathCommandParser.rayExpr`.
+	 * @param ctx the parse tree
+	 */
+	exitRayExpr?: (ctx: RayExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `MathCommandParser.pyramidExpr`.
+	 * @param ctx the parse tree
+	 */
+	enterPyramidExpr?: (ctx: PyramidExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `MathCommandParser.pyramidExpr`.
+	 * @param ctx the parse tree
+	 */
+	exitPyramidExpr?: (ctx: PyramidExprContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `MathCommandParser.shapeExpr`.
 	 * @param ctx the parse tree
 	 */
@@ -616,82 +633,5 @@ export interface MathCommandListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitShapeExpr?: (ctx: ShapeExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.two_side_expr`.
-	 * @param ctx the parse tree
-	 */
-	enterTwo_side_expr?: (ctx: Two_side_exprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.two_side_expr`.
-	 * @param ctx the parse tree
-	 */
-	exitTwo_side_expr?: (ctx: Two_side_exprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.varExpr`.
-	 * @param ctx the parse tree
-	 */
-	enterVarExpr?: (ctx: VarExprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.varExpr`.
-	 * @param ctx the parse tree
-	 */
-	exitVarExpr?: (ctx: VarExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.varMultiplicativeExpr`.
-	 * @param ctx the parse tree
-	 */
-	enterVarMultiplicativeExpr?: (ctx: VarMultiplicativeExprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.varMultiplicativeExpr`.
-	 * @param ctx the parse tree
-	 */
-	exitVarMultiplicativeExpr?: (ctx: VarMultiplicativeExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.varImplicitMultiplicativeExpr`.
-	 * @param ctx the parse tree
-	 */
-	enterVarImplicitMultiplicativeExpr?: (ctx: VarImplicitMultiplicativeExprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.varImplicitMultiplicativeExpr`.
-	 * @param ctx the parse tree
-	 */
-	exitVarImplicitMultiplicativeExpr?: (ctx: VarImplicitMultiplicativeExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.varExponentialExpr`.
-	 * @param ctx the parse tree
-	 */
-	enterVarExponentialExpr?: (ctx: VarExponentialExprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.varExponentialExpr`.
-	 * @param ctx the parse tree
-	 */
-	exitVarExponentialExpr?: (ctx: VarExponentialExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.varUnaryExpr`.
-	 * @param ctx the parse tree
-	 */
-	enterVarUnaryExpr?: (ctx: VarUnaryExprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.varUnaryExpr`.
-	 * @param ctx the parse tree
-	 */
-	exitVarUnaryExpr?: (ctx: VarUnaryExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `MathCommandParser.varPrimaryExpr`.
-	 * @param ctx the parse tree
-	 */
-	enterVarPrimaryExpr?: (ctx: VarPrimaryExprContext) => void;
-	/**
-	 * Exit a parse tree produced by `MathCommandParser.varPrimaryExpr`.
-	 * @param ctx the parse tree
-	 */
-	exitVarPrimaryExpr?: (ctx: VarPrimaryExprContext) => void;
 }
 
