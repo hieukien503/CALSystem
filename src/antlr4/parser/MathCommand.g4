@@ -1,13 +1,11 @@
 grammar MathCommand;
 
 @lexer::header {
-    import { ErrorToken, UncloseString, IllegalEscape } from "./lexererr.ts";
+    import { ErrorToken, UncloseString, IllegalEscape } from "./lexererr";
 }
 
 program: expr EOF;
-expr: command | two_side_expr | pointExpr | lineExpr | vectorExpr | planeExpr | numberExpr | directionExpr;
-command: pointDef | sphereDef | planeDef | lineDef | angleDef | transformDef | vectorDef | polygonDef | circleDef | segmentDef |
-        rayDef | intersectionDef;
+expr: shapeExpr;
 pointDef: POINT? LR (numberExpr COMMA numberExpr COMMA numberExpr) RR;
 sphereDef: SPHERE LR (pointExpr COMMA (pointExpr | numberExpr)) RR;
 planeDef: PLANE LR (
@@ -47,21 +45,19 @@ segmentDef: SEGMENT LR (
 rayDef: RAY LR (
         pointExpr COMMA (pointExpr | vectorExpr)
     ) RR;
-intersectionDef: INTERSECT LR (expr | expr) RR;
+intersectionDef: INTERSECT LR (expr COMMA expr) RR;
 transformDef: (
-    (TRANSLATE LR (pointExpr COMMA vectorExpr) RR) |
-    (ROTATE LR (shapeExpr COMMA numberExpr (COMMA shapeExpr)?) RR) |
-    (PROJECT LR (pointExpr COMMA (planeExpr | lineExpr)) RR) |
-    (REFLECT LR (pointExpr COMMA (planeExpr | lineExpr | pointExpr)) RR) |
+    (TRANSLATE LR (shapeExpr COMMA vectorExpr) RR) |
+    (ROTATE LR (shapeExpr COMMA numberExpr ((COMMA pointExpr) | (COMMA directionExpr) | (COMMA pointExpr COMMA directionExpr))?) RR) |
+    (PROJECT LR (pointExpr COMMA planeExpr) RR) |
+    (REFLECT LR (shapeExpr COMMA (planeExpr | lineExpr | pointExpr)) RR) |
     (ENLARGE LR (shapeExpr COMMA numberExpr COMMA pointExpr) RR)
 );
 cylinderDef: CYLINDER LR (pointExpr COMMA pointExpr COMMA numberExpr) RR;
-tetrahedronDef: TETRAHEDRON LR (polygonExpr COMMA pointExpr) RR;
+tetrahedronDef: TETRAHEDRON LR ((polygonExpr | (pointExpr COMMA pointExpr COMMA pointExpr)) COMMA pointExpr) RR;
 coneDef: CONE LR (pointExpr COMMA numberExpr COMMA pointExpr) RR;
 prismDef: PRISM LR (polygonExpr COMMA directionExpr) RR;
-cuboidDef: CUBOID LR (
-    pointExpr COMMA numberExpr (COMMA numberExpr COMMA numberExpr COMMA numberExpr)?
-) RR;
+pyramidDef: PYRAMID LR (polygonExpr COMMA pointExpr) RR;
 
 numberExpr: additiveExpr;
 additiveExpr
@@ -122,69 +118,21 @@ absExpr: ABS LR numberExpr RR;
 expExpr: EXP LR numberExpr RR;
 
 pointExpr: POINT_ID | pointDef;
-lineExpr: lineDef | SHAPE_ID | ((pointExpr | vectorDef | LR (numberExpr COMMA numberExpr COMMA numberExpr)) (ADD | SUB) (
-    SHAPE_ID MULTIPLY (vectorDef | SHAPE_ID | LR (numberExpr COMMA numberExpr COMMA numberExpr) RR)
-) | (
-    (vectorDef | SHAPE_ID | LR (numberExpr COMMA numberExpr COMMA numberExpr) RR) MULTIPLY SHAPE_ID)
-);
+lineExpr: lineDef | SHAPE_ID;
+dirExpr: pointExpr | vectorExpr | LR (numberExpr COMMA numberExpr COMMA numberExpr) RR;
 vectorExpr: vectorDef | SHAPE_ID;
 planeExpr: planeDef | SHAPE_ID;
-directionExpr: SHAPE_ID | vectorDef;
+directionExpr: SHAPE_ID | vectorExpr | lineExpr | segmentExpr | rayExpr | planeExpr;
 polygonExpr: SHAPE_ID | polygonDef;
-cuboidExpr: SHAPE_ID | cuboidDef;
 tetrahedronExpr: SHAPE_ID | tetrahedronDef;
 cylinderExpr: SHAPE_ID | cylinderDef;
 coneExpr: SHAPE_ID | coneDef;
 prismExpr: SHAPE_ID | prismDef;
-shapeExpr: pointExpr | lineExpr | vectorExpr | polygonExpr | planeExpr | directionExpr | cuboidExpr | tetrahedronExpr | cylinderExpr | coneExpr | prismExpr;
-
-two_side_expr: varExpr EQ varExpr;
-varExpr
-    : varExpr ADD varMultiplicativeExpr
-    | varExpr SUB varMultiplicativeExpr
-    | varMultiplicativeExpr
-    ;
-
-varMultiplicativeExpr
-    : varMultiplicativeExpr MULTIPLY varExponentialExpr
-    | varMultiplicativeExpr DIVIDE varExponentialExpr
-    | varImplicitMultiplicativeExpr            
-    | varExponentialExpr
-    ;
-
-varImplicitMultiplicativeExpr
-    : varPrimaryExpr varPrimaryExpr+
-    ;
-
-varExponentialExpr
-    : varUnaryExpr POWER varExponentialExpr
-    | varUnaryExpr
-    ;
-
-varUnaryExpr
-    : SUB varUnaryExpr
-    | ADD varUnaryExpr
-    | varPrimaryExpr
-    ;
-
-varPrimaryExpr
-    : INT_LIT
-    | FLOAT_LIT
-    | PI
-    | E
-    | shapeExpr
-    | LR varExpr RR
-    | sinExpr
-    | cosExpr
-    | tanExpr
-    | cotExpr
-    | logExpr
-    | lnExpr
-    | expExpr
-    | absExpr
-    | sqrtExpr
-    | cbrtExpr
-    ;
+segmentExpr: SHAPE_ID | segmentDef;
+rayExpr: SHAPE_ID | rayDef;
+pyramidExpr: SHAPE_ID | pyramidDef;
+shapeExpr: rayExpr | coneExpr | lineExpr | angleDef | planeExpr | pointExpr | prismExpr | circleDef | sphereDef | vectorExpr | polygonExpr |
+            segmentExpr | cylinderExpr | transformDef | tetrahedronExpr | intersectionDef | pyramidExpr;
 
 /* Lexer */
 CIRCLE: 'Circle';
@@ -223,6 +171,9 @@ ABS: 'abs';
 PI: 'pi';
 E: 'e';
 
+X: 'x';
+Y: 'y';
+Z: 'z';
 POINT_ID: [A-Z][A-Za-z0-9]*[']?([_][A-Za-z0-9]+)?;
 SHAPE_ID: [a-z][A-Za-z0-9]*[']?([_][A-Za-z0-9]+)?;
 LR: '(';
@@ -235,7 +186,6 @@ ADD: '+';
 SUB: '-';
 MULTIPLY: '*';
 POWER: '^';
-EQ: '=';
 
 INT_LIT: '0' | ([1-9][0-9]*);
 FLOAT_LIT: (FInt FDec FExp?) | (FInt FExp) | (FDec FExp);
@@ -244,3 +194,4 @@ fragment FDec: '.'[0-9]+;
 fragment FExp: [eE][+-]?[0-9]+;
 
 WS: [ \t\n\r]+ -> skip;
+ERROR_CHAR: .{ throw new ErrorToken(this.text); };

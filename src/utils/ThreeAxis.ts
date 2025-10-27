@@ -103,7 +103,7 @@ class ThreeAxis {
                 sphere.position.set(0, i, 0).applyEuler(euler);
                 const label = utils3d.createLabel(
                     z.toFixed(0).toString(),
-                    new THREE.Vector3(-0.2, 0, 0.2),
+                    new THREE.Vector3(-0.2, 0, -0.2),
                     0, 0, 0,  // offset slightly in X and Y
                     this.props.axisColor
                 );

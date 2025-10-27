@@ -52,7 +52,7 @@ interface Project3DState {
         angleMode: boolean;
     } | undefined;
     /** For user input */
-    data: number | {type: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
+    data: number | {type: string, label: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
     /** For error */
     error: {
         label: string; // for dialogbox error
@@ -646,7 +646,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const ast = new ASTGen(this.dag, this.labelUsed);
                 const data = ast.visit(tree);
                 if (data === undefined || 
-                    (typeof data === 'object' && data !== null && (!('type' in data) || ('type' in data && data.type !== 'Point')))) {
+                    (typeof data === 'object' && data !== null && !('x' in data && 'y' in data && 'props' in data))) {
                     this.setState({
                         error: {
                             label: 'Invalid expression',
@@ -657,7 +657,15 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     return;
                 }
 
-                this.setState({ data: data as { type: 'Point', x: number, y: number, z: number } });
+                const pointData = {
+                    type: 'Point',
+                    label: (data as Point).props.label,
+                    x: (data as Point).x,
+                    y: (data as Point).y,
+                    z: (data as Point).z ?? 0
+                }
+                
+                this.setState({ data: pointData });
                 return;
             }
 

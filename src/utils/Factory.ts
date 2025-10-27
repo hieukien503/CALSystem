@@ -179,11 +179,11 @@ export const createCone = (
     return p;
 }
 
-export const createAngle = (props: GeometryShape.ShapeProps, vertex?: GeometryShape.Point, startAngle?: number, degree?: number): GeometryShape.Angle => {
+export const createAngle = (props: GeometryShape.ShapeProps, vector1: GeometryShape.Vector, vector2: GeometryShape.Vector, vertex?: GeometryShape.Point, ): GeometryShape.Angle => {
     let s: GeometryShape.Angle = {
         vertex: vertex,
-        startAngle: startAngle ?? 0,
-        degree: degree ?? 0,
+        vector1: vector1,
+        vector2: vector2,
         props: props,
         type: 'Angle'
     }

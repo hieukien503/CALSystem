@@ -147,30 +147,41 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
     };
 
     private createDescription = (shapeNode: GeometryShape.ShapeNode3D): string => {
+        let label = shapeNode.type.props.label;
+        const subscriptMap: Record<string, string> = {
+            '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+            '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+        };
+
+        const formatLabel = label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+            const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+            return `${letter}_{${normal}}`;
+        });
+
         const shape = shapeNode.type.type;
         if (shape === 'Point') {
             if (shapeNode.id.includes('tmpPoint')) {
                 let label = shapeNode.id;
-                return `$Text${label.replace('tmpPoint', '')} = "${shapeNode.type.props.label}"$`;
+                return `$Text${label.replace('tmpPoint', '')} = "${formatLabel}"$`;
             }
             
-            return `$${shapeNode.type.props.label} = \\left(${((shapeNode.type as GeometryShape.Point).x.toFixed(2))},${(shapeNode.type as GeometryShape.Point).y.toFixed(2)}\\right)$`
+            return `$${formatLabel} = \\left(${((shapeNode.type as GeometryShape.Point).x.toFixed(2))},${(shapeNode.type as GeometryShape.Point).y.toFixed(2)}\\right)$`
         }
         
         else if (shape === 'Line') {
-            return `$${shapeNode.type.props.label} = Line\\left(${(shapeNode.type as GeometryShape.Line).startLine.props.label},${(shapeNode.type as GeometryShape.Line).endLine.props.label}\\right)$`
+            return `$${formatLabel} = Line\\left(${(shapeNode.type as GeometryShape.Line).startLine.props.label},${(shapeNode.type as GeometryShape.Line).endLine.props.label}\\right)$`
         }
 
         else if (shape === 'Segment') {
-            return `$${shapeNode.type.props.label} = Segment\\left(${(shapeNode.type as GeometryShape.Segment).startSegment.props.label},${(shapeNode.type as GeometryShape.Segment).endSegment.props.label}\\right)$`
+            return `$${formatLabel} = Segment\\left(${(shapeNode.type as GeometryShape.Segment).startSegment.props.label},${(shapeNode.type as GeometryShape.Segment).endSegment.props.label}\\right)$`
         }
 
         else if (shape === 'Vector') {
-            return `$${shapeNode.type.props.label} = Vector\\left(${(shapeNode.type as GeometryShape.Vector).startVector.props.label},${(shapeNode.type as GeometryShape.Vector).endVector.props.label}\\right)$`
+            return `$${formatLabel} = Vector\\left(${(shapeNode.type as GeometryShape.Vector).startVector.props.label},${(shapeNode.type as GeometryShape.Vector).endVector.props.label}\\right)$`
         }
 
         else if (shape === 'Ray') {
-            return `$${shapeNode.type.props.label} = Ray\\left(${(shapeNode.type as GeometryShape.Ray).startRay.props.label},${(shapeNode.type as GeometryShape.Ray).endRay.props.label}\\right)$`
+            return `$${formatLabel} = Ray\\left(${(shapeNode.type as GeometryShape.Ray).startRay.props.label},${(shapeNode.type as GeometryShape.Ray).endRay.props.label}\\right)$`
         }
 
         else if (['Polygon', 'RegularPolygon'].includes(shape)) {
@@ -180,17 +191,30 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                 stringOfLabels = stringOfLabels + point.props.label;
             });
 
-            return `$${shapeNode.type.props.label} = ${shape}\\left(${stringOfLabels}\\right)$`
+            return `$${formatLabel} = ${shape}\\left(${stringOfLabels}\\right)$`
         }
 
         else if (shape === 'Circle') {
-            return `$${shapeNode.type.props.label} = Circle\\left(${(shapeNode.type as GeometryShape.Circle).centerC.props.label},${(shapeNode.type as GeometryShape.Circle).radius}\\right)$`
+            return `$${formatLabel} = Circle\\left(${(shapeNode.type as GeometryShape.Circle).centerC.props.label},${(shapeNode.type as GeometryShape.Circle).radius}\\right)$`
         }
 
         else if (shape === 'Intersection') {
-            let str = `$${shapeNode.type.props.label} = ${shape}\\left(`
-            let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
-            labels.forEach(label => {
+            let str = `$${formatLabel} = ${shape}\\left(`
+            let labels = shapeNode.dependsOn.map(id => {
+                const node = this.props.dag.get(id)!;
+                let label = node.type.props.label;
+                const subscriptMap: Record<string, string> = {
+                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+                };
+
+                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                    return `${letter}_{${normal}}`;
+                });
+            });
+            
+            labels.slice(0, 2).forEach(label => {
                 str += label + ",";
             });
 
@@ -207,9 +231,22 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
         }
 
         else if (!(['Translation', 'Rotation', 'Reflection', 'Enlarge'].includes(shape))) {
-            let str = `$${shapeNode.type.props.label} = ${shape}\\left(`
-            let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
-            labels.forEach(label => {
+            let str = `$${formatLabel} = ${shape}\\left(`;
+            let labels = shapeNode.dependsOn.map(id => {
+                const node = this.props.dag.get(id)!;
+                let label = node.type.props.label;
+                const subscriptMap: Record<string, string> = {
+                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+                };
+
+                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                    return `${letter}_{${normal}}`;
+                });
+            });
+            
+            labels.slice(0, 2).forEach(label => {
                 str += label + ",";
             });
 
@@ -219,10 +256,23 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
 
         else {
             let verb = (shape === 'Translation' ? 'Translate' : (shape === 'Rotation' ? 'Rotate' : (shape === 'Reflection' ? 'Reflect' : 'Dilate')));
-            let str: string = `$${shapeNode.type.props.label} = ${verb}\\left(`;
+            let str: string = `$${formatLabel} = ${verb}\\left(`;
             if (verb === 'Translate' || verb === 'Reflect') {
-                let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
-                labels.forEach(label => {
+                let labels = shapeNode.dependsOn.map(id => {
+                    const node = this.props.dag.get(id)!;
+                    let label = node.type.props.label;
+                    const subscriptMap: Record<string, string> = {
+                        '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                        '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+                    };
+
+                    return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                        const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                        return `${letter}_{${normal}}`;
+                    });
+                });
+
+                labels.slice(0, 2).forEach(label => {
                     str += label + ",";
                 });
 
@@ -230,12 +280,25 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
             }
 
             else if (verb === 'Rotate') {
-                let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
-                labels.forEach(label => {
+                let labels = shapeNode.dependsOn.map(id => {
+                    const node = this.props.dag.get(id)!;
+                    let label = node.type.props.label;
+                    const subscriptMap: Record<string, string> = {
+                        '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                        '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+                    };
+
+                    return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                        const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                        return `${letter}_{${normal}}`;
+                    });
+                });
+                
+                labels.slice(0, 2).forEach(label => {
                     str += label + ",";
                 });
 
-                str += (shapeNode.rotationFactor!.azimuth).toString() + "," + (shapeNode.rotationFactor!.polar).toString() + "\\right)$";
+                str += (shapeNode.rotationFactor!.azimuth).toString() + "^\\circ\\right)$";
             }
 
             else {
