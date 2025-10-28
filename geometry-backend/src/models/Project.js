@@ -95,7 +95,8 @@ const projectSchema = new mongoose.Schema({
     // Store serialized geometry and DAG
     geometryState: { type: mongoose.Schema.Types.Mixed, default: {} },
     dag: { type: Array, default: [] },
-    labelUsed: { type: [String], default: [] }
+    labelUsed: { type: [String], default: [] },
+    animation: { type: Array, default: [] }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Project", projectSchema);
