@@ -1139,6 +1139,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         const visualPriority: Record<string, number> = {
             // Lowest Priority - Foundational 2D and 3D Shapes
             'Plane': 0,
+            'PerpendicularPlane': 0,
+            'ParallelPlane': 0,
             'Circle': 1,
             'Circle2Point': 2,
             'Circumcircle': 3,
@@ -1684,6 +1686,17 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             if (selectedPoints.length !== 1) return;
             if (selectedShapes[0].props.id.includes('line-')) {
+                if (this.props.mode === 'perpendicular') {
+                    // Cannot draw unique perpendicular line to line
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    });
+
+                    return;
+                }
+
                 const [start, end] = operation.getStartAndEnd(selectedShapes[0]);
                 let label = `line0`
                 let index = 0;
@@ -1696,34 +1709,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 let newLine = Factory.createLine(
                     utils.createLineDefaultShapeProps(label),
                     selectedPoints[0],
-                    this.props.mode === 'parallel' ? Factory.createPoint(
+                    Factory.createPoint(
                         utils.createPointDefaultShapeProps(''),
                         selectedPoints[0].x + (end.x - start.x),
                         selectedPoints[0].y + (end.y - start.y),
                         (selectedPoints[0].z ?? 0) + ((end.z ?? 0) - (start.z ?? 0))
-                    ) : (() => {
-                        const w = {
-                            x: selectedPoints[0].x - start.x,
-                            y: selectedPoints[0].y - start.y,
-                            z: (selectedPoints[0].z ?? 0) - (start.z ?? 0)
-                        }
-
-                        const v = {
-                            x: end.x - start.x,
-                            y: end.y - start.y,
-                            z: (end.z ?? 0) - (start.z ?? 0)
-                        }
-
-                        const cross = operation.cross(w.x, w.y, w.z, v.x, v.y, v.z);
-                        const dot = operation.dot(v.x, v.y, v.z, v.x, v.y, v.z);
-                        const w_ortho = operation.cross(cross.x / dot, cross.y / dot, cross.z / dot, v.x, v.y, v.z);
-                        return Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            selectedPoints[0].x + (w.x - w_ortho.x),
-                            selectedPoints[0].y + (w.y - w_ortho.y),
-                            (selectedPoints[0].z ?? 0) + (w.z - w_ortho.z)
-                        );
-                    })()
+                    )
                 );
 
                 DAG.set(newLine.props.id, {
@@ -1734,7 +1725,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: newLine
                 });
 
-                newLine.type = this.props.mode === 'parallel' ? 'ParallelLine' : 'PerpendicularLine';
+                newLine.type = 'ParallelLine';
 
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
@@ -1778,6 +1769,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     )
                 );
 
+                newLine.type = 'PerpendicularLine';
+
                 DAG.set(newLine.props.id, {
                     id: newLine.props.id,
                     dependsOn: [selectedPoints[0].props.id, selectedShapes[0].props.id],
@@ -1785,8 +1778,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     isSelected: false,
                     type: newLine
                 });
-
-                newLine.type = 'PerpendicularLine';
 
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
@@ -3919,6 +3910,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     (shape as Plane).norm
                 );
 
+                plane.type = 'ParallelPlane';
+
                 DAG.set(plane.props.id, {
                     id: plane.props.id,
                     defined: true,
@@ -3972,6 +3965,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     )
                 );
 
+                plane.type = 'PerpendicularPlane';
                 DAG.set(plane.props.id, {
                     id: plane.props.id,
                     defined: true,

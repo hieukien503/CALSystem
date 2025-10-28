@@ -77,7 +77,20 @@ export class AlgebraInputItem extends React.Component<AlgebraInputItemProps, Alg
         if (e.key === 'Enter') {
             try {
                 const node = math.parse(this.state.value_from_input);
-                this.tex = node.toTex();
+                this.tex = node.toTex({
+                    handler: (node: math.MathNode, options: any): string => {
+                        if ((node as math.FunctionNode).isFunctionNode === true) {
+                            switch ((node as math.FunctionNode).fn.name) {
+                                case 'sqrt': {
+                                    if ((node as math.FunctionNode).args.length === 1) {
+                                        
+                                    }
+                                }
+                            }
+                        }
+                        return node.toTex();
+                    }
+                });
             }
             
             catch (error) {

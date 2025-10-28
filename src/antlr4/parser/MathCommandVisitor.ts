@@ -38,6 +38,7 @@ import { LogExprContext } from "./MathCommandParser";
 import { LnExprContext } from "./MathCommandParser";
 import { CbrtExprContext } from "./MathCommandParser";
 import { SqrtExprContext } from "./MathCommandParser";
+import { NrootExprContext } from "./MathCommandParser";
 import { AbsExprContext } from "./MathCommandParser";
 import { ExpExprContext } from "./MathCommandParser";
 import { PointExprContext } from "./MathCommandParser";
@@ -309,6 +310,13 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitSqrtExpr?: (ctx: SqrtExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `MathCommandParser.nrootExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitNrootExpr?: (ctx: NrootExprContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `MathCommandParser.absExpr`.

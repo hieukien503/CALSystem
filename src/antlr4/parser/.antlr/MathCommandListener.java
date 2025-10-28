@@ -197,6 +197,16 @@ public interface MathCommandListener extends ParseTreeListener {
 	 */
 	void exitPrismDef(MathCommandParser.PrismDefContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MathCommandParser#pyramidDef}.
+	 * @param ctx the parse tree
+	 */
+	void enterPyramidDef(MathCommandParser.PyramidDefContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MathCommandParser#pyramidDef}.
+	 * @param ctx the parse tree
+	 */
+	void exitPyramidDef(MathCommandParser.PyramidDefContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MathCommandParser#numberExpr}.
 	 * @param ctx the parse tree
 	 */
@@ -477,6 +487,36 @@ public interface MathCommandListener extends ParseTreeListener {
 	 */
 	void exitPrismExpr(MathCommandParser.PrismExprContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MathCommandParser#segmentExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterSegmentExpr(MathCommandParser.SegmentExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MathCommandParser#segmentExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitSegmentExpr(MathCommandParser.SegmentExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MathCommandParser#rayExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterRayExpr(MathCommandParser.RayExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MathCommandParser#rayExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitRayExpr(MathCommandParser.RayExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MathCommandParser#pyramidExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterPyramidExpr(MathCommandParser.PyramidExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MathCommandParser#pyramidExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitPyramidExpr(MathCommandParser.PyramidExprContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MathCommandParser#shapeExpr}.
 	 * @param ctx the parse tree
 	 */
@@ -486,74 +526,4 @@ public interface MathCommandListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitShapeExpr(MathCommandParser.ShapeExprContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MathCommandParser#two_side_expr}.
-	 * @param ctx the parse tree
-	 */
-	void enterTwo_side_expr(MathCommandParser.Two_side_exprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MathCommandParser#two_side_expr}.
-	 * @param ctx the parse tree
-	 */
-	void exitTwo_side_expr(MathCommandParser.Two_side_exprContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MathCommandParser#varExpr}.
-	 * @param ctx the parse tree
-	 */
-	void enterVarExpr(MathCommandParser.VarExprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MathCommandParser#varExpr}.
-	 * @param ctx the parse tree
-	 */
-	void exitVarExpr(MathCommandParser.VarExprContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MathCommandParser#varMultiplicativeExpr}.
-	 * @param ctx the parse tree
-	 */
-	void enterVarMultiplicativeExpr(MathCommandParser.VarMultiplicativeExprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MathCommandParser#varMultiplicativeExpr}.
-	 * @param ctx the parse tree
-	 */
-	void exitVarMultiplicativeExpr(MathCommandParser.VarMultiplicativeExprContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MathCommandParser#varImplicitMultiplicativeExpr}.
-	 * @param ctx the parse tree
-	 */
-	void enterVarImplicitMultiplicativeExpr(MathCommandParser.VarImplicitMultiplicativeExprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MathCommandParser#varImplicitMultiplicativeExpr}.
-	 * @param ctx the parse tree
-	 */
-	void exitVarImplicitMultiplicativeExpr(MathCommandParser.VarImplicitMultiplicativeExprContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MathCommandParser#varExponentialExpr}.
-	 * @param ctx the parse tree
-	 */
-	void enterVarExponentialExpr(MathCommandParser.VarExponentialExprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MathCommandParser#varExponentialExpr}.
-	 * @param ctx the parse tree
-	 */
-	void exitVarExponentialExpr(MathCommandParser.VarExponentialExprContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MathCommandParser#varUnaryExpr}.
-	 * @param ctx the parse tree
-	 */
-	void enterVarUnaryExpr(MathCommandParser.VarUnaryExprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MathCommandParser#varUnaryExpr}.
-	 * @param ctx the parse tree
-	 */
-	void exitVarUnaryExpr(MathCommandParser.VarUnaryExprContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link MathCommandParser#varPrimaryExpr}.
-	 * @param ctx the parse tree
-	 */
-	void enterVarPrimaryExpr(MathCommandParser.VarPrimaryExprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MathCommandParser#varPrimaryExpr}.
-	 * @param ctx the parse tree
-	 */
-	void exitVarPrimaryExpr(MathCommandParser.VarPrimaryExprContext ctx);
 }

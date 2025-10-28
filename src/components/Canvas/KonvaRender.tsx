@@ -425,7 +425,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         }
 
         this.moveFrameId = requestAnimationFrame(() => {
-            console.log('Hi');
             const layer = this.layerMathObjectRef.current;
             const stage = this.stageRef.current;
             if (!layer || !stage) return null;
@@ -7625,7 +7624,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         const selectedPoints = [...this.props.selectedPoints];
         let label = utils.getExcelLabel('A', 0);
-        console.log(this.props.labelUsed);
         let index = 0;
         while (this.props.labelUsed.includes(label)) {
             index++;

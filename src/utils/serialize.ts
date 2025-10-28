@@ -16,7 +16,6 @@ export function serializeDAG(dag: Map<string, ShapeNode>) {
         };
     });
 
-    console.log('Serialized DAG:', obj);
     return obj;
 }
 

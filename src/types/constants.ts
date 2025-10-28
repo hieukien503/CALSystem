@@ -1,7 +1,6 @@
 // Constants
 export const FONT_DEFAULTS = {
-    // SIZE: 0.75 * parseFloat(getComputedStyle(document.documentElement).fontSize),
-    SIZE: 26,
+    SIZE: 0.75 * parseFloat(getComputedStyle(document.documentElement).fontSize),
     FAMILY: 'Arial, sans-serif',
     COLOR: 'black'
 };

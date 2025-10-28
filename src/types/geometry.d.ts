@@ -20,7 +20,7 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
                         'PerpendicularLine' | 'TangentLine' | 'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' |
                         'Circle2Point' | 'Angle' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
                         'Reflection' | 'Rotation' | 'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' |
-                        'RegularPolygon' | 'Sphere2Point';
+                        'RegularPolygon' | 'Sphere2Point' | 'ParallelPlane' | 'PerpendicularPlane';
 
 export interface Angle extends BaseShape {
     // Use degree for angle

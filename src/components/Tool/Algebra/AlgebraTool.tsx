@@ -12,6 +12,7 @@ interface AlgebraItemProps {
     shapeVisible: boolean;
     hidden: boolean;
     onClick: (e: React.MouseEvent) => void;
+    onToggleVisibility: (e: React.MouseEvent) => void; // <-- added
 }
 
 class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
@@ -31,7 +32,9 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
                     <div className="elem">
                         <div className="marblePanel">
                             <div className={`marble${this.props.hidden ? " marbleHidden" : ""}`}
-                                style={this.props.hidden ? {backgroundColor: "rgb(255, 255, 255)"} : {borderWidth: '1px', borderStyle: 'solid', borderColor: borderColor, backgroundColor: backgroundColor}}>
+                                style={this.props.hidden ? {backgroundColor: "rgb(255, 255, 255)"} : {borderWidth: '1px', borderStyle: 'solid', borderColor: borderColor, backgroundColor: backgroundColor}}
+                                onClick={(e) => this.props.onToggleVisibility(e)}
+                            >
                             </div>
                         </div>
                         <div className="algebraViewObjectStylebar"
@@ -57,6 +60,7 @@ interface AlgebraToolProps {
     height: number;
     dag: Map<string, GeometryShape.ShapeNode>;
     onSelect: (id: string, e: React.MouseEvent) => void;
+    onUpdateDAG: (dag: Map<string, GeometryShape.ShapeNode>) => void;
 }
 
 class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
@@ -256,6 +260,16 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                                 description={this.createDescription(value[1])}
                                 onClick={(e) => this.props.onSelect(value[1].id, e)}
                                 shapeVisible={value[1].type.props.visible.shape}
+                                onToggleVisibility={() => {
+                                    const visible = value[1].type.props.visible;
+                                    console.log(visible);
+                                    value[1].type.props.visible.shape = !visible.shape;
+                                    if ('x' in value[1].type && 'y' in value[1].type) {
+                                        value[1].type.props.visible.label = value[1].type.props.visible.shape;
+                                    }
+
+                                    this.props.onUpdateDAG(utils.cloneDAG(this.props.dag));
+                                }}
                                 hidden={!value[1].defined}
                             />
                         )
