@@ -51,7 +51,8 @@ import {
     TransformDefContext,
     CylinderDefContext,
     PyramidDefContext,
-    PyramidExprContext
+    PyramidExprContext,
+    NrootExprContext
 } from "../parser/MathCommandParser";
 import { MathCommandVisitor } from "../parser/MathCommandVisitor";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
@@ -357,6 +358,29 @@ class ASTGen implements MathCommandVisitor<unknown> {
             this.DAG.set(poly.props.id, shapeNode);
         }
 
+        else if ('vector1' in shape && 'vector2' in shape) {
+            let idx = 0;
+            let label = `angle${idx}`;
+            while (this.labelUsed.includes(label)) {
+                idx += 1;
+                label = `angle${idx}`;
+            }
+
+            this.labelUsed.push(label);
+            shape.props.label = label;
+            shape.props.id = `angle-${label}`;
+            let shapeNode: geometry.ShapeNode3D = {
+                id: shape.props.id,
+                type: shape,
+                dependsOn: [(shape as geometry.Angle).vector1.props.id, (shape as geometry.Angle).vector2.props.id],
+                defined: true,
+                isSelected: false
+            }
+
+
+            this.DAG.set(shape.props.id, shapeNode);
+        }
+        
         return;
     };
 
@@ -497,6 +521,21 @@ class ASTGen implements MathCommandVisitor<unknown> {
         }
 
         return Math.log(value);
+    }
+
+    visitNrootExpr = (ctx: NrootExprContext): unknown => {
+        const value1 = this.visit(ctx.numberExpr(0)) as number;
+        const value2 = this.visit(ctx.numberExpr(1)) as number;
+        if (value1 === 0) {
+            throw new Error('Root must be non-zero')
+        }
+
+        const result = Math.pow(value2, 1 / value1);
+        if (isNaN(result)) {
+            throw new Error(`Cannot compute nroot(${value1},${value2}) in real number set`);
+        }
+
+        return result;
     }
 
     visitLogExpr = (ctx: LogExprContext): unknown => {

@@ -244,6 +244,18 @@ public class MathCommandBaseListener implements MathCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterPyramidDef(MathCommandParser.PyramidDefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPyramidDef(MathCommandParser.PyramidDefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterNumberExpr(MathCommandParser.NumberExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -580,6 +592,42 @@ public class MathCommandBaseListener implements MathCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSegmentExpr(MathCommandParser.SegmentExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSegmentExpr(MathCommandParser.SegmentExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterRayExpr(MathCommandParser.RayExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitRayExpr(MathCommandParser.RayExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPyramidExpr(MathCommandParser.PyramidExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPyramidExpr(MathCommandParser.PyramidExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterShapeExpr(MathCommandParser.ShapeExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -587,90 +635,6 @@ public class MathCommandBaseListener implements MathCommandListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitShapeExpr(MathCommandParser.ShapeExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterTwo_side_expr(MathCommandParser.Two_side_exprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitTwo_side_expr(MathCommandParser.Two_side_exprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVarExpr(MathCommandParser.VarExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVarExpr(MathCommandParser.VarExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVarMultiplicativeExpr(MathCommandParser.VarMultiplicativeExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVarMultiplicativeExpr(MathCommandParser.VarMultiplicativeExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVarImplicitMultiplicativeExpr(MathCommandParser.VarImplicitMultiplicativeExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVarImplicitMultiplicativeExpr(MathCommandParser.VarImplicitMultiplicativeExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVarExponentialExpr(MathCommandParser.VarExponentialExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVarExponentialExpr(MathCommandParser.VarExponentialExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVarUnaryExpr(MathCommandParser.VarUnaryExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVarUnaryExpr(MathCommandParser.VarUnaryExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVarPrimaryExpr(MathCommandParser.VarPrimaryExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVarPrimaryExpr(MathCommandParser.VarPrimaryExprContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

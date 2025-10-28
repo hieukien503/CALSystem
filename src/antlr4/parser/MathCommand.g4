@@ -104,6 +104,7 @@ primaryExpr
     | absExpr
     | sqrtExpr
     | cbrtExpr
+    | nrootExpr
     ;
 
 sinExpr: SIN LR numberExpr RR;
@@ -114,6 +115,7 @@ logExpr: LOG LR (numberExpr COMMA numberExpr) RR;
 lnExpr: LN LR numberExpr RR;
 cbrtExpr: CBRT LR numberExpr RR;
 sqrtExpr: SQRT LR numberExpr RR;
+nrootExpr: NROOT LR (numberExpr COMMA numberExpr) RR;
 absExpr: ABS LR numberExpr RR;
 expExpr: EXP LR numberExpr RR;
 
@@ -170,6 +172,7 @@ CBRT: 'cbrt';
 ABS: 'abs';
 PI: 'pi';
 E: 'e';
+NROOT: 'nroot';
 
 X: 'x';
 Y: 'y';

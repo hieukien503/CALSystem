@@ -38,6 +38,7 @@ import { LogExprContext } from "./MathCommandParser";
 import { LnExprContext } from "./MathCommandParser";
 import { CbrtExprContext } from "./MathCommandParser";
 import { SqrtExprContext } from "./MathCommandParser";
+import { NrootExprContext } from "./MathCommandParser";
 import { AbsExprContext } from "./MathCommandParser";
 import { ExpExprContext } from "./MathCommandParser";
 import { PointExprContext } from "./MathCommandParser";
@@ -446,6 +447,17 @@ export interface MathCommandListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitSqrtExpr?: (ctx: SqrtExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `MathCommandParser.nrootExpr`.
+	 * @param ctx the parse tree
+	 */
+	enterNrootExpr?: (ctx: NrootExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `MathCommandParser.nrootExpr`.
+	 * @param ctx the parse tree
+	 */
+	exitNrootExpr?: (ctx: NrootExprContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `MathCommandParser.absExpr`.

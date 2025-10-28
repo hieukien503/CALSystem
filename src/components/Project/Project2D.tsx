@@ -1047,6 +1047,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onSetMode={(mode) => this.setMode(mode)}
                     selectedPoints={this.state.selectedPoints}
                     selectedShapes={this.state.selectedShapes}
+                    onUpdateDAG={(dag) => this.updateAll(
+                        {
+                            gs: this.state.geometryState,
+                            dag: dag,
+                            selectedPoints: this.state.selectedPoints,
+                            selectedShapes: this.state.selectedShapes
+                        }
+                    )}
                 />
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
