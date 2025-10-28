@@ -12,6 +12,14 @@ import { SharingMode } from "../../types/types";
 import { serializeDAG, deserializeDAG } from "../../utils/serialize";
 
 const math = require('mathjs');
+
+interface TimelineItem {
+    object: string;
+    start: number;
+    end: number;
+    action: string;
+    tweens?: string[];
+}
 interface Project2DProps {
     id: string;
     title: string;
@@ -76,6 +84,8 @@ interface Project2DState {
     }
     /** Checked for SnapToGrid */
     snapToGridEnabled: boolean;
+
+    timeline: TimelineItem[];
 }
 
 class Project2D extends React.Component<Project2DProps, Project2DState> {
@@ -90,10 +100,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private errorDialogRef: RefObject<ErrorDialogbox | null>;
     private dag: Map<string, ShapeNode> = new Map<string, ShapeNode>();
     private parts = window.location.pathname.split('/');
-    private projectId = this.parts[this.parts.length - 1]; // last segmen
+    private projectId = this.parts[this.parts.length - 1]; // last segment
+    private stageRef: RefObject<Konva.Stage | null>;
     constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
+        this.stageRef = React.createRef<Konva.Stage>();
         this.state = {
             geometryState: {
                 numLoops: 1,
@@ -125,7 +137,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             position: {
                 dialogPos: undefined,
                 errorDialogPos: undefined
-            }
+            },
+            timeline: []
         }
 
         this.lastFailedState = null;
@@ -141,6 +154,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         this.dialogRef = createRef<Dialogbox | null>();
         this.errorDialogRef = createRef<ErrorDialogbox | null>();
     }
+
+    setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>> = (value) => {
+        this.setState(prevState => ({
+            timeline: typeof value === "function" ? value(prevState.timeline) : value
+        }));
+    };
 
     componentDidMount(): void {
         window.addEventListener("resize", this.handleWindowResize);
@@ -1005,11 +1024,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 geometryState: this.state.geometryState,
                 dag: serializeDAG(this.dag),
                 labelUsed: this.labelUsed,
+                animation: this.state.timeline,
             };
-
-            
-            //
-            //
 
             await fetch(`http://localhost:3001/api/projects/${this.projectId}`, {
                 method: "PATCH",
@@ -1041,6 +1057,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 geometryState: data.geometryState,
                 selectedPoints: [],
                 selectedShapes: [],
+                timeline: data.animation,
+                
             });
 
             this.labelUsed = data.labelUsed;
@@ -1057,11 +1075,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     width={this.state.toolWidth}
                     height={window.innerHeight * 0.745}
                     dag={this.dag}
-                    onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
+                    onUpdateWidth={(width: number) => this.setState({ toolWidth: width, geometryState: { ...this.state.geometryState } })}
                     onSelect={this.handleSelectObject}
                     onSetMode={(mode) => this.setMode(mode)}
                     selectedPoints={this.state.selectedPoints}
                     selectedShapes={this.state.selectedShapes}
+                    stageRef={this.stageRef}
+                    timeline={this.state.timeline}
+                    setTimeline={this.setTimeline}
                 />
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
@@ -1106,6 +1127,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onRemoveNode={this.removeNode}
                     onRenderDialogbox={this.setDialogbox}
                     data={this.state.data}
+                    stageRef={this.stageRef}
                 />}
                 {this.state.isDialogBox && (<Dialogbox 
                     title={this.state.isDialogBox.title}
