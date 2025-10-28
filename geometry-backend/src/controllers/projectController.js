@@ -12,7 +12,8 @@ exports.createProject = async (req, res) => {
             collaborators: req.body.collaborators || [],
             ownedBy: req.body.ownedBy || null,
             objects: req.body.objects || [],
-            session: req.body.session || {} // optional session
+            session: req.body.session || {},
+            animation: req.body.animation || []
         });
 
         await newProject.save();
@@ -41,11 +42,11 @@ exports.loadProject = async (req, res) => {
 // --- Update project by Mongo _id ---
 exports.updateProject = async (req, res) => {
     try {
-        const { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed } = req.body;
+        const { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed, animation } = req.body;
 
         const project = await Project.findByIdAndUpdate(
             req.params.id,
-            { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed },
+            { title, description, sharing, projectVersion, collaborators, ownedBy, geometryState, dag, labelUsed, animation },
             { new: true, runValidators: true }
         );
 

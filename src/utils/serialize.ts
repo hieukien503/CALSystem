@@ -27,7 +27,6 @@ export function deserializeDAG(data: Record<string, any>): Map<string, ShapeNode
     Object.entries(obj).forEach(([key, value]) => {
         const v = value as any;
 
-
         let konvaNode: Konva.Shape | null = null;
 
         if (v.type.type === "Point") {
