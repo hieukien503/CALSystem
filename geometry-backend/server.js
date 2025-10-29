@@ -29,8 +29,14 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", publicRoutes); // 👈 /api/home and /api/search
 
+// if (!process.env.JWT_SECRET) {
+//   console.error("FATAL: JWT_SECRET is not set. Please set it in .env or env variables.");
+//   process.exit(1);
+// }
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     
 });
+
