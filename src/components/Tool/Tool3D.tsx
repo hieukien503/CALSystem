@@ -10,6 +10,7 @@ interface Tool3DProps {
     onUpdateWidth: (width: number) => void;
     onSetMode: (mode: DrawingMode) => void;
     onSelect: (id: string, e: React.MouseEvent) => void;
+    onUpdateDAG: (dag: Map<string, ShapeNode3D>) => void;
 }
 
 interface Tool3DState {
@@ -117,6 +118,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                 height={this.props.height}
                                 dag={this.props.dag}
                                 onSelect={this.props.onSelect}
+                                onUpdateDAG={this.props.onUpdateDAG}
                             />)}
                         </div>
                     </div>

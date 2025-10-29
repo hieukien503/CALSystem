@@ -901,9 +901,8 @@ input:focus {
 
 .algebraViewObjectStylebar {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
+    top: 0px;
+    bottom: 0px;
     padding-right: 12px;
 }
 

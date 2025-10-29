@@ -1,7 +1,8 @@
 import React from "react";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AddIcon from '@mui/icons-material/Add';
-import * as utils from "../../../utils/utilities"
+import * as utils from "../../../utils/utilities";
+import * as utils3d from "../../../utils/utilities3D"
 import * as GeometryShape from "../../../types/geometry"
 import Latex from 'react-latex';
 import * as math from 'mathjs';
@@ -14,6 +15,7 @@ interface AlgebraItemProps {
     shapeVisible: boolean;
     hidden: boolean;
     onClick: (e: React.MouseEvent) => void;
+    onToggleVisibility: (e: React.MouseEvent) => void;
 }
 
 class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
@@ -22,7 +24,7 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
         const borderColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`
         const backgroundColor = this.props.shapeVisible ? `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.4)` : "rgb(255, 255, 255)";
         return (
-            <div style={{padding: '3px 3px 3px 23px', width: this.props.width, marginLeft: '0px', position: 'relative'}}
+            <div style={{padding: '3px 3px 3px 23px', width: '100%', marginLeft: '0px', position: 'relative'}}
                 className={`avItem${this.props.isSelected ? " selectedItem" : ""}`}
                 onClick={this.props.onClick}
             >
@@ -33,7 +35,9 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
                     <div className="elem">
                         <div className="marblePanel">
                             <div className={`marble${this.props.hidden ? " marbleHidden" : ""}`}
-                                style={this.props.hidden ? {backgroundColor: "rgb(255, 255, 255)"} : {borderWidth: '1px', borderStyle: 'solid', borderColor: borderColor, backgroundColor: backgroundColor}}>
+                                style={this.props.hidden ? {backgroundColor: "rgb(255, 255, 255)"} : {borderWidth: '1px', borderStyle: 'solid', borderColor: borderColor, backgroundColor: backgroundColor}}
+                                onClick={(e) => this.props.onToggleVisibility(e)}
+                            >
                             </div>
                         </div>
                         <div className="algebraViewObjectStylebar"
@@ -79,12 +83,74 @@ export class AlgebraInputItem extends React.Component<AlgebraInputItemProps, Alg
                 const node = math.parse(this.state.value_from_input);
                 this.tex = node.toTex({
                     handler: (node: math.MathNode, options: any): string => {
+                        if ((node as math.ParenthesisNode).isParenthesisNode === true) {
+                            const innerExpr = (node as math.ParenthesisNode).content;
+                            return `\\left(${innerExpr.toTex(options)}\\right)`
+                        }
+
+                        if ((node as math.OperatorNode).isOperatorNode === true) {
+                            const [left, right] = (node as math.OperatorNode).args;
+                           return `${left.toTex(options)}${(node as math.OperatorNode).op}${(node as math.OperatorNode).op === '^' ? '{' : ''}${right.toTex(options)}${(node as math.OperatorNode).op === '^' ? '}' : ''}`
+                        }
+
                         if ((node as math.FunctionNode).isFunctionNode === true) {
                             switch ((node as math.FunctionNode).fn.name) {
                                 case 'sqrt': {
                                     if ((node as math.FunctionNode).args.length === 1) {
-                                        
+                                        return node.toTex(options);
                                     }
+
+                                    else if ((node as math.FunctionNode).args.length === 2) {
+                                        const [base, arg] = (node as math.FunctionNode).args;
+                                        return `\\sqrt[${base.toTex(options)}]{${arg.toTex(options)}}`
+                                    }
+
+                                    throw new Error('Invalid square root command');
+                                }
+
+                                case 'log': {
+                                    if ((node as math.FunctionNode).args.length === 1) {
+                                        return node.toTex(options);
+                                    }
+
+                                    if ((node as math.FunctionNode).args.length === 2) {
+                                        const [base, arg] = (node as math.FunctionNode).args;
+                                        return `\\log_[${base.toTex(options)}]{\\left(${arg.toTex(options)}\\right)}`
+                                    }
+
+                                    throw new Error('Invalid log command');
+                                }
+
+                                case 'sin': {
+                                    if ((node as math.FunctionNode).args.length === 1) {
+                                        return `\\sin\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
+                                    }
+
+                                    throw new Error('Invalid sin command');
+                                }
+
+                                case 'cos': {
+                                    if ((node as math.FunctionNode).args.length === 1) {
+                                        return `\\cos\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
+                                    }
+
+                                    throw new Error('Invalid cos command');
+                                }
+
+                                case 'tan': {
+                                    if ((node as math.FunctionNode).args.length === 1) {
+                                        return `\\tan\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
+                                    }
+
+                                    throw new Error('Invalid tan command');
+                                }
+
+                                case 'cot': {
+                                    if ((node as math.FunctionNode).args.length === 1) {
+                                        return `\\cot\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
+                                    }
+
+                                    throw new Error('Invalid cot command');
                                 }
                             }
                         }
@@ -137,13 +203,17 @@ interface AlgebraTool3DProps {
     height: number;
     dag: Map<string, GeometryShape.ShapeNode3D>;
     onSelect: (id: string, e: React.MouseEvent) => void;
+    onUpdateDAG: (dag: Map<string, GeometryShape.ShapeNode3D>) => void;
 }
 
 class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DState> {
     constructor(props: AlgebraTool3DProps) {
         super(props);
         this.state = {
-            items: [],
+            items: [{
+                type: 'input',
+                latex: 'string',
+            }],
         };
     }
 
@@ -311,7 +381,7 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                     str += label + ",";
                 });
 
-                str += (shapeNode.rotationFactor!.azimuth).toString() + "^\\circ\\right)$";
+                str += ((shapeNode.rotationFactor!.CCW ? -1 : 1) * shapeNode.rotationFactor!.degree).toString() + "^\\circ\\right)$";
             }
 
             else {
@@ -359,21 +429,26 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                                         onClick={(e) => this.props.onSelect(shapeNode.id, e)}
                                         shapeVisible={shapeNode.type.props.visible.shape}
                                         hidden={!shapeNode.defined}
+                                        onToggleVisibility={() => {
+                                            const visible = shapeNode.type.props.visible;
+                                            console.log(visible);
+                                            shapeNode.type.props.visible.shape = !visible.shape;
+                                            if ('x' in shapeNode.type && 'y' in shapeNode.type) {
+                                                shapeNode.type.props.visible.label = shapeNode.type.props.visible.shape;
+                                            }
+        
+                                            this.props.onUpdateDAG(utils3d.cloneDAG(this.props.dag));
+                                        }}
                                     />
                                 );
                             }
                             
                             else if (item.type === 'input') {
                                 return (
-                                    <AlgebraItem
+                                    <AlgebraInputItem
                                         key={`input-${index}`}
-                                        color="white"
-                                        isSelected={false}
                                         width={this.props.width}
-                                        description={`$${item.latex}$`}
                                         onClick={() => {}}
-                                        shapeVisible={true}
-                                        hidden={false}
                                     />
                                 );
                             }

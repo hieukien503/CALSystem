@@ -642,31 +642,33 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const lexer = new MathCommandLexer(inputStream);
                 const tokens = new CommonTokenStream(lexer);
                 const parser = new MathCommandParser(tokens);
-                const tree = parser.program();
+                const tree = parser.pointDef();
                 const ast = new ASTGen(this.dag, this.labelUsed);
                 const data = ast.visit(tree);
-                if (data === undefined || 
-                    (typeof data === 'object' && data !== null && !('x' in data && 'y' in data && 'props' in data))) {
-                    this.setState({
-                        error: {
-                            label: 'Invalid expression',
-                            message: `Invalid expression for point`
-                        }
-                    });
+                if (
+                    data !== undefined &&
+                    (typeof data === 'object' && data !== null) &&
+                    ('shape' in data && typeof data.shape === 'object' && data.shape !== null) &&
+                    ('x' in data.shape && 'y' in data.shape)
+                ) {
+                    const pointData = {
+                        type: 'Point',
+                        label: (data.shape as Point).props.label,
+                        x: (data.shape as Point).x,
+                        y: (data.shape as Point).y,
+                        z: (data.shape as Point).z ?? 0
+                    }
 
+                    this.setState({ data: pointData });
                     return;
                 }
 
-                const pointData = {
-                    type: 'Point',
-                    label: (data as Point).props.label,
-                    x: (data as Point).x,
-                    y: (data as Point).y,
-                    z: (data as Point).z ?? 0
-                }
-                
-                this.setState({ data: pointData });
-                return;
+                this.setState({
+                    error: {
+                        label: 'Invalid expression',
+                        message: `Invalid expression for point`
+                    }
+                });
             }
 
             catch (error) {
@@ -828,6 +830,14 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     dag={this.dag}
                     onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
                     onSelect={this.handleSelectObject}
+                    onUpdateDAG={(dag) => this.updateAll(
+                        {
+                            gs: this.state.geometryState,
+                            dag: dag,
+                            selectedPoints: this.state.selectedPoints,
+                            selectedShapes: this.state.selectedShapes
+                        }
+                    )}
                     onSetMode={(mode) => this.setMode(mode)}
                 />
                 {this.state.toolWidth > 0 && <div 

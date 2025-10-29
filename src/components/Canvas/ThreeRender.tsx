@@ -515,7 +515,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
         if ('point' in shape && 'norm' in shape) {
             let pl: Plane = shape as Plane;
-            geometry = new THREE.PlaneGeometry(25, 25);
+            geometry = new THREE.PlaneGeometry(12, 12);
             const visibleMesh = new THREE.Mesh(geometry, material);
             const depthMesh = new THREE.Mesh(geometry, depthMaterial);
             let point = utils3d.convertToVector3(pl.point.x, pl.point.y, pl.point.z ?? 0);
@@ -1233,7 +1233,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 labelUsed.push(label);
                 const point = Factory.createPoint(
                     utils.createPointDefaultShapeProps(label),
-                    pointData.x, -pointData.y, pointData.z
+                    pointData.x, pointData.y, pointData.z
                 )
 
                 DAG.set(point.props.id, {
@@ -2537,8 +2537,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     rotationFactor: {
-                        azimuth: angle,
-                        polar: 0
+                        degree: angle,
+                        CCW: true
                     }
                 }
 
@@ -2654,8 +2654,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     rotationFactor: {
-                        azimuth: angle,
-                        polar: 0
+                        degree: angle,
+                        CCW: true
                     }
                 }
 
@@ -3289,11 +3289,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: circle,
                     dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
-                    isSelected: false,
-                    rotationFactor: {
-                        azimuth: 0,
-                        polar: 0
-                    }
+                    isSelected: false
                 };
 
                 

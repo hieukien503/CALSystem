@@ -1,4 +1,5 @@
 import Konva from 'konva';
+import * as THREE from 'three';
 
 // Base interfaces
 export interface BaseShape {
@@ -209,9 +210,10 @@ export interface ShapeNode3D {
     scaleFactor?: number;
     /** For rotation */
     rotationFactor?: {
-        azimuth: number; // Rotation around the vertical axis
-        polar: number; // Rotation around the horizontal axis
+        degree: number;
+        CCW: boolean;
     };
+    node?: THREE.Group | THREE.Mesh;
     /** For tangent line and angle bisector */
     side? : 0 | 1;
     /** Selected or not */

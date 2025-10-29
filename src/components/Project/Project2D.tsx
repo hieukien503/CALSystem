@@ -226,6 +226,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         else if (e.key === 'Escape') {
             this.dag.forEach((node, key) => {
                 node.isSelected = false;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowBlur(0);
                     (node.node! as Konva.Circle).shadowOpacity(0);
@@ -388,6 +389,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         selectedPoints: Point[]
     }, storeHistory: boolean = true) => {
         state.dag.forEach((node, key) => {
+            if (node.node === undefined) return;
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
@@ -446,6 +448,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
     private onSelectedPointsChange = (selectedPoints: Point[]): void => {
         this.dag.forEach((node, key) => {
+            if (node.node === undefined) return;
             if (!selectedPoints.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 (node.node! as Konva.Circle).shadowBlur(0);
@@ -487,6 +490,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
     private onSelectedChange = (state: {selectedShapes: Shape[], selectedPoints: Point[]}): void => {
         this.dag.forEach((node, key) => {
+            if (node.node === undefined) return;
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
@@ -576,6 +580,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         else {
             this.dag.forEach((node, key) => {
                 node.isSelected = false;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowBlur(0);
                     (node.node! as Konva.Circle).shadowOpacity(0);
@@ -685,7 +690,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         const isCtrl = e.ctrlKey || e.metaKey;
         if (isCtrl) {
             const node = this.dag.get(id);
-            if (!node) return;
+            if (!node || (node && node.node === undefined)) return;
             const wasSelected = node.isSelected;
             node.isSelected = !wasSelected;
             if (node.isSelected) {
@@ -718,6 +723,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             // Clear previous selection
             this.dag.forEach(node => {
                 node.isSelected = false;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowBlur(0);
                     (node.node! as Konva.Circle).shadowOpacity(0);
@@ -732,6 +738,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             const node = this.dag.get(id);
             if (node) {
                 node.isSelected = true;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowColor('gray');
                     (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
