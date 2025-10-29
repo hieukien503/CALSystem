@@ -1027,6 +1027,9 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 animation: this.state.timeline,
             };
 
+            //
+            //
+
             await fetch(`http://localhost:3001/api/projects/${this.projectId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
