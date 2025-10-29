@@ -8,7 +8,6 @@ import * as Factory from '../../utils/Factory'
 import * as utils from '../../utils/utilities'
 import * as constants from '../../types/constants'
 import * as operation from '../../utils/math_operation'
-import { v4 as uuidv4 } from 'uuid';
 const math = require('mathjs');
 
 interface CanvasProps {
@@ -65,6 +64,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private last_pointer: {x: number, y: number};
     private moveFrameId: number | null = null;
     private zoomFrameId: number | null = null;
+    private newCreatedPoint: Point[];
 
     constructor(props: CanvasProps) {
         super(props);
@@ -78,6 +78,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleZoom = this.handleZoom.bind(this);
+        this.newCreatedPoint = new Array<Point>();
     }
 
     componentDidMount(): void {
@@ -5218,6 +5219,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 return;
             }
         }
+
+        this.newCreatedPoint = [];
     }
 
     private findChildren = (id: string): string[] => {
@@ -7707,8 +7710,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         DAG.set(point.props.id, shapeNode);
         selectedPoints.push(point);
+        this.newCreatedPoint.push(point);
         this.props.onUpdateLastFailedState(this.props.mode === 'point' ? undefined : {
-            selectedPoints: selectedPoints,
+            selectedPoints: [...this.newCreatedPoint],
             selectedShapes: [...this.props.selectedShapes]
         });
 

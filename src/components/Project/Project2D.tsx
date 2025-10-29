@@ -129,7 +129,15 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         }
 
         this.lastFailedState = null;
-        this.historyStack = []; // Initialize history stack
+        this.historyStack = [
+            utils.clone(
+                {...this.state.geometryState},
+                utils.cloneDAG(this.dag),
+                [],
+                [],
+                []
+            )
+        ]; // Initialize history stack
         this.futureStack = new Array<HistoryEntry>();
         this.dialogRef = createRef<Dialogbox | null>();
         this.errorDialogRef = createRef<ErrorDialogbox | null>();
@@ -254,11 +262,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleUndoClick = () => {
+        console.log(this.lastFailedState, this.historyStack);
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {
-                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key) ||
-                    this.lastFailedState?.selectedShapes.find(shape => shape.props.id === key)
+                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key)
                 ) {
                     this.labelUsed = this.labelUsed.filter(label => label !== dag.get(key)!.type.props.label);
                     dag.get(key)!.node!.destroy();
@@ -418,7 +426,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     this.state.selectedPoints,
                     this.state.selectedShapes,
                     this.labelUsed
-                ))
+                ));
             }
         });
     }
