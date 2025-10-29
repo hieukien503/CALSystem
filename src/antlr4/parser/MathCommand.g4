@@ -30,7 +30,7 @@ angleDef: ANGLE LR (
             (pointExpr COMMA pointExpr COMMA pointExpr)
         ) RR;
 vectorDef: VECTOR LR (pointExpr | (pointExpr COMMA pointExpr)) RR;
-polygonDef: POLYGON LR pointList RR;
+polygonDef: POLYGON LR (pointList | (pointExpr COMMA pointExpr COMMA numberExpr COMMA planeExpr)) RR;
 pointList: pointExpr COMMA pointList | pointExpr;
 circleDef: CIRCLE LR (
         (pointExpr COMMA numberExpr) |

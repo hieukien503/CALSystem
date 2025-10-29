@@ -7,7 +7,6 @@ import Latex from 'react-latex'
 interface AlgebraItemProps {
     color: string;
     isSelected: boolean;
-    width: number;
     description: string;
     shapeVisible: boolean;
     hidden: boolean;
@@ -21,7 +20,7 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
         const borderColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`
         const backgroundColor = this.props.shapeVisible ? `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.4)` : "rgb(255, 255, 255)";
         return (
-            <div style={{padding: '3px 3px 3px 23px', width: this.props.width, marginLeft: '0px', position: 'relative'}}
+            <div style={{padding: '3px 3px 3px 23px', width: '100%', marginLeft: '0px', position: 'relative'}}
                 className={`avItem${this.props.isSelected ? " selectedItem" : ""}`}
                 onClick={this.props.onClick}
             >
@@ -239,7 +238,7 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                 className="customScrollBar"
                 style={{
                     position: 'relative',
-                    width: this.props.width,
+                    width: '100%',
                     height: this.props.height,
                     display: 'flex',
                     flexDirection: 'row',
@@ -247,16 +246,16 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                     overflow: 'auto',
                 }}
             >
-                <div style={{position: "relative", zoom: "1",  height: "100%"}}>
+                <div style={{position: "relative", zoom: "1", height: "100%", width: '100%'}}>
                     <div
                         className="Tree algebraView"
-                        style={{position: "relative", zoom: "1", minHeight: "444px"}}>
+                        style={{position: "relative", zoom: "1", height: '100%'}}>
                     {entries.map(value => {
                         return (
                             <AlgebraItem
                                 key={value[1].id}
                                 color={value[1].defined ? value[1].type.props.color : "white"}
-                                isSelected={value[1].isSelected} width={this.props.width}
+                                isSelected={value[1].isSelected}
                                 description={this.createDescription(value[1])}
                                 onClick={(e) => this.props.onSelect(value[1].id, e)}
                                 shapeVisible={value[1].type.props.visible.shape}

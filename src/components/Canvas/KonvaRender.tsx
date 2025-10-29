@@ -3847,11 +3847,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const selectedPoints = [...this.props.selectedPoints];
             if (selectedPoints.length !== 2) return;
             const [p1, p2] = selectedPoints;
-            let label = `circle0`;
+            let label = `semi0`;
             let index = 0;
             while (this.props.labelUsed.includes(label)) {
                 index++;
-                label = `circle${index}`;
+                label = `semi${index}`;
             }
 
             this.props.onLabelUsed([...this.props.labelUsed, label]);
