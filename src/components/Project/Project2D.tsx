@@ -525,36 +525,32 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         })
     }
 
-    private removeNodeBatch = (id: string, visited: Set<string>, state: {
-        labelUsed: string[],
-        dag: Map<string, ShapeNode>
-    }) => {
+    private removeNodeBatch = (id: string, visited: Set<string>) => {
         if (visited.has(id)) return;
-        const node = state.dag.get(id);
+        const node = this.dag.get(id);
         if (!node) return;
 
         visited.add(id);
         // 1. Find all dependent nodes and recursively remove them
-        state.dag.forEach((value, key) => {
+        this.dag.forEach((value, key) => {
             if (value.dependsOn.includes(id)) {
-                this.removeNodeBatch(key, visited, state);
+                this.removeNodeBatch(key, visited);
             }
         });
 
         // 2. Clean up
-        state.labelUsed = state.labelUsed.filter(
+        this.labelUsed = this.labelUsed.filter(
             label => label !== node.type.props.label
         );
 
         node.node!.destroy();
-        state.dag.delete(id);
+        this.dag.delete(id);
     };
 
     // Public method that does batch delete with single re-render
     private removeNode = (id: string): void => {
         const set = new Set<string>();
-
-        this.removeNodeBatch(id, set, { labelUsed: this.labelUsed, dag: this.dag });
+        this.removeNodeBatch(id, set);
     };
 
     private setMode = (mode: DrawingMode) => {
@@ -567,7 +563,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             });
 
             const visited = new Set<string>();
-            selected.forEach(id => this.removeNodeBatch(id, visited, {labelUsed: this.labelUsed, dag: this.dag}));
+            selected.forEach(id => this.removeNodeBatch(id, visited));
             this.pushHistory(utils.clone(
                 this.state.geometryState,
                 this.dag,

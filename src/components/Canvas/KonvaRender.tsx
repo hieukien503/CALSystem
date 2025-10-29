@@ -178,7 +178,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
 
                 node.node!.strokeWidth(node.type.props.line_size / newScale);
-                node.node!.hitStrokeWidth(2 / newScale);
+                node.node!.hitStrokeWidth(5 / newScale);
                 node.node!.dash(utils.createDashArray({
                     dash_size: node.type.props.line_style.dash_size / newScale,
                     dot_size: node.type.props.line_style.dot_size ?? 0 / newScale,
@@ -710,7 +710,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             draggable: true,
             strokeWidth: scaledStrokeWidth,
             perfectDrawEnabled: false,
-            hitStrokeWidth: 2
+            hitStrokeWidth: 5
         });
 
         c.visible(props.visible.shape);
@@ -721,6 +721,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(point.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(c.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -869,7 +876,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             stroke: props.color,
             visible: props.visible.shape,
             id: props.id,
-            hitStrokeWidth: 2,
+            hitStrokeWidth: 5,
             draggable: true
         });
 
@@ -881,6 +888,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(line.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(l.id());
             this.props.pushHistory(this.props.getSnapshot());
         });
@@ -977,7 +991,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             stroke: props.color,
             visible: props.visible.shape,
             id: props.id,
-            hitStrokeWidth: 2,
+            hitStrokeWidth: 5,
             draggable: true,
 
         });
@@ -990,6 +1004,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(segment.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(s.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -1089,7 +1110,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             stroke: props.color,
             visible: props.visible.shape,
             id: props.id,
-            hitStrokeWidth: 2,
+            hitStrokeWidth: 5,
             draggable: true,
             fill: props.fill? props.color : 'none',
 
@@ -1103,6 +1124,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(vector.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(v.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -1217,6 +1245,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(circle.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(c.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -1309,7 +1344,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             closed: true,
             visible: props.visible.shape,
             id: props.id,
-            hitStrokeWidth: 2,
+            hitStrokeWidth: 5,
             draggable: true
         });
 
@@ -1321,6 +1356,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(polygon.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(p.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -1430,7 +1472,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             stroke: props.color,
             visible: props.visible.shape,
             id: props.id,
-            hitStrokeWidth: 2,
+            hitStrokeWidth: 5,
             draggable: true,
         });
 
@@ -1442,6 +1484,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(ray.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(r.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -1566,7 +1615,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             fill: `rgba(${r},${g},${b},${opacity})`,
             stroke: props.color,
             strokeWidth: scaledStrokeWidth,
-            hitStrokeWidth: 2
+            hitStrokeWidth: 5
         }) : new Konva.Line({
             x: screenPos.x,
             y: screenPos.y,
@@ -1583,7 +1632,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             closed: true,
             visible: props.visible.shape,
             id: props.id,
-            hitStrokeWidth: 2,
+            hitStrokeWidth: 5,
             draggable: false,
             rotation: startAngle,
         })
@@ -1596,6 +1645,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(shape.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(a.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -1630,7 +1686,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             strokeWidth: scaledStrokeWidth,
             dash: utils.createDashArray(props.line_style),
             id: props.id,
-            hitStrokeWidth: 2,
+            hitStrokeWidth: 5,
             draggable: true,
             clockwise: true
         })
@@ -1643,6 +1699,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(semicircle.props.id));
+                if (label) {
+                    label.destroy();
+                }
+            }
+
             this.props.onRemoveNode(semiCircle.id());
             this.props.pushHistory(this.props.getSnapshot());
         })
@@ -6080,7 +6143,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     fill: node.node!.fill(),
                     stroke: node.node!.stroke(),
                     strokeWidth: node.node!.strokeWidth(),
-                    hitStrokeWidth: 2,
+                    hitStrokeWidth: 5,
                     id: node.node!.id()
                 }) : new Konva.Line({
                     x: B.x,
@@ -6095,7 +6158,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     fill: node.node!.fill(),
                     stroke: node.node!.stroke(),
                     strokeWidth: node.node!.strokeWidth(),
-                    hitStrokeWidth: 2,
+                    hitStrokeWidth: 5,
                     rotation: startAngle,
                     closed: true,
                     draggable: false,
@@ -6228,7 +6291,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         fill: node.node!.fill(),
                         stroke: node.node!.stroke(),
                         strokeWidth: node.node!.strokeWidth(),
-                        hitStrokeWidth: 2,
+                        hitStrokeWidth: 5,
                         id: node.node!.id()
                     }) : new Konva.Line({
                         x: vertex.x,
@@ -6243,7 +6306,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         fill: node.node!.fill(),
                         stroke: node.node!.stroke(),
                         strokeWidth: node.node!.strokeWidth(),
-                        hitStrokeWidth: 2,
+                        hitStrokeWidth: 5,
                         rotation: startAngle,
                         closed: true,
                         draggable: false,
