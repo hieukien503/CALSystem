@@ -1,6 +1,10 @@
+import { MouseSharp } from '@mui/icons-material';
 import React from 'react';
+import { useNavigate } from "react-router-dom";
 
 const Footer = () => {
+    const navigate = useNavigate();
+
     return (
         <footer>
             <div className="left">
@@ -8,9 +12,10 @@ const Footer = () => {
             </div>
             <div className="right">
                 <nav>
-                    <ul className="navi-right">
-                        <li><a href="index.php?page=contact">Top page</a></li>
-                        <li><a href="index.php?page=contact">Login/Signup</a></li>
+                    <ul className="navi-right gap-3">
+                        <li onClick={() => navigate("/view/home")}>Top page</li>
+                        {//<li onClick={() => navigate("/view/login")}>Login/Signup</li>
+                        }
                     </ul>
                 </nav>
             </div>

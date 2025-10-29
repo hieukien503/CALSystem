@@ -1,59 +1,24 @@
 import * as THREE from 'three';
 import { ShapeNode3D, ShapeProps, GeometryState, Shape, Point, Vector, Ray, Segment, Line } from '../types/geometry';
 import * as constants3d from '../types/constants3D';
-import * as operation from '../utils/math_operation'
-import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
+import * as operation from '../utils/math_operation';
 
 // Utility functions
-export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THREE.Mesh | THREE.Group => {
-    const geometry = new MeshLineGeometry().setFromPoints(points);
-    if (props.line_style.dot_size !== undefined) {
-        const totalLength = props.line_style.dot_size + props.line_style.dash_size + 2 * props.line_style.gap_size;
-        const dashMaterial = new MeshLineMaterial({
-            color: new THREE.Color(props.color),
-            lineWidth: props.line_size,
-            useDash: 1,
-            dashArray: totalLength,
-            dashRatio: props.line_style.dash_size / totalLength,
-            dashOffset: 0.0,
-            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight * 0.74)
-        });
+export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THREE.Line => {
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineDashedMaterial({
+        color: props.color,
+        linewidth: props.line_size,
+        dashSize: props.line_style.dash_size,
+        gapSize: props.line_style.gap_size,
+    });
 
-        const dotMaterial = new MeshLineMaterial({
-            color: new THREE.Color(props.color),
-            lineWidth: props.line_size,
-            useDash: 1,
-            dashArray: totalLength,
-            dashRatio: props.line_style.dot_size / totalLength,
-            dashOffset: props.line_style.dash_size + props.line_style.gap_size,
-            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight * 0.74)
-        });
+    const line = new THREE.Line(geometry, material);
+    line.computeLineDistances();
 
-        const mainLine = new THREE.Mesh(geometry, dashMaterial);
-        const dotLine = new THREE.Mesh(geometry, dotMaterial);
-
-        const group = new THREE.Group();
-        group.add(mainLine);
-        group.add(dotLine);
-
-        return group;
-    }
-
-    else {
-        const totalLength = props.line_style.dash_size + props.line_style.gap_size;
-        const dashMaterial = new MeshLineMaterial({
-            color: new THREE.Color(props.color),
-            lineWidth: props.line_size,
-            useDash: 1,
-            dashArray: totalLength,
-            dashRatio: props.line_style.dash_size / totalLength,
-            dashOffset: 0.0,
-            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight * 0.74)
-        });
-
-        const mainLine = new THREE.Mesh(geometry, dashMaterial);
-        return mainLine;
-    }
+    // set a name
+    line.name = props.id;
+    return line;
 }
 
 export const convertToVector3 = (x: number, y: number, z: number): THREE.Vector3 => {

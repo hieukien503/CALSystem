@@ -1,6 +1,7 @@
 import React from "react";
 import AlgebraTool from "./Algebra/AlgebraTool";
 import { GeometryTool } from "./Geometry/GeometryTool";
+import { AnimationTool } from "./Animation/AnimationTool";
 import { DrawingMode, ShapeNode } from "../../types/geometry";
 import * as constants from "../../types/constants"
 
@@ -14,7 +15,7 @@ interface ToolProps {
 }
 
 interface ToolState {
-    mode: 'algebra' | 'geometry'
+    mode: 'algebra' | 'geometry' | 'animation' | 'project';
 }
 
 class Tool extends React.Component<ToolProps, ToolState> {
@@ -25,7 +26,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
         }
     }
 
-    private changeMode = (mode: 'algebra' | 'geometry' = 'geometry', e: React.MouseEvent): void => {
+    private changeMode = (mode: 'algebra' | 'geometry' | 'animation' = 'geometry', e: React.MouseEvent): void => {
         e.stopPropagation();
         this.setState({mode: mode}, () => {
             this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, constants.MIN_TOOL_WIDTH));
@@ -55,6 +56,13 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         onClick={(e) => this.changeMode('geometry', e)}
                                     >
                                         <div className="label">Geometry</div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'animation' ? " selected" : "") : ""}`}
+                                        onClick={(e) => this.changeMode('animation', e)}
+                                    >
+                                        <div className="label">Animation</div>
                                     </button>
                                 </div>
                             </div>
@@ -106,12 +114,17 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                     onScalingClick={() => this.props.onSetMode('enlarge')}
                                     onProjectionClick={() => this.props.onSetMode('projection')}
                                     onTranslationClick={() => this.props.onSetMode('translation')}
-                            /> : <AlgebraTool 
+                            /> : this.state.mode === "algebra" ? <AlgebraTool 
                                 width={this.props.width}
                                 height={this.props.height}
                                 dag={this.props.dag}
                                 onSelect={this.props.onSelect}
-                            />)}
+                                /> : <AnimationTool
+                                        width={this.props.width}
+                                        height={this.props.height}
+                                />
+
+                            )}
                         </div>
                     </div>
                 </div>
