@@ -4,8 +4,7 @@ import { FONT_DEFAULTS, EPSILON } from "../types/constants";
 import { GeometryState, Shape, Point, ShapeNode, Polygon, ShapeType, Segment, Circle, Line, Ray, Vector } from "../types/geometry";
 import * as constants from '../types/constants'
 import { v4 as uuidv4 } from 'uuid';
-import * as Factory from './Factory'
-import { update } from "lodash";
+import * as Factory from './Factory';
 const math = require('mathjs');
 
 // Utility functions
