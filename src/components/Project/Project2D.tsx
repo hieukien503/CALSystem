@@ -330,7 +330,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleMouseDownResize = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
         e.stopPropagation();
+
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ew-resize';
+        
         document.addEventListener("pointermove", this.handleMouseMoveResize);
         document.addEventListener("pointerup", this.handleMouseUpResize);
         this.setState({ isResize: true, isMenuRightClick: undefined });
@@ -349,6 +354,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleMouseUpResize = () => {
+        // Re-enable text selection and reset cursor
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        
         document.removeEventListener("pointermove", this.handleMouseMoveResize);
         document.removeEventListener("pointerup", this.handleMouseUpResize);
         this.setState({ isResize: false });

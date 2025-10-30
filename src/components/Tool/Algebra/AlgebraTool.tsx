@@ -42,8 +42,16 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
                                     <MoreVertIcon />
                                 </button>
                         </div>
-                        <div className="elemText">
-                            <div className="avPlainText" style={{fontSize: "16px", display: "inline-block", verticalAlign: "middle"}}>
+                        <div className="elemText" style={{
+                            overflow: 'hidden',
+                            flex: 1,
+                            minWidth: 0
+                        }}>
+                            <div className="avPlainText" style={{
+                                fontSize: "12px",
+                                display: "inline-block",
+                                verticalAlign: "middle"
+                            }}>
                                 <Latex>{this.props.description}</Latex>
                             </div>
                         </div>
