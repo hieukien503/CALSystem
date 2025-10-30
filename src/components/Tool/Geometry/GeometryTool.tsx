@@ -134,7 +134,7 @@ interface GeometryToolProps {
 
 interface GeometryToolState {
     activeButton: string | null;
-    openCategory: string | null;
+    openCategory: string[];
 }
 
 export class GeometryTool extends React.Component<GeometryToolProps, GeometryToolState> {
@@ -142,14 +142,23 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
         super(props);
         this.state = {
             activeButton: null,
-            openCategory: null
+            openCategory: []
         }
     }
 
     toolCategoryClicked(categoryName: string) {
-        this.setState((prevState) => ({
-            openCategory: prevState.openCategory === categoryName ? null : categoryName
-        }));
+        const openCategory = [...this.state.openCategory];
+        if (openCategory.includes(categoryName)) {
+            this.setState(
+                { openCategory: openCategory.filter(name => name !== categoryName) }
+            )
+        }
+        
+        else {
+            this.setState(
+                { openCategory: [...openCategory, categoryName] }
+            )
+        }
     }
 
     setActiveTool(toolKey: string) {
@@ -443,18 +452,18 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                 >
                 {toolCategories.map((category) => (
                     <div key={category.name}
-                        className={`tool-category ${this.state.openCategory === category.name ? "open" : ""}`}
+                        className={`tool-category ${this.state.openCategory.includes(category.name) ? "open" : ""}`}
                     >
                         <div className="catLabel text-neutral-900" 
                             onClick={() => this.toolCategoryClicked(category.name)}
                             style={{cursor: 'pointer'}}
                         >
                             <span>{category.name}</span>
-                            <div className={`arrowBox ${this.state.openCategory === category.name ? "open" : ""}`}>
+                            <div className={`arrowBox ${this.state.openCategory.includes(category.name) ? "open" : ""}`}>
                                 <ArrowRightIcon sx={{ fontSize: 20 }} />
                             </div>
                         </div>
-                        {this.state.openCategory === category.name && (
+                        {this.state.openCategory.includes(category.name) && (
                             <div
                                 className="categoryPanel"
                             >
@@ -537,14 +546,23 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
         super(props);
         this.state = {
             activeButton: null,
-            openCategory: null
+            openCategory: []
         }
     }
 
     toolCategoryClicked(categoryName: string) {
-        this.setState((prevState) => ({
-            openCategory: prevState.openCategory === categoryName ? null : categoryName
-        }))
+        const openCategory = [...this.state.openCategory];
+        if (openCategory.includes(categoryName)) {
+            this.setState(
+                { openCategory: openCategory.filter(name => name !== categoryName) }
+            )
+        }
+        
+        else {
+            this.setState(
+                { openCategory: [...openCategory, categoryName] }
+            )
+        }
     }
 
     setActiveTool(toolKey: string) {
@@ -881,18 +899,18 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
                 >
                 {toolCategories.map((category) => (
                     <div key={category.name}
-                        className={`tool-category ${this.state.openCategory === category.name ? "open" : ""}`}
+                        className={`tool-category ${this.state.openCategory.includes(category.name) ? "open" : ""}`}
                     >
                         <div className="catLabel text-neutral-900" 
                             onClick={() => this.toolCategoryClicked(category.name)}
                             style={{cursor: 'pointer'}}
                         >
                             <span>{category.name}</span>
-                            <div className={`arrowBox ${this.state.openCategory === category.name ? "open" : ""}`}>
+                            <div className={`arrowBox ${this.state.openCategory.includes(category.name) ? "open" : ""}`}>
                                 <ArrowRightIcon sx={{ fontSize: 20 }} />
                             </div>
                         </div>
-                        {this.state.openCategory === category.name && (
+                        {this.state.openCategory.includes(category.name) && (
                             <div
                                 className="categoryPanel"
                             >

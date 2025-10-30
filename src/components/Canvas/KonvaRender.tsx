@@ -3078,11 +3078,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             else {
                 if (selectedPoints.length !== 3) return;
-                let label = utils.getExcelLabel('A', 0);
+                let label = `circle0`
                 let index = 0;
                 while (this.props.labelUsed.includes(label)) {
                     index++;
-                    label = utils.getExcelLabel('A', index);
+                    label = `circle${index}`;
                 }
 
                 this.props.onLabelUsed([...this.props.labelUsed, label]);
@@ -3630,6 +3630,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         (selectedShapes[0] as Circle).centerC.y
                     )
                     
+                    midpoint.type = 'Midpoint';
     
                     DAG.set(midpoint.props.id, {
                         id: midpoint.props.id,
@@ -5664,28 +5665,77 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     }
 
     private updateMidpoint = (node: ShapeNode): ShapeNode => {
-        const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.props.dag.get(id1), this.props.dag.get(id2)];
-        if (!start || !end) {
+        if (![1, 2].includes(node.dependsOn.length)) return { ...node! };
+        if (node.dependsOn.length === 2) {
+            const [id1, id2] = node.dependsOn;
+            const [start, end] = [this.props.dag.get(id1), this.props.dag.get(id2)];
+            if (!start || !end) {
+                return { ...node! };
+            }
+
+            const posA = (start).node!.position();
+            const posB = (end).node!.position();
+            
+            let point = node.node! as Konva.Circle;
+            point.position({x: (posA.x + posB.x) / 2, y: (posA.y + posB.y) / 2});
+
+            if (this.layerUnchangeVisualRef.current) {
+                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
+                if (label) {
+                    label.setAttrs(this.createLabel(node).getAttrs());
+                }
+            }
+
+            this.updatePointPos((node.type as Point), point.x(), point.y());
             return { ...node! };
         }
-
-        const posA = (start).node!.position();
-        const posB = (end).node!.position();
         
-        let point = node.node! as Konva.Circle;
-        point.position({x: (posA.x + posB.x) / 2, y: (posA.y + posB.y) / 2});
+        else {
+            const shape = this.props.dag.get(node.dependsOn[0]);
+            if (!shape) return { ...node! };
+            if ('startSegment' in shape.type) {
+                const [start, end] = [shape.type.startSegment, shape.type.endSegment];
+                const pos = utils.convertToScreenCoords(
+                    {x: (start.x + end.x) / 2, y: (start.y + end.y) / 2},
+                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    this.props.geometryState.spacing
+                );
 
-        if (this.layerUnchangeVisualRef.current) {
-            let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
-            if (label) {
-                label.setAttrs(this.createLabel(node).getAttrs());
+                let point = node.node! as Konva.Circle;
+                point.position(pos);
+                if (this.layerUnchangeVisualRef.current) {
+                    let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
+                    if (label) {
+                        label.setAttrs(this.createLabel(node).getAttrs());
+                    }
+                }
+
+                [(node.type as Point).x, (node.type as Point).y] = [(start.x + end.x) / 2, (start.y + end.y) / 2];
+                return { ...node! };
             }
-        }
 
-        this.updatePointPos((node.type as Point), point.x(), point.y());
-        [(node.type as Point).x, (node.type as Point).x] = [point.x(), point.y()];
-        return { ...node! };
+            else if ('centerC' in shape.type && 'radius' in shape.type) {
+                let point = node.node! as Konva.Circle;
+                const pos = utils.convertToScreenCoords(
+                    {x: shape.type.centerC.x, y: shape.type.centerC.y},
+                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    this.props.geometryState.spacing
+                );
+
+                point.position(pos);
+                if (this.layerUnchangeVisualRef.current) {
+                    let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
+                    if (label) {
+                        label.setAttrs(this.createLabel(node).getAttrs());
+                    }
+                }
+
+                [(node.type as Point).x, (node.type as Point).y] = [shape.type.centerC.x, shape.type.centerC.y];
+                return { ...node! };
+            }
+
+            else return { ...node! };
+        }
     }
 
     private updateCentroid = (node: ShapeNode): ShapeNode => {
@@ -7802,9 +7852,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 onPointerUp={this.handleMouseUp}
             >
                 <Layer ref={this.layerGridRef} />
-                <Layer ref={this.layerUnchangeVisualRef} />
                 <Layer ref={this.layerAxisRef} />
                 <Layer ref={this.layerMathObjectRef} />
+                <Layer ref={this.layerUnchangeVisualRef} />
             </Stage>
         )
     }
