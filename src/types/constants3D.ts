@@ -1,6 +1,6 @@
 // Constants
 export const FONT_DEFAULTS = {
-    SIZE: 26,
+    SIZE: 30,
     FAMILY: 'Calibri',
     COLOR: 'black'
 };

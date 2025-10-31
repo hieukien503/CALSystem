@@ -52,7 +52,7 @@ interface Project3DState {
         angleMode: boolean;
     } | undefined;
     /** For user input */
-    data: number | {type: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
+    data: number | {type: string, label: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
     /** For error */
     error: {
         label: string; // for dialogbox error
@@ -406,7 +406,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private handleUndoClick = () => {
-        console.log(this.historyStack);
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {
@@ -442,7 +441,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
         this.dag = copyState.dag;
         this.labelUsed = copyState.label_used;
-        console.log(this.dag);
 
         this.setState({
             mode: 'edit',
@@ -644,23 +642,33 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const lexer = new MathCommandLexer(inputStream);
                 const tokens = new CommonTokenStream(lexer);
                 const parser = new MathCommandParser(tokens);
-                const tree = parser.program();
+                const tree = parser.pointDef();
                 const ast = new ASTGen(this.dag, this.labelUsed);
                 const data = ast.visit(tree);
-                if (data === undefined || 
-                    (typeof data === 'object' && data !== null && (!('type' in data) || ('type' in data && data.type !== 'Point')))) {
-                    this.setState({
-                        error: {
-                            label: 'Invalid expression',
-                            message: `Invalid expression for point`
-                        }
-                    });
+                if (
+                    data !== undefined &&
+                    (typeof data === 'object' && data !== null) &&
+                    ('shape' in data && typeof data.shape === 'object' && data.shape !== null) &&
+                    ('x' in data.shape && 'y' in data.shape)
+                ) {
+                    const pointData = {
+                        type: 'Point',
+                        label: (data.shape as Point).props.label,
+                        x: (data.shape as Point).x,
+                        y: (data.shape as Point).y,
+                        z: (data.shape as Point).z ?? 0
+                    }
 
+                    this.setState({ data: pointData });
                     return;
                 }
 
-                this.setState({ data: data as { type: 'Point', x: number, y: number, z: number } });
-                return;
+                this.setState({
+                    error: {
+                        label: 'Invalid expression',
+                        message: `Invalid expression for point`
+                    }
+                });
             }
 
             catch (error) {
@@ -822,6 +830,14 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     dag={this.dag}
                     onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
                     onSelect={this.handleSelectObject}
+                    onUpdateDAG={(dag) => this.updateAll(
+                        {
+                            gs: this.state.geometryState,
+                            dag: dag,
+                            selectedPoints: this.state.selectedPoints,
+                            selectedShapes: this.state.selectedShapes
+                        }
+                    )}
                     onSetMode={(mode) => this.setMode(mode)}
                 />
                 {this.state.toolWidth > 0 && <div 

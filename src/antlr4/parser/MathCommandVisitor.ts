@@ -5,7 +5,6 @@ import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
 import { ProgramContext } from "./MathCommandParser";
 import { ExprContext } from "./MathCommandParser";
-import { CommandContext } from "./MathCommandParser";
 import { PointDefContext } from "./MathCommandParser";
 import { SphereDefContext } from "./MathCommandParser";
 import { PlaneDefContext } from "./MathCommandParser";
@@ -23,7 +22,7 @@ import { CylinderDefContext } from "./MathCommandParser";
 import { TetrahedronDefContext } from "./MathCommandParser";
 import { ConeDefContext } from "./MathCommandParser";
 import { PrismDefContext } from "./MathCommandParser";
-import { CuboidDefContext } from "./MathCommandParser";
+import { PyramidDefContext } from "./MathCommandParser";
 import { NumberExprContext } from "./MathCommandParser";
 import { AdditiveExprContext } from "./MathCommandParser";
 import { MultiplicativeExprContext } from "./MathCommandParser";
@@ -39,27 +38,24 @@ import { LogExprContext } from "./MathCommandParser";
 import { LnExprContext } from "./MathCommandParser";
 import { CbrtExprContext } from "./MathCommandParser";
 import { SqrtExprContext } from "./MathCommandParser";
+import { NrootExprContext } from "./MathCommandParser";
 import { AbsExprContext } from "./MathCommandParser";
 import { ExpExprContext } from "./MathCommandParser";
 import { PointExprContext } from "./MathCommandParser";
 import { LineExprContext } from "./MathCommandParser";
+import { DirExprContext } from "./MathCommandParser";
 import { VectorExprContext } from "./MathCommandParser";
 import { PlaneExprContext } from "./MathCommandParser";
 import { DirectionExprContext } from "./MathCommandParser";
 import { PolygonExprContext } from "./MathCommandParser";
-import { CuboidExprContext } from "./MathCommandParser";
 import { TetrahedronExprContext } from "./MathCommandParser";
 import { CylinderExprContext } from "./MathCommandParser";
 import { ConeExprContext } from "./MathCommandParser";
 import { PrismExprContext } from "./MathCommandParser";
+import { SegmentExprContext } from "./MathCommandParser";
+import { RayExprContext } from "./MathCommandParser";
+import { PyramidExprContext } from "./MathCommandParser";
 import { ShapeExprContext } from "./MathCommandParser";
-import { Two_side_exprContext } from "./MathCommandParser";
-import { VarExprContext } from "./MathCommandParser";
-import { VarMultiplicativeExprContext } from "./MathCommandParser";
-import { VarImplicitMultiplicativeExprContext } from "./MathCommandParser";
-import { VarExponentialExprContext } from "./MathCommandParser";
-import { VarUnaryExprContext } from "./MathCommandParser";
-import { VarPrimaryExprContext } from "./MathCommandParser";
 
 
 /**
@@ -83,13 +79,6 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitExpr?: (ctx: ExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.command`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitCommand?: (ctx: CommandContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `MathCommandParser.pointDef`.
@@ -211,11 +200,11 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitPrismDef?: (ctx: PrismDefContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `MathCommandParser.cuboidDef`.
+	 * Visit a parse tree produced by `MathCommandParser.pyramidDef`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitCuboidDef?: (ctx: CuboidDefContext) => Result;
+	visitPyramidDef?: (ctx: PyramidDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `MathCommandParser.numberExpr`.
@@ -323,6 +312,13 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitSqrtExpr?: (ctx: SqrtExprContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `MathCommandParser.nrootExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitNrootExpr?: (ctx: NrootExprContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `MathCommandParser.absExpr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -349,6 +345,13 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitLineExpr?: (ctx: LineExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `MathCommandParser.dirExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitDirExpr?: (ctx: DirExprContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `MathCommandParser.vectorExpr`.
@@ -379,13 +382,6 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitPolygonExpr?: (ctx: PolygonExprContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `MathCommandParser.cuboidExpr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitCuboidExpr?: (ctx: CuboidExprContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `MathCommandParser.tetrahedronExpr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -414,59 +410,31 @@ export interface MathCommandVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitPrismExpr?: (ctx: PrismExprContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `MathCommandParser.segmentExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSegmentExpr?: (ctx: SegmentExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `MathCommandParser.rayExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRayExpr?: (ctx: RayExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `MathCommandParser.pyramidExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPyramidExpr?: (ctx: PyramidExprContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `MathCommandParser.shapeExpr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitShapeExpr?: (ctx: ShapeExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.two_side_expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTwo_side_expr?: (ctx: Two_side_exprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.varExpr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVarExpr?: (ctx: VarExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.varMultiplicativeExpr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVarMultiplicativeExpr?: (ctx: VarMultiplicativeExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.varImplicitMultiplicativeExpr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVarImplicitMultiplicativeExpr?: (ctx: VarImplicitMultiplicativeExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.varExponentialExpr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVarExponentialExpr?: (ctx: VarExponentialExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.varUnaryExpr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVarUnaryExpr?: (ctx: VarUnaryExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `MathCommandParser.varPrimaryExpr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVarPrimaryExpr?: (ctx: VarPrimaryExprContext) => Result;
 }
 

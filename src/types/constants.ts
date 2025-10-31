@@ -20,4 +20,4 @@ export const ZOOM_FACTOR = 1.1;
 export const EPSILON = 1e-5;
 
 // Constants for minimum tool width
-export const MIN_TOOL_WIDTH = 300;
+export const MIN_TOOL_WIDTH = 320;

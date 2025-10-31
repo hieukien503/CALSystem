@@ -35,11 +35,13 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
 
     componentDidMount() {
         document.addEventListener('pointerdown', this.handleClickOutside);
+        document.addEventListener('keydown', this.handleSubmit);
         this.inputRef.current?.focus();
     }
 
     componentWillUnmount() {
         document.removeEventListener('pointerdown', this.handleClickOutside);
+        document.removeEventListener('keydown', this.handleSubmit);
     }
 
     public getBoundingClientRect = (): DOMRect | undefined => {
@@ -65,6 +67,12 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
     private handleClickOutside = (event: MouseEvent) => {
         if (this.dialogRef.current && !this.dialogRef.current.contains(event.target as Node)) {
             this.props.onCancelClick();
+        }
+    }
+
+    private handleSubmit = (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            this.props.onSubmitClick(this.state.value_from_input, this.state.isCCW);
         }
     }
 
