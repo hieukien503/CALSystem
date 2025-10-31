@@ -10,7 +10,7 @@ const {
 
 const {
     loadHome,
-    searchProjects
+    searchAll
 } = require("../controllers/publicController");
 
 // Auth routes
@@ -22,6 +22,6 @@ router.post("/forgot-password", forgotPassword);
 
 // Public views (no auth required)
 router.get("/home", loadHome);               // Home.tsx
-router.get("/search", searchProjects);       // SearchResults.tsx
+router.get("/search", searchAll);       // SearchResults.tsx
 
 module.exports = router;
