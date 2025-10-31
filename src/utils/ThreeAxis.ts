@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-import * as utils from '../utils/utilities3D'
+import * as utils3d from '../utils/utilities3D'
+import * as utils from '../utils/utilities'
 
 interface AxisProps {
     length: number;
@@ -10,6 +11,7 @@ interface AxisProps {
     xTickSpacing: number;
     axisInterval: number;
     ratio: number;
+    rotation: number[]; // Rotation in radians around X, Y, Z axes, measured in radians
 }
 
 class ThreeAxis {
@@ -19,35 +21,52 @@ class ThreeAxis {
     }
 
     generateAxis = (): THREE.Group => {
+        if (this.props.rotation.length !== 3) {
+            throw new Error('Rotation array must have exactly three elements.');
+        }
+
         const group = new THREE.Group();
         const posLength = this.props.length / (1 + this.props.ratio);
         const negLength = posLength * this.props.ratio;
-        // Cylinder (positive direction)
-        const cylinderRadius = this.props.radius;
-        const cylinderGeometry = new THREE.CylinderGeometry(
-            cylinderRadius, cylinderRadius, posLength - this.props.pointerLength, 8
+        
+        const positions: THREE.Vector3[] = [
+            new THREE.Vector3(0, -negLength, 0),
+            new THREE.Vector3(0, posLength - this.props.pointerLength, 0)
+        ];
+
+        // Apply rotation to the axis
+        const euler = new THREE.Euler(this.props.rotation[0], this.props.rotation[1], this.props.rotation[2]);
+        positions.forEach(pos => pos.applyEuler(euler));
+
+        const props = utils.createLineDefaultShapeProps(
+            '',
+            this.props.radius
         );
-        const material = new THREE.MeshStandardMaterial({ color: this.props.axisColor });
-        const cylinder = new THREE.Mesh(cylinderGeometry, material);
 
-        cylinder.position.y = (posLength - this.props.pointerLength) / 2;
-        group.add(cylinder);
+        props.color = this.props.axisColor;
+        props.line_size = 2;
 
-        // Cylinder (negative direction)
-        const negCylinderGeometry = new THREE.CylinderGeometry(
-            cylinderRadius, cylinderRadius, negLength, 8
-        );
-
-        const negCylinder = new THREE.Mesh(negCylinderGeometry, material);
-        negCylinder.position.y = -negLength / 2;
-        group.add(negCylinder);
+        const line = utils3d.createDashLine(positions, props);
+        line.renderOrder = 15;
+        group.add(line);
 
         // Cone (arrowhead)
         const coneHeight = this.props.pointerLength;
+        const material = new THREE.MeshStandardMaterial({ color: this.props.axisColor, depthTest: false });
         const coneGeometry = new THREE.ConeGeometry(this.props.pointerWidth, coneHeight, 8);
         const cone = new THREE.Mesh(coneGeometry, material);
 
         cone.position.y = posLength - coneHeight / 2;
+        cone.position.applyEuler(euler);
+        // Rotate cone such that its apex points along the axis direction
+        cone.setRotationFromEuler(new THREE.Euler(
+            euler.x,
+            euler.y,
+            euler.z
+        ));
+
+        cone.renderOrder = 10;
+
         group.add(cone);
         const [x0, y0, z0] = [0, 0, 0];
 
@@ -59,8 +78,9 @@ class ThreeAxis {
                 );
 
                 const sphere = new THREE.Mesh(sphereGeometry, material);
-                sphere.position.set(0, i, 0);
-                const label = utils.createLabel(
+                sphere.renderOrder = 11;
+                sphere.position.set(0, i, 0).applyEuler(euler);
+                const label = utils3d.createLabel(
                     x.toFixed(0).toString(),
                     new THREE.Vector3(0.2, 0.2, 0),
                     0, 0, 0,  // small Y offset
@@ -79,10 +99,11 @@ class ThreeAxis {
                 );
 
                 const sphere = new THREE.Mesh(sphereGeometry, material);
-                sphere.position.set(0, i, 0);
-                const label = utils.createLabel(
+                sphere.renderOrder = 11;
+                sphere.position.set(0, i, 0).applyEuler(euler);
+                const label = utils3d.createLabel(
                     z.toFixed(0).toString(),
-                    new THREE.Vector3(-0.2, 0, 0.2),
+                    new THREE.Vector3(-0.2, 0, -0.2),
                     0, 0, 0,  // offset slightly in X and Y
                     this.props.axisColor
                 );
@@ -100,8 +121,9 @@ class ThreeAxis {
                 );
 
                 const sphere = new THREE.Mesh(sphereGeometry, material);
-                sphere.position.set(0, i, 0);
-                const label = utils.createLabel(
+                sphere.renderOrder = 11;
+                sphere.position.set(0, i, 0).applyEuler(euler);
+                const label = utils3d.createLabel(
                     (y <= 0 ? Math.trunc(y) : Math.round(y)).toFixed(0).toString(),
                     new THREE.Vector3(-0.2, 0, 0.2),
                     0, 0, 0, // offset in X and Z
@@ -114,6 +136,7 @@ class ThreeAxis {
         }
 
         group.position.set(x0, y0, z0);
+        group.renderOrder = 19
         return group;
     }
 }

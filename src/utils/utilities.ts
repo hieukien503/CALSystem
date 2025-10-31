@@ -1,25 +1,25 @@
 import Konva from "konva";
-import _ from 'lodash';
-import { LineStyle } from "../types/geometry";
+import { LineStyle, SemiCircle } from "../types/geometry";
 import { FONT_DEFAULTS, EPSILON } from "../types/constants";
-import { GeometryState, Shape, Point, ShapeNode, Polygon } from "../types/geometry";
+import { GeometryState, Shape, Point, ShapeNode, Polygon, ShapeType, Segment, Circle, Line, Ray, Vector } from "../types/geometry";
 import * as constants from '../types/constants'
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid';
+import * as Factory from './Factory';
 const math = require('mathjs');
 
 // Utility functions
-export const convert2RGB = _.memoize((color: string): [number, number, number] => {
+export const convert2RGB = (color: string): [number, number, number] => {
     const rgb = Konva.Util.getRGB(color)
     if (rgb) {
         return [rgb.r, rgb.g, rgb.b]
     }
     throw new Error('Invalid color format');
-});
+};
 
-export const createDashArray = _.memoize((lineStyle: LineStyle): number[] => {
+export const createDashArray = (lineStyle: LineStyle): number[] => {
     const [dash, gap, offset] = [lineStyle.dash_size, lineStyle.gap_size, lineStyle.dot_size];
     return [offset ?? 0, gap, dash, gap];
-});
+};
 
 export const createLabelProps = (
     x: number,
@@ -45,7 +45,7 @@ export const createLabelProps = (
     }
 }
 
-export const createPointDefaultShapeProps = _.memoize((label: string, radius: number = 0.05, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createPointDefaultShapeProps = (label: string, radius: number = 0.05, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -59,9 +59,9 @@ export const createPointDefaultShapeProps = _.memoize((label: string, radius: nu
         fill: true,
         id: `point-${uuidv4()}`
     }
-});
+};
 
-export const createLineDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createLineDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         line_size: 1,
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
@@ -75,9 +75,9 @@ export const createLineDefaultShapeProps = _.memoize((label: string, radius: num
         labelZOffset: labelZOffset,
         id: `line-${label}`
     }
-})
+};
 
-export const createVectorDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createVectorDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         line_size: 1,
         line_style: {dash_size: 0, gap_size: 0, dot_size: 0},
@@ -91,9 +91,9 @@ export const createVectorDefaultShapeProps = _.memoize((label: string, radius: n
         labelZOffset: labelZOffset,
         id: `vector-${label}`
     }
-})
+};
 
-export const createCircleDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createCircleDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -107,9 +107,9 @@ export const createCircleDefaultShapeProps = _.memoize((label: string, radius: n
         fill: true,
         id: `circle-${label}`
     }
-})
+}
 
-export const createSphereDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createSphereDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -123,9 +123,9 @@ export const createSphereDefaultShapeProps = _.memoize((label: string, radius: n
         fill: true,
         id: `sphere-${label}`
     }
-})
+};
 
-export const createSemiCircleDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createSemiCircleDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -139,9 +139,9 @@ export const createSemiCircleDefaultShapeProps = _.memoize((label: string, radiu
         fill: true,
         id: `semi-${label}`
     }
-})
+};
 
-export const createPolygonDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createPolygonDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -156,9 +156,9 @@ export const createPolygonDefaultShapeProps = _.memoize((label: string, radius: 
         id: `polygon-${label}`,
         opacity: 0.1
     }
-})
+};
 
-export const createAngleDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createAngleDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -173,9 +173,9 @@ export const createAngleDefaultShapeProps = _.memoize((label: string, radius: nu
         id: `angle-${label}`,
         opacity: 0.1
     }
-});
+};
 
-export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createPlaneDefaultShapeProps = (label: string, radius: number = 0, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -190,9 +190,9 @@ export const createPlaneDefaultShapeProps = _.memoize((label: string, radius: nu
         id: `plane-${label}`,
         opacity: 0.3
     }
-});
+};
 
-export const createCylinderDefaultShapeProps = _.memoize((label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
+export const createCylinderDefaultShapeProps = (label: string, radius: number, labelXOffset: number = 0, labelYOffset: number = 0, labelZOffset: number = 0): Shape['props'] => {
     return {
         label: label,
         labelXOffset: labelXOffset,
@@ -207,9 +207,9 @@ export const createCylinderDefaultShapeProps = _.memoize((label: string, radius:
         id: `cylinder-${label}`,
         opacity: 0.5
     }
-})
+};
 
-export const snapToGrid = _.memoize((
+export const snapToGrid = (
     pointer: {x: number, y: number},
     gridSpace: number,
     split: number,
@@ -257,7 +257,7 @@ export const snapToGrid = _.memoize((
     }
 
     return finalMathPos;
-});
+};
 
 export const clone = (
     state: GeometryState,
@@ -329,7 +329,14 @@ export const snapToShape = (
     let scaleFactor: number | undefined = undefined;
     if (!shape) {
         return {
-            position: position,
+            position: isSnapToGrid ? snapToGrid(
+                position,
+                constants.BASE_SPACING,
+                axisTickInterval,
+                stage.width() / 2,
+                stage.height() / 2,
+                layerMath
+            ) : position,
             rotFactor: rotFactor,
             scaleFactor: scaleFactor
         };
@@ -576,4 +583,541 @@ export const convertToScreenCoords = (
     const cy = screenY;
 
     return { x: cx, y: cy };
+}
+
+export const updateShapeAfterTransform = (
+    shape: Shape,
+    transformedShape: Shape,
+    labelUsed: string[],
+    dag: Map<string, ShapeNode>,
+    mode: string,
+    data: {
+        rotation: {
+            degree: number,
+            CCW: boolean
+        } | undefined;
+        scale_factor: number | undefined;
+    },
+    transformObject: Shape | undefined
+): void => {
+    const getNewLabel = (oldLabel: string) => {
+        let label = incrementLabel(oldLabel);
+        while (labelUsed.includes(label)) {
+            label = incrementLabel(label);
+        }
+
+        return label;
+    }
+
+    const shapeType: ShapeType = (mode === 'rotation' ? 'Rotation' : 
+                    (mode === 'enlarge' ? 'Enlarge' : (mode === 'translation' ? 'Translation' : 'Reflection')));
+
+    if ('points' in transformedShape) {
+        let idx = 0;
+        let label = `poly${idx}`;
+        while (labelUsed.includes(label)) {
+            idx += 1;
+            label = `poly${idx}`;
+        }
+
+        labelUsed.push(label);
+        transformedShape.props.label = label;
+        transformedShape.props.id = `polygon-${label}`;
+        const points = (transformedShape as Polygon).points;
+        for(let i = 0; i < points.length; i++) {
+            updateShapeAfterTransform(
+                (shape as Polygon).points[i],
+                points[i],
+                labelUsed,
+                dag,
+                mode,
+                data,
+                transformObject
+            );
+        };
+
+        for (let i = 0; i < points.length; i++) {
+            const pNext = points[(i + 1) % points.length];
+            const oldSegment = Array.from(dag.entries()).find((value: [string, ShapeNode]) => {
+                return 'startSegment' in value[1].type && 
+                (
+                    (value[1].type.endSegment.props.id === (shape as Polygon).points[i].props.id && (value[1].type.startSegment.props.id === (shape as Polygon).points[(i + 1) % points.length].props.id)) ||
+                    (value[1].type.startSegment.props.id === (shape as Polygon).points[i].props.id && (value[1].type.endSegment.props.id === (shape as Polygon).points[(i + 1) % points.length].props.id))
+                )
+            });
+
+            label = `segment0`;
+            let index = 0;
+            while (labelUsed.includes(label)) {
+                index++;
+                label = `segment${index}`;
+            }
+
+            labelUsed.push(label);
+            const segment = Factory.createSegment(
+                structuredClone(oldSegment![1].type.props),
+                points[i],
+                pNext
+            );
+
+            segment.props.label = label;
+            segment.props.id = `line-${label}`
+            let anotherShapeNode: ShapeNode = {
+                id: segment.props.id,
+                defined: true,
+                isSelected: false,
+                dependsOn: [oldSegment![1].id, transformObject!.props.id, points[i].props.id, pNext.props.id, transformedShape.props.id],
+                type: segment,
+                node: undefined,
+                rotationFactor: mode === 'rotation' ? {
+                    degree: (data.rotation ? data.rotation.degree : 0),
+                    CCW: (data.rotation ? data.rotation.CCW : true)
+                } : undefined,
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            };
+
+            segment.type = shapeType;
+            dag.set(segment.props.id, anotherShapeNode);
+        }
+
+        let shapeNode = {
+            id: transformedShape.props.id,
+            type: transformedShape,
+            node: undefined,
+            dependsOn: [shape.props.id, transformObject!.props.id],
+            defined: true,
+            isSelected: false,
+            rotationFactor: mode === 'rotation' ? {
+                degree: (data.rotation ? data.rotation.degree : 0),
+                CCW: (data.rotation ? data.rotation.CCW : true)
+            } : undefined,
+            scaleFactor: data.scale_factor ? data.scale_factor : undefined
+        };
+
+        dag.set(transformedShape.props.id, shapeNode);
+    }
+
+    else if (!('x' in transformedShape && 'y' in transformedShape)) {
+        if ('startSegment' in shape) {
+            const [start, end] = [(shape as Segment).startSegment, (shape as Segment).endSegment];
+            updateShapeAfterTransform(
+                start, (transformedShape as Segment).startSegment, labelUsed, dag, mode, data, transformObject
+            );
+            updateShapeAfterTransform(
+                end, (transformedShape as Segment).endSegment, labelUsed, dag, mode, data, transformObject
+            );
+            // (transformedShape as Segment).startSegment.props.label = getNewLabel(start.props.label);
+            // (transformedShape as Segment).startSegment.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Segment).startSegment.props.label);
+            // (transformedShape as Segment).endSegment.props.label = getNewLabel(end.props.label);
+            // (transformedShape as Segment).endSegment.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Segment).endSegment.props.label);
+            let segment_label = `segment0`;
+            let index = 0;
+            while (labelUsed.includes(segment_label)) {
+                index++;
+                segment_label = `segment${index}`;
+            }
+
+            labelUsed.push(segment_label);
+            transformedShape.props.label = segment_label;
+            transformedShape.props.id = `line-${segment_label}`;
+
+            let anotherShapeNode = {
+                id: transformedShape.props.id,
+                defined: true,
+                isSelected: false,
+                dependsOn: [shape.props.id, transformObject!.props.id, (transformedShape as Segment).startSegment.props.id, (transformedShape as Segment).endSegment.props.id],
+                type: transformedShape,
+                node: undefined,
+                rotationFactor: mode === 'rotation' ? {
+                    degree: (data.rotation ? data.rotation.degree : 0),
+                    CCW: (data.rotation ? data.rotation.CCW : true)
+                } : undefined,
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            };
+
+            transformedShape.type = shapeType;
+            // shapeNode1.type.type = shapeType;
+            // shapeNode2.type.type = shapeType;
+            // dag.set(shapeNode1.id, shapeNode1);
+            // dag.set(shapeNode2.id, shapeNode2);
+            dag.set(transformedShape.props.id, anotherShapeNode);
+        }
+
+        else if ('startLine' in shape) {
+            const [start, end] = [(shape as Line).startLine, (shape as Line).endLine];
+            updateShapeAfterTransform(
+                start, (transformedShape as Line).startLine, labelUsed, dag, mode, data, transformObject
+            );
+            updateShapeAfterTransform(
+                end, (transformedShape as Line).endLine, labelUsed, dag, mode, data, transformObject
+            );
+            // (transformedShape as Line).startLine.props.label = getNewLabel(start.props.label);
+            // (transformedShape as Line).startLine.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Line).startLine.props.label);
+            // (transformedShape as Line).endLine.props.label = getNewLabel(end.props.label);
+            // (transformedShape as Line).endLine.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Line).endLine.props.label);
+            let line_label = `line0`;
+            let index = 0;
+            while (labelUsed.includes(line_label)) {
+                index++;
+                line_label = `line${index}`;
+            }
+
+            labelUsed.push(line_label);
+            transformedShape.props.label = line_label;
+            transformedShape.props.id = `line-${line_label}`;
+
+            // let shapeNode1: ShapeNode = {
+            //     id: (transformedShape as Line).startLine.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [start.props.id, transformObject!.props.id],
+            //     type: (transformedShape as Line).startLine,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            // let shapeNode2: ShapeNode = {
+            //     id: (transformedShape as Line).endLine.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [end.props.id, transformObject!.props.id],
+            //     type: (transformedShape as Line).endLine,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            let anotherShapeNode = {
+                id: transformedShape.props.id,
+                defined: true,
+                isSelected: false,
+                dependsOn: [shape.props.id, transformObject!.props.id, (transformedShape as Line).startLine.props.id, (transformedShape as Line).endLine.props.id],
+                type: transformedShape,
+                node: undefined,
+                rotationFactor: mode === 'rotation' ? {
+                    degree: (data.rotation ? data.rotation.degree : 0),
+                    CCW: (data.rotation ? data.rotation.CCW : true)
+                } : undefined,
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            };
+
+            transformedShape.type = shapeType;
+            // shapeNode1.type.type = shapeType;
+            // shapeNode2.type.type = shapeType;
+            // dag.set(shapeNode1.id, shapeNode1);
+            // dag.set(shapeNode2.id, shapeNode2);
+            dag.set(transformedShape.props.id, anotherShapeNode);
+        }
+
+        else if ('startRay' in shape) {
+            const [start, end] = [(shape as Ray).startRay, (shape as Ray).endRay];
+            updateShapeAfterTransform(
+                start, (transformedShape as Ray).startRay, labelUsed, dag, mode, data, transformObject
+            );
+            updateShapeAfterTransform(
+                end, (transformedShape as Ray).endRay, labelUsed, dag, mode, data, transformObject
+            );
+            // (transformedShape as Ray).startRay.props.label = getNewLabel(start.props.label);
+            // (transformedShape as Ray).startRay.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Ray).startRay.props.label);
+            // (transformedShape as Ray).endRay.props.label = getNewLabel(end.props.label);
+            // (transformedShape as Ray).endRay.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Ray).endRay.props.label);
+            let ray_label = `ray0`;
+            let index = 0;
+            while (labelUsed.includes(ray_label)) {
+                index++;
+                ray_label = `ray${index}`;
+            }
+
+            labelUsed.push(ray_label);
+            transformedShape.props.label = ray_label;
+            transformedShape.props.id = `line-${ray_label}`;
+
+            // let shapeNode1: ShapeNode = {
+            //     id: (transformedShape as Ray).startRay.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [start.props.id, transformObject!.props.id],
+            //     type: (transformedShape as Ray).startRay,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            // let shapeNode2: ShapeNode = {
+            //     id: (transformedShape as Ray).endRay.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [end.props.id, transformObject!.props.id],
+            //     type: (transformedShape as Ray).endRay,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            let anotherShapeNode = {
+                id: transformedShape.props.id,
+                defined: true,
+                isSelected: false,
+                dependsOn: [shape.props.id, transformObject!.props.id, (transformedShape as Ray).startRay.props.id, (transformedShape as Ray).endRay.props.id],
+                type: transformedShape,
+                node: undefined,
+                rotationFactor: mode === 'rotation' ? {
+                    degree: (data.rotation ? data.rotation.degree : 0),
+                    CCW: (data.rotation ? data.rotation.CCW : true)
+                } : undefined,
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            };
+
+            transformedShape.type = shapeType;
+            // shapeNode1.type.type = shapeType;
+            // shapeNode2.type.type = shapeType;
+            // dag.set(shapeNode1.id, shapeNode1);
+            // dag.set(shapeNode2.id, shapeNode2);
+            dag.set(transformedShape.props.id, anotherShapeNode);
+        }
+
+        else if ('startVector' in shape) {
+            const [start, end] = [(shape as Vector).startVector, (shape as Vector).endVector];
+            updateShapeAfterTransform(
+                start, (transformedShape as Vector).startVector, labelUsed, dag, mode, data, transformObject
+            );
+            updateShapeAfterTransform(
+                end, (transformedShape as Vector).endVector, labelUsed, dag, mode, data, transformObject
+            );
+            // (transformedShape as Vector).startVector.props.label = getNewLabel(start.props.label);
+            // (transformedShape as Vector).startVector.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Vector).startVector.props.label);
+            // (transformedShape as Vector).endVector.props.label = getNewLabel(end.props.label);
+            // (transformedShape as Vector).endVector.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as Vector).endVector.props.label);
+            let vector_label = `vector0`;
+            let index = 0;
+            while (labelUsed.includes(vector_label)) {
+                index++;
+                vector_label = `vector${index}`;
+            }
+
+            labelUsed.push(vector_label);
+            transformedShape.props.label = vector_label;
+            transformedShape.props.id = `vector-${vector_label}`;
+
+            // let shapeNode1: ShapeNode = {
+            //     id: (transformedShape as Vector).startVector.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [start.props.id, transformObject!.props.id],
+            //     type: (transformedShape as Vector).startVector,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            // let shapeNode2: ShapeNode = {
+            //     id: (transformedShape as Vector).endVector.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [end.props.id, transformObject!.props.id],
+            //     type: (transformedShape as Vector).endVector,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            let anotherShapeNode = {
+                id: transformedShape.props.id,
+                defined: true,
+                isSelected: false,
+                dependsOn: [shape.props.id, transformObject!.props.id, (transformedShape as Vector).startVector.props.id, (transformedShape as Vector).endVector.props.id],
+                type: transformedShape,
+                node: undefined,
+                rotationFactor: mode === 'rotation' ? {
+                    degree: (data.rotation ? data.rotation.degree : 0),
+                    CCW: (data.rotation ? data.rotation.CCW : true)
+                } : undefined,
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            };
+
+            transformedShape.type = shapeType;
+            // shapeNode1.type.type = shapeType;
+            // shapeNode2.type.type = shapeType;
+            // dag.set(shapeNode1.id, shapeNode1);
+            // dag.set(shapeNode2.id, shapeNode2);
+            dag.set(transformedShape.props.id, anotherShapeNode);
+        }
+
+        else if ('centerC' in shape && 'radius' in shape) {
+            const center = (shape as Circle).centerC;
+            updateShapeAfterTransform(
+                center, (transformedShape as Circle).centerC, labelUsed, dag, mode, data, transformObject
+            );
+            // (transformedShape as Circle).centerC.props.label = getNewLabel(center.props.label);
+            // (transformedShape as Circle).centerC.props.id = `point-${uuidv4()}`;
+            // labelUsed.push((transformedShape as Circle).centerC.props.label);
+            let circle_label = `circle0`;
+            let index = 0;
+            while (labelUsed.includes(circle_label)) {
+                index++;
+                circle_label = `circle${index}`;
+            }
+
+            labelUsed.push(circle_label);
+            transformedShape.props.label = circle_label;
+            transformedShape.props.id = `circle-${circle_label}`;
+
+            // let shapeNode1: ShapeNode = {
+            //     id: (transformedShape as Circle).centerC.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [(shape as Circle).centerC.props.id, transformObject!.props.id],
+            //     type: (transformedShape as Circle).centerC,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            let anotherShapeNode = {
+                id: transformedShape.props.id,
+                defined: true,
+                isSelected: false,
+                dependsOn: [shape.props.id, transformObject!.props.id, (transformedShape as Circle).centerC.props.id],
+                type: transformedShape,
+                node: undefined,
+                rotationFactor: mode === 'rotation' ? {
+                    degree: (data.rotation ? data.rotation.degree : 0),
+                    CCW: (data.rotation ? data.rotation.CCW : true)
+                } : undefined,
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            };
+
+            transformedShape.type = shapeType;
+            // shapeNode1.type.type = shapeType;
+            // dag.set(shapeNode1.id, shapeNode1);
+            dag.set(transformedShape.props.id, anotherShapeNode);
+        }
+
+        else if ('start' in shape && 'end' in shape) {
+            const startPoint = (shape as SemiCircle).start, endPoint = (shape as SemiCircle).end;
+            updateShapeAfterTransform(
+                startPoint, (transformedShape as SemiCircle).start, labelUsed, dag, mode, data, transformObject
+            );
+            updateShapeAfterTransform(
+                endPoint, (transformedShape as SemiCircle).end, labelUsed, dag, mode, data, transformObject
+            );
+            // (transformedShape as SemiCircle).start.props.label = getNewLabel(startPoint.props.label);
+            // (transformedShape as SemiCircle).start.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as SemiCircle).start.props.label);
+            // (transformedShape as SemiCircle).end.props.label = getNewLabel(endPoint.props.label);
+            // (transformedShape as SemiCircle).end.props.id = `point-${uuidv4()}`
+            // labelUsed.push((transformedShape as SemiCircle).end.props.label);
+            let semi_label = `semi0`;
+            let index = 0;
+            while (labelUsed.includes(semi_label)) {
+                index++;
+                semi_label = `semi${index}`;
+            }
+
+            labelUsed.push(semi_label);
+            transformedShape.props.label = semi_label;
+            transformedShape.props.id = `semi-${semi_label}`;
+
+            // let shapeNode1: ShapeNode = {
+            //     id: (transformedShape as SemiCircle).start.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [startPoint.props.id, transformObject!.props.id],
+            //     type: (transformedShape as SemiCircle).start,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            // let shapeNode2: ShapeNode = {
+            //     id: (transformedShape as SemiCircle).end.props.id,
+            //     defined: true,
+            //     isSelected: false,
+            //     dependsOn: [endPoint.props.id, transformObject!.props.id],
+            //     type: (transformedShape as SemiCircle).end,
+            //     node: undefined,
+            //     rotationFactor: mode === 'rotation' ? {
+            //         degree: (data.rotation ? data.rotation.degree : 0),
+            //         CCW: (data.rotation ? data.rotation.CCW : true)
+            //     } : undefined,
+            //     scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            // }
+
+            let anotherShapeNode = {
+                id: transformedShape.props.id,
+                defined: true,
+                isSelected: false,
+                dependsOn: [shape.props.id, transformObject!.props.id, (transformedShape as SemiCircle).start.props.id, (transformedShape as SemiCircle).end.props.id],
+                type: transformedShape,
+                node: undefined,
+                rotationFactor: mode === 'rotation' ? {
+                    degree: (data.rotation ? data.rotation.degree : 0),
+                    CCW: (data.rotation ? data.rotation.CCW : true)
+                } : undefined,
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            };
+
+            transformedShape.type = shapeType;
+            // shapeNode1.type.type = shapeType;
+            // shapeNode2.type.type = shapeType;
+            // dag.set(shapeNode1.id, shapeNode1);
+            // dag.set(shapeNode2.id, shapeNode2);
+            dag.set(transformedShape.props.id, anotherShapeNode);
+        }
+    }
+
+    else {
+        transformedShape.props.label = getNewLabel(shape.props.label);
+        transformedShape.props.id = `point-${uuidv4()}`
+        labelUsed.push(transformedShape.props.label);
+        let anotherShapeNode = {
+            id: transformedShape.props.id,
+            defined: true,
+            isSelected: false,
+            dependsOn: [shape.props.id, transformObject!.props.id],
+            type: transformedShape,
+            node: undefined,
+            rotationFactor: mode === 'rotation' ? {
+                degree: (data.rotation ? data.rotation.degree : 0),
+                CCW: (data.rotation ? data.rotation.CCW : true)
+            } : undefined,
+            scaleFactor: data.scale_factor ? data.scale_factor : undefined
+        };
+
+        transformedShape.type = shapeType;
+        dag.set(transformedShape.props.id, anotherShapeNode);
+    }
 }

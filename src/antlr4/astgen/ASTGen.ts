@@ -4,7 +4,6 @@ import {
     AdditiveExprContext,
     AngleDefContext,
     CbrtExprContext,
-    CommandContext,
     CosExprContext,
     CotExprContext,
     ExpExprContext,
@@ -28,24 +27,59 @@ import {
     PlaneExprContext,
     VectorDefContext,
     CircleDefContext,
-    CuboidExprContext
+    PointExprContext,
+    PointListContext,
+    PolygonDefContext,
+    PolygonExprContext,
+    LineExprContext,
+    ShapeExprContext,
+    SegmentDefContext,
+    RayDefContext,
+    DirExprContext,
+    VectorExprContext,
+    DirectionExprContext,
+    SegmentExprContext,
+    RayExprContext,
+    ConeDefContext,
+    ConeExprContext,
+    CylinderExprContext,
+    IntersectionDefContext,
+    PrismDefContext,
+    PrismExprContext,
+    TetrahedronDefContext,
+    TetrahedronExprContext,
+    TransformDefContext,
+    CylinderDefContext,
+    PyramidDefContext,
+    PyramidExprContext,
+    NrootExprContext
 } from "../parser/MathCommandParser";
 import { MathCommandVisitor } from "../parser/MathCommandVisitor";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { TerminalNode } from "antlr4ts/tree/TerminalNode";
 import { ErrorNode } from "antlr4ts/tree/ErrorNode";
-import { ShapeNode3D } from "../../types/geometry";
-import * as utils from "../../utils/utilities";
-import * as utils3d from "../../utils/utilities3D";
+import * as geometry from "../../types/geometry";
+import {
+    createAngleDefaultShapeProps,
+    createCircleDefaultShapeProps,
+    createCylinderDefaultShapeProps,
+    createPlaneDefaultShapeProps,
+    createLineDefaultShapeProps,
+    createPointDefaultShapeProps,
+    createPolygonDefaultShapeProps,
+    createSphereDefaultShapeProps,
+    createVectorDefaultShapeProps,
+    getExcelLabel
+} from '../../utils/utilities'
 import * as operations from "../../utils/math_operation"
 import * as factory from "../../utils/Factory";
 
 const EPSILON = 1e-6;
 
 class ASTGen implements MathCommandVisitor<unknown> {
-    private DAG: Map<string, ShapeNode3D>;
+    private DAG: Map<string, geometry.ShapeNode3D>;
     private labelUsed: Array<string>;
-    constructor(DAG: Map<string, ShapeNode3D>, labelUsed: Array<string>) {
+    constructor(DAG: Map<string, geometry.ShapeNode3D>, labelUsed: Array<string>) {
         this.DAG = DAG;
         this.labelUsed = labelUsed;
     }
@@ -97,23 +131,272 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitProgram = (ctx: ProgramContext): unknown => {
-        return this.visit(ctx.expr());
+        const shapeInfo = this.visit(ctx.expr()) as { shape: geometry.Shape, defined: boolean };
+        const shape = shapeInfo.shape;
+        if ('x' in shape && 'y' in shape) {
+            let label = getExcelLabel('A', 0);
+            let index = 0;
+            while (this.labelUsed.includes(label)) {
+                index++;
+                label = getExcelLabel('A', index);
+            }
+
+            this.labelUsed.push(label);
+            shape.props.label = label;
+            this.DAG.set(shape.props.id, {
+                id: shape.props.id,
+                defined: shapeInfo.defined,
+                isSelected: false,
+                dependsOn: [],
+                type: shape
+            })
+        }
+
+        else if ('startLine' in shape || 'startVector' in shape || 'startRay' in shape || 'startSegment' in shape) {
+            const mode = 'startLine' in shape ? "line" : ('startVector' in shape ? "vector" : ('startRay' in shape ? "ray" : "segment"));
+            let index = 0;
+            let label = `${mode}${index}`;
+            while (this.labelUsed.includes(label)) {
+                index++;
+                label = `${mode}${index}`;
+            }
+
+            this.labelUsed.push(label);
+            shape.props.label = label;
+            shape.props.id = mode === 'vector' ? `vector-${label}` : `line-${label}`;
+
+            switch (mode) {
+                case 'vector': {
+                    const dir = {
+                        x: (shape as geometry.Vector).endVector.x - (shape as geometry.Vector).startVector.x,
+                        y: (shape as geometry.Vector).endVector.y - (shape as geometry.Vector).startVector.y,
+                        z: ((shape as geometry.Vector).endVector.z ?? 0) - ((shape as geometry.Vector).startVector.z ?? 0),
+                    }
+
+                    if (dir.x ** 2 + dir.y ** 2 + dir.z ** 2 <= 1e-6) {
+                        return; // 2 points are consider the same, no
+                    }
+
+                    let shapeNode: geometry.ShapeNode3D = {
+                        id: shape.props.id,
+                        type: shape,
+                        dependsOn: [(shape as geometry.Vector).startVector.props.id, (shape as geometry.Vector).endVector.props.id],
+                        defined: true,
+                        isSelected: false
+                    }
+
+            
+                    this.DAG.set(shape.props.id, shapeNode);
+                    break;
+                }
+                    
+                case 'line': {
+                    const dir = {
+                        x: (shape as geometry.Line).endLine.x - (shape as geometry.Line).startLine.x,
+                        y: (shape as geometry.Line).endLine.y - (shape as geometry.Line).startLine.y,
+                        z: ((shape as geometry.Line).endLine.z ?? 0) - ((shape as geometry.Line).startLine.z ?? 0),
+                    }
+
+                    if (dir.x ** 2 + dir.y ** 2 + dir.z ** 2 <= 1e-6) {
+                        return; // 2 points are consider the same, no
+                    }
+
+                    let shapeNode: geometry.ShapeNode3D = {
+                        id: shape.props.id,
+                        type: shape,
+                        dependsOn: [(shape as geometry.Line).startLine.props.id, (shape as geometry.Line).endLine.props.id],
+                        defined: true,
+                        isSelected: false
+                    }
+
+            
+                    this.DAG.set(shape.props.id, shapeNode);
+                    break;
+                }
+
+                case 'ray': {
+                    const dir = {
+                        x: (shape as geometry.Ray).endRay.x - (shape as geometry.Ray).startRay.x,
+                        y: (shape as geometry.Ray).endRay.y - (shape as geometry.Ray).startRay.y,
+                        z: ((shape as geometry.Ray).endRay.z ?? 0) - ((shape as geometry.Ray).startRay.z ?? 0),
+                    }
+
+                    if (dir.x ** 2 + dir.y ** 2 + dir.z ** 2 <= 1e-6) {
+                        return; // 2 points are consider the same, no
+                    }
+
+                    let shapeNode: geometry.ShapeNode3D = {
+                        id: shape.props.id,
+                        type: shape,
+                        dependsOn: [(shape as geometry.Ray).startRay.props.id, (shape as geometry.Ray).endRay.props.id],
+                        defined: true,
+                        isSelected: false
+                    }
+
+            
+                    this.DAG.set(shape.props.id, shapeNode);
+                    break;
+                }
+                    
+                default: {
+                    const dir = {
+                        x: (shape as geometry.Segment).endSegment.x - (shape as geometry.Segment).startSegment.x,
+                        y: (shape as geometry.Segment).endSegment.y - (shape as geometry.Segment).startSegment.y,
+                        z: ((shape as geometry.Segment).endSegment.z ?? 0) - ((shape as geometry.Segment).startSegment.z ?? 0),
+                    }
+
+                    if (dir.x ** 2 + dir.y ** 2 + dir.z ** 2 <= 1e-6) {
+                        return; // 2 points are consider the same, no
+                    }
+
+                    let shapeNode: geometry.ShapeNode3D = {
+                        id: shape.props.id,
+                        type: shape,
+                        dependsOn: [(shape as geometry.Segment).startSegment.props.id, (shape as geometry.Segment).endSegment.props.id],
+                        defined: true,
+                        isSelected: false
+                    }
+
+            
+                    this.DAG.set(shape.props.id, shapeNode);
+                    break;
+                }
+            }
+        }
+
+        else if ('centerC' in shape && 'radius' in shape) {
+            let index = 0;
+            let label = `circle${index}`;
+            while (this.labelUsed.includes(label)) {
+                index++;
+                label = `circle${index}`;
+            }
+
+            shape.props.label = label;
+            shape.props.id = `circle-${label}`
+
+            let shapeNode: geometry.ShapeNode3D = {
+                id: shape.props.id,
+                type: shape,
+                dependsOn: [(shape as geometry.Circle).centerC.props.id],
+                defined: true,
+                isSelected: false
+            }
+
+
+            this.DAG.set(shape.props.id, shapeNode);
+        }
+
+        else if ('points' in shape) {
+            let poly = shape as geometry.Polygon;
+            for (let i = 0; i < poly.points.length; i++) {
+                const p1 = poly.points[i], p2 = poly.points[(i + 1) % poly.points.length];
+                const dir = {
+                    x: p2.x - p1.x,
+                    y: p2.y - p1.y,
+                    z: (p2.z ?? 0) - (p1.z ?? 0),
+                }
+
+                if (dir.x ** 2 + dir.y ** 2 + dir.z ** 2 <= 1e-6) {
+                    return; // 2 points are consider the same, no
+                }
+            }
+
+            if (!operations.checkCoplanar(poly.points)) {
+                return;
+            }
+
+            let idx = 0;
+            let label = `poly${idx}`;
+            while (this.labelUsed.includes(label)) {
+                idx += 1;
+                label = `poly${idx}`;
+            }
+
+            this.labelUsed.push(label);
+            shape.props.label = label;
+            shape.props.id = `polygon-${label}`;
+            let dependencies: string[] = [];
+            dependencies = poly.points.map(point => point.props.id);
+            for (let i = 0; i < poly.points.length; i++) {
+                let p = poly.points[i];
+                let pNext = poly.points[(i + 1) % poly.points.length];
+                let label = `segment0`
+                let index = 0;
+                while (this.labelUsed.includes(label)) {
+                    index++;
+                    label = `segment${index}`;
+                }
+
+                this.labelUsed.push(label);
+                let segment = factory.createSegment(
+                    createLineDefaultShapeProps(label),
+                    p,
+                    pNext
+                );
+
+                segment.props.color = poly.props.color;
+                let shapeNode: geometry.ShapeNode3D = {
+                    id: segment.props.id,
+                    type: segment,
+                    dependsOn: [p.props.id, pNext.props.id, poly.props.id],
+                    defined: true,
+                    isSelected: false
+                }
+
+                this.DAG.set(segment.props.id, shapeNode);
+            }
+
+            let shapeNode: geometry.ShapeNode3D = {
+                id: poly.props.id,
+                type: poly,
+                dependsOn: dependencies,
+                defined: true,
+                isSelected: false
+            }
+    
+            this.DAG.set(poly.props.id, shapeNode);
+        }
+
+        else if ('vector1' in shape && 'vector2' in shape) {
+            let idx = 0;
+            let label = `angle${idx}`;
+            while (this.labelUsed.includes(label)) {
+                idx += 1;
+                label = `angle${idx}`;
+            }
+
+            this.labelUsed.push(label);
+            shape.props.label = label;
+            shape.props.id = `angle-${label}`;
+            let shapeNode: geometry.ShapeNode3D = {
+                id: shape.props.id,
+                type: shape,
+                dependsOn: [(shape as geometry.Angle).vector1.props.id, (shape as geometry.Angle).vector2.props.id],
+                defined: true,
+                isSelected: false
+            }
+
+
+            this.DAG.set(shape.props.id, shapeNode);
+        }
+        
+        return;
     };
 
     visitExpr = (ctx: ExprContext): unknown => {
         return this.visitChildren(ctx);
     }
 
-    visitCommand = (ctx: CommandContext): unknown => {
-        return this.visitChildren(ctx);
-    }
-
     visitPointDef = (ctx: PointDefContext): unknown => {
         return {
-            type: "Point",
-            x: this.visit(ctx.numberExpr()[0]) as number,
-            y: this.visit(ctx.numberExpr()[1]) as number,
-            z: this.visit(ctx.numberExpr()[2]) as number
+            shape: factory.createPoint(
+                createPointDefaultShapeProps(''),
+                this.visit(ctx.numberExpr(0)) as number,
+                this.visit(ctx.numberExpr(1)) as number,
+                this.visit(ctx.numberExpr(2)) as number
+            ),
+            defined: true
         }
     }
 
@@ -240,6 +523,21 @@ class ASTGen implements MathCommandVisitor<unknown> {
         return Math.log(value);
     }
 
+    visitNrootExpr = (ctx: NrootExprContext): unknown => {
+        const value1 = this.visit(ctx.numberExpr(0)) as number;
+        const value2 = this.visit(ctx.numberExpr(1)) as number;
+        if (value1 === 0) {
+            throw new Error('Root must be non-zero')
+        }
+
+        const result = Math.pow(value2, 1 / value1);
+        if (isNaN(result)) {
+            throw new Error(`Cannot compute nroot(${value1},${value2}) in real number set`);
+        }
+
+        return result;
+    }
+
     visitLogExpr = (ctx: LogExprContext): unknown => {
         const base = this.visit(ctx.numberExpr(0)) as number;
         const value = this.visit(ctx.numberExpr(1)) as number;
@@ -279,53 +577,100 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitLineDef = (ctx: LineDefContext): unknown => {
-        let point1 = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
-        if (ctx.pointExpr().length === 2) {
-            let point2 = this.visit(ctx.pointExpr(1)) as { type: "Point", x: number, y: number, z: number };
+        let point1 = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean };
+        if (!point1.defined) {
             return {
-                type: "Line",
-                point1: point1,
-                point2: point2
-            };
+                shape: factory.createLine(
+                    createLineDefaultShapeProps(''),
+                    factory.createPoint(
+                        createPointDefaultShapeProps(''),
+                        0, 0, 0
+                    ),
+                    factory.createPoint(
+                        createPointDefaultShapeProps(''),
+                        0, 0, 0
+                    )
+                ),
+                defined: false
+            }
+        }
+
+        if (ctx.pointExpr().length === 2) {
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            return {
+                shape: factory.createLine(
+                    createLineDefaultShapeProps(''),
+                    point1.shape,
+                    point2.shape
+                ),
+                defined: point2.defined
+            }
         }
 
         else if (ctx.lineExpr()) {
-            let lineExpr = this.visit(ctx.lineExpr()!) as { type: "Line", point1: { x: number, y: number, z: number }, point2: { x: number, y: number, z: number } };
+            let lineExpr = this.visit(ctx.lineExpr()!) as { shape: geometry.Line, defined: boolean };
+            // Return a line parallel to the given lineExpr passing through point1
             return {
-                type: "Line",
-                point1: lineExpr.point1,
-                point2: lineExpr.point2
-            };
+                shape: factory.createLine(
+                    createLineDefaultShapeProps(''),
+                    point1.shape,
+                    factory.createPoint(
+                        createPointDefaultShapeProps(''),
+                        point1.shape.x + (lineExpr.shape.endLine.x - lineExpr.shape.startLine.x),
+                        point1.shape.y + (lineExpr.shape.endLine.y - lineExpr.shape.startLine.y),
+                        (point1.shape.z ?? 0) + ((lineExpr.shape.endLine.z ?? 0) - (lineExpr.shape.startLine.z ?? 0))
+                    )
+                ),
+                defined: lineExpr.defined
+            }
         }
 
         else {
-            let vectorExpr = this.visit(ctx.vectorExpr()!) as { type: "Vector", x: number, y: number, z: number };
+            let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
             return {
-                type: "Line",
-                point1: point1,
-                point2: {
-                    x: point1.x + vectorExpr.x,
-                    y: point1.y + vectorExpr.y,
-                    z: point1.z + vectorExpr.z
-                }
-            };
+                shape: factory.createLine(
+                    createLineDefaultShapeProps(''),
+                    point1.shape,
+                    factory.createPoint(
+                        createPointDefaultShapeProps(''),
+                        point1.shape.x + (vectorExpr.shape.endVector.x - vectorExpr.shape.startVector.x),
+                        point1.shape.y + (vectorExpr.shape.endVector.y - vectorExpr.shape.startVector.y),
+                        (point1.shape.z ?? 0) + ((vectorExpr.shape.endVector.z ?? 0) - (vectorExpr.shape.startVector.z ?? 0))
+                    )
+                ),
+                defined: vectorExpr.defined
+            }
         }
     }
 
     visitSphereDef = (ctx: SphereDefContext): unknown => {
-        let center = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
+        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        if (!center.defined) {
+            return {
+                shape: factory.createSphere(
+                    createSphereDefaultShapeProps('', 0),
+                    center.shape,
+                    0
+                ),
+                defined: false
+            }
+        }
+
         if (ctx.pointExpr().length === 2) {
-            let pointOnSphere = this.visit(ctx.pointExpr(1)) as { type: "Point", x: number, y: number, z: number };
+            let pointOnSphere = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
             let radius = Math.sqrt(
-                Math.pow(pointOnSphere.x - center.x, 2) +
-                Math.pow(pointOnSphere.y - center.y, 2) +
-                Math.pow(pointOnSphere.z - center.z, 2)
+                Math.pow(pointOnSphere.shape.x - center.shape.x, 2) +
+                Math.pow(pointOnSphere.shape.y - center.shape.y, 2) +
+                Math.pow((pointOnSphere.shape.z ?? 0) - (center.shape.z ?? 0), 2)
             );
             
             return {
-                type: "Sphere",
-                center: center,
-                radius: radius
+                shape: factory.createSphere(
+                    createSphereDefaultShapeProps('', radius),
+                    center.shape,
+                    radius
+                ),
+                defined: pointOnSphere.defined
             }
         }
 
@@ -335,238 +680,307 @@ class ASTGen implements MathCommandVisitor<unknown> {
         }
 
         return {
-            type: "Sphere",
-            center: center,
-            radius: radius
-        };
+            shape: factory.createSphere(
+                createSphereDefaultShapeProps('', radius),
+                center.shape,
+                radius
+            ),
+            defined: true
+        }
     }
 
     visitAngleDef = (ctx: AngleDefContext): unknown => {
         if (ctx.vectorExpr().length === 1) {
-            let vector = this.visit(ctx.vectorExpr(0)) as { type: "Vector", x: number, y: number, z: number };
-            // Calculate the angle between the vector and the x-axis
-            // We convert the coordinate to THREE.js coordinate, which y is up
-            let v1 = utils3d.convertToVector3(vector.x, vector.y, vector.z);
-            let v2 = utils3d.convertToVector3(1, 0, 0); // x-axis vector
-            let angle = v1.angleTo(v2);
+            let vector = this.visit(ctx.vectorExpr(0)) as { shape: geometry.Vector, defined: boolean };
             return {
-                type: "Angle",
-                point: {x: 0, y: 0, z: 0}, // Default point at origin
-                angle: angle
-            };
+                shape: factory.createAngle(
+                    createAngleDefaultShapeProps(''),
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            0, 0, 0
+                        ),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            1, 0, 0
+                        )
+                    ),
+                    vector.shape
+                ),
+                defined: vector.defined
+            }
         }
 
         if (ctx.pointExpr().length === 1) {
-            let point = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
-            // Calculate the angle between the point and the x-axis
-            let v1 = utils3d.convertToVector3(point.x, point.y, point.z);
-            let v2 = utils3d.convertToVector3(1, 0, 0); // x-axis vector
-            let angle = v1.angleTo(v2);
+            let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
             return {
-                type: "Angle",
-                point: {x: 0, y: 0, z: 0},
-                angle: angle
-            };
+                shape: factory.createAngle(
+                    createAngleDefaultShapeProps(''),
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            0, 0, 0
+                        ),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            1, 0, 0
+                        )
+                    ),
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            0, 0, 0
+                        ),
+                        point.shape
+                    ),
+                ),
+                defined: point.defined
+            }
         }
 
         if (ctx.vectorExpr().length === 2) {
-            let vector1 = this.visit(ctx.vectorExpr(0)) as { type: "Vector", x: number, y: number, z: number };
-            let vector2 = this.visit(ctx.vectorExpr(1)) as { type: "Vector", x: number, y: number, z: number };
-            // Calculate the angle between two vectors
-            let v1 = utils3d.convertToVector3(vector1.x, vector1.y, vector1.z);
-            let v2 = utils3d.convertToVector3(vector2.x, vector2.y, vector2.z);
-            let angle = v1.angleTo(v2);
+            let vector1 = this.visit(ctx.vectorExpr(0)) as { shape: geometry.Vector, defined: boolean };
+            let vector2 = this.visit(ctx.vectorExpr(1)) as { shape: geometry.Vector, defined: boolean };
+
             return {
-                type: "Angle",
-                point: {x: 0, y: 0, z: 0}, // Default point at origin
-                angle: angle
-            };
+                shape: factory.createAngle(
+                    createAngleDefaultShapeProps(''),
+                    vector1.shape,
+                    vector2.shape
+                ),
+                defined: vector1.defined && vector2.defined
+            }
         }
 
         if (ctx.lineExpr().length === 1) {
-            let line = this.visit(ctx.lineExpr(0)) as { type: "Line", point1: { x: number, y: number, z: number }, point2: { x: number, y: number, z: number } };
-            let plane = this.visit(ctx.planeExpr(0)!) as { type: "Plane", point: { x: number, y: number, z: number }, normal: { x: number, y: number, z: number } };
-            // Calculate the angle between the line and the plane
-            let v1 = utils3d.convertToVector3(
-                line.point2.x - line.point1.x,
-                line.point2.y - line.point1.y,
-                line.point2.z - line.point1.z
-            );
-            let v2 = utils3d.convertToVector3(plane.normal.x, plane.normal.y, plane.normal.z);
-            let angle = v1.angleTo(v2);
-            const tmpLine = factory.createLine(
-                utils.createLineDefaultShapeProps(''),
-                factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    line.point1.x,
-                    line.point1.y,
-                    line.point1.z
-                ),
-                factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    line.point2.x,
-                    line.point2.y,
-                    line.point2.z
-                )
-            );
+            let line = this.visit(ctx.lineExpr(0)) as { shape: geometry.Line, defined: boolean };
+            let plane = this.visit(ctx.planeExpr(0)!) as { shape: geometry.Plane, defined: boolean };
+            const intersection = operations.getIntersections3D(line.shape, plane.shape);
+            const pointIntersection = intersection[0].coors;
 
-            const tmpPlane = factory.createPlane(
-                utils.createLineDefaultShapeProps(''),
-                factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    plane.point.x,
-                    plane.point.y,
-                    plane.point.z
-                ),
-                factory.createVector(
-                    utils.createVectorDefaultShapeProps(''),
-                    factory.createPoint(
-                        utils.createPointDefaultShapeProps(''),
-                        plane.point.x,
-                        plane.point.y,
-                        plane.point.z
+            let v = {
+                x: line.shape.endLine.x - line.shape.startLine.x,
+                y: line.shape.endLine.y - line.shape.startLine.y,
+                z: (line.shape.endLine.z ?? 0) - (line.shape.startLine.z ?? 0), 
+            }
+
+            let n = {
+                x: plane.shape.norm.endVector.x - plane.shape.norm.startVector.x,
+                y: plane.shape.norm.endVector.y - plane.shape.norm.startVector.y,
+                z: (plane.shape.norm.endVector.z ?? 0) - (plane.shape.norm.startVector.z ?? 0),
+            };
+
+            let v_plane = {
+                x: v.x - (operations.dot(v.x, v.y, v.z, n.x, n.y, n.z) / (n.x ** 2 + n.y ** 2 + n.z ** 2) * n.x),
+                y: v.y - (operations.dot(v.y, v.y, v.z, n.y, n.y, n.z) / (n.y ** 2 + n.y ** 2 + n.z ** 2) * n.y),
+                z: v.z - (operations.dot(v.z, v.y, v.z, n.z, n.y, n.z) / (n.z ** 2 + n.y ** 2 + n.z ** 2) * n.z),
+            }
+
+            return {
+                shape: factory.createAngle(
+                    createAngleDefaultShapeProps(''),
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            pointIntersection?.x ?? 0, pointIntersection?.y ?? 0, pointIntersection?.z ?? 0
+                        ),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            (pointIntersection?.x ?? 0) + v_plane.x,
+                            (pointIntersection?.y ?? 0) + v_plane.y,
+                            (pointIntersection?.z ?? 0) + v_plane.z,
+                        )
+                    ),
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        line.shape.startLine,
+                        line.shape.endLine
                     ),
                     factory.createPoint(
-                        utils.createPointDefaultShapeProps(''),
-                        plane.point.x + plane.normal.x,
-                        plane.point.y + plane.normal.y,
-                        plane.point.z + plane.normal.z
+                        createPointDefaultShapeProps(''),
+                        pointIntersection?.x ?? 0, pointIntersection?.y ?? 0, pointIntersection?.z ?? 0
                     )
-                )
-            );
-
-            const intersection = operations.getIntersections3D(tmpLine, tmpPlane);
-            const pointIntersection = intersection[0].coors;
-            return {
-                type: "Angle",
-                point: pointIntersection,
-                angle: angle
-            };
+                ),
+                defined: line.defined && plane.defined
+            }
         }
     }
 
     visitVectorDef = (ctx: VectorDefContext): unknown => {
         if (ctx.COMMA() !== undefined) {
-            let point1 = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
-            let point2 = this.visit(ctx.pointExpr(1)) as { type: "Point", x: number, y: number, z: number };
+            let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+
             return {
-                type: "Vector",
-                point1: point1,
-                point2: point2
-            };
+                shape: factory.createVector(
+                    createVectorDefaultShapeProps(''),
+                    point1.shape,
+                    point2.shape
+                ),
+                defined: point1.defined && point2.defined
+            }
         }
 
-        let point = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
+        let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
         return {
-            type: "Vector",
-            point1: { x: 0, y: 0, z: 0 },
-            point2: point
-        };
+            shape: factory.createVector(
+                createVectorDefaultShapeProps(''),
+                factory.createPoint(
+                    createPointDefaultShapeProps(''),
+                    0, 0, 0
+                ),
+                point.shape
+            ),
+            defined: point.defined
+        }
     }
 
     visitCircleDef = (ctx: CircleDefContext): unknown => {
         if (ctx.pointExpr().length === 2) {
-            let center = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
-            let pointOnCircle = this.visit(ctx.pointExpr(1)) as { type: "Point", x: number, y: number, z: number };
+            let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+            let pointOnCircle = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
             let radius = Math.sqrt(
-                Math.pow(pointOnCircle.x - center.x, 2) +
-                Math.pow(pointOnCircle.y - center.y, 2) +
-                Math.pow(pointOnCircle.z - center.z, 2)
+                Math.pow(pointOnCircle.shape.x - center.shape.x, 2) +
+                Math.pow(pointOnCircle.shape.y - center.shape.y, 2) +
+                Math.pow((pointOnCircle.shape.z ?? 0) - (center.shape.z ?? 0), 2)
             );
 
             if (ctx.directionExpr()) {
-                let direction = this.visit(ctx.directionExpr()!) as { type: "Direction", x: number, y: number, z: number };
+                let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean };
                 // Ensure the direction vector is a unit vector
-                let dirLength = Math.sqrt(direction.x ** 2 + direction.y ** 2 + direction.z ** 2);
+                let dirLength = Math.sqrt(
+                    (direction.shape.endVector.x - direction.shape.startVector.x) ** 2 +
+                    (direction.shape.endVector.y - direction.shape.startVector.y) ** 2 +
+                    ((direction.shape.endVector.z ?? 0) - (direction.shape.startVector.z ?? 0)) ** 2
+                );
+
                 if (dirLength < EPSILON) {
                     throw new Error("Direction vector cannot be zero.");
                 }
 
-                let norm = {
-                    x: direction.x / dirLength,
-                    y: direction.y / dirLength,
-                    z: direction.z / dirLength
-                };
-
                 return {
-                    type: "Circle",
-                    center: center,
-                    radius: radius,
-                    normal: norm
+                    shape: factory.createCircle(
+                        createCircleDefaultShapeProps('', radius),
+                        center.shape,
+                        radius,
+                        direction.shape
+                    ),
+                    defined: center.defined && direction.defined && pointOnCircle.defined
                 }
             }
             
             return {
-                type: "Circle",
-                center: center,
-                radius: radius,
-                normal: { x: 0, y: 0, z: 1 } // Default normal vector pointing in the z-direction
+                shape: factory.createCircle(
+                    createCircleDefaultShapeProps('', radius),
+                    center.shape,
+                    radius,
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        center.shape,
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            center.shape.x,
+                            center.shape.y,
+                            (center.shape.z ?? 0) + 1
+                        )
+                    )
+                ),
+                defined: center.defined && pointOnCircle.defined
             }
         }
 
         if (ctx.pointExpr().length === 3) {
-            let pointOnCircle1 = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
-            let pointOnCircle2 = this.visit(ctx.pointExpr(1)) as { type: "Point", x: number, y: number, z: number };
-            let pointOnCircle3 = this.visit(ctx.pointExpr(2)) as { type: "Point", x: number, y: number, z: number };
-            let [point1, point2, point3] = [factory.createPoint(
-                utils.createPointDefaultShapeProps(''),
-                pointOnCircle1.x,
-                pointOnCircle1.y,
-                pointOnCircle1.z
-            ), factory.createPoint(
-                utils.createPointDefaultShapeProps(''),
-                pointOnCircle2.x,
-                pointOnCircle2.y,
-                pointOnCircle2.z
-            ), factory.createPoint(
-                utils.createPointDefaultShapeProps(''),
-                pointOnCircle3.x,
-                pointOnCircle3.y,
-                pointOnCircle3.z
-            )]
+            let pointOnCircle1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+            let pointOnCircle2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let pointOnCircle3 = this.visit(ctx.pointExpr(2)) as { shape:  geometry.Point, defined: boolean };
 
-            let [center, radius] = [operations.circumcenter(point1, point2, point3), operations.circumradius(point1, point2, point3)];
+            let [center, radius] = [operations.circumcenter(pointOnCircle1.shape, pointOnCircle2.shape, pointOnCircle3.shape), operations.circumradius(pointOnCircle1.shape, pointOnCircle2.shape, pointOnCircle3.shape)];
+            // Compute the normal vector of the circle plane
+            const v1 = {
+                x: pointOnCircle2.shape.x - pointOnCircle1.shape.x,
+                y: pointOnCircle2.shape.y - pointOnCircle1.shape.y,
+                z: (pointOnCircle2.shape.z ?? 0) - (pointOnCircle1.shape.z ?? 0)
+            };
+
+            const v2 = {
+                x: pointOnCircle3.shape.x - pointOnCircle1.shape.x,
+                y: pointOnCircle3.shape.y - pointOnCircle1.shape.y,
+                z: (pointOnCircle3.shape.z ?? 0) - (pointOnCircle1.shape.z ?? 0)
+            };
+
+            const cross = operations.cross(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+            if (Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2) < EPSILON) {
+                throw new Error("The three points are collinear, cannot define a circle.");
+            }
+
             return {
-                type: "Circle",
-                center: center,
-                radius: radius
+                shape: factory.createCircle(
+                    createCircleDefaultShapeProps('', radius),
+                    factory.createPoint(
+                        createPointDefaultShapeProps(''),
+                        center.x,
+                        center.y,
+                        center.z ?? 0
+                    ),
+                    radius,
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            0, 0, 0
+                        ),
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            cross.x, cross.y, cross.z
+                        )
+                    )
+                ),
+                defined: pointOnCircle1.defined && pointOnCircle2.defined && pointOnCircle3.defined
             }
         }
 
-        let center = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
+        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
         let radius = this.visit(ctx.numberExpr()!) as number;
         if (radius < 0) {
             throw new Error("Circle radius cannot be negative.");
         }
 
         if (ctx.directionExpr()) {
-            let direction = this.visit(ctx.directionExpr()!) as { type: "Direction", x: number, y: number, z: number };
+            let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean };
             // Ensure the direction vector is a unit vector
-            let dirLength = Math.sqrt(direction.x ** 2 + direction.y ** 2 + direction.z ** 2);
+            let dirLength = Math.sqrt(
+                (direction.shape.endVector.x - direction.shape.startVector.x) ** 2 +
+                (direction.shape.endVector.y - direction.shape.startVector.y) ** 2 +
+                ((direction.shape.endVector.z ?? 0) - (direction.shape.startVector.z ?? 0)) ** 2
+            );
+
             if (dirLength < EPSILON) {
                 throw new Error("Direction vector cannot be zero.");
             }
 
-            let norm = {
-                x: direction.x / dirLength,
-                y: direction.y / dirLength,
-                z: direction.z / dirLength
-            };
-
             return {
-                type: "Circle",
-                center: center,
-                radius: radius,
-                normal: norm
+                shape: factory.createCircle(
+                    createCircleDefaultShapeProps('', radius),
+                    center.shape,
+                    radius,
+                    direction.shape
+                ),
+                defined: center.defined && direction.defined
             }
         }
 
         return {
-            type: "Circle",
-            center: center,
-            radius: radius,
-            normal: { x: 0, y: 0, z: 1 } // Default normal vector pointing in the z-direction
-        };
+            shape: factory.createCircle(
+                createCircleDefaultShapeProps('', radius),
+                center.shape,
+                radius,
+            ),
+            defined: center.defined
+        }
     }
 
     visitPlaneDef = (ctx: PlaneDefContext): unknown => {
@@ -574,7 +988,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
             let shapeId = ctx.SHAPE_ID()!.text;
             let keys = Array.from(this.DAG.keys());
             for (let key of keys) {
-                if (key.includes(shapeId)) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
                     // Check if the shape is a polygon
                     let shape = this.DAG.get(key);
                     if (shape && 'points' in shape.type) {
@@ -620,9 +1035,21 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         }
 
                         return {
-                            type: "Plane",
-                            point: p1,
-                            normal: normal
+                            shape: factory.createPlane(
+                                createPlaneDefaultShapeProps(''),
+                                points[0],
+                                factory.createVector(
+                                    createVectorDefaultShapeProps(''),
+                                    points[0],
+                                    factory.createPoint(
+                                        createPointDefaultShapeProps(''),
+                                        points[0].x + normal.x,
+                                        points[0].y + normal.y,
+                                        (points[0].z ?? 0) + (normal.z ?? 0)
+                                    )
+                                )
+                            ),
+                            defined: node.defined
                         }
                     }
                 }
@@ -632,13 +1059,13 @@ class ASTGen implements MathCommandVisitor<unknown> {
         }
 
         if (ctx.pointExpr().length === 3) {
-            let p1 = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
-            let p2 = this.visit(ctx.pointExpr(1)) as { type: "Point", x: number, y: number, z: number };
-            let p3 = this.visit(ctx.pointExpr(2)) as { type: "Point", x: number, y: number, z: number };
+            let p1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+            let p2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let p3 = this.visit(ctx.pointExpr(2)) as { shape:  geometry.Point, defined: boolean };
 
             let cross = operations.cross(
-                p2.x - p1.x, p2.y - p1.y, (p2.z ?? 0) - (p1.z ?? 0),
-                p3.x - p1.x, p3.y - p1.y, (p3.z ?? 0) - (p1.z ?? 0)
+                p2.shape.x - p1.shape.x, p2.shape.y - p1.shape.y, (p2.shape.z ?? 0) - (p1.shape.z ?? 0),
+                p3.shape.x - p1.shape.x, p3.shape.y - p1.shape.y, (p3.shape.z ?? 0) - (p1.shape.z ?? 0)
             );
 
             let crossLength = Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2);
@@ -653,32 +1080,44 @@ class ASTGen implements MathCommandVisitor<unknown> {
             }
 
             return {
-                type: "Plane",
-                point: p1,
-                normal: normal
+                shape: factory.createPlane(
+                    createPlaneDefaultShapeProps(''),
+                    p1.shape,
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        p1.shape,
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            p1.shape.x + normal.x,
+                            p1.shape.y + normal.y,
+                            (p1.shape.z ?? 0) + (normal.z ?? 0)
+                        )
+                    )
+                ),
+                defined: p1.defined && p2.defined && p3.defined
             }
         }
 
         if (ctx.lineExpr().length === 2) {
-            let l1 = this.visit(ctx.lineExpr(0)) as { type: "Line", point1: { x: number, y: number, z: number }, point2: { x: number, y: number, z: number } };
-            let l2 = this.visit(ctx.lineExpr(1)) as { type: "Line", point1: { x: number, y: number, z: number }, point2: { x: number, y: number, z: number } };
+            let l1 = this.visit(ctx.lineExpr(0)) as { shape: geometry.Line, defined: boolean };
+            let l2 = this.visit(ctx.lineExpr(1)) as { shape: geometry.Line, defined: boolean };
             // Check if two lines are coincident
             let dir1 = {
-                x: l1.point2.x - l1.point1.x,
-                y: l1.point2.y - l1.point1.y,
-                z: l1.point2.z - l1.point1.z
+                x: l1.shape.endLine.x - l1.shape.startLine.x,
+                y: l1.shape.endLine.y - l1.shape.startLine.y,
+                z: (l1.shape.endLine.z ?? 0) - (l1.shape.startLine.z ?? 0)
             }
 
             let dir2 = {
-                x: l2.point2.x - l2.point1.x,
-                y: l2.point2.y - l2.point1.y,
-                z: l2.point2.z - l2.point1.z
+                x: l2.shape.endLine.x - l2.shape.startLine.x,
+                y: l2.shape.endLine.y - l2.shape.startLine.y,
+                z: (l2.shape.endLine.z ?? 0) - (l2.shape.startLine.z ?? 0)
             }
 
             let dir = {
-                x: l2.point1.x - l1.point1.x,
-                y: l2.point1.y - l1.point1.y,
-                z: l2.point1.z - l1.point1.z
+                x: l2.shape.startLine.x - l1.shape.startLine.x,
+                y: l2.shape.startLine.y - l1.shape.startLine.y,
+                z: (l2.shape.startLine.z ?? 0) - (l1.shape.startLine.z ?? 0)
             }
 
             let cross = operations.cross(dir1.x, dir1.y, dir1.z, dir2.x, dir2.y, dir2.z);
@@ -690,7 +1129,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 }
 
                 // Parallel, form a plane using one line and a point from the other line
-                let point = l2.point1;
+                let point = l2.shape.startLine;
                 let normal = cross1;
                 let normalLength = Math.sqrt(normal.x ** 2 + normal.y ** 2 + normal.z ** 2);
                 normal = {
@@ -700,9 +1139,21 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 }
 
                 return {
-                    type: "Plane",
-                    point: point,
-                    normal: normal
+                    shape: factory.createPlane(
+                        createPlaneDefaultShapeProps(''),
+                        point,
+                        factory.createVector(
+                            createVectorDefaultShapeProps(''),
+                            point,
+                            factory.createPoint(
+                                createPointDefaultShapeProps(''),
+                                point.x + normal.x,
+                                point.y + normal.y,
+                                (point.z ?? 0) + (normal.z ?? 0)
+                            )
+                        )
+                    ),
+                    defined: l1.defined && l2.defined
                 }
             }
 
@@ -716,31 +1167,46 @@ class ASTGen implements MathCommandVisitor<unknown> {
             }
 
             return {
-                type: "Plane",
-                point: l1.point1,
-                normal: normal
+                shape: factory.createPlane(
+                    createPlaneDefaultShapeProps(''),
+                    l1.shape.startLine,
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        l1.shape.startLine,
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            l1.shape.startLine.x + normal.x,
+                            l1.shape.startLine.y + normal.y,
+                            (l1.shape.startLine.z ?? 0) + (normal.z ?? 0)
+                        )
+                    )
+                ),
+                defined: l1.defined && l2.defined
             }
         }
 
         if (ctx.pointExpr().length === 1) {
-            let point = this.visit(ctx.pointExpr(0)) as { type: "Point", x: number, y: number, z: number };
+            let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
             if (ctx.planeExpr()) {
-                let planeExpr = this.visit(ctx.planeExpr()!) as { type: "Plane", point: { x: number, y: number, z: number }, normal: { x: number, y: number, z: number } };
+                let planeExpr = this.visit(ctx.planeExpr()!) as { shape: geometry.Plane, defined: boolean };
                 // Return a plane parallel to the given plane passing through the point
                 return {
-                    type: "Plane",
-                    point: point,
-                    normal: planeExpr.normal
+                    shape: factory.createPlane(
+                        createPlaneDefaultShapeProps(''),
+                        point.shape,
+                        planeExpr.shape.norm
+                    ),
+                    defined: point.defined && planeExpr.defined
                 }
             }
 
             if (ctx.lineExpr()) {
-                let lineExpr = this.visit(ctx.lineExpr(0)!) as { type: "Line", point1: { x: number, y: number, z: number }, point2: { x: number, y: number, z: number } };
+                let lineExpr = this.visit(ctx.lineExpr(0)!) as { shape: geometry.Line, defined: boolean };
                 // Return a plane perpendicular to the line passing through the point
                 let dir = {
-                    x: lineExpr.point2.x - lineExpr.point1.x,
-                    y: lineExpr.point2.y - lineExpr.point1.y,
-                    z: lineExpr.point2.z - lineExpr.point1.z
+                    x: lineExpr.shape.endLine.x - lineExpr.shape.startLine.x,
+                    y: lineExpr.shape.endLine.y - lineExpr.shape.startLine.y,
+                    z: (lineExpr.shape.endLine.z ?? 0) - (lineExpr.shape.startLine.z ?? 0)
                 }
 
                 let dirLength = Math.sqrt(dir.x ** 2 + dir.y ** 2 + dir.z ** 2);
@@ -751,26 +1217,39 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 }
 
                 return {
-                    type: "Plane",
-                    point: point,
-                    normal: dir
+                    shape: factory.createPlane(
+                        createPlaneDefaultShapeProps(''),
+                        point.shape,
+                        factory.createVector(
+                            createVectorDefaultShapeProps(''),
+                            factory.createPoint(
+                                createPointDefaultShapeProps(''),
+                                0, 0, 0
+                            ),
+                            factory.createPoint(
+                                createPointDefaultShapeProps(''),
+                                dir.x, dir.y, dir.z
+                            ),
+                        )
+                    ),
+                    defined: point.defined && lineExpr.defined
                 }
             }
 
             if (ctx.vectorExpr()) {
-                let vectorExpr1 = this.visit(ctx.vectorExpr(0)!) as { type: "Vector", x: number, y: number, z: number };
-                let vectorExpr2 = this.visit(ctx.vectorExpr(1)!) as { type: "Vector", x: number, y: number, z: number };
+                let vectorExpr1 = this.visit(ctx.vectorExpr(0)!) as { shape: geometry.Vector, defined: boolean };
+                let vectorExpr2 = this.visit(ctx.vectorExpr(1)!) as { shape: geometry.Vector, defined: boolean };
                 // Return a plane defined by the two vectors originating from the point
                 let dir1 = {
-                    x: vectorExpr1.x,
-                    y: vectorExpr1.y,
-                    z: vectorExpr1.z
+                    x: vectorExpr1.shape.endVector.x - vectorExpr1.shape.startVector.x,
+                    y: vectorExpr1.shape.endVector.y - vectorExpr1.shape.startVector.y,
+                    z: (vectorExpr1.shape.endVector.z ?? 0) - (vectorExpr1.shape.startVector.z ?? 0)
                 }
 
                 let dir2 = {
-                    x: vectorExpr2.x,
-                    y: vectorExpr2.y,
-                    z: vectorExpr2.z
+                    x: vectorExpr2.shape.endVector.x - vectorExpr2.shape.startVector.x,
+                    y: vectorExpr2.shape.endVector.y - vectorExpr2.shape.startVector.y,
+                    z: (vectorExpr2.shape.endVector.z ?? 0) - (vectorExpr2.shape.startVector.z ?? 0)
                 }
 
                 let cross = operations.cross(dir1.x, dir1.y, dir1.z, dir2.x, dir2.y, dir2.z);
@@ -786,12 +1265,694 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 }
 
                 return {
-                    type: "Plane",
-                    point: point,
-                    normal: normal
+                    shape: factory.createPlane(
+                        createPlaneDefaultShapeProps(''),
+                        point.shape,
+                        factory.createVector(
+                            createVectorDefaultShapeProps(''),
+                            factory.createPoint(
+                                createPointDefaultShapeProps(''),
+                                0, 0, 0
+                            ),
+                            factory.createPoint(
+                                createPointDefaultShapeProps(''),
+                                normal.x, normal.y, normal.z
+                            ),
+                        )
+                    ),
+                    defined: point.defined && vectorExpr1.defined && vectorExpr2.defined
                 }
             }
         }
+    }
+
+    visitPointExpr = (ctx: PointExprContext): unknown => {
+        if (ctx.POINT_ID() !== undefined) {
+            let label = ctx.POINT_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === label) {
+                    // Check if the shape is a point
+                    if ('x' in node.type && 'y' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${label} is not a point.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${label} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitPointList = (ctx: PointListContext): unknown => {
+        let arr: { shape:  geometry.Point, defined: boolean }[] = [];
+        if (ctx.pointList() !== undefined) {
+            let point = this.visit(ctx.pointExpr()!) as { shape:  geometry.Point, defined: boolean };
+            arr = this.visit(ctx.pointList()!) as { shape:  geometry.Point, defined: boolean }[];
+            arr.unshift(point);
+            return arr;
+        }
+
+        let point = this.visit(ctx.pointExpr()) as { shape:  geometry.Point, defined: boolean };
+        arr.push(point);
+        return arr;
+    }
+
+    visitPolygonDef = (ctx: PolygonDefContext): unknown => {
+        let points = this.visit(ctx.pointList()) as { shape: geometry.Point, defined: boolean }[];
+        if (points.length < 3) {
+            throw new Error("A polygon must have at least 3 points.");
+        }
+
+        return {
+            shape: factory.createPolygon(
+                createPolygonDefaultShapeProps(''),
+                points.map(p => p.shape)
+            ),
+            defined: points.every(p => p.defined === true)
+        }
+    }
+
+    visitPolygonExpr = (ctx: PolygonExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    // Check if the shape is a polygon
+                    if ('points' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a polygon.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitLineExpr = (ctx: LineExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    // Check if the shape is a line
+                    if ('startLine' in node.type && 'endLine' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a line.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitDirExpr = (ctx: DirExprContext): unknown => {
+        if (ctx.pointExpr() !== undefined) {
+            let point = this.visit(ctx.pointExpr()!) as { shape: geometry.Point, defined: boolean };
+            return {
+                shape: point.shape,
+                defined: point.defined
+            };
+        }
+
+        if (ctx.vectorExpr() !== undefined) {
+            let vector = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
+            return {
+                shape: vector.shape,
+                defined: vector.defined
+            }
+        }
+
+        return {
+            x: this.visit(ctx.numberExpr(0)) as number,
+            y: this.visit(ctx.numberExpr(1)) as number,
+            z: this.visit(ctx.numberExpr(2)) as number
+        }
+    }
+
+    visitShapeExpr = (ctx: ShapeExprContext): unknown => {
+        return this.visitChildren(ctx);
+    }
+
+    visitSegmentDef = (ctx: SegmentDefContext): unknown => {
+        let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        if (ctx.pointExpr().length === 2) {
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            return {
+                shape: factory.createSegment(
+                    createLineDefaultShapeProps(''),
+                    point1.shape,
+                    point2.shape
+                ),
+                defined: point1.defined && point2.defined
+            }
+        }
+
+        let length = this.visit(ctx.numberExpr()!) as number;
+        if (length <= 0) {
+            throw new Error("Segment length must be positive.");
+        }
+
+        return {
+            shape: factory.createSegment(
+                createLineDefaultShapeProps(''),
+                point1.shape,
+                factory.createPoint(
+                    createPointDefaultShapeProps(''),
+                    point1.shape.x + length,
+                    point1.shape.y,
+                    point1.shape.z
+                )
+            ),
+            defined: point1.defined
+        }
+    }
+
+    visitRayDef = (ctx: RayDefContext): unknown => {
+        let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        if (ctx.pointExpr().length === 2) {
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            return {
+                shape: factory.createRay(
+                    createLineDefaultShapeProps(''),
+                    point1.shape,
+                    point2.shape
+                ),
+                defined: point1.defined && point2.defined
+            }
+        }
+
+        let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
+        return {
+            shape: factory.createRay(
+                createLineDefaultShapeProps(''),
+                point1.shape,
+                factory.createPoint(
+                    createLineDefaultShapeProps(''),
+                    point1.shape.x + (vectorExpr.shape.endVector.x - vectorExpr.shape.startVector.x),
+                    point1.shape.y + (vectorExpr.shape.endVector.y - vectorExpr.shape.startVector.y),
+                    (point1.shape.z ?? 0) + ((vectorExpr.shape.endVector.z ?? 0) - (vectorExpr.shape.startVector.z ?? 0))
+                )
+            ),
+            defined: point1.defined && vectorExpr.defined
+        }
+    }
+
+    visitVectorExpr = (ctx: VectorExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let label = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === label) {
+                    // Check if the shape is a vector
+                    if ('startVector' in node.type && 'endVector' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${label} is not a vector.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${label} not found.`);
+        }
+        
+        return this.visitChildren(ctx);
+    }
+
+    visitDirectionExpr = (ctx: DirectionExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let label = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === label) {
+                    // Check if the shape is a line, vector, ray, segment or plane
+                    if (('startVector' in node.type && 'endVector' in node.type) ||
+                        ('startSegment' in node.type && 'endSegment' in node.type) ||
+                        ('startLine' in node.type && 'endLine' in node.type) ||
+                        ('startRay' in node.type && 'endRay' in node.type) ||
+                        ('norm' in node.type && 'point' in node.type)
+                    ) {
+                        return ('startVector' in node.type ? { shape: node.type, defined: node.defined } : (
+                            'startSegment' in node.type ? {
+                                shape: factory.createVector(
+                                    createVectorDefaultShapeProps(''),
+                                    node.type.startSegment,
+                                    node.type.endSegment
+                                ),
+                                defined: node.defined
+                            } : (
+                                'startLine' in node.type ? {
+                                    shape: factory.createVector(
+                                        createVectorDefaultShapeProps(''),
+                                        node.type.startLine,
+                                        node.type.endLine
+                                    ),
+                                    defined: node.defined
+                                } : (
+                                    'startRay' in node.type ? {
+                                        shape: factory.createVector(
+                                            createVectorDefaultShapeProps(''),
+                                            node.type.startRay,
+                                            node.type.endRay
+                                        ),
+                                        defined: node.defined
+                                    } : { shape: node.type.norm, defined: node.defined }
+                                )
+                            )
+                        ))
+                    }
+
+                    throw new Error(`Shape with ID ${label} cannot represent a direction.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${label} not found.`);
+        }
+
+        const shape = this.visitChildren(ctx);
+        if (typeof shape === 'object' && shape !== null && 
+            ('shape' in shape && typeof shape.shape === 'object' && shape.shape !== null) &&
+            ('defined' in shape && typeof shape.defined === 'boolean')
+        ) {
+            if ('startVector' in shape.shape) return { shape: shape.shape as geometry.Vector, defined: true };
+            if ('startLine' in shape.shape && 'endLine' in shape.shape) {
+                return {
+                    shape: factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        shape.shape.startLine as geometry.Point,
+                        shape.shape.endLine as geometry.Point
+                    ),
+                    defined: shape.defined as boolean
+                }
+            }
+
+            if ('startSegment' in shape.shape && 'endSegment' in shape.shape) {
+                return {
+                    shape: factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        shape.shape.startSegment as geometry.Point,
+                        shape.shape.endSegment as geometry.Point
+                    ),
+                    defined: shape.defined as boolean
+                }
+            }
+
+            if ('startRay' in shape.shape && 'endRay' in shape.shape) {
+                return {
+                    shape: factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        shape.shape.startRay as geometry.Point,
+                        shape.shape.endRay as geometry.Point
+                    ),
+                    defined: shape.defined as boolean
+                }
+            }
+
+            if ('norm' in shape.shape) return shape.shape.norm as geometry.Vector;
+        }
+
+        throw new Error('Cannot determine direction from shape');
+    }
+
+    visitPlaneExpr = (ctx: PlaneExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let label = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === label) {
+                    // Check if the shape is a line, vector, ray, segment or plane
+                    if (
+                        ('norm' in node.type && 'point' in node.type)
+                    ) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${label} is not a plane.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${label} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitSegmentExpr = (ctx: SegmentExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    // Check if the shape is a line
+                    if ('startSegment' in node.type && 'endSegment' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a segment.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitRayExpr = (ctx: RayExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    // Check if the shape is a line
+                    if ('startRay' in node.type && 'endRay' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a ray.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitConeDef = (ctx: ConeDefContext): unknown => {
+        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        let apex = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+        if (!center.defined || !apex.defined) {
+
+        }
+        let radius = this.visit(ctx.numberExpr()!) as number;
+        if (radius <= 0) {
+            throw new Error(`Radius can not be negative or 0`);
+        }
+
+        return {
+            shape: factory.createCone(
+                createCylinderDefaultShapeProps('', radius),
+                center.shape,
+                apex.shape, radius
+            ),
+            defined: true
+        };
+    }
+
+    visitConeExpr = (ctx: ConeExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    // Check if the shape is a line
+                    if ('cone' in node.type && 'apex' in node.type && 'radius' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a cone.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitCylinderDef = (ctx: CylinderDefContext): unknown => {
+        let center1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        let center2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+        let radius = this.visit(ctx.numberExpr()!) as number;
+        if (radius <= 0) {
+            throw new Error(`Radius can not be negative or 0`);
+        }
+
+        return {
+            shape: factory.createCylinder(
+                createCylinderDefaultShapeProps('', radius),
+                center1.shape,
+                center2.shape, radius
+            ),
+            defined: center1.defined && center2.defined
+        }
+    }
+
+    visitCylinderExpr = (ctx: CylinderExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    if ('centerBase1' in node.type && 'centerBase2' in node.type && 'radius' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a cylinder.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitIntersectionDef = (ctx: IntersectionDefContext): unknown => {
+        let shape1 = this.visit(ctx.expr(0)) as { shape: geometry.Shape, defined: boolean };
+        let shape2 = this.visit(ctx.expr(1)) as { shape: geometry.Shape, defined: boolean };
+        if (!shape1.defined || !shape2.defined) {
+            return {
+                shape: factory.createPoint(
+                    createPointDefaultShapeProps(''),
+                    0, 0, 0
+                ),
+                defined: false
+            }
+        }
+
+        try {
+            const intersections = operations.getIntersections3D(shape1.shape, shape2.shape);
+            if (intersections.length === 0) {
+                throw new Error('This command is still in beta, we will update in the future');
+            }
+
+            const intersection = intersections[0];
+            return {
+                shape: factory.createPoint(
+                    createPointDefaultShapeProps(''),
+                    intersection.coors?.x ?? 0, 
+                    intersection.coors?.y ?? 0, 
+                    intersection.coors?.z ?? 0, 
+                ),
+                defined: !intersection.ambiguous
+            }
+        }
+
+        catch(error) {
+            throw new Error(`${(error as Error).message}`);
+        }
+    }
+
+    visitPrismDef = (ctx: PrismDefContext): unknown => {
+        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean };
+        let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean };
+
+        return {
+            shape: factory.createPrism(
+                createCylinderDefaultShapeProps('', 0),
+                polygon.shape,
+                operations.translation(polygon.shape, direction.shape) as geometry.Polygon,
+            ),
+            defined: polygon.defined && direction.defined
+        }
+    }
+
+    visitPrismExpr = (ctx: PrismExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    if ('base1' in node.type && 'base2' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a prism.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitTetrahedronDef = (ctx: TetrahedronDefContext): unknown => {
+        if (ctx.pointExpr().length === 4) {
+            let [p1, p2, p3, apex] = [
+                this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean },
+                this.visit(ctx.pointExpr(1)) as { shape: geometry.Point, defined: boolean },
+                this.visit(ctx.pointExpr(2)) as { shape: geometry.Point, defined: boolean },
+                this.visit(ctx.pointExpr(3)) as { shape: geometry.Point, defined: boolean }
+            ];
+
+            if (operations.checkCoplanar([p1.shape, p2.shape, p3.shape, apex.shape])) {
+                throw new Error('Cannot form a tetrahedron with 4 coplanar points');
+            }
+
+            const checkCollinear = (a: geometry.Point, b: geometry.Point, c: geometry.Point): boolean => {
+                // If any two points coincide, treat as collinear
+                const ab = {
+                    x: b.x - a.x,
+                    y: b.y - a.x,
+                    z: (b.z ?? 0) - (a.z ?? 0)
+                };
+                
+                const ac = {
+                    x: c.x - a.x,
+                    y: c.y - a.x,
+                    z: (c.z ?? 0) - (a.z ?? 0)
+                };
+
+                const normSq = (v: {x: number, y: number, z: number}): number => {
+                    return v.x ** 2 + v.y ** 2 + v.z ** 2;
+                }
+
+                if (normSq(ab) === 0 && normSq(ac) === 0) return true; // all three same
+                if (normSq(ab) === 0) return true; // a == b, so a, b, c collinear
+                if (normSq(ac) === 0) return true; // a == c
+
+                const cr = operations.cross(ab.x, ab.y, ab.z, ac.x, ac.y, ac.z);
+                return normSq(cr) === 0; // cross nearly zero vector
+            }
+
+            if (checkCollinear(p1.shape, p2.shape, p3.shape) || checkCollinear(p1.shape, p2.shape, apex.shape) ||
+                checkCollinear(p1.shape, p3.shape, apex.shape) || checkCollinear(p2.shape, p3.shape, apex.shape)
+            ) {
+                throw new Error('Cannot form a tetrahedron with 3 collinear points');
+            }
+
+            return {
+                shape: factory.createPyramid(
+                    createCylinderDefaultShapeProps('', 0),
+                    factory.createPolygon(
+                        createPolygonDefaultShapeProps(''),
+                        [p1.shape, p2.shape, p3.shape]
+                    ), apex.shape
+                ),
+                defined: p1.defined && p2.defined && p3.defined && apex.defined
+            }
+        }
+
+        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean }
+        let apex = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean }
+        if (polygon.shape.points.length !== 3) {
+            throw new Error('Use the Pyramid command instead');
+        }
+
+        if (operations.checkCoplanar([...polygon.shape.points.map(p => p), apex.shape])) {
+            throw new Error('Cannot form a tetrahedron with 4 coplanar points');
+        }
+
+        return {
+            shape: factory.createPyramid(
+                createCylinderDefaultShapeProps('', 0),
+                polygon.shape, apex.shape
+            ),
+            defined: polygon.defined && apex.defined
+        }
+    }
+    
+    visitTetrahedronExpr = (ctx: TetrahedronExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    if ('apex' in node.type && 'base' in node.type) {
+                        const base = node.type.base as geometry.Polygon;
+                        if (base.points.length === 3) return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a tetrahedron.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitPyramidDef = (ctx: PyramidDefContext): unknown => {
+        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean };
+        let point = this.visit(ctx.pointExpr()!) as { shape: geometry.Point, defined: boolean };
+
+        return {
+            shape: factory.createPyramid(
+                createCylinderDefaultShapeProps('', 0),
+                polygon.shape,
+                point.shape,
+            ),
+            defined: polygon.defined && point.defined
+        }
+    }
+
+    visitPyramidExpr =  (ctx: PyramidExprContext): unknown => {
+        if (ctx.SHAPE_ID() !== undefined) {
+            let shapeId = ctx.SHAPE_ID()!.text;
+            let keys = Array.from(this.DAG.keys());
+            for (let key of keys) {
+                const node = this.DAG.get(key);
+                if (node && node.type.props.label === shapeId) {
+                    if ('apex' in node.type && 'base' in node.type) {
+                        return { shape: node.type, defined: node.defined };
+                    }
+
+                    throw new Error(`Shape with ID ${shapeId} is not a tetrahedron.`);
+                }
+            }
+
+            throw new Error(`Shape with ID ${shapeId} not found.`);
+        }
+
+        return this.visitChildren(ctx);
+    }
+
+    visitTransformDef = (ctx: TransformDefContext): unknown => {
+        if (ctx.TRANSLATE()) {
+            let shape = this.visit(ctx.shapeExpr()!) as { shape: geometry.Shape, defined: boolean };
+            let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
+            const translatedShape = operations.translation(shape.shape, vectorExpr.shape);
+        }
+
+        return;
     }
 }
 

@@ -142,14 +142,15 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         }
 
         this.lastFailedState = null;
-        this.historyStack = new Array<HistoryEntry>(utils.clone(
-            this.state.geometryState,
-            this.dag,
-            this.state.selectedPoints,
-            this.state.selectedShapes,
-            this.labelUsed
-        )); // Initialize history stack
-        
+        this.historyStack = [
+            utils.clone(
+                {...this.state.geometryState},
+                utils.cloneDAG(this.dag),
+                [],
+                [],
+                []
+            )
+        ]; // Initialize history stack
         this.futureStack = new Array<HistoryEntry>();
         this.dialogRef = createRef<Dialogbox | null>();
         this.errorDialogRef = createRef<ErrorDialogbox | null>();
@@ -166,12 +167,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         window.addEventListener("keydown", this.handleKeyDown);
 
         this.loadProject();
-
-        // Auto-save every 60 seconds
-        //this.autoSaveInterval = window.setInterval(() => {
-        //    
-        //    this.saveProject();
-        //}, 5000);
     }
 
     componentWillUnmount() {
@@ -205,13 +200,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     this.setState({position: {errorDialogPos: {x: x, y: y}, dialogPos: this.state.position.dialogPos}});
                 }
             }, 0);
-        }
-
-        // ✅ Auto-save when DAG or geometry changes
-        if (prevState.geometryState !== this.state.geometryState ||
-            prevState.selectedPoints !== this.state.selectedPoints ||
-            prevState.selectedShapes !== this.state.selectedShapes) {
-            this.saveProject();
         }
     }
 
@@ -257,6 +245,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         else if (e.key === 'Escape') {
             this.dag.forEach((node, key) => {
                 node.isSelected = false;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowBlur(0);
                     (node.node! as Konva.Circle).shadowOpacity(0);
@@ -293,11 +282,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleUndoClick = () => {
+        console.log(this.lastFailedState, this.historyStack);
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {
-                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key) ||
-                    this.lastFailedState?.selectedShapes.find(shape => shape.props.id === key)
+                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key)
                 ) {
                     this.labelUsed = this.labelUsed.filter(label => label !== dag.get(key)!.type.props.label);
                     dag.get(key)!.node!.destroy();
@@ -360,7 +349,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleMouseDownResize = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
         e.stopPropagation();
+
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ew-resize';
+        
         document.addEventListener("pointermove", this.handleMouseMoveResize);
         document.addEventListener("pointerup", this.handleMouseUpResize);
         this.setState({ isResize: true, isMenuRightClick: undefined });
@@ -379,6 +373,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleMouseUpResize = () => {
+        // Re-enable text selection and reset cursor
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        
         document.removeEventListener("pointermove", this.handleMouseMoveResize);
         document.removeEventListener("pointerup", this.handleMouseUpResize);
         this.setState({ isResize: false });
@@ -419,6 +417,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         selectedPoints: Point[]
     }, storeHistory: boolean = true) => {
         state.dag.forEach((node, key) => {
+            if (node.node === undefined) return;
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
@@ -434,7 +433,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         });
 
         this.dag = state.dag;
-        console.log(this.dag);
         this.setState({
             geometryState: state.gs,
             selectedPoints: state.selectedPoints,
@@ -451,13 +449,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }, () => {
             if (!this.lastFailedState && storeHistory) {
+                this.saveProject();
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
                     this.state.selectedPoints,
                     this.state.selectedShapes,
                     this.labelUsed
-                ))
+                ));
             }
         });
     }
@@ -477,6 +476,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
     private onSelectedPointsChange = (selectedPoints: Point[]): void => {
         this.dag.forEach((node, key) => {
+            if (node.node === undefined) return;
             if (!selectedPoints.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 (node.node! as Konva.Circle).shadowBlur(0);
@@ -518,6 +518,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
     private onSelectedChange = (state: {selectedShapes: Shape[], selectedPoints: Point[]}): void => {
         this.dag.forEach((node, key) => {
+            if (node.node === undefined) return;
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
                 if (node.id.includes('point-')) {
@@ -552,36 +553,32 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         })
     }
 
-    private removeNodeBatch = (id: string, visited: Set<string>, state: {
-        labelUsed: string[],
-        dag: Map<string, ShapeNode>
-    }) => {
+    private removeNodeBatch = (id: string, visited: Set<string>) => {
         if (visited.has(id)) return;
-        const node = state.dag.get(id);
+        const node = this.dag.get(id);
         if (!node) return;
 
         visited.add(id);
         // 1. Find all dependent nodes and recursively remove them
-        state.dag.forEach((value, key) => {
+        this.dag.forEach((value, key) => {
             if (value.dependsOn.includes(id)) {
-                this.removeNodeBatch(key, visited, state);
+                this.removeNodeBatch(key, visited);
             }
         });
 
         // 2. Clean up
-        state.labelUsed = state.labelUsed.filter(
+        this.labelUsed = this.labelUsed.filter(
             label => label !== node.type.props.label
         );
 
         node.node!.destroy();
-        state.dag.delete(id);
+        this.dag.delete(id);
     };
 
     // Public method that does batch delete with single re-render
     private removeNode = (id: string): void => {
         const set = new Set<string>();
-
-        this.removeNodeBatch(id, set, { labelUsed: this.labelUsed, dag: this.dag });
+        this.removeNodeBatch(id, set);
     };
 
     private setMode = (mode: DrawingMode) => {
@@ -594,7 +591,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             });
 
             const visited = new Set<string>();
-            selected.forEach(id => this.removeNodeBatch(id, visited, {labelUsed: this.labelUsed, dag: this.dag}));
+            selected.forEach(id => this.removeNodeBatch(id, visited));
             this.pushHistory(utils.clone(
                 this.state.geometryState,
                 this.dag,
@@ -607,6 +604,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         else {
             this.dag.forEach((node, key) => {
                 node.isSelected = false;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowBlur(0);
                     (node.node! as Konva.Circle).shadowOpacity(0);
@@ -716,7 +714,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         const isCtrl = e.ctrlKey || e.metaKey;
         if (isCtrl) {
             const node = this.dag.get(id);
-            if (!node) return;
+            if (!node || (node && node.node === undefined)) return;
             const wasSelected = node.isSelected;
             node.isSelected = !wasSelected;
             if (node.isSelected) {
@@ -749,6 +747,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             // Clear previous selection
             this.dag.forEach(node => {
                 node.isSelected = false;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowBlur(0);
                     (node.node! as Konva.Circle).shadowOpacity(0);
@@ -763,6 +762,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             const node = this.dag.get(id);
             if (node) {
                 node.isSelected = true;
+                if (node.node === undefined) return;
                 if (node.id.includes('point-')) {
                     (node.node! as Konva.Circle).shadowColor('gray');
                     (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
@@ -1027,9 +1027,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 animation: this.state.timeline,
             };
 
-            //
-            //
-
             await fetch(`http://localhost:3001/api/projects/${this.projectId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -1054,10 +1051,19 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.setState((prev) => ({ ...prev }));
           
             //console.log("Updated DAG: ", this.dag);
+            
 
             //// Restore state
             this.setState({
-                geometryState: data.geometryState,
+                geometryState: data.geometryState ?? {
+                    numLoops: 1,
+                    axisTickInterval: 1,
+                    spacing: constants.BASE_SPACING,
+                    gridVisible: true,
+                    zoom_level: 1,
+                    axesVisible: true,
+                    panning: false,
+                },
                 selectedPoints: [],
                 selectedShapes: [],
                 timeline: data.animation,
@@ -1086,6 +1092,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     stageRef={this.stageRef}
                     timeline={this.state.timeline}
                     setTimeline={this.setTimeline}
+                    onUpdateDAG={(dag) => this.updateAll(
+                        {
+                            gs: this.state.geometryState,
+                            dag: dag,
+                            selectedPoints: this.state.selectedPoints,
+                            selectedShapes: this.state.selectedShapes
+                        }
+                    )}
                 />
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"

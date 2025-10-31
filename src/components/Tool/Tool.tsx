@@ -19,6 +19,7 @@ interface ToolProps {
     onUpdateWidth: (width: number) => void;
     onSetMode: (mode: DrawingMode) => void;
     onSelect: (id: string, e: React.MouseEvent) => void;
+    onUpdateDAG: (dag: Map<string, ShapeNode>) => void;
     selectedPoints: Point[];
     selectedShapes: Shape[];
     stageRef: React.RefObject<any>;
@@ -131,6 +132,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                 height={this.props.height}
                                 dag={this.props.dag}
                                 onSelect={this.props.onSelect}
+                                onUpdateDAG={this.props.onUpdateDAG}
                                 /> : <AnimationTool
                                         width={this.props.width}
                                         height={this.props.height}

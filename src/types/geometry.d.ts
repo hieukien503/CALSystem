@@ -1,4 +1,5 @@
 import Konva from 'konva';
+import * as THREE from 'three';
 
 // Base interfaces
 export interface BaseShape {
@@ -20,13 +21,13 @@ export type ShapeType = 'Point' | 'Line' | 'Segment' | 'Vector' | 'Ray' | 'Circl
                         'PerpendicularLine' | 'TangentLine' | 'ParallelLine' | 'Circumcircle' | 'Incircle' | 'SemiCircle' |
                         'Circle2Point' | 'Angle' | 'Cone' | 'Sphere' | 'Plane' | 'Prism' | 'Pyramid' | 'Cylinder' |
                         'Reflection' | 'Rotation' | 'Projection' | 'Enlarge' | 'Translation' | 'Excenter' | 'Excircle' |
-                        'RegularPolygon' | 'Sphere2Point';
+                        'RegularPolygon' | 'Sphere2Point' | 'ParallelPlane' | 'PerpendicularPlane';
 
 export interface Angle extends BaseShape {
     // Use degree for angle
     vertex?: Point;
-    startAngle: number;
-    degree: number;
+    vector1: Vector;
+    vector2: Vector;
 }
 
 export interface SemiCircle extends BaseShape {
@@ -209,9 +210,10 @@ export interface ShapeNode3D {
     scaleFactor?: number;
     /** For rotation */
     rotationFactor?: {
-        azimuth: number; // Rotation around the vertical axis
-        polar: number; // Rotation around the horizontal axis
+        degree: number;
+        CCW: boolean;
     };
+    node?: THREE.Group | THREE.Mesh;
     /** For tangent line and angle bisector */
     side? : 0 | 1;
     /** Selected or not */
