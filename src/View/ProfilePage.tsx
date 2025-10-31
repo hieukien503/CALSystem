@@ -128,20 +128,17 @@ const ProfilePage: React.FC = () => {
                                     borderRadius: "50%",
                                 }}
                             />
-                            <div className="fw-bold fs-4">{viewedUser.name}</div>
+                            <div className="text-left">
+                                <div className="fw-bold fs-4">
+                                    {viewedUser.name}
+                                </div>
+                                <div>
+                                    Role: {viewedUser.role}
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    {/* User details
-                    <div className="p-3 text-start">
-                        <p>
-                            <strong>Email:</strong> {viewedUser.email}
-                        </p>
-                        <p>
-                            <strong>Role:</strong> {viewedUser.role}
-                        </p>
-                    </div>
-                     */}
+                     
                     {/* Tabs */}
                     <div
                         className="d-flex flex-row align-items-center justify-content-start"
@@ -180,13 +177,6 @@ const ProfilePage: React.FC = () => {
                         className="d-flex flex-column align-items-center justify-content-start p-3 gap-3"
                         style={{ backgroundColor: "white" }}
                     >
-                        <button
-                            style={{ width: "200px", borderWidth: "5px" }}
-                            onClick={() => navigate("/view/project")}
-                        >
-                            + New Project
-                        </button>
-
                         <div className="d-flex flex-wrap gap-3 w-100">
                             {
                                 viewedUser.project.length === 0 ? (

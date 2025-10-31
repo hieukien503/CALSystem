@@ -12,6 +12,7 @@ import MyProfilePage from "./View/MyProfilePage";
 import ProfilePage from "./View/ProfilePage";
 import SearchResults from "./View/SearchResults";
 import NewCalApp from "./View/NewCalApp";
+import EditProjectPage from "./View/EditProjectPage";
 import E404 from "./View/E404";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -42,6 +43,7 @@ function App() {
                         <Route path="/view/profile/:id" element={<ProfilePage />} />
                         <Route path="/view/myprofile/" element={<MyProfilePage />} />
                         <Route path="/view/search" element={<SearchResults />} />
+                        <Route path="/view/edit/project/:id" element={<EditProjectPage />} />
                         <Route path="*" element={<E404 />} />
                     </Routes>
                 </main>
