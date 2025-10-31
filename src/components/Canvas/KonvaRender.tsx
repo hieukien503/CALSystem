@@ -50,9 +50,10 @@ interface CanvasProps {
         selectedShapes: Shape[],
         selectedPoints: Point[]
     }) => void;
-    onRenderMenuRightClick: (pos?: {x: number, y: number}) => void;
+    onRenderMenuRightClick: (pos?: { x: number, y: number }) => void;
     onRemoveNode: (id: string) => void;
     onRenderDialogbox: (mode: DrawingMode, id_to_change?: string) => void;
+    stageRef: RefObject<Konva.Stage | null>;
 }
 
 class KonvaCanvas extends React.Component<CanvasProps, {}> {
@@ -60,8 +61,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private layerUnchangeVisualRef: RefObject<Konva.Layer | null>;
     private layerAxisRef: RefObject<Konva.Layer | null>;
     private layerGridRef: RefObject<Konva.Layer | null>;
-    private stageRef: RefObject<Konva.Stage | null>;
-    private last_pointer: {x: number, y: number};
+    private last_pointer: { x: number, y: number };
     private moveFrameId: number | null = null;
     private zoomFrameId: number | null = null;
     private newCreatedPoint: Point[];
@@ -72,8 +72,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         this.layerUnchangeVisualRef = React.createRef<Konva.Layer>();
         this.layerAxisRef = React.createRef<Konva.Layer>();
         this.layerGridRef = React.createRef<Konva.Layer>();
-        this.last_pointer = {x: 0, y: 0};
-        this.stageRef = React.createRef<Konva.Stage>();
+        this.last_pointer = { x: 0, y: 0 };
+        //this.props.stageRef = React.createRef<Konva.Stage>();
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
@@ -82,7 +82,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     }
 
     componentDidMount(): void {
-        this.stageRef.current?.container().addEventListener('contextmenu', this.handleContextMenu);
+        this.props.stageRef.current?.container().addEventListener('contextmenu', this.handleContextMenu);
         this.drawShapes();
     }
 
@@ -121,7 +121,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     }
 
     componentWillUnmount(): void {
-        this.stageRef.current?.container().removeEventListener('contextmenu', this.handleContextMenu);
+        this.props.stageRef.current?.container().removeEventListener('contextmenu', this.handleContextMenu);
     }
 
     private handleContextMenu = (e: MouseEvent) => {
@@ -130,7 +130,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
     private handleZoom = (e: Konva.KonvaEventObject<MouseEvent>) => {
         e.evt.preventDefault();
-        const stage = this.stageRef.current;
+        const stage = this.props.stageRef.current;
         const layer = this.layerMathObjectRef.current;
         if (this.zoomFrameId) {
             cancelAnimationFrame(this.zoomFrameId);
@@ -204,7 +204,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         current *= multiplier[i];
                         i = (i + 1) % multiplier.length;
                     }
-                    
+
                     return (forward ? current * multiplier[i] : current / multiplier[(i - 1 + multiplier.length) % multiplier.length]);
                 }
 
@@ -237,15 +237,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 spacing: this.props.geometryState.spacing
             });
         })
-        
+
     }
 
     private handleMouseDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
-        if (!this.stageRef.current || !this.layerMathObjectRef.current) return;
-        const pointer = this.stageRef.current.getPointerPosition();
+        if (!this.props.stageRef.current || !this.layerMathObjectRef.current) return;
+        const pointer = this.props.stageRef.current.getPointerPosition();
         if (!pointer) return;
         if (e.evt.button !== 0) {
-            this.props.onRenderMenuRightClick({x: e.evt.clientX, y: e.evt.clientY});
+            this.props.onRenderMenuRightClick({ x: e.evt.clientX, y: e.evt.clientY });
             return;
         }
 
@@ -258,16 +258,16 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             this.last_pointer = position;
 
-            position = this.props.isSnapToGrid? utils.snapToGrid(
+            position = this.props.isSnapToGrid ? utils.snapToGrid(
                 pointer,
                 this.props.geometryState.spacing,
                 this.props.geometryState.axisTickInterval,
-                this.stageRef.current.width() / 2,
-                this.stageRef.current.height() / 2,
+                this.props.stageRef.current.width() / 2,
+                this.props.stageRef.current.height() / 2,
                 this.layerMathObjectRef.current!
             ) : position;
 
-            let shapes = this.stageRef.current.getAllIntersections(pointer);
+            let shapes = this.props.stageRef.current.getAllIntersections(pointer);
             let children = shapes.filter(node => (node.getLayer() === this.layerMathObjectRef.current) || node.getLayer() === this.layerAxisRef.current);
             let shape = children.length > 0 ? children[children.length - 1] : undefined;
             if (shape) {
@@ -290,7 +290,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     const newSelected = [...this.props.selectedShapes, l];
                     this.props.onSelectedShapesChange(newSelected);
                 }
-            
+
                 else {
                     if (!shape.id().includes('point-')) {
                         const newSelected = [...this.props.selectedShapes, pNode.type];
@@ -338,11 +338,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             else if (!shape || (shape && !shape.id().includes('point-'))) {
-                if (!['length', 'area', 'tangent_line'].includes(this.props.mode) && 
+                if (!['length', 'area', 'tangent_line'].includes(this.props.mode) &&
                     !(shape && shape.id().includes('polygon-') && this.props.selectedPoints.length === 0 && ['orthocenter', 'centroid', 'circumcenter', 'incenter', 'excenter', 'circumcircle', 'incircle', 'excircle'].includes(this.props.mode)) &&
                     !(this.props.mode === 'intersection' && shape && !shape.id().includes('point-')) &&
-                    !(shape && (shape.id().includes('circle-') || 
-                               (shape.id().includes('line-') && this.props.dag.has(shape.id()) && 'startSegment' in this.props.dag.get(shape.id())!.type)) && this.props.mode === 'midpoint') &&
+                    !(shape && (shape.id().includes('circle-') ||
+                        (shape.id().includes('line-') && this.props.dag.has(shape.id()) && 'startSegment' in this.props.dag.get(shape.id())!.type)) && this.props.mode === 'midpoint') &&
                     !(shape && (shape.id().includes('point-') || (shape.id().includes('line-') && this.props.dag.has(shape.id()) && 'startSegment' in this.props.dag.get(shape.id())!.type)) && this.props.mode === 'regular_polygon')
                 ) {
                     this.createPoint(position, children);
@@ -353,8 +353,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             return;
         }
 
-        this.stageRef.current.container().className = this.stageRef.current.getIntersection(pointer) ? "cursor_drag" : "cursor_grabbing";
-        let shapes = this.stageRef.current.getAllIntersections(pointer);
+        this.props.stageRef.current.container().className = this.props.stageRef.current.getIntersection(pointer) ? "cursor_drag" : "cursor_grabbing";
+        let shapes = this.props.stageRef.current.getAllIntersections(pointer);
         let children = shapes.filter(node => (node.getLayer() === this.layerMathObjectRef.current));
         let shape = children.length > 0 ? children[children.length - 1] : undefined;
         if (shape) {
@@ -368,12 +368,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     if (isAlreadySelected) {
                         newSelectedShapes = newSelectedShapes.filter(s => s.props.id !== pNode!.type.props.id);
                     }
-                    
+
                     else {
                         newSelectedShapes.push(pNode!.type);
                     }
                 }
-                
+
                 else {
                     newSelectedShapes = [pNode!.type];
                 }
@@ -389,29 +389,29 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     if (isAlreadySelected) {
                         newSelectedPoints = newSelectedPoints.filter(p => p.props.id !== pNode!.type.props.id);
                     }
-                    
+
                     else {
                         newSelectedPoints.push(pNode!.type as Point);
                     }
                 }
-                
+
                 else {
                     newSelectedPoints = [pNode!.type as Point];
                 }
-                
+
                 this.props.onSelectedPointsChange(newSelectedPoints);
             }
         }
 
         else {
-            if (e.target === this.stageRef.current || e.target instanceof Konva.Stage) {
+            if (e.target === this.props.stageRef.current || e.target instanceof Konva.Stage) {
                 this.last_pointer = {
                     x: pointer.x,
                     y: pointer.y
                 }
 
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState, panning: true},
+                    gs: { ...this.props.geometryState, panning: true },
                     dag: utils.cloneDAG(this.props.dag),
                     selectedShapes: [],
                     selectedPoints: []
@@ -427,7 +427,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         this.moveFrameId = requestAnimationFrame(() => {
             const layer = this.layerMathObjectRef.current;
-            const stage = this.stageRef.current;
+            const stage = this.props.stageRef.current;
             if (!layer || !stage) return null;
             if (this.props.isResize) {
                 stage.container().style.cursor = 'ew-resize';
@@ -452,7 +452,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         (node.node! as Konva.Circle).shadowBlur((node.node! as Konva.Circle).radius() * 2.5);
                         (node.node! as Konva.Circle).shadowOpacity(1.5);
                     }
-                    
+
                     else {
                         const strokeWidth = node.type.props.line_size / this.props.geometryState.zoom_level;
                         node.node!.strokeWidth(strokeWidth * 2);
@@ -465,7 +465,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             (node.node! as Konva.Circle).shadowBlur(0);
                             (node.node! as Konva.Circle).shadowOpacity(0);
                         }
-                        
+
                         else {
                             const strokeWidth = node.type.props.line_size / this.props.geometryState.zoom_level;
                             node.node!.strokeWidth(strokeWidth);
@@ -473,17 +473,17 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
                 }
             })
-            
+
             if (this.props.mode !== 'edit') {
                 return;
             }
-            
+
             if (!this.props.geometryState.panning) return;
 
             if (e.target === stage || e.target instanceof Konva.Stage) {
                 const pointer = stage.getPointerPosition();
                 if (!pointer) return;
-                
+
                 const dx = pointer.x - this.last_pointer.x;
                 const dy = pointer.y - this.last_pointer.y;
 
@@ -503,7 +503,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 // Update labels
                 this.layerUnchangeVisualRef.current?.getChildren().forEach((node) => {
-                    node.position({x: node.x() + dx, y: node.y() + dy});
+                    node.position({ x: node.x() + dx, y: node.y() + dy });
                 })
 
                 this.last_pointer = {
@@ -517,7 +517,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.layerGridRef.current?.batchDraw();
                 this.layerUnchangeVisualRef.current?.batchDraw();
 
-                this.props.onGeometryStateChange({...this.props.geometryState});
+                this.props.onGeometryStateChange({ ...this.props.geometryState });
             }
         })
     }
@@ -525,27 +525,27 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private handleMouseUp = () => {
         if (this.props.geometryState.panning) {
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState, panning: false},
+                gs: { ...this.props.geometryState, panning: false },
                 dag: this.props.dag,
                 selectedShapes: [],
                 selectedPoints: []
             });
         }
-        
 
-        this.stageRef.current!.container().className = "cursor_hit";
+
+        this.props.stageRef.current!.container().className = "cursor_hit";
     }
 
     private drawGrid = (): void => {
         if (this.props.geometryState.gridVisible && this.layerGridRef.current) {
             const grid = new KonvaGrid({
-                width: this.stageRef.current!.width(),
+                width: this.props.stageRef.current!.width(),
                 height: this.props.height,
                 gridColor: 'gray',
                 gridSize: this.props.geometryState.spacing,
                 strokeWidth: 0.75,
-                originX: this.stageRef.current!.width() / 2,
-                originY: this.stageRef.current!.height() / 2,
+                originX: this.props.stageRef.current!.width() / 2,
+                originY: this.props.stageRef.current!.height() / 2,
                 opacity: 0.5
             });
 
@@ -559,19 +559,19 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             );
         }
     }
-    
+
     private drawAxes = (): void => {
         if (this.props.geometryState.axesVisible && this.layerAxisRef.current) {
             const axes = new KonvaAxis({
-                width: this.stageRef.current!.width(),
-                height: this.stageRef.current!.height(),
+                width: this.props.stageRef.current!.width(),
+                height: this.props.stageRef.current!.height(),
                 axisColor: 'gray',
                 axisWidth: 1,
                 pointerWidth: constants.ARROW_DEFAULTS.POINTER_WIDTH,
                 pointerLength: constants.ARROW_DEFAULTS.POINTER_LENGTH,
                 xTickSpacing: this.props.geometryState.spacing,
-                originX: this.stageRef.current!.width() / 2,
-                originY: this.stageRef.current!.height() / 2,
+                originX: this.props.stageRef.current!.width() / 2,
+                originY: this.props.stageRef.current!.height() / 2,
                 opacity: 0.5
             });
 
@@ -586,7 +586,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     }
 
     private drawShapes = (): void => {
-        if (!this.stageRef.current || !this.layerMathObjectRef.current) return;
+        if (!this.props.stageRef.current || !this.layerMathObjectRef.current) return;
         this.layerUnchangeVisualRef.current?.destroyChildren();
         this.layerAxisRef.current?.destroyChildren();
         this.layerGridRef.current?.destroyChildren();
@@ -645,7 +645,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             if (!this.props.dag.get(node.id())) {
                 node.remove();
             }
-            
+
             else {
                 const idx = node.id();
                 const n = this.props.dag.get(idx);
@@ -684,7 +684,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 shape.node!.moveToTop();
             }
         });
-        
+
         this.layerGridRef.current?.draw();
         this.layerUnchangeVisualRef.current?.draw();
         this.layerAxisRef.current?.draw();
@@ -695,7 +695,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const props = point.props;
         const scaledStrokeWidth = props.line_size / (this.layerMathObjectRef.current!.scaleX() ?? 1);
         const pos = utils.convertToScreenCoords(
-            {x: point.x, y: point.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: point.x, y: point.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -745,7 +745,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             this.props.pushHistory(this.props.getSnapshot());
         })
-        
+
         c.on('dragmove', (e) => {
             if (this.props.mode !== 'edit') {
                 return;
@@ -789,16 +789,16 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 let posInfo = utils.snapToShape(
                     this.props.dag, shape, pos, this.layerMathObjectRef.current!, this.props.isSnapToGrid,
-                    this.stageRef.current!, this.props.geometryState.axisTickInterval
+                    this.props.stageRef.current!, this.props.geometryState.axisTickInterval
                 );
 
                 if (!shape) {
                     posInfo.position = {
-                        x: (posInfo.position.x - this.layerMathObjectRef.current!.x())/this.layerMathObjectRef.current!.scaleX(),
-                        y: (posInfo.position.y - this.layerMathObjectRef.current!.y())/this.layerMathObjectRef.current!.scaleY(),
+                        x: (posInfo.position.x - this.layerMathObjectRef.current!.x()) / this.layerMathObjectRef.current!.scaleX(),
+                        y: (posInfo.position.y - this.layerMathObjectRef.current!.y()) / this.layerMathObjectRef.current!.scaleY(),
                     }
                 }
-                
+
                 node.node!.position(posInfo.position);
                 this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
                 node.rotationFactor = posInfo.rotFactor;
@@ -811,7 +811,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
                 }
 
-                return {...node};
+                return { ...node };
             };
 
             this.updateAndPropagate(c.id(), updateFn);
@@ -845,25 +845,25 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private drawLine = (line: Line) => {
         const props = line.props;
         const screenPosStart = utils.convertToScreenCoords(
-            {x: line.startLine.x, y: line.startLine.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: line.startLine.x, y: line.startLine.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
         const screenPosEnd = utils.convertToScreenCoords(
-            {x: line.endLine.x, y: line.endLine.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: line.endLine.x, y: line.endLine.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
         const dx = screenPosEnd.x - screenPosStart.x;
         const dy = screenPosEnd.y - screenPosStart.y;
 
-        let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / (this.layerMathObjectRef.current!.scaleX() ?? 1);
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / (this.layerMathObjectRef.current!.scaleX() ?? 1);
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
         const scale = (this.layerMathObjectRef.current!.scaleX() ?? 1);
         const scaledStrokeWidth = props.line_size / scale;
-        
+
         const l = new Konva.Line({
             points: [
                 screenPosStart.x - length * norm_dx,
@@ -915,7 +915,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            oldPos = this.stageRef.current!.getPointerPosition() ?? oldPos;
+            oldPos = this.props.stageRef.current!.getPointerPosition() ?? oldPos;
             this.props.pushHistory(this.props.getSnapshot());
         })
 
@@ -931,7 +931,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.target.position({ x: 0, y: 0 });
-            const pos = this.stageRef.current!.getPointerPosition();
+            const pos = this.props.stageRef.current!.getPointerPosition();
             if (!pos) return;
             let dx = pos.x - oldPos.x;
             let dy = pos.y - oldPos.y;
@@ -946,8 +946,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let node2 = (p2).node!;
             oldPos = pos;
 
-            node1.position({x: node1.x() + dx, y: node1.y() + dy});
-            node2.position({x: node2.x() + dx, y: node2.y() + dy});
+            node1.position({ x: node1.x() + dx, y: node1.y() + dy });
+            node2.position({ x: node2.x() + dx, y: node2.y() + dy });
             this.updateAndPropagate(p1.id, this.computeUpdateFor);
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         });
@@ -967,12 +967,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private drawSegment = (segment: Segment) => {
         const props = segment.props;
         const screenPosStart = utils.convertToScreenCoords(
-            {x: segment.startSegment.x, y: segment.startSegment.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: segment.startSegment.x, y: segment.startSegment.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
         const screenPosEnd = utils.convertToScreenCoords(
-            {x: segment.endSegment.x, y: segment.endSegment.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: segment.endSegment.x, y: segment.endSegment.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -1031,7 +1031,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            oldPos = this.stageRef.current!.getPointerPosition() ?? oldPos;
+            oldPos = this.props.stageRef.current!.getPointerPosition() ?? oldPos;
             this.props.pushHistory(this.props.getSnapshot());
         })
 
@@ -1047,7 +1047,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.target.position({ x: 0, y: 0 });
-            const pos = this.stageRef.current!.getPointerPosition();
+            const pos = this.props.stageRef.current!.getPointerPosition();
             if (!pos) return;
 
             let dx = pos.x - oldPos.x;
@@ -1063,8 +1063,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let node2 = (p2).node!;
             oldPos = pos;
 
-            node1.position({x: node1.x() + dx, y: node1.y() + dy});
-            node2.position({x: node2.x() + dx, y: node2.y() + dy});
+            node1.position({ x: node1.x() + dx, y: node1.y() + dy });
+            node2.position({ x: node2.x() + dx, y: node2.y() + dy });
             this.updateAndPropagate(p1.id, this.computeUpdateFor);
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         });
@@ -1084,12 +1084,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private drawVector = (vector: Vector) => {
         const props = vector.props;
         const screenPosStart = utils.convertToScreenCoords(
-            {x: vector.startVector.x, y: vector.startVector.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: vector.startVector.x, y: vector.startVector.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
         const screenPosEnd = utils.convertToScreenCoords(
-            {x: vector.endVector.x, y: vector.endVector.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: vector.endVector.x, y: vector.endVector.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -1112,7 +1112,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             id: props.id,
             hitStrokeWidth: 5,
             draggable: true,
-            fill: props.fill? props.color : 'none',
+            fill: props.fill ? props.color : 'none',
 
         });
 
@@ -1151,7 +1151,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            oldPos = this.stageRef.current!.getPointerPosition() ?? oldPos;
+            oldPos = this.props.stageRef.current!.getPointerPosition() ?? oldPos;
             this.props.pushHistory(this.props.getSnapshot());
         })
 
@@ -1167,7 +1167,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.target.position({ x: 0, y: 0 });
-            const pos = this.stageRef.current!.getPointerPosition();
+            const pos = this.props.stageRef.current!.getPointerPosition();
             if (!pos) return;
             let dx = pos.x - oldPos.x;
             let dy = pos.y - oldPos.y;
@@ -1182,8 +1182,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let node2 = (p2).node!;
             oldPos = pos;
 
-            node1.position({x: node1.x() + dx, y: node1.y() + dy});
-            node2.position({x: node2.x() + dx, y: node2.y() + dy});
+            node1.position({ x: node1.x() + dx, y: node1.y() + dy });
+            node2.position({ x: node2.x() + dx, y: node2.y() + dy });
             this.updateAndPropagate(p1.id, this.computeUpdateFor);
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         });
@@ -1203,7 +1203,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private drawCircle = (circle: Circle) => {
         const props = circle.props;
         const screenPos = utils.convertToScreenCoords(
-            {x: circle.centerC.x, y: circle.centerC.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: circle.centerC.x, y: circle.centerC.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
         const scale = (this.layerMathObjectRef.current!.scaleX() ?? 1);
@@ -1272,7 +1272,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            oldPos = this.stageRef.current!.getPointerPosition() ?? oldPos;
+            oldPos = this.props.stageRef.current!.getPointerPosition() ?? oldPos;
             this.props.pushHistory(this.props.getSnapshot());
         })
 
@@ -1288,7 +1288,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.target.position({ x: 0, y: 0 });
-            const pos = this.stageRef.current!.getPointerPosition();
+            const pos = this.props.stageRef.current!.getPointerPosition();
             if (!pos) return;
             let dx = pos.x - oldPos.x;
             let dy = pos.y - oldPos.y;
@@ -1302,7 +1302,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let node = p.node!;
             oldPos = pos;
 
-            node.position({x: node.x() + dx, y: node.y() + dy});
+            node.position({ x: node.x() + dx, y: node.y() + dy });
             this.updateAndPropagate(p.id, this.computeUpdateFor);
         });
 
@@ -1322,7 +1322,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const props = polygon.props
         const points = polygon.points.flatMap(point => {
             const screenPos = utils.convertToScreenCoords(
-                {x: point.x, y: point.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: point.x, y: point.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -1383,7 +1383,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            oldPos = this.stageRef.current!.getPointerPosition() ?? oldPos;
+            oldPos = this.props.stageRef.current!.getPointerPosition() ?? oldPos;
             this.props.pushHistory(this.props.getSnapshot());
         })
 
@@ -1399,7 +1399,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.target.position({ x: 0, y: 0 });
-            const pos = this.stageRef.current!.getPointerPosition();
+            const pos = this.props.stageRef.current!.getPointerPosition();
             if (!pos) return;
             let dx = pos.x - oldPos.x;
             let dy = pos.y - oldPos.y;
@@ -1421,7 +1421,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 let point = node.node!;
                 oldPos = pos;
 
-                point.position({x: point.x() + dx, y: point.y() + dy});
+                point.position({ x: point.x() + dx, y: point.y() + dy });
                 this.updateAndPropagate(node.id, this.computeUpdateFor);
             })
         });
@@ -1441,12 +1441,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private drawRay = (ray: Ray) => {
         const props = ray.props;
         const screenPosStart = utils.convertToScreenCoords(
-            {x: ray.startRay.x, y: ray.startRay.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: ray.startRay.x, y: ray.startRay.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
         const screenPosEnd = utils.convertToScreenCoords(
-            {x: ray.endRay.x, y: ray.endRay.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: ray.endRay.x, y: ray.endRay.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -1455,7 +1455,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
-        let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / (this.layerMathObjectRef.current!.scaleX() ?? 1);
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / (this.layerMathObjectRef.current!.scaleX() ?? 1);
 
         const scale = (this.layerMathObjectRef.current!.scaleX() ?? 1);
         const scaledStrokeWidth = props.line_size / scale;
@@ -1511,7 +1511,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            oldPos = this.stageRef.current!.getPointerPosition() ?? oldPos;
+            oldPos = this.props.stageRef.current!.getPointerPosition() ?? oldPos;
             this.props.pushHistory(this.props.getSnapshot());
         })
 
@@ -1527,7 +1527,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.target.position({ x: 0, y: 0 });
-            const pos = this.stageRef.current!.getPointerPosition();
+            const pos = this.props.stageRef.current!.getPointerPosition();
             if (!pos) return;
             let dx = pos.x - oldPos.x;
             let dy = pos.y - oldPos.y;
@@ -1542,8 +1542,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let node2 = (p2).node!;
             oldPos = pos;
 
-            node1.position({x: node1.x() + dx, y: node1.y() + dy});
-            node2.position({x: node2.x() + dx, y: node2.y() + dy});
+            node1.position({ x: node1.x() + dx, y: node1.y() + dy });
+            node2.position({ x: node2.x() + dx, y: node2.y() + dy });
             this.updateAndPropagate(p1.id, this.computeUpdateFor);
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         });
@@ -1563,7 +1563,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private drawAngle = (shape: Angle): Konva.Shape => {
         const props = shape.props;
         const screenPos = utils.convertToScreenCoords(
-            {x: (shape.vertex ? shape.vertex.x : 0), y: (shape.vertex ? shape.vertex.y : 0)}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: (shape.vertex ? shape.vertex.x : 0), y: (shape.vertex ? shape.vertex.y : 0) }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -1572,7 +1572,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const scale = (this.layerMathObjectRef.current!.scaleX() ?? 1);
         const scaledStrokeWidth = props.line_size / scale;
         const angle = (x: number, y: number): number => {
-            let degree = (math.parse('atan2(y, x)').evaluate({x: x, y: y})) * 180 / Math.PI;
+            let degree = (math.parse('atan2(y, x)').evaluate({ x: x, y: y })) * 180 / Math.PI;
             if (degree < 0) {
                 degree += 360;
             }
@@ -1663,15 +1663,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const props = semicircle.props;
         const scale = (this.layerMathObjectRef.current!.scaleX() ?? 1);
         const scaledStrokeWidth = props.line_size / scale;
-        const radius = (math.parse('sqrt(x^2 + y^2)').evaluate({x: semicircle.start.x - semicircle.end.x, y: semicircle.start.y - semicircle.end.y})) / 2
+        const radius = (math.parse('sqrt(x^2 + y^2)').evaluate({ x: semicircle.start.x - semicircle.end.x, y: semicircle.start.y - semicircle.end.y })) / 2
 
         const screenPosStart = utils.convertToScreenCoords(
-            {x: semicircle.start.x, y: semicircle.start.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: semicircle.start.x, y: semicircle.start.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
         const screenPosEnd = utils.convertToScreenCoords(
-            {x: semicircle.end.x, y: semicircle.end.y}, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: semicircle.end.x, y: semicircle.end.y }, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -1681,7 +1681,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             innerRadius: radius,
             outerRadius: radius,
             angle: 180,
-            rotation: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({x: screenPosEnd.x - screenPosStart.x, y: screenPosEnd.y - screenPosStart.y})) * 180 / Math.PI),
+            rotation: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({ x: screenPosEnd.x - screenPosStart.x, y: screenPosEnd.y - screenPosStart.y })) * 180 / Math.PI),
             stroke: props.color,
             strokeWidth: scaledStrokeWidth,
             dash: utils.createDashArray(props.line_style),
@@ -1726,7 +1726,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 stage.container().style.cursor = 'pointer';
             }
 
-            oldPos = this.stageRef.current!.getPointerPosition() ?? oldPos;
+            oldPos = this.props.stageRef.current!.getPointerPosition() ?? oldPos;
             this.props.pushHistory(this.props.getSnapshot());
         })
 
@@ -1742,7 +1742,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.target.position({ x: 0, y: 0 });
-            const pos = this.stageRef.current!.getPointerPosition();
+            const pos = this.props.stageRef.current!.getPointerPosition();
             if (!pos) return;
             let dx = pos.x - oldPos.x;
             let dy = pos.y - oldPos.y;
@@ -1757,8 +1757,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let node2 = (p2).node!;
             oldPos = pos;
 
-            node1.position({x: node1.x() + dx, y: node1.y() + dy});
-            node2.position({x: node2.x() + dx, y: node2.y() + dy});
+            node1.position({ x: node1.x() + dx, y: node1.y() + dy });
+            node2.position({ x: node2.x() + dx, y: node2.y() + dy });
             this.updateAndPropagate(p1.id, this.computeUpdateFor);
             this.updateAndPropagate(p2.id, this.computeUpdateFor);
         });
@@ -1855,7 +1855,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         text.id(`label-${shape.props.id}`);
         if (shape.type === 'Angle') {
             const angle = (x: number, y: number): number => {
-                let degree = (math.parse('atan2(y, x)').evaluate({x: x, y: y})) * 180 / Math.PI;
+                let degree = (math.parse('atan2(y, x)').evaluate({ x: x, y: y })) * 180 / Math.PI;
                 if (degree < 0) {
                     degree += 360;
                 }
@@ -1880,7 +1880,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else {
             text.visible(shape.props.visible.shape && shape.props.visible.label);
         }
-        
+
         text.on('dragstart', (e) => {
             if (this.props.mode !== 'edit') {
                 return;
@@ -1899,7 +1899,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             if (this.props.mode !== "edit") return;
             e.cancelBubble = true;
 
-            const pointer = this.stageRef.current!.getPointerPosition();
+            const pointer = this.props.stageRef.current!.getPointerPosition();
             if (!pointer) return;
 
             // Compute screen-space position of the object's center
@@ -1917,7 +1917,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 shapeX = (pts[0] + pts[2]) / 2;
                 shapeY = (pts[1] + pts[3]) / 2;
             }
-            
+
             else if ('points' in shape) {
                 const pts = (shapeNode.node! as Konva.Line).points();
                 for (let i = 0; i < pts.length; i += 2) {
@@ -1928,7 +1928,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 shapeX /= pts.length / 2;
                 shapeY /= pts.length / 2;
             }
-            
+
             else {
                 shapeX = shapeNode.node!.x();
                 shapeY = shapeNode.node!.y();
@@ -1962,24 +1962,24 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 shapeX = shapeNode.node!.x();
                 shapeY = shapeNode.node!.y();
             }
-            
+
             else if ('startSegment' in shape || 'startLine' in shape || 'startRay' in shape || 'startVector' in shape) {
                 const pts = (shapeNode.node! as Konva.Line).points();
                 shapeX = (pts[0] + pts[2]) / 2;
                 shapeY = (pts[1] + pts[3]) / 2;
             }
-            
+
             else if ('points' in shape) {
                 const pts = (shapeNode.node! as Konva.Line).points();
                 for (let i = 0; i < pts.length; i += 2) {
                     shapeX += pts[i];
                     shapeY += pts[i + 1];
                 }
-                
+
                 shapeX /= pts.length / 2;
                 shapeY /= pts.length / 2;
             }
-            
+
             else {
                 shapeX = shapeNode.node!.x();
                 shapeY = shapeNode.node!.y();
@@ -2005,35 +2005,35 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         if ('x' in shape && 'y' in shape) {
             konvaShape = this.drawPoint(shape as Point);
         }
-                
+
         else if ('startLine' in shape) {
             konvaShape = this.drawLine(shape as Line);
         }
-                
+
         else if ('startSegment' in shape) {
             konvaShape = this.drawSegment(shape as Segment);
         }
-                
+
         else if ('startVector' in shape) {
             konvaShape = this.drawVector(shape as Vector);
         }
-                
+
         else if ('startRay' in shape) {
             konvaShape = this.drawRay(shape as Ray);
         }
-                
+
         else if ('points' in shape) {
             konvaShape = this.drawPolygon(shape as Polygon);
         }
-                
+
         else if ('centerC' in shape && 'radius' in shape) {
             konvaShape = this.drawCircle(shape as Circle);
         }
-                
+
         else if ('start' in shape && 'end' in shape) {
             konvaShape = this.drawSemiCircle(shape as SemiCircle);
         }
-                
+
         else {
             konvaShape = this.drawAngle(shape as Angle);
         }
@@ -2085,11 +2085,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false
                     }
 
-            
+
                     DAG.set(vector.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2097,8 +2097,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                     break;
                 }
-                    
-                
+
+
                 case 'line': {
                     const line: Line = Factory.createLine(
                         utils.createLineDefaultShapeProps(label),
@@ -2115,12 +2115,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false
                     };
 
-            
+
 
                     DAG.set(line.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2146,11 +2146,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false
                     };
 
-            
+
                     DAG.set(ray.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2158,7 +2158,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                     break;
                 }
-                    
+
                 default: {
                     const segment: Segment = {
                         startSegment: p1,
@@ -2176,11 +2176,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false
                     };
 
-            
+
                     DAG.set(segment.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2201,7 +2201,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onRenderDialogbox(this.props.mode);
                 return;
             }
-            
+
             let label = `circle0`
             let index = 0;
             while (this.props.labelUsed.includes(label)) {
@@ -2211,7 +2211,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             this.props.onLabelUsed([...this.props.labelUsed, label]);
             const circle: Circle = Factory.createCircle(
-            utils.createCircleDefaultShapeProps(label, radius, 0, 10, 0),
+                utils.createCircleDefaultShapeProps(label, radius, 0, 10, 0),
                 point,
                 radius
             )
@@ -2228,7 +2228,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             DAG.set(circle.props.id, shapeNode);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
@@ -2251,7 +2251,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 return;
             }
-            
+
             else {
                 if (selectedPoints[0] !== selectedPoints[selectedPoints.length - 1]) {
                     for (let i = 1; i < selectedPoints.length - 1; i++) {
@@ -2323,12 +2323,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         defined: true,
                         isSelected: false
                     }
-            
+
                     DAG.set(polygon.props.id, shapeNode);
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2385,7 +2385,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         ),
                     )
                 ]
-                
+
                 let vertex = operation.getIntersections2D(
                     tmpSelectedShapes[0],
                     tmpSelectedShapes[1]
@@ -2446,7 +2446,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 DAG.set(a.props.id, shapeNode);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -2541,12 +2541,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     isSelected: false
                 };
 
-        
+
                 DAG.set(a.props.id, shapeNode);
 
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -2570,17 +2570,17 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     shape = shape as Segment;
                     label = `Length of ${shape.props.label} = `
                 }
-            
+
                 else if ('points' in shape) {
                     shape = shape as Polygon;
                     label = `Perimeter of ${shape.props.label} = `
                 }
-            
+
                 else if ('radius' in shape) {
                     shape = shape as Circle;
                     label = `Perimeter of ${shape.props.label} = `
                 }
-            
+
                 else if ('start' in shape && 'end' in shape) {
                     shape = shape as SemiCircle;
                     label = `Arc length of ${shape.props.label} = `
@@ -2609,7 +2609,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     y: end.x - start.x
                 }
 
-                perimeter = Math.abs(n.x * point.x + n.y * point.y - (n.x * start.x + n.y * start.y)) / math.parse('sqrt(x^2 + y^2)').evaluate({x: n.x, y: n.y});
+                perimeter = Math.abs(n.x * point.x + n.y * point.y - (n.x * start.x + n.y * start.y)) / math.parse('sqrt(x^2 + y^2)').evaluate({ x: n.x, y: n.y });
                 label = `${selectedShapes[0].props.label}${selectedShapes[1].props.label} = `
                 id = `${selectedShapes[0].props.label}${selectedShapes[1].props.label}`
                 let projectedPoint = operation.point_projection(point, line);
@@ -2684,15 +2684,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
-            });   
+            });
         }
 
         else if (this.props.mode === 'area') {
-            const selectedShapes= [...this.props.selectedShapes];
+            const selectedShapes = [...this.props.selectedShapes];
             let label: string = "";
             if (selectedShapes.length !== 1) return;
             let shape: Shape = selectedShapes[0] as Shape;
@@ -2720,7 +2720,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             DAG.set(`tmpPoint${id}`, tmpShapeNode);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
@@ -2776,11 +2776,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 DAG.set(point.props.id, shapeNode);
             });
-            
+
             this.props.onLabelUsed(labelUsed);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
@@ -2819,7 +2819,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             DAG.set(circle.props.id, shapeNode);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
@@ -2843,14 +2843,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 try {
                     let p = (
-                        this.props.mode === 'orthocenter' ? operation.orthocenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) : 
-                        (
-                            this.props.mode === 'incenter' ? operation.incenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) : 
+                        this.props.mode === 'orthocenter' ? operation.orthocenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) :
                             (
-                                this.props.mode === 'circumcenter' ? operation.circumcenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) : 
-                                operation.centroid((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2])
+                                this.props.mode === 'incenter' ? operation.incenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) :
+                                    (
+                                        this.props.mode === 'circumcenter' ? operation.circumcenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) :
+                                            operation.centroid((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2])
+                                    )
                             )
-                        )
                     );
 
                     let point = Factory.createPoint(
@@ -2865,7 +2865,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
-                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
+                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
                     };
 
                     point.type = this.props.mode === 'orthocenter' ? 'Orthocenter' : (this.props.mode === 'centroid' ? 'Centroid' : (this.props.mode === 'incenter' ? 'Incenter' : 'Circumcenter'));
@@ -2873,7 +2873,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(point.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2893,7 +2893,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
-                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
+                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
                     };
 
                     point.type = this.props.mode === 'orthocenter' ? 'Orthocenter' : (this.props.mode === 'centroid' ? 'Centroid' : (this.props.mode === 'incenter' ? 'Incenter' : 'Circumcenter'));
@@ -2902,7 +2902,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(point.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2922,14 +2922,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onLabelUsed([...this.props.labelUsed, label]);
 
                 try {
-                    let p = this.props.mode === 'orthocenter' ? operation.orthocenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]) : 
-                    (
-                        this.props.mode === 'incenter' ? operation.incenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]) : 
+                    let p = this.props.mode === 'orthocenter' ? operation.orthocenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]) :
                         (
-                            this.props.mode === 'circumcenter' ? operation.circumcenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]) : 
-                            operation.centroid(selectedPoints[0], selectedPoints[1], selectedPoints[2])
-                        )
-                    );
+                            this.props.mode === 'incenter' ? operation.incenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]) :
+                                (
+                                    this.props.mode === 'circumcenter' ? operation.circumcenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]) :
+                                        operation.centroid(selectedPoints[0], selectedPoints[1], selectedPoints[2])
+                                )
+                        );
 
                     let point = Factory.createPoint(
                         utils.createPointDefaultShapeProps(label),
@@ -2943,7 +2943,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
-                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
                     };
 
                     point.type = this.props.mode === 'orthocenter' ? 'Orthocenter' : (this.props.mode === 'centroid' ? 'Centroid' : (this.props.mode === 'incenter' ? 'Incenter' : 'Circumcenter'));
@@ -2951,7 +2951,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(point.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -2971,7 +2971,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(point),
                         type: point,
-                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
                     };
 
                     point.type = this.props.mode === 'orthocenter' ? 'Orthocenter' : (this.props.mode === 'centroid' ? 'Centroid' : (this.props.mode === 'incenter' ? 'Incenter' : 'Circumcenter'));
@@ -2980,7 +2980,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(point.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3006,10 +3006,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 try {
                     let p = this.props.mode === 'incircle' ? operation.incenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) :
-                            operation.circumcenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]);
-                    
+                        operation.circumcenter((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]);
+
                     let r = this.props.mode === 'incircle' ? operation.inradius((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]) :
-                            operation.circumradius((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]);
+                        operation.circumradius((polygon as Polygon).points[0], (polygon as Polygon).points[1], (polygon as Polygon).points[2]);
 
                     let circle = Factory.createCircle(
                         utils.createCircleDefaultShapeProps(label, r),
@@ -3027,7 +3027,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
-                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
+                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
                     };
 
                     circle.type = (this.props.mode === 'incircle' ? 'Incircle' : 'Circumcircle');
@@ -3035,7 +3035,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(circle.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3059,7 +3059,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
-                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
+                        dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
                     };
 
                     circle.type = (this.props.mode === 'incircle' ? 'Incircle' : 'Circumcircle');
@@ -3068,7 +3068,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(circle.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3089,10 +3089,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 try {
                     let p = this.props.mode === 'incircle' ? operation.incenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]) :
-                            operation.circumcenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]);
-                    
+                        operation.circumcenter(selectedPoints[0], selectedPoints[1], selectedPoints[2]);
+
                     let r = this.props.mode === 'incircle' ? operation.inradius(selectedPoints[0], selectedPoints[1], selectedPoints[2]) :
-                            operation.circumradius(selectedPoints[0], selectedPoints[1], selectedPoints[2]);
+                        operation.circumradius(selectedPoints[0], selectedPoints[1], selectedPoints[2]);
 
                     let circle = Factory.createCircle(
                         utils.createCircleDefaultShapeProps(label, r),
@@ -3110,7 +3110,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
-                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
                     };
 
                     circle.type = (this.props.mode === 'incircle' ? 'Incircle' : 'Circumcircle');
@@ -3118,7 +3118,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(circle.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3142,7 +3142,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false,
                         node: this.createKonvaShape(circle),
                         type: circle,
-                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                        dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
                     };
 
                     circle.type = (this.props.mode === 'incircle' ? 'Incircle' : 'Circumcircle');
@@ -3151,7 +3151,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     DAG.set(circle.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3196,7 +3196,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
-                            dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
+                            dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
                         };
 
                         circle.type = 'Excircle';
@@ -3207,7 +3207,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3241,7 +3241,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
-                            dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
+                            dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
                         };
 
                         circle.type = 'Excircle';
@@ -3253,7 +3253,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3293,7 +3293,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
-                            dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                            dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
                         };
 
                         circle.type = 'Excircle';
@@ -3304,7 +3304,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3338,7 +3338,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             isSelected: false,
                             node: this.createKonvaShape(circle),
                             type: circle,
-                            dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                            dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
                         };
 
                         circle.type = 'Excircle';
@@ -3350,7 +3350,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3390,7 +3390,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             isSelected: false,
                             node: this.createKonvaShape(point),
                             type: point,
-                            dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id] 
+                            dependsOn: [(polygon as Polygon).points[0].props.id, (polygon as Polygon).points[1].props.id, (polygon as Polygon).points[2].props.id]
                         };
 
                         point.type = 'Excenter';
@@ -3401,7 +3401,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3443,7 +3443,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3478,7 +3478,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             isSelected: false,
                             node: this.createKonvaShape(point),
                             type: point,
-                            dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                            dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id]
                         };
 
                         point.type = 'Excenter';
@@ -3489,7 +3489,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3531,7 +3531,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3557,7 +3557,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     (selectedPoints[0].x + selectedPoints[1].x) / 2,
                     (selectedPoints[0].y + selectedPoints[1].y) / 2
                 )
-                
+
 
                 DAG.set(midpoint.props.id, {
                     id: midpoint.props.id,
@@ -3571,7 +3571,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 midpoint.type = 'Midpoint';
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -3602,8 +3602,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         (selectedShapes[0].startSegment.x + selectedShapes[0].endSegment.x) / 2,
                         (selectedShapes[0].startSegment.y + selectedShapes[0].endSegment.y) / 2
                     )
-                    
-    
+
+
                     DAG.set(midpoint.props.id, {
                         id: midpoint.props.id,
                         dependsOn: [selectedShapes[0].props.id],
@@ -3616,7 +3616,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     midpoint.type = 'Midpoint';
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3629,9 +3629,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         (selectedShapes[0] as Circle).centerC.x,
                         (selectedShapes[0] as Circle).centerC.y
                     )
-                    
+
                     midpoint.type = 'Midpoint';
-    
+
                     DAG.set(midpoint.props.id, {
                         id: midpoint.props.id,
                         dependsOn: [selectedShapes[0].props.id],
@@ -3643,7 +3643,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -3704,7 +3704,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
@@ -3735,7 +3735,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             this.props.onLabelUsed([...this.props.labelUsed, point_label, segment_label]);
-            
+
             const point: Point = Factory.createPoint(
                 utils.createPointDefaultShapeProps(point_label),
                 selectedPoints[0].x + length,
@@ -3775,7 +3775,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             DAG.set(shapeNodeSegment.id, shapeNodeSegment);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
@@ -3844,7 +3844,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 line.type = 'PerpendicularBisector';
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -3899,7 +3899,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 line.type = 'PerpendicularBisector';
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -3919,7 +3919,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             this.props.onLabelUsed([...this.props.labelUsed, label]);
-            const radius = (math.parse('sqrt(x^2 + y^2)').evaluate({x: p1.x - p2.x, y: p1.y - p2.y})) / 2;
+            const radius = (math.parse('sqrt(x^2 + y^2)').evaluate({ x: p1.x - p2.x, y: p1.y - p2.y })) / 2;
             let semiCircle: SemiCircle = Factory.createSemiCircle(
                 utils.createSemiCircleDefaultShapeProps(label, radius),
                 p1,
@@ -3934,14 +3934,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 type: semiCircle,
                 node: this.createKonvaShape(semiCircle),
                 rotationFactor: {
-                    degree: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({x: p2.x - p1.x, y: p2.y - p1.y})) * 180 / Math.PI),
+                    degree: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({ x: p2.x - p1.x, y: p2.y - p1.y })) * 180 / Math.PI),
                     CCW: false
                 }
             });
 
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
-                gs: {...this.props.geometryState},
+                gs: { ...this.props.geometryState },
                 dag: DAG,
                 selectedPoints: [],
                 selectedShapes: []
@@ -3989,7 +3989,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         ),
                     )
                 ]
-                
+
                 try {
                     let bisectors = operation.bisector_angle_line2(tmpSelectedShapes[0], tmpSelectedShapes[1]);
                     const labelUsed = [...this.props.labelUsed];
@@ -4034,14 +4034,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
                     });
                 }
-                
-                catch(error) {
+
+                catch (error) {
                     // Create 2 perpendicular, undefined lines
                     const labelUsed = [...this.props.labelUsed];
                     for (let i = 0; i < 2; i++) {
@@ -4086,7 +4086,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.onLabelUsed(labelUsed);
                     this.props.onUpdateLastFailedState();
                     this.props.onUpdateAll({
-                        gs: {...this.props.geometryState},
+                        gs: { ...this.props.geometryState },
                         dag: DAG,
                         selectedPoints: [],
                         selectedShapes: []
@@ -4180,7 +4180,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 newLine.type = 'AngleBisector';
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -4227,13 +4227,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         utils.createLineDefaultShapeProps(label),
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
-                            selectedPoints[0].x - (tangentLines.length > i? tangentLines[i].direction.x : 0),
-                            selectedPoints[0].y - (tangentLines.length > i? tangentLines[i].direction.y : 0),
+                            selectedPoints[0].x - (tangentLines.length > i ? tangentLines[i].direction.x : 0),
+                            selectedPoints[0].y - (tangentLines.length > i ? tangentLines[i].direction.y : 0),
                         ),
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
-                            selectedPoints[0].x + (tangentLines.length > i? tangentLines[i].direction.x : 0),
-                            selectedPoints[0].y + (tangentLines.length > i? tangentLines[i].direction.y : 0),
+                            selectedPoints[0].x + (tangentLines.length > i ? tangentLines[i].direction.x : 0),
+                            selectedPoints[0].y + (tangentLines.length > i ? tangentLines[i].direction.y : 0),
                         )
                     )
 
@@ -4253,13 +4253,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
                 })
             }
-            
+
             else {
                 let tangentLines = operation.tangentLine(selectedPoints[0], selectedShapes[0] as SemiCircle);
                 const labelUsed = [...this.props.labelUsed];
@@ -4276,13 +4276,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         utils.createLineDefaultShapeProps(label),
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
-                            selectedPoints[0].x - (tangentLines.length > i? tangentLines[i].direction.x : 0),
-                            selectedPoints[0].y - (tangentLines.length > i? tangentLines[i].direction.y : 0),
+                            selectedPoints[0].x - (tangentLines.length > i ? tangentLines[i].direction.x : 0),
+                            selectedPoints[0].y - (tangentLines.length > i ? tangentLines[i].direction.y : 0),
                         ),
                         Factory.createPoint(
                             utils.createPointDefaultShapeProps(''),
-                            selectedPoints[0].x + (tangentLines.length > i? tangentLines[i].direction.x : 0),
-                            selectedPoints[0].y + (tangentLines.length > i? tangentLines[i].direction.y : 0),
+                            selectedPoints[0].x + (tangentLines.length > i ? tangentLines[i].direction.x : 0),
+                            selectedPoints[0].y + (tangentLines.length > i ? tangentLines[i].direction.y : 0),
                         )
                     )
 
@@ -4302,7 +4302,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -4429,12 +4429,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
 
                 polygon.type = 'RegularPolygon';
-        
+
                 DAG.set(polygon.props.id, shapeNode);
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -4541,12 +4541,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
 
                 polygon.type = 'RegularPolygon';
-        
+
                 DAG.set(polygon.props.id, shapeNode);
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -4591,8 +4591,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     return;
                 }
 
-                newShape = this.props.mode === 'reflect_line' ? operation.reflection(selectedShapes[0], selectedShapes[1]) : 
-                                                                operation.translation(selectedShapes[0], selectedShapes[1] as Vector);
+                newShape = this.props.mode === 'reflect_line' ? operation.reflection(selectedShapes[0], selectedShapes[1]) :
+                    operation.translation(selectedShapes[0], selectedShapes[1] as Vector);
                 shape = selectedShapes[0];
                 transformObject = selectedShapes[1];
             }
@@ -4655,7 +4655,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         shape = selectedPoints[0];
                         transformObject = selectedShapes[0];
                     }
-                    
+
                     else {
                         newShape = operation.reflection(selectedShapes[0], selectedPoints[0]);
                         transformObject = selectedPoints[0];
@@ -4717,7 +4717,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 labelUsed,
                 DAG,
                 this.props.mode,
-                {rotation: this.props.data.rotation, scale_factor: this.props.data.radius as number},
+                { rotation: this.props.data.rotation, scale_factor: this.props.data.radius as number },
                 transformObject
             );
 
@@ -5266,7 +5266,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
                 this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
+                    gs: { ...this.props.geometryState },
                     dag: DAG,
                     selectedPoints: [],
                     selectedShapes: []
@@ -5332,7 +5332,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         });
 
         this.props.onUpdateAll({
-            gs: {...this.props.geometryState},
+            gs: { ...this.props.geometryState },
             dag: DAG,
             selectedPoints: this.props.selectedPoints,
             selectedShapes: this.props.selectedShapes
@@ -5350,7 +5350,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             'Vector': this.updateVector,
             'Circle2Point': this.updateCircle2Point,
             'Intersection': this.updateIntersection,
-            'Midpoint': this.updateMidpoint, 
+            'Midpoint': this.updateMidpoint,
             'Centroid': this.updateCentroid,
             'Orthocenter': this.updateOrthocenter,
             'Circumcenter': this.updateCircumcenter,
@@ -5362,9 +5362,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             'TangentLine': this.updateTangentLine,
             'ParallelLine': this.updateParallelLine,
             'Circumcircle': this.updateCircle3Point,
-            'SemiCircle': this.updateSemiCircle, 
+            'SemiCircle': this.updateSemiCircle,
             'Angle': this.updateAngle,
-            'Reflection': this.updateReflection, 
+            'Reflection': this.updateReflection,
             'Rotation': this.updateRotation,
             'Projection': this.updateProjection,
             'Enlarge': this.updateEnlarge,
@@ -5415,12 +5415,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 pts.forEach(point => {
                     if (point.props.label === node.type.props.label) {
                         const pos = utils.convertToScreenCoords(
-                            {x: point.x, y: point.y},
-                            {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                            { x: point.x, y: point.y },
+                            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                             this.props.geometryState.spacing
                         );
 
-                        node.node!.position({x: pos.x, y: pos.y});
+                        node.node!.position({ x: pos.x, y: pos.y });
                         this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
                         if (this.layerUnchangeVisualRef.current) {
                             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -5439,7 +5439,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     y: l.points()[3] - l.points()[1]
                 }
 
-                node.node!.position({x: l.points()[0] + node.scaleFactor * d.x, y: l.points()[1] + node.scaleFactor * d.y});
+                node.node!.position({ x: l.points()[0] + node.scaleFactor * d.x, y: l.points()[1] + node.scaleFactor * d.y });
                 this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
             }
 
@@ -5455,7 +5455,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     const newY = cy + r * Math.sin(angle);
                     node.node!.position({ x: newX, y: newY });
                 }
-                
+
                 else {
                     let c = shape.node! as Konva.Arc;
                     const cx = c.x();
@@ -5490,7 +5490,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     node.type.props.label = `${splits[0]} = ${splits.includes('Area') ? area : perimeter}`;
                 }
             }
-            
+
 
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
@@ -5536,7 +5536,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const dx = posB.x - posA.x;
         const dy = posB.y - posA.y;
 
-        let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -5569,7 +5569,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const dx = posB.x - posA.x;
         const dy = posB.y - posA.y;
 
-        let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -5648,7 +5648,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         const posA = (start).node!.position();
         const posB = (end).node!.position();
-        
+
         let vectorNode = node.node! as Konva.Arrow;
         vectorNode.points([posA.x, posA.y, posB.x, posB.y]);
         this.updatePointPos((node.type as Vector).startVector, posA.x, posA.y);
@@ -5675,9 +5675,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             const posA = (start).node!.position();
             const posB = (end).node!.position();
-            
+
             let point = node.node! as Konva.Circle;
-            point.position({x: (posA.x + posB.x) / 2, y: (posA.y + posB.y) / 2});
+            point.position({ x: (posA.x + posB.x) / 2, y: (posA.y + posB.y) / 2 });
 
             if (this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -5689,15 +5689,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updatePointPos((node.type as Point), point.x(), point.y());
             return { ...node! };
         }
-        
+
         else {
             const shape = this.props.dag.get(node.dependsOn[0]);
             if (!shape) return { ...node! };
             if ('startSegment' in shape.type) {
                 const [start, end] = [shape.type.startSegment, shape.type.endSegment];
                 const pos = utils.convertToScreenCoords(
-                    {x: (start.x + end.x) / 2, y: (start.y + end.y) / 2},
-                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 },
+                    { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                     this.props.geometryState.spacing
                 );
 
@@ -5717,8 +5717,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             else if ('centerC' in shape.type && 'radius' in shape.type) {
                 let point = node.node! as Konva.Circle;
                 const pos = utils.convertToScreenCoords(
-                    {x: shape.type.centerC.x, y: shape.type.centerC.y},
-                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    { x: shape.type.centerC.x, y: shape.type.centerC.y },
+                    { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                     this.props.geometryState.spacing
                 );
 
@@ -5748,7 +5748,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const posA = (p1).node!.position();
         const posB = (p2).node!.position();
         const posC = (p3).node!.position();
-        
+
         let [A, B, C] = [
             Factory.createPoint(node.type.props, posA.x, posA.y),
             Factory.createPoint(node.type.props, posB.x, posB.y),
@@ -5758,7 +5758,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let ortho = operation.centroid(A, B, C);
             let point = node.node! as Konva.Circle;
-            point.position({x: ortho.x, y: ortho.y});
+            point.position({ x: ortho.x, y: ortho.y });
             point.show();
             node.defined = true;
 
@@ -5808,7 +5808,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let ortho = operation.orthocenter(A, B, C);
             let point = node.node! as Konva.Circle;
-            point.position({x: ortho.x, y: ortho.y});
+            point.position({ x: ortho.x, y: ortho.y });
             point.show();
             node.defined = true;
 
@@ -5858,7 +5858,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let ortho = operation.circumcenter(A, B, C);
             let point = node.node! as Konva.Circle;
-            point.position({x: ortho.x, y: ortho.y});
+            point.position({ x: ortho.x, y: ortho.y });
             point.show();
             node.defined = true;
 
@@ -5908,7 +5908,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let ortho = operation.incenter(A, B, C);
             let point = node.node! as Konva.Circle;
-            point.position({x: ortho.x, y: ortho.y});
+            point.position({ x: ortho.x, y: ortho.y });
             point.show();
             node.defined = true;
 
@@ -5947,9 +5947,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         const posA = (start).node!.position();
         const posB = (end).node!.position();
-        
+
         let point = node.node! as Konva.Circle;
-        point.position({x: posA.x, y: posA.y});
+        point.position({ x: posA.x, y: posA.y });
         point.radius(Math.hypot(posB.x - posA.x, posB.y - posA.y));
         this.updatePointPos((node.type as Circle).centerC, posA.x, posA.y);
         (node.type as Circle).radius = point.radius() / this.props.geometryState.spacing;
@@ -5989,7 +5989,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             }
 
-            node.node!.position({x: intersections[0].coors!.x, y: intersections[0].coors!.y})
+            node.node!.position({ x: intersections[0].coors!.x, y: intersections[0].coors!.y })
             node.node!.show();
             node.defined = true;
 
@@ -6005,7 +6005,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             node.defined = intersections[0].coors !== undefined && !intersections[0].ambiguous;
             return { ...node! };
         }
-        
+
         let i = node.side!;
         if (intersections[i].coors === undefined || intersections[i].ambiguous) {
             node.node!.hide();
@@ -6024,7 +6024,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         }
 
         else {
-            node.node!.position({x: intersections[i].coors!.x, y: intersections[i].coors!.y})
+            node.node!.position({ x: intersections[i].coors!.x, y: intersections[i].coors!.y })
             node.node!.show();
             node.defined = true;
 
@@ -6065,7 +6065,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const dx = line.direction.x;
             const dy = line.direction.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -6097,7 +6097,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 const match = (node.side! === 0 ? newTangents[0] : newTangents[1]) || newTangents[0];
                 const dx = match.direction.x;
                 const dy = match.direction.y;
-                let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+                let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
                 let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
                 let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
                 let line: Konva.Line = node.node! as Konva.Line;
@@ -6163,8 +6163,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 y: A.y - B.y
             }
 
-            const angleFromXAxis = (v: {x: number, y: number}) => {
-                return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
+            const angleFromXAxis = (v: { x: number, y: number }) => {
+                return (math.parse('atan2(y, x)').evaluate({ x: v.x, y: v.y })) * 180 / Math.PI;
             }
 
             let startAngle = utils.cleanAngle(angleFromXAxis(BA));
@@ -6228,7 +6228,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     }
                 }
             }
-            
+
             else {
                 if (this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -6291,18 +6291,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 y: tmpShape1.endLine.y - tmpShape1.startLine.y
             }
 
-            const angleFromXAxis = (v: {x: number, y: number}) => {
-                return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
+            const angleFromXAxis = (v: { x: number, y: number }) => {
+                return (math.parse('atan2(y, x)').evaluate({ x: v.x, y: v.y })) * 180 / Math.PI;
             }
 
             let startAngle = utils.cleanAngle(angleFromXAxis(start));
             let intersection = operation.getIntersections2D(shape1.type as Line, shape2.type as Line);
-            let vertex: Point | undefined = intersection[0].coors === undefined ? undefined : 
-                                            Factory.createPoint(
-                                                utils.createPointDefaultShapeProps(''),
-                                                intersection[0].coors.x,
-                                                intersection[0].coors.y
-                                            )
+            let vertex: Point | undefined = intersection[0].coors === undefined ? undefined :
+                Factory.createPoint(
+                    utils.createPointDefaultShapeProps(''),
+                    intersection[0].coors.x,
+                    intersection[0].coors.y
+                )
             if (angle === 0 || !vertex) {
                 if (this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -6314,7 +6314,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 node.node!.hide();
                 node.defined = false;
             }
-            
+
             else {
                 let parent = node.node!.getParent();
                 if (parent) {
@@ -6416,7 +6416,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let [circumcenter, circumradius] = [operation.circumcenter(A, B, C), operation.circumradius(A, B, C)];
             let circle = node.node! as Konva.Circle;
-            circle.position({x: circumcenter.x, y: circumcenter.y});
+            circle.position({ x: circumcenter.x, y: circumcenter.y });
             circle.radius(circumradius);
             node.node!.show();
             node.defined = true;
@@ -6435,7 +6435,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             return { ...node! };
         }
 
-        catch(error) {
+        catch (error) {
             node.node!.hide();
             node.defined = false;
             if (this.layerUnchangeVisualRef.current) {
@@ -6470,7 +6470,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let [incenter, inradius] = [operation.incenter(A, B, C), operation.inradius(A, B, C)];
             let circle = node.node! as Konva.Circle;
-            circle.position({x: incenter.x, y: incenter.y});
+            circle.position({ x: incenter.x, y: incenter.y });
             circle.radius(inradius);
             node.node!.show();
             node.defined = true;
@@ -6489,7 +6489,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             return { ...node! };
         }
 
-        catch(error) {
+        catch (error) {
             node.node!.hide();
             node.defined = false;
             if (this.layerUnchangeVisualRef.current) {
@@ -6498,7 +6498,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     label.hide();
                 }
             }
-            
+
             return { ...node! };
         }
     }
@@ -6524,8 +6524,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             y: B.y - M.y
         }
 
-        const angleFromXAxis = (v: {x: number, y: number}) => {
-            return (math.parse('atan2(y, x)').evaluate({x: v.x, y: v.y})) * 180 / Math.PI;
+        const angleFromXAxis = (v: { x: number, y: number }) => {
+            return (math.parse('atan2(y, x)').evaluate({ x: v.x, y: v.y })) * 180 / Math.PI;
         }
 
         let startAngle = utils.cleanAngle(angleFromXAxis(MB));
@@ -6534,9 +6534,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         arc.innerRadius(math.hypot(MB.x, MB.y));
         arc.outerRadius(math.hypot(MB.x, MB.y));
         arc.angle(180);
-        arc.position({x: M.x, y: M.y});
+        arc.position({ x: M.x, y: M.y });
         arc.rotation(startAngle);
-                
+
         if (this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
@@ -6564,12 +6564,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // reflected is Point
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: reflected.x, y: reflected.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: reflected.x, y: reflected.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             (node.type as Point).x = reflected.x;
             (node.type as Point).y = reflected.y;
         }
@@ -6578,12 +6578,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // reflected is Circle
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: (reflected as Circle).centerC.x, y: (reflected as Circle).centerC.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Circle).centerC.x, y: (reflected as Circle).centerC.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             p.radius(reflected.radius * this.props.geometryState.spacing);
             (node.type as Circle).centerC.x = (reflected as Circle).centerC.x;
             (node.type as Circle).centerC.y = (reflected as Circle).centerC.y;
@@ -6595,8 +6595,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let points: number[] = [];
             (reflected as Polygon).points.forEach((p: Point) => {
                 const screenPos = utils.convertToScreenCoords(
-                    {x: p.x, y: p.y},
-                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    { x: p.x, y: p.y },
+                    { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                     this.props.geometryState.spacing
                 );
                 points.push(screenPos.x, screenPos.y);
@@ -6610,14 +6610,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         else if ('startLine' in reflected) {
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (reflected as Line).startLine.x, y: (reflected as Line).startLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Line).startLine.x, y: (reflected as Line).startLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (reflected as Line).endLine.x, y: (reflected as Line).endLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Line).endLine.x, y: (reflected as Line).endLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -6625,7 +6625,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -6637,14 +6637,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startVector' in reflected) {
             let l = node.node! as Konva.Arrow;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (reflected as Vector).startVector.x, y: (reflected as Vector).startVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Vector).startVector.x, y: (reflected as Vector).startVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (reflected as Vector).endVector.x, y: (reflected as Vector).endVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Vector).endVector.x, y: (reflected as Vector).endVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -6656,14 +6656,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startSegment' in reflected) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (reflected as Segment).startSegment.x, y: (reflected as Segment).startSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Segment).startSegment.x, y: (reflected as Segment).startSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (reflected as Segment).endSegment.x, y: (reflected as Segment).endSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Segment).endSegment.x, y: (reflected as Segment).endSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -6675,21 +6675,21 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startRay' in reflected) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (reflected as Ray).startRay.x, y: (reflected as Ray).startRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Ray).startRay.x, y: (reflected as Ray).startRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (reflected as Ray).endRay.x, y: (reflected as Ray).endRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (reflected as Ray).endRay.x, y: (reflected as Ray).endRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -6701,18 +6701,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('start' in reflected && 'end' in reflected) {
             let arc = node.node! as Konva.Arc;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: reflected.start.x, y: reflected.start.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: reflected.start.x, y: reflected.start.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: reflected.end.x, y: reflected.end.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: reflected.end.x, y: reflected.end.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            arc.position({x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2});
+            arc.position({ x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2 });
             [(node.type as SemiCircle).start.x, (node.type as SemiCircle).start.y] = [reflected.start.x, reflected.start.y];
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [reflected.end.x, reflected.end.y];
         }
@@ -6771,7 +6771,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let l = newTangents[0];
             const dx = l.direction.x;
             const dy = l.direction.y;
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
             let line: Konva.Line = node.node! as Konva.Line;
@@ -6814,7 +6814,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         const dx = match.direction.x;
         const dy = match.direction.y;
-        let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
         let line: Konva.Line = node.node! as Konva.Line;
@@ -6852,7 +6852,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const dx = segmentPos[1] - segmentPos[3];
             const dy = segmentPos[2] - segmentPos[0];
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -6887,7 +6887,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const dx = posA.x - posB.x;
             const dy = posB.y - posB.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -6921,7 +6921,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const dx = segmentPos[1] - segmentPos[3];
         const dy = segmentPos[2] - segmentPos[0];
 
-        let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -6953,7 +6953,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const dx = segmentPos[2] - segmentPos[0];
         const dy = segmentPos[3] - segmentPos[1];
 
-        let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
         let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -6985,12 +6985,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         let point = node.node! as Konva.Circle;
         const newPos = utils.convertToScreenCoords(
-            {x: projected_point.x, y: projected_point.y},
-            {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: projected_point.x, y: projected_point.y },
+            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
-        point.position({x: newPos.x, y: newPos.y});
+        point.position({ x: newPos.x, y: newPos.y });
         [(node.type as Point).x, (node.type as Point).y] = [projected_point.x, projected_point.y];
         if (this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -7022,16 +7022,16 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let [excenter, exradius] = [operation.excenter(A, B, C), operation.exradius(A, B, C)];
             let circle = node.node! as Konva.Circle;
-            let idx = 0, minDst = math.parse('sqrt(x^2 + y^2)').evaluate({x: excenter[0].x - circle.x(), y: excenter[0].y - circle.y()});
+            let idx = 0, minDst = math.parse('sqrt(x^2 + y^2)').evaluate({ x: excenter[0].x - circle.x(), y: excenter[0].y - circle.y() });
             excenter.forEach((center, i) => {
-                const newDst = math.parse('sqrt(x^2 + y^2)').evaluate({x: center.x - circle.x(), y: center.y - circle.y()});
+                const newDst = math.parse('sqrt(x^2 + y^2)').evaluate({ x: center.x - circle.x(), y: center.y - circle.y() });
                 if (newDst <= minDst) {
                     minDst = newDst;
                     idx = i;
                 }
             });
 
-            circle.position({x: excenter[idx].x, y: excenter[idx].y});
+            circle.position({ x: excenter[idx].x, y: excenter[idx].y });
             circle.radius(exradius[idx]);
             node.node!.show();
             node.defined = true;
@@ -7049,7 +7049,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             return { ...node! };
         }
 
-        catch(error) {
+        catch (error) {
             node.node!.hide();
             node.defined = false;
             if (this.layerUnchangeVisualRef.current) {
@@ -7059,7 +7059,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     label.setAttrs(this.createLabel(node).getAttrs());
                 }
             }
-            
+
             return { ...node! };
         }
     }
@@ -7084,9 +7084,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         try {
             let excenter = operation.excenter(A, B, C);
             let circle = node.node! as Konva.Circle;
-            let idx = 0, minDst = math.parse('sqrt(x^2 + y^2)').evaluate({x: excenter[0].x - circle.x(), y: excenter[0].y - circle.y()});
+            let idx = 0, minDst = math.parse('sqrt(x^2 + y^2)').evaluate({ x: excenter[0].x - circle.x(), y: excenter[0].y - circle.y() });
             excenter.forEach((center, i) => {
-                const newDst = math.parse('sqrt(x^2 + y^2)').evaluate({x: center.x - circle.x(), y: center.y - circle.y()});
+                const newDst = math.parse('sqrt(x^2 + y^2)').evaluate({ x: center.x - circle.x(), y: center.y - circle.y() });
                 if (newDst <= minDst) {
                     minDst = newDst;
                     idx = i;
@@ -7094,7 +7094,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             });
 
             let point = node.node! as Konva.Circle;
-            point.position({x: excenter[idx].x, y: excenter[idx].y});
+            point.position({ x: excenter[idx].x, y: excenter[idx].y });
             point.show();
             node.defined = true;
             this.updatePointPos(node.type as Point, excenter[idx].x, excenter[idx].y);
@@ -7134,7 +7134,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         }
 
         if (node.rotationFactor === undefined) {
-            return { ...node!};
+            return { ...node! };
         }
 
         let rotated_obj = operation.rotation(
@@ -7145,12 +7145,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // rotated_obj is Point
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: rotated_obj.x, y: rotated_obj.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: rotated_obj.x, y: rotated_obj.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             (node.type as Point).x = rotated_obj.x;
             (node.type as Point).y = rotated_obj.y;
         }
@@ -7159,12 +7159,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // rotated_obj is Circle
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: (rotated_obj as Circle).centerC.x, y: (rotated_obj as Circle).centerC.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Circle).centerC.x, y: (rotated_obj as Circle).centerC.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             p.radius(rotated_obj.radius * this.props.geometryState.spacing);
             (node.type as Circle).centerC.x = (rotated_obj as Circle).centerC.x;
             (node.type as Circle).centerC.y = (rotated_obj as Circle).centerC.y;
@@ -7176,8 +7176,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let points: number[] = [];
             (rotated_obj as Polygon).points.forEach((p: Point) => {
                 const screenPos = utils.convertToScreenCoords(
-                    {x: p.x, y: p.y},
-                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    { x: p.x, y: p.y },
+                    { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                     this.props.geometryState.spacing
                 );
                 points.push(screenPos.x, screenPos.y);
@@ -7191,14 +7191,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         else if ('startLine' in rotated_obj) {
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (rotated_obj as Line).startLine.x, y: (rotated_obj as Line).startLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Line).startLine.x, y: (rotated_obj as Line).startLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (rotated_obj as Line).endLine.x, y: (rotated_obj as Line).endLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Line).endLine.x, y: (rotated_obj as Line).endLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7206,7 +7206,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -7218,14 +7218,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startVector' in rotated_obj) {
             let l = node.node! as Konva.Arrow;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (rotated_obj as Vector).startVector.x, y: (rotated_obj as Vector).startVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Vector).startVector.x, y: (rotated_obj as Vector).startVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (rotated_obj as Vector).endVector.x, y: (rotated_obj as Vector).endVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Vector).endVector.x, y: (rotated_obj as Vector).endVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7237,14 +7237,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startSegment' in rotated_obj) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (rotated_obj as Segment).startSegment.x, y: (rotated_obj as Segment).startSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Segment).startSegment.x, y: (rotated_obj as Segment).startSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (rotated_obj as Segment).endSegment.x, y: (rotated_obj as Segment).endSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Segment).endSegment.x, y: (rotated_obj as Segment).endSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7256,21 +7256,21 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startRay' in rotated_obj) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (rotated_obj as Ray).startRay.x, y: (rotated_obj as Ray).startRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Ray).startRay.x, y: (rotated_obj as Ray).startRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (rotated_obj as Ray).endRay.x, y: (rotated_obj as Ray).endRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (rotated_obj as Ray).endRay.x, y: (rotated_obj as Ray).endRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -7282,18 +7282,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('start' in rotated_obj && 'end' in rotated_obj) {
             let arc = node.node! as Konva.Arc;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: rotated_obj.start.x, y: rotated_obj.start.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: rotated_obj.start.x, y: rotated_obj.start.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: rotated_obj.end.x, y: rotated_obj.end.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: rotated_obj.end.x, y: rotated_obj.end.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            arc.position({x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2});
+            arc.position({ x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2 });
             [(node.type as SemiCircle).start.x, (node.type as SemiCircle).start.y] = [rotated_obj.start.x, rotated_obj.start.y];
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [rotated_obj.end.x, rotated_obj.end.y];
         }
@@ -7324,12 +7324,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // enlarge_obj is Point
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: enlarge_obj.x, y: enlarge_obj.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: enlarge_obj.x, y: enlarge_obj.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             (node.type as Point).x = enlarge_obj.x;
             (node.type as Point).y = enlarge_obj.y;
         }
@@ -7338,12 +7338,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // enlarge_obj is Circle
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Circle).centerC.x, y: (enlarge_obj as Circle).centerC.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Circle).centerC.x, y: (enlarge_obj as Circle).centerC.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             p.radius(enlarge_obj.radius * this.props.geometryState.spacing);
             (node.type as Circle).centerC.x = (enlarge_obj as Circle).centerC.x;
             (node.type as Circle).centerC.y = (enlarge_obj as Circle).centerC.y;
@@ -7355,8 +7355,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let points: number[] = [];
             (enlarge_obj as Polygon).points.forEach((p: Point) => {
                 const screenPos = utils.convertToScreenCoords(
-                    {x: p.x, y: p.y},
-                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    { x: p.x, y: p.y },
+                    { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                     this.props.geometryState.spacing
                 );
                 points.push(screenPos.x, screenPos.y);
@@ -7370,14 +7370,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         else if ('startLine' in enlarge_obj) {
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Line).startLine.x, y: (enlarge_obj as Line).startLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Line).startLine.x, y: (enlarge_obj as Line).startLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Line).endLine.x, y: (enlarge_obj as Line).endLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Line).endLine.x, y: (enlarge_obj as Line).endLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7385,7 +7385,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -7397,14 +7397,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startVector' in enlarge_obj) {
             let l = node.node! as Konva.Arrow;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Vector).startVector.x, y: (enlarge_obj as Vector).startVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Vector).startVector.x, y: (enlarge_obj as Vector).startVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Vector).endVector.x, y: (enlarge_obj as Vector).endVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Vector).endVector.x, y: (enlarge_obj as Vector).endVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7416,14 +7416,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startSegment' in enlarge_obj) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Segment).startSegment.x, y: (enlarge_obj as Segment).startSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Segment).startSegment.x, y: (enlarge_obj as Segment).startSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Segment).endSegment.x, y: (enlarge_obj as Segment).endSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Segment).endSegment.x, y: (enlarge_obj as Segment).endSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7435,21 +7435,21 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startRay' in enlarge_obj) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Ray).startRay.x, y: (enlarge_obj as Ray).startRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Ray).startRay.x, y: (enlarge_obj as Ray).startRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (enlarge_obj as Ray).endRay.x, y: (enlarge_obj as Ray).endRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (enlarge_obj as Ray).endRay.x, y: (enlarge_obj as Ray).endRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -7461,18 +7461,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('start' in enlarge_obj && 'end' in enlarge_obj) {
             let arc = node.node! as Konva.Arc;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: enlarge_obj.start.x, y: enlarge_obj.start.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: enlarge_obj.start.x, y: enlarge_obj.start.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: enlarge_obj.end.x, y: enlarge_obj.end.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: enlarge_obj.end.x, y: enlarge_obj.end.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            arc.position({x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2});
+            arc.position({ x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2 });
             [(node.type as SemiCircle).start.x, (node.type as SemiCircle).start.y] = [enlarge_obj.start.x, enlarge_obj.start.y];
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [enlarge_obj.end.x, enlarge_obj.end.y];
         }
@@ -7499,12 +7499,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // translate_obj is Point
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: translate_obj.x, y: translate_obj.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: translate_obj.x, y: translate_obj.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             (node.type as Point).x = translate_obj.x;
             (node.type as Point).y = translate_obj.y;
         }
@@ -7513,12 +7513,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // translate_obj is Circle
             let p = node.node! as Konva.Circle;
             const screenPos = utils.convertToScreenCoords(
-                {x: (translate_obj as Circle).centerC.x, y: (translate_obj as Circle).centerC.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Circle).centerC.x, y: (translate_obj as Circle).centerC.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            p.position({x: screenPos.x, y: screenPos.y});
+            p.position({ x: screenPos.x, y: screenPos.y });
             p.radius(translate_obj.radius * this.props.geometryState.spacing);
             (node.type as Circle).centerC.x = (translate_obj as Circle).centerC.x;
             (node.type as Circle).centerC.y = (translate_obj as Circle).centerC.y;
@@ -7530,8 +7530,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let points: number[] = [];
             (translate_obj as Polygon).points.forEach((p: Point) => {
                 const screenPos = utils.convertToScreenCoords(
-                    {x: p.x, y: p.y},
-                    {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                    { x: p.x, y: p.y },
+                    { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                     this.props.geometryState.spacing
                 );
                 points.push(screenPos.x, screenPos.y);
@@ -7545,14 +7545,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         else if ('startLine' in translate_obj) {
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (translate_obj as Line).startLine.x, y: (translate_obj as Line).startLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Line).startLine.x, y: (translate_obj as Line).startLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (translate_obj as Line).endLine.x, y: (translate_obj as Line).endLine.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Line).endLine.x, y: (translate_obj as Line).endLine.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7560,7 +7560,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -7572,14 +7572,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startVector' in translate_obj) {
             let l = node.node! as Konva.Arrow;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (translate_obj as Vector).startVector.x, y: (translate_obj as Vector).startVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Vector).startVector.x, y: (translate_obj as Vector).startVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (translate_obj as Vector).endVector.x, y: (translate_obj as Vector).endVector.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Vector).endVector.x, y: (translate_obj as Vector).endVector.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7591,14 +7591,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startSegment' in translate_obj) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (translate_obj as Segment).startSegment.x, y: (translate_obj as Segment).startSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Segment).startSegment.x, y: (translate_obj as Segment).startSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (translate_obj as Segment).endSegment.x, y: (translate_obj as Segment).endSegment.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Segment).endSegment.x, y: (translate_obj as Segment).endSegment.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
@@ -7610,21 +7610,21 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('startRay' in translate_obj) {
             let l = node.node! as Konva.Line;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: (translate_obj as Ray).startRay.x, y: (translate_obj as Ray).startRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Ray).startRay.x, y: (translate_obj as Ray).startRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: (translate_obj as Ray).endRay.x, y: (translate_obj as Ray).endRay.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: (translate_obj as Ray).endRay.x, y: (translate_obj as Ray).endRay.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const dx = screenPosEnd.x - screenPosStart.x;
             const dy = screenPosEnd.y - screenPosStart.y;
 
-            let length = 2 * Math.max(this.stageRef.current!.width(), this.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
             let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
 
@@ -7636,18 +7636,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if ('start' in translate_obj && 'end' in translate_obj) {
             let arc = node.node! as Konva.Arc;
             const screenPosStart = utils.convertToScreenCoords(
-                {x: translate_obj.start.x, y: translate_obj.start.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: translate_obj.start.x, y: translate_obj.start.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
             const screenPosEnd = utils.convertToScreenCoords(
-                {x: translate_obj.end.x, y: translate_obj.end.y},
-                {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+                { x: translate_obj.end.x, y: translate_obj.end.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
-            arc.position({x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2});
+            arc.position({ x: (screenPosEnd.x + screenPosStart.x) / 2, y: (screenPosEnd.y + screenPosStart.y) / 2 });
             [(node.type as SemiCircle).start.x, (node.type as SemiCircle).start.y] = [translate_obj.start.x, translate_obj.start.y];
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [translate_obj.end.x, translate_obj.end.y];
         }
@@ -7710,8 +7710,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
     private updatePointPos = (point: Point, x: number, y: number): void => {
         const pos = utils.convertToCustomCoords(
-            {x: x, y: y},
-            {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            { x: x, y: y },
+            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -7719,18 +7719,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     }
 
     private createPoint = (
-        position: {x: number, y: number},
+        position: { x: number, y: number },
         children: Konva.Shape[]
     ): void => {
         let shape = children.length > 0 ? children[children.length - 1] : undefined;
         let scaleFactor: number | undefined = undefined;
-        let rotFactor: {degree: number, CCW: boolean} | undefined = undefined;
+        let rotFactor: { degree: number, CCW: boolean } | undefined = undefined;
         const DAG = utils.cloneDAG(this.props.dag);
-        
+
         children.slice(-2).forEach(s => {
             let posInfo = utils.snapToShape(
                 DAG, s, position, this.layerMathObjectRef.current!, this.props.isSnapToGrid,
-                this.stageRef.current!, this.props.geometryState.axisTickInterval
+                this.props.stageRef.current!, this.props.geometryState.axisTickInterval
             );
 
             position = posInfo.position;
@@ -7748,7 +7748,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         this.props.onLabelUsed([...this.props.labelUsed, label]);
         const pos = utils.convertToCustomCoords(
-            position, {x: this.stageRef.current!.width() / 2, y: this.stageRef.current!.height() / 2},
+            position, { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
@@ -7786,7 +7786,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 const updateFn = (node: ShapeNode): ShapeNode => {
                     let posInfo = utils.snapToShape(
                         DAG, shape, pos, this.layerMathObjectRef.current!, this.props.isSnapToGrid,
-                        this.stageRef.current!, this.props.geometryState.axisTickInterval
+                        this.props.stageRef.current!, this.props.geometryState.axisTickInterval
                     );
 
                     position = posInfo.position;
@@ -7802,7 +7802,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         }
                     }
 
-                    return {...node};
+                    return { ...node };
                 };
 
                 this.updateAndPropagate(pNode.id(), updateFn);
@@ -7830,7 +7830,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         });
 
         this.props.onUpdateAll({
-            gs: {...this.props.geometryState},
+            gs: { ...this.props.geometryState },
             dag: DAG,
             selectedShapes: this.props.mode === 'point' ? [] : [...this.props.selectedShapes],
             selectedPoints: this.props.mode === 'point' ? [] : selectedPoints
@@ -7841,11 +7841,11 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const { width, height, background_color } = this.props;
         return (
             <Stage
-                className={"cursor_hit"} 
-                ref={this.stageRef} 
+                className={"cursor_hit"}
+                ref={this.props.stageRef}
                 width={width}
-                height={height} 
-                style={{background: background_color}}
+                height={height}
+                style={{ background: background_color }}
                 onWheel={this.handleZoom}
                 onPointerDown={this.handleMouseDown}
                 onPointerMove={this.handleMouseMove}

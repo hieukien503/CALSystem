@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+dotenv.config({ path: './geometry-backend/.env' });
 const connectDB = require("./src/config/db");
 const cors = require("cors");
 
@@ -7,7 +8,6 @@ const projectRoutes = require("./src/routes/projectRoutes");
 const authRoutes = require("./src/routes/authRoutes");
 const publicRoutes = require("./src/routes/publicRoutes"); // 👈 add this
 
-dotenv.config({ path: './geometry-backend/.env' });
 const app = express();
 
 // ✅ allow your React dev origin
