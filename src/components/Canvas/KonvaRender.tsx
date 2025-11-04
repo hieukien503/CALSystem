@@ -668,7 +668,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             shapeNode.push(node);
             let label = this.createLabel(node);
             if (!node.defined || ((node.type.props.visible.shape && !node.type.props.visible.label) || !node.type.props.visible.shape)) {
-                label.hide();
+                node.id.includes('tmp') ? label.show() : label.hide();
             }
 
             this.layerUnchangeVisualRef.current?.add(label);
@@ -2560,29 +2560,78 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let id: string = "";
             const selectedShapes = [...this.props.selectedShapes];
             const selectedPoints = [...this.props.selectedPoints];
-            let x = this.last_pointer.x;
-            let y = this.last_pointer.y;
-            let tmpSegment: Segment | undefined = undefined;
+            const pos = utils.convertToCustomCoords(
+                this.last_pointer, {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            );
+
+            let x = pos.x, y = pos.y;
+            let scaleFactor: number | undefined = undefined;
+            let rotationFactor: { degree: number, CCW: boolean } | undefined = undefined;
+
             if (selectedShapes.length === 1 && selectedPoints.length === 0) {
                 let shape = selectedShapes[0];
                 id = shape.props.label;
                 if ('startSegment' in shape) {
                     shape = shape as Segment;
+                    const point = operation.point_projection(
+                        Factory.createPoint(
+                            utils.createPointDefaultShapeProps(''),
+                            x, y
+                        ),
+                        shape
+                    );
+
+                    scaleFactor = utils.projectPointOntoLineSegment (
+                        { x: point.x, y: point.y }, 
+                        { x: shape.startSegment.x, y: shape.startSegment.y },
+                        { x: shape.endSegment.x, y: shape.endSegment.y }
+                    );
+                    
                     label = `Length of ${shape.props.label} = `
                 }
 
                 else if ('points' in shape) {
                     shape = shape as Polygon;
+                    let base: { x: number, y: number } = { x: 0, y: 0 };
+                    shape.points.forEach(pt => {
+                        base.x += pt.x
+                        base.y += pt.y
+                    });
+
+                    base.x /= shape.points.length;
+                    base.y /= shape.points.length;
+                    rotationFactor = {
+                        degree: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({x: x - base.x, y: y - base.y})) * 180 / Math.PI),
+                        CCW: true
+                    }
+
+                    scaleFactor = Math.sqrt((base.x - x) ** 2 + (base.y - y) ** 2);
                     label = `Perimeter of ${shape.props.label} = `
                 }
 
                 else if ('radius' in shape) {
                     shape = shape as Circle;
+                    rotationFactor = {
+                        degree: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({x: x - shape.centerC.x, y: y - shape.centerC.y})) * 180 / Math.PI),
+                        CCW: true
+                    }
+
                     label = `Perimeter of ${shape.props.label} = `
                 }
 
                 else if ('start' in shape && 'end' in shape) {
                     shape = shape as SemiCircle;
+                    const center: {x: number, y: number} = {
+                        x: (shape.start.x + shape.end.x) / 2,
+                        y: (shape.start.y + shape.end.y) / 2
+                    }
+
+                    rotationFactor = {
+                        degree: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({x: center.x - x, y: center.y - y})) * 180 / Math.PI),
+                        CCW: true
+                    }
+
                     label = `Arc length of ${shape.props.label} = `
                 }
 
@@ -2611,19 +2660,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 perimeter = Math.abs(n.x * point.x + n.y * point.y - (n.x * start.x + n.y * start.y)) / math.parse('sqrt(x^2 + y^2)').evaluate({ x: n.x, y: n.y });
                 label = `${selectedShapes[0].props.label}${selectedShapes[1].props.label} = `
-                id = `${selectedShapes[0].props.label}${selectedShapes[1].props.label}`
                 let projectedPoint = operation.point_projection(point, line);
                 x = (point.x + projectedPoint.x) / 2;
                 y = (point.y + projectedPoint.y) / 2;
-                tmpSegment = Factory.createSegment(
-                    utils.createLineDefaultShapeProps(`tmpLine${selectedShapes[0].props.label}${selectedShapes[1].props.label}`),
-                    point,
-                    Factory.createPoint(
-                        utils.createPointDefaultShapeProps(''),
-                        projectedPoint.x,
-                        projectedPoint.x
-                    )
-                )
             }
 
             else if (selectedPoints.length === 2) {
@@ -2632,11 +2671,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 id = `${selectedPoints[0].props.label}${selectedPoints[1].props.label}`
                 x = (selectedPoints[0].x + selectedPoints[1].x) / 2;
                 y = (selectedPoints[0].y + selectedPoints[1].y) / 2;
-                tmpSegment = Factory.createSegment(
-                    utils.createLineDefaultShapeProps(`tmpLine${selectedPoints[0].props.label}${selectedPoints[1].props.label}`),
-                    selectedPoints[0],
-                    selectedPoints[1]
-                )
             }
 
             else {
@@ -2649,39 +2683,39 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 return;
             }
 
-            label = `${label}${perimeter}`;
+            label = `${label}${perimeter.toFixed(2)}`;
             let tmpPoint = Factory.createPoint(
                 utils.createPointDefaultShapeProps(label),
                 x,
                 y
             );
 
+            tmpPoint.props.visible.shape = false;
+
+            tmpPoint.type = (selectedPoints.length > 0 ? 'Midpoint' : 'Point');
+            let dependencies: string[] = [];
+            selectedShapes.forEach(shape => {
+                dependencies.push(shape.props.id)
+            });
+
+            selectedPoints.forEach(point => {
+                dependencies.push(point.props.id)
+            });
+
             let tmpShapeNode: ShapeNode = {
-                id: `tmpPoint${id}`,
-                dependsOn: tmpSegment === undefined ? [id] : [tmpSegment.props.id],
+                id: `tmpPoint-${tmpPoint.props.id}`,
+                dependsOn: dependencies,
                 node: this.createKonvaShape(tmpPoint),
                 type: tmpPoint,
                 defined: true,
                 isSelected: false,
-                scaleFactor: tmpSegment === undefined ? undefined : 0.5
+                scaleFactor: scaleFactor,
+                rotationFactor: rotationFactor
             }
 
             tmpShapeNode.node!.hide();
-
-            DAG.set(`tmpPoint${id}`, tmpShapeNode);
-            if (tmpSegment) {
-                DAG.set(tmpSegment.props.id, {
-                    id: tmpSegment.props.id,
-                    dependsOn: [tmpSegment.endSegment.props.id, tmpSegment.startSegment.props.id],
-                    node: this.createKonvaShape(tmpSegment),
-                    type: tmpSegment,
-                    defined: false,
-                    isSelected: false
-                });
-
-                DAG.get(tmpSegment.props.id)!.node!.hide();
-            }
-
+            DAG.set(tmpShapeNode.id, tmpShapeNode);
+            console.log(DAG);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
                 gs: { ...this.props.geometryState },
@@ -2699,25 +2733,61 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             if (!('points' in shape) && !('radius' in shape)) return;
             let area = ('points' in shape ? (shape as Polygon).area : (shape as Circle).area);
             if (!area) return;
-            label = `Area of ${shape.props.label} = ${area}`;
+            label = `Area of ${shape.props.label} = ${area.toFixed(2)}`;
+            const pos = utils.convertToCustomCoords(
+                this.last_pointer, {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            );
+
+            let scaleFactor: number | undefined = undefined;
+            let rotationFactor: { degree: number, CCW: boolean } | undefined = undefined;
+            if ('points' in shape) {
+                shape = shape as Polygon;
+                let base: { x: number, y: number } = { x: 0, y: 0 };
+                shape.points.forEach(pt => {
+                    base.x += pt.x
+                    base.y += pt.y
+                });
+
+                base.x /= shape.points.length;
+                base.y /= shape.points.length;
+                rotationFactor = {
+                    degree: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({x: pos.x - base.x, y: pos.y - base.y})) * 180 / Math.PI),
+                    CCW: true
+                }
+
+                scaleFactor = Math.sqrt((base.x - pos.x) ** 2 + (base.y - pos.y) ** 2);
+            }
+        
+            else if ('radius' in shape) {
+                shape = shape as Circle;
+                rotationFactor = {
+                    degree: utils.cleanAngle((math.parse('atan2(y, x)').evaluate({x: pos.x - shape.centerC.x, y: pos.y - shape.centerC.y})) * 180 / Math.PI),
+                    CCW: true
+                }
+            }
+
             let tmpPoint = Factory.createPoint(
                 utils.createPointDefaultShapeProps(label),
-                this.last_pointer.x,
-                this.last_pointer.y
+                pos.x, pos.y
             );
 
             let id: string = shape.props.id;
             let tmpShapeNode: ShapeNode = {
-                id: `tmpPoint${id}`,
-                dependsOn: [id],
+                id: `tmpPoint-${tmpPoint.props.id}`,
+                dependsOn: [selectedShapes[0].props.id],
                 node: this.createKonvaShape(tmpPoint),
                 type: tmpPoint,
                 defined: true,
-                isSelected: false
-            }
+                isSelected: false,
+                scaleFactor: scaleFactor,
+                rotationFactor: rotationFactor
+            };
 
+            tmpPoint.props.visible.shape = false;
             tmpShapeNode.node!.hide();
-            DAG.set(`tmpPoint${id}`, tmpShapeNode);
+            DAG.set(tmpShapeNode.id, tmpShapeNode);
+            console.log(DAG);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
                 gs: { ...this.props.geometryState },
@@ -5412,24 +5482,58 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             if ('points' in shape.type) {
                 let pts = shape.type.points;
-                pts.forEach(point => {
-                    if (point.props.label === node.type.props.label) {
-                        const pos = utils.convertToScreenCoords(
-                            { x: point.x, y: point.y },
-                            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
-                            this.props.geometryState.spacing
-                        );
+                if (node.rotationFactor !== undefined && node.scaleFactor !== undefined) {
+                    console.log(node.rotationFactor, node.scaleFactor);
+                    const base = {x: 0, y: 0};
+                    pts.forEach(pt => {
+                        base.x += pt.x
+                        base.y += pt.y
+                    });
 
-                        node.node!.position({ x: pos.x, y: pos.y });
-                        this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
-                        if (this.layerUnchangeVisualRef.current) {
-                            let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
-                            if (label) {
-                                label.setAttrs(this.createLabel(node).getAttrs());
-                            }
+                    base.x /= pts.length;
+                    base.y /= pts.length;
+                    const pos = utils.convertToScreenCoords(
+                        {x: base.x, y: base.y},
+                        {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2},
+                        this.props.geometryState.spacing
+                    );
+
+                    if (node.node === undefined) return { ...node! };
+                    node.node.position({
+                        x: pos.x + node.scaleFactor * this.props.geometryState.spacing * Math.cos(Konva.getAngle(node.rotationFactor.degree)),
+                        y: pos.y - node.scaleFactor * this.props.geometryState.spacing * Math.sin(Konva.getAngle(node.rotationFactor.degree))
+                    });
+
+                    this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
+                    console.log(base, node.type);
+                    if (this.layerUnchangeVisualRef.current) {
+                        let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
+                        if (label) {
+                            label.setAttrs(this.createLabel(node).getAttrs());
                         }
                     }
-                });
+                }
+
+                else {
+                    pts.forEach(point => {
+                        if (point.props.label === node.type.props.label) {
+                            const pos = utils.convertToScreenCoords(
+                                {x: point.x, y: point.y},
+                                {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2},
+                                this.props.geometryState.spacing
+                            );
+
+                            node.node!.position({x: pos.x, y: pos.y});
+                            this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
+                            if (this.layerUnchangeVisualRef.current) {
+                                let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
+                                if (label) {
+                                    label.setAttrs(this.createLabel(node).getAttrs());
+                                }
+                            }
+                        }
+                    });
+                }
             }
 
             else if (node.scaleFactor) {
@@ -5487,7 +5591,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             if (node.id.includes('tmpPoint')) {
                 let splits = node.type.props.label.split(' = ');
                 if (splits.length > 0) {
-                    node.type.props.label = `${splits[0]} = ${splits.includes('Area') ? area : perimeter}`;
+                    node.type.props.label = `${splits[0]} = ${splits[0].includes('Area') ? area.toFixed(2) : perimeter.toFixed(2)}`;
                 }
             }
 
@@ -5495,6 +5599,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
+                node.id.includes('tmpPoint') ? label.show() : label.hide();
             }
         }
 

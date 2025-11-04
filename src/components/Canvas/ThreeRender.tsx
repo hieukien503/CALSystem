@@ -14,6 +14,7 @@ import * as constants3d from '../../types/constants3D';
 import * as operation from '../../utils/math_operation'
 import ThreeAxis from '../../utils/ThreeAxis';
 import ThreeGrid from '../../utils/ThreeGrid';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 interface ThreeDCanvasProps {
     width: number;
@@ -64,6 +65,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private rendererRef: RefObject<THREE.WebGLRenderer | null>;
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
+    private transformControlsRef: RefObject<TransformControls | null>;
     constructor(props: ThreeDCanvasProps) {
         super(props);
         this.sceneRef = React.createRef<THREE.Scene>();
@@ -71,6 +73,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.rendererRef = React.createRef<THREE.WebGLRenderer>();
         this.controlsRef = React.createRef<OrbitControls>();
         this.canvasRef = React.createRef<HTMLCanvasElement>();
+        this.transformControlsRef = React.createRef<TransformControls>();
         this.handleMouseDown = this.handleMouseDown.bind(this);
     }
 
@@ -558,39 +561,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             mesh.quaternion.copy(quaternion);
             mesh.position.copy(start).add(direction.clone().multiplyScalar(0.5));
             labelPosition = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-
-            const base1 = Factory.createCircle(
-                utils.createCircleDefaultShapeProps('', cy.radius),
-                cy.centerBase1,
-                cy.radius,
-                Factory.createVector(
-                    utils.createVectorDefaultShapeProps(''),
-                    cy.centerBase1,
-                    cy.centerBase2
-                )
-            );
-
-            const base2 = Factory.createCircle(
-                utils.createCircleDefaultShapeProps('', cy.radius),
-                cy.centerBase2,
-                cy.radius,
-                Factory.createVector(
-                    utils.createVectorDefaultShapeProps(''),
-                    cy.centerBase2,
-                    cy.centerBase1
-                )
-            );
-
-            base1.props.color = shape.props.color;
-            base2.props.color = shape.props.color;
-
-            const base1Mesh = this.create2DShape(base1);
-            const base2Mesh = this.create2DShape(base2);
-            const cylinderGroup = new THREE.Group();
-            if (base1Mesh) cylinderGroup.add(base1Mesh);
-            if (base2Mesh) cylinderGroup.add(base2Mesh);
-            cylinderGroup.add(mesh);
-            mesh = cylinderGroup as unknown as THREE.Mesh;
         }
         
         else if ('center' in shape && 'apex' in shape && 'radius' in shape) {
@@ -614,25 +584,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             mesh.quaternion.copy(quaternion);
             mesh.position.copy(center).add(direction.clone().multiplyScalar(0.5));
             labelPosition = new THREE.Vector3().addVectors(center, apex).multiplyScalar(0.5);
-
-            const base = Factory.createCircle(
-                utils.createCircleDefaultShapeProps('', co.radius),
-                co.center,
-                co.radius,
-                Factory.createVector(
-                    utils.createVectorDefaultShapeProps(''),
-                    co.center,
-                    co.apex
-                )
-            );
-
-            base.props.color = shape.props.color;
-
-            const baseMesh = this.create2DShape(base);
-            const coneGroup = new THREE.Group();
-            if (baseMesh) coneGroup.add(baseMesh);
-            coneGroup.add(mesh);
-            mesh = coneGroup as unknown as THREE.Mesh;
         }
         
         else if ('centerS' in shape && 'radius' in shape) {
@@ -693,28 +644,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             let baseCenter = new THREE.Vector3();
             for (const p of py.base.points) {
                 baseCenter.add(utils3d.convertToVector3(p.x, p.y, p.z ?? 0));
-            }
-
-            for (let i = 0; i < py.base.points.length; i++) {
-                const start = apex;
-                const end   = utils3d.convertToVector3(py.base.points[i].x, py.base.points[i].y, py.base.points[i].z ?? 0);
-                const props = utils.createLineDefaultShapeProps("");
-                props.color = shape.props.color;
-
-                const edge = utils3d.createDashLine([start, end], props);
-                edge.renderOrder = 18; // Ensure edges render above fill
-                pyramidGroup.add(edge);
-            }
-
-            for (let i = 0; i < py.base.points.length; i++) {
-                const start = utils3d.convertToVector3(py.base.points[i].x, py.base.points[i].y, py.base.points[i].z ?? 0);
-                const end   = utils3d.convertToVector3(py.base.points[(i + 1) % py.base.points.length].x, py.base.points[(i + 1) % py.base.points.length].y, py.base.points[(i + 1) % py.base.points.length].z ?? 0);
-                const props = utils.createLineDefaultShapeProps("");
-                props.color = shape.props.color;
-
-                const edge = utils3d.createDashLine([start, end], props);
-                edge.renderOrder = 18; // Ensure edges render above fill
-                pyramidGroup.add(edge);
             }
 
             pyramidGroup.add(fillMesh);
@@ -3461,8 +3390,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
 
             let idx = 0;
-            let cylinder_label = `cylinder${idx}`;
             const labelUsed = [...this.props.labelUsed];
+            let cylinder_label = `cylinder${idx}`;
+            
             while (labelUsed.includes(cylinder_label)) {
                 idx += 1;
                 cylinder_label = `cylinder${idx}`;
@@ -3485,6 +3415,34 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             };
 
             DAG.set(cylinder.props.id, shapeNode);
+
+            idx = 0;
+            for (let i = 0; i < 2; i++) {
+                let circle_label = "circle0";
+                while (labelUsed.includes(circle_label)) {
+                    idx++;
+                    circle_label = `circle${idx}`;
+                }
+
+                labelUsed.push(circle_label);
+                const base: Circle = Factory.createCircle(
+                    utils.createCircleDefaultShapeProps(circle_label, radius),
+                    selectedPoints[i],
+                    radius
+                );
+
+                base.props.color = cylinder.props.color;
+                const shapeNode: ShapeNode3D = {
+                    id: base.props.id,
+                    type: base,
+                    dependsOn: [selectedPoints[i].props.id, cylinder.props.id],
+                    defined: true,
+                    isSelected: false
+                };
+
+                DAG.set(base.props.id, shapeNode);
+            }
+
             this.props.onUpdateLastFailedState();
             this.props.onLabelUsed(labelUsed);
             this.props.onUpdateAll({
@@ -3538,6 +3496,31 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: cone,
                 dependsOn: selectedPoints.map(point => point.props.id)
             });
+
+            idx = 0;
+            let circle_label = "circle0";
+            while (labelUsed.includes(circle_label)) {
+                idx++;
+                circle_label = `circle${idx}`;
+            }
+
+            labelUsed.push(circle_label);
+            const base: Circle = Factory.createCircle(
+                utils.createCircleDefaultShapeProps(circle_label, radius),
+                selectedPoints[0],
+                radius
+            );
+
+            base.props.color = cone.props.color;
+            const shapeNode: ShapeNode3D = {
+                id: base.props.id,
+                type: base,
+                dependsOn: [selectedPoints[0].props.id, cone.props.id],
+                defined: true,
+                isSelected: false
+            };
+
+            DAG.set(base.props.id, shapeNode);
 
             this.props.onUpdateLastFailedState();
             this.props.onLabelUsed(labelUsed);
@@ -3607,6 +3590,35 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: pyramid,
                 dependsOn: [polygon.props.id, selectedPoints[0].props.id]
             });
+
+            for (let i = 0; i < polygon.points.length; i++) {
+                let p = polygon.points[i];
+                let pNext = selectedPoints[0];
+                let label = `segment0`
+                let index = 0;
+                while (labelUsed.includes(label)) {
+                    index++;
+                    label = `segment${index}`;
+                }
+
+                labelUsed.push(label);
+                let segment = Factory.createSegment(
+                    utils.createLineDefaultShapeProps(label),
+                    p,
+                    pNext
+                );
+
+                segment.props.color = polygon.props.color;
+                let shapeNode: ShapeNode3D = {
+                    id: segment.props.id,
+                    type: segment,
+                    dependsOn: [p.props.id, pNext.props.id, pyramid.props.id],
+                    defined: true,
+                    isSelected: false
+                }
+
+                DAG.set(segment.props.id, shapeNode);
+            }
 
             this.props.onUpdateLastFailedState();
             this.props.onLabelUsed(labelUsed);
@@ -3689,40 +3701,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 )
             });
 
-            topPoints.forEach((pt, idx) => {
-                let i = 0;
-                let segment_label = `segment0`;
-                while (labelUsed.includes(segment_label)) {
-                    i += 1;
-                    segment_label = `segment${i}`;
-                }
-
-                labelUsed.push(segment_label);
-                const segment = Factory.createSegment(
-                    utils.createLineDefaultShapeProps(segment_label),
-                    base.points[idx],
-                    pt
-                );
-
-                segment.props.color = '#FF7276';
-
-                DAG.set(pt.props.id, {
-                    id: pt.props.id,
-                    defined: true,
-                    isSelected: false,
-                    type: pt,
-                    dependsOn: [base.points[idx].props.id]
-                });
-
-                DAG.set(segment.props.id, {
-                    id: segment.props.id,
-                    defined: true,
-                    isSelected: false,
-                    type: segment,
-                    dependsOn: [base.points[idx].props.id, pt.props.id]
-                })
-            })
-
             let polygon_label = `poly0`;
             idx = 0;
             while (labelUsed.includes(polygon_label)) {
@@ -3758,6 +3736,40 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: prism,
                 dependsOn: selectedPoints.map(point => point.props.id)
             });
+
+            topPoints.forEach((pt, idx) => {
+                let i = 0;
+                let segment_label = `segment0`;
+                while (labelUsed.includes(segment_label)) {
+                    i += 1;
+                    segment_label = `segment${i}`;
+                }
+
+                labelUsed.push(segment_label);
+                const segment = Factory.createSegment(
+                    utils.createLineDefaultShapeProps(segment_label),
+                    base.points[idx],
+                    pt
+                );
+
+                segment.props.color = '#FF7276';
+
+                DAG.set(pt.props.id, {
+                    id: pt.props.id,
+                    defined: true,
+                    isSelected: false,
+                    type: pt,
+                    dependsOn: [base.points[idx].props.id, prism.props.id]
+                });
+
+                DAG.set(segment.props.id, {
+                    id: segment.props.id,
+                    defined: true,
+                    isSelected: false,
+                    type: segment,
+                    dependsOn: [base.points[idx].props.id, pt.props.id, prism.props.id]
+                })
+            })
 
             this.props.onUpdateLastFailedState();
             this.props.onLabelUsed(labelUsed);
@@ -3832,6 +3844,35 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: tetra,
                 dependsOn: selectedPoints.map(point => point.props.id)
             });
+
+            for (let i = 0; i < 3; i++) {
+                let p = selectedPoints[i];
+                let pNext = selectedPoints[3];
+                let label = `segment0`
+                let index = 0;
+                while (labelUsed.includes(label)) {
+                    index++;
+                    label = `segment${index}`;
+                }
+
+                labelUsed.push(label);
+                let segment = Factory.createSegment(
+                    utils.createLineDefaultShapeProps(label),
+                    p,
+                    pNext
+                );
+
+                segment.props.color = tetra.props.color;
+                let shapeNode: ShapeNode3D = {
+                    id: segment.props.id,
+                    type: segment,
+                    dependsOn: [p.props.id, pNext.props.id, tetra.props.id],
+                    defined: true,
+                    isSelected: false
+                }
+
+                DAG.set(segment.props.id, shapeNode);
+            }
 
             this.props.onUpdateLastFailedState();
             this.props.onLabelUsed(labelUsed);
