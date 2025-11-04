@@ -71,6 +71,15 @@ interface AlgebraToolProps {
 }
 
 class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
+    private textId: number;
+    constructor(props: AlgebraToolProps) {
+        super(props);
+        this.textId = 0;
+    }
+
+    componentDidUpdate(prevProps: Readonly<AlgebraToolProps>, prevState: Readonly<{}>, snapshot?: any): void {
+        this.textId = 0;
+    }
     private createDescription = (shapeNode: GeometryShape.ShapeNode): string => {
         let label = shapeNode.type.props.label;
         const subscriptMap: Record<string, string> = {
@@ -86,8 +95,8 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
         const shape = shapeNode.type.type;
         if (shape === 'Point') {
             if (shapeNode.id.includes('tmpPoint')) {
-                let label = shapeNode.id;
-                return `$Text${label.replace('tmpPoint', '')} = "${formatLabel}"$`;
+                this.textId += 1;
+                return `$Text${this.textId} = "${label}"$`;
             }
             
             return `$${formatLabel} = \\left(${((shapeNode.type as GeometryShape.Point).x.toFixed(2))},${(shapeNode.type as GeometryShape.Point).y.toFixed(2)}\\right)$`
