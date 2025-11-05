@@ -14,8 +14,6 @@ const Footer = () => {
                 <nav>
                     <ul className="navi-right gap-3">
                         <li onClick={() => navigate("/view/home")}>Top page</li>
-                        {//<li onClick={() => navigate("/view/login")}>Login/Signup</li>
-                        }
                     </ul>
                 </nav>
             </div>

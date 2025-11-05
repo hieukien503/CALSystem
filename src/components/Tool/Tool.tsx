@@ -2,7 +2,7 @@ import React from "react";
 import AlgebraTool from "./Algebra/AlgebraTool";
 import { GeometryTool } from "./Geometry/GeometryTool";
 import { AnimationTool } from "./Animation/AnimationTool";
-import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../../types/geometry'
+import { Point, Shape, ShapeNode, DrawingMode } from '../../types/geometry'
 import * as constants from "../../types/constants"
 
 interface TimelineItem {
@@ -143,7 +143,6 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         selectedShapes={this.props.selectedShapes}
                                         stageRef={this.props.stageRef }
                                 />
-
                             )}
                         </div>
                     </div>

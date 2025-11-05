@@ -15,6 +15,13 @@ import { MathCommandParser } from "../../antlr4/parser/MathCommandParser";
 import ASTGen from "../../antlr4/astgen/ASTGen";
 const math = require('mathjs');
 
+interface TimelineItem {
+    object: string;
+    start: number;
+    end: number;
+    action: string;
+    tweens?: string[];
+}
 interface Project3DProps {
     id: string;
     title: string;
@@ -71,6 +78,8 @@ interface Project3DState {
     }
     /** Checked for SnapToGrid */
     snapToGridEnabled: boolean;
+
+    timeline: TimelineItem[];
 }
 
 class Project3D extends React.Component<Project3DProps, Project3DState> {
@@ -84,6 +93,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     private dialogRef: RefObject<Dialogbox | null>;
     private errorDialogRef: RefObject<ErrorDialogbox | null>;
     private dag: Map<string, ShapeNode3D> = new Map<string, ShapeNode3D>();
+    //private stageRef: RefObject<Konva.Stage | null>;
     constructor(props: Project3DProps) {
         super(props);
         this.labelUsed = [];
@@ -114,7 +124,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             position: {
                 dialogPos: undefined,
                 errorDialogPos: undefined
-            }
+            },
+            timeline: []
         }
 
         this.lastFailedState = null;
@@ -130,6 +141,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         this.dialogRef = createRef<Dialogbox | null>();
         this.errorDialogRef = createRef<ErrorDialogbox | null>();
     }
+
+    setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>> = (value) => {
+        this.setState(prevState => ({
+            timeline: typeof value === "function" ? value(prevState.timeline) : value
+        }));
+    };
 
     componentDidMount(): void {
         window.addEventListener("resize", this.handleWindowResize);
@@ -839,6 +856,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                         }
                     )}
                     onSetMode={(mode) => this.setMode(mode)}
+                    selectedPoints={this.state.selectedPoints}
+                    selectedShapes={this.state.selectedShapes}
+                    //stageRef={undefined}
+                    timeline={this.state.timeline}
+                    setTimeline={this.setTimeline}
                 />
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"

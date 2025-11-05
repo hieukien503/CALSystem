@@ -55,7 +55,17 @@ const ProfilePage: React.FC = () => {
                 body: JSON.stringify({ ids: viewedUser.project }),
             })
                 .then((res) => res.json())
-                .then((data) => setProjects(data))
+                .then((data) => {
+                    console.log("Projects response:", data);
+                    if (Array.isArray(data)) {
+                        setProjects(data);
+                    } else if (Array.isArray(data.projects)) {
+                        setProjects(data.projects);
+                    } else {
+                        setProjects([]); // Prevent crash
+                        console.error("Unexpected API format for projects:", data);
+                    }
+                })
                 .catch((err) => console.error("Error fetching projects:", err));
         } else {
             setProjects([]);
