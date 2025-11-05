@@ -1,8 +1,16 @@
 import React from "react";
 import AlgebraTool3D from "./Algebra/AlgebraTool3D";
 import { GeometryTool3D } from "./Geometry/GeometryTool";
-import { DrawingMode, ShapeNode3D } from "../../types/geometry";
+import { DrawingMode, ShapeNode3D, Point, Shape } from "../../types/geometry";
+import { AnimationTool3D } from "./Animation/AnimationTool3D";
 
+interface TimelineItem {
+    object: string;
+    start: number;
+    end: number;
+    action: string;
+    tweens?: string[];
+}
 interface Tool3DProps {
     width: number;
     height: number;
@@ -11,10 +19,15 @@ interface Tool3DProps {
     onSetMode: (mode: DrawingMode) => void;
     onSelect: (id: string, e: React.MouseEvent) => void;
     onUpdateDAG: (dag: Map<string, ShapeNode3D>) => void;
+    selectedPoints: Point[];
+    selectedShapes: Shape[];
+    //stageRef: React.RefObject<any>;
+    timeline: TimelineItem[];
+    setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
 }
 
 interface Tool3DState {
-    mode: 'algebra' | 'geometry'
+    mode: 'algebra' | 'geometry' | 'animation';
 }
 
 class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
@@ -25,7 +38,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
         }
     }
 
-    private changeMode = (mode: 'algebra' | 'geometry' = 'geometry', e: React.MouseEvent): void => {
+    private changeMode = (mode: 'algebra' | 'geometry' | 'animation' = 'geometry', e: React.MouseEvent): void => {
         e.stopPropagation();
         this.setState({mode: mode}, () => {
             this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, 300));
@@ -55,6 +68,13 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                         onClick={(e) => this.changeMode('geometry', e)}
                                     >
                                         <div className="label">Geometry</div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'animation' ? " selected" : "") : ""}`}
+                                        onClick={(e) => this.changeMode('animation', e)}
+                                    >
+                                        <div className="label">Animation</div>
                                     </button>
                                 </div>
                             </div>
@@ -113,13 +133,23 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     onPyramidClick={() => this.props.onSetMode('pyramid')}
                                     onReflectPlaneClick={() => this.props.onSetMode('reflect_plane')}
                                     onTetrahedronClick={() => this.props.onSetMode('tetrahedron')}
-                            /> : <AlgebraTool3D 
-                                width={this.props.width}
-                                height={this.props.height}
-                                dag={this.props.dag}
-                                onSelect={this.props.onSelect}
-                                onUpdateDAG={this.props.onUpdateDAG}
-                            />)}
+                                /> : this.state.mode === "algebra" ? <AlgebraTool3D
+                                    width={this.props.width}
+                                    height={this.props.height}
+                                    dag={this.props.dag}
+                                    onSelect={this.props.onSelect}
+                                    onUpdateDAG={this.props.onUpdateDAG}
+                                /> : <AnimationTool3D
+                                    width={this.props.width}
+                                    height={this.props.height}
+                                    dag={this.props.dag}
+                                    timeline={this.props.timeline}
+                                    setTimeline={this.props.setTimeline}
+                                    selectedPoints={this.props.selectedPoints}
+                                    selectedShapes={this.props.selectedShapes}
+                                    //stageRef={this.props.stageRef}
+                                />
+                                )}
                         </div>
                     </div>
                 </div>

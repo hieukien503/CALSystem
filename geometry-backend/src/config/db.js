@@ -2,8 +2,7 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
     try {
-        console.log("process.env.PORT: ", process.env.PORT);
-        await mongoose.connect("mongodb+srv://phuongla342_db:bcdopttll@cluster0.vtc7zgr.mongodb.net/doan_db?retryWrites=true&w=majority", {
+        await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

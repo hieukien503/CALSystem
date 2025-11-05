@@ -1,6 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
-dotenv.config({ path: './geometry-backend/.env' });
+dotenv.config({ path: './.env' });
 const connectDB = require("./src/config/db");
 const cors = require("cors");
 
