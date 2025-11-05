@@ -78,29 +78,27 @@ exports.updateProject = async (req, res) => {
 
 exports.bulkProject = async (req, res) => {
     try {
-        const { ids } = req.body; // mong muốn: ["68ffe5...", "68ffaa..."]
+        const { ids } = req.body;
         if (!Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ message: "Missing or invalid ids array" });
         }
-
-        // lấy tất cả project có _id trong ids
         const projects = await Project.find({ _id: { $in: ids } });
 
-        const userId = req.user?.userId; // "U0003"
+        const userId = req.user?.userId;
 
-        // lọc theo quyền: public OR ownedBy === userId OR collaborators includes userId
         const visible = projects.filter(p =>
             p.sharing === "public" ||
             (userId && p.ownedBy === userId) ||
             (userId && Array.isArray(p.collaborators) && p.collaborators.includes(userId))
         );
 
-        res.json({ count: visible.length, results: visible });
+        res.json(visible); // ✅ Client expects an array
     } catch (err) {
         console.error("Error in bulkProject:", err);
         res.status(500).json({ message: "Error fetching projects", error: err.message });
     }
 };
+
 
 // --- Add project to user's project list ---
 exports.addProjectToUser = async (req, res) => {
