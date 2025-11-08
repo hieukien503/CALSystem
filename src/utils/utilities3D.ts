@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ShapeNode3D, ShapeProps, GeometryState, Shape, Point, Vector, Ray, Segment, Line, ShapeType, 
-        Polygon, SemiCircle, Circle } from '../types/geometry';
+        Polygon, SemiCircle, Circle, Plane } from '../types/geometry';
 import * as constants3d from '../types/constants3D';
 import * as operation from '../utils/math_operation';
 import * as utils from './utilities';
@@ -27,8 +27,9 @@ export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THRE
         depthTest: true,
         depthWrite: true,          // <-- prevent overwriting plane depth
         polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1,
+        polygonOffsetFactor: -10,
+        polygonOffsetUnits: -10,
+        transparent: false
     });
 
     // --- Dashed line material ---
@@ -40,8 +41,6 @@ export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THRE
         gapSize: props.line_style.gap_size === 0 ? 0.25 : props.line_style.gap_size,
         depthTest: false,
         depthWrite: false,
-        transparent: true,
-        opacity: 0.6,
         polygonOffset: true,
         polygonOffsetFactor: 2,
         polygonOffsetUnits: 2,
@@ -59,8 +58,8 @@ export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THRE
     dashedLine.computeLineDistances();
 
     // Set render order (solid below, dashed above)
-    solidLine.renderOrder = 0;
-    dashedLine.renderOrder = 1;
+    solidLine.renderOrder = 2;
+    dashedLine.renderOrder = 3;
 
     // Scale correction (important for LineMaterial)
     solidLine.scale.set(1, 1, 1);
@@ -68,9 +67,9 @@ export const createDashLine = (points: THREE.Vector3[], props: ShapeProps): THRE
 
     // Group both lines
     const group = new THREE.Group();
-    group.add(solidLine);
     group.add(dashedLine);
-
+    group.add(solidLine);
+    
     return group;
 }
 
@@ -300,11 +299,55 @@ export const snapToShape3D = (
 
         else if ('centerC' in node.type && 'radius' in node.type) {
             let c = node.type;
-            let N = node.type.normal ? new THREE.Vector3(
-                node.type.normal.endVector.x - node.type.normal.startVector.x,
-                node.type.normal.endVector.y - node.type.normal.startVector.y,
-                (node.type.normal.endVector.z ?? 0) - (node.type.normal.startVector.z ?? 0),
-            ).normalize() : convertToVector3(0, 0, 1);
+            const N: THREE.Vector3 = convertToVector3(0, 0, 1);
+            if (c.direction) {
+                if ('startVector' in c.direction) {
+                    const dir = convertToVector3(
+                        c.direction.endVector.x - c.direction.startVector.x,
+                        c.direction.endVector.y - c.direction.startVector.y,
+                        (c.direction.endVector.z ?? 0) - (c.direction.startVector.z ?? 0)
+                    ).normalize();
+                    N.copy(dir);
+                }
+
+                else if ('startLine' in c.direction) {
+                    const dir = convertToVector3(
+                        c.direction.endLine.x - c.direction.startLine.x,
+                        c.direction.endLine.y - c.direction.startLine.y,
+                        (c.direction.endLine.z ?? 0) - (c.direction.startLine.z ?? 0)
+                    ).normalize();
+                    N.copy(dir);
+                }
+
+                else if ('startSegment' in c.direction) {
+                    const dir = convertToVector3(
+                        c.direction.endSegment.x - c.direction.startSegment.x,
+                        c.direction.endSegment.y - c.direction.startSegment.y,
+                        (c.direction.endSegment.z ?? 0) - (c.direction.startSegment.z ?? 0)
+                    ).normalize();
+                    N.copy(dir);
+                }
+
+                else if ('startRay' in c.direction) {
+                    const dir = convertToVector3(
+                        c.direction.endRay.x - c.direction.startRay.x,
+                        c.direction.endRay.y - c.direction.startRay.y,
+                        (c.direction.endRay.z ?? 0) - (c.direction.startRay.z ?? 0)
+                    ).normalize();
+                    N.copy(dir);
+                }
+
+                else {
+                    const p = c.direction as Plane;
+                    const dir = convertToVector3(
+                        p.norm.endVector.x - p.norm.startVector.x,
+                        p.norm.endVector.y - p.norm.startVector.y,
+                        (p.norm.endVector.z ?? 0) - (p.norm.startVector.z ?? 0)
+                    ).normalize();
+                    N.copy(dir);
+                }
+            }
+
             let C = convertToVector3(c.centerC.x, c.centerC.y, c.centerC.z ?? 0);
 
             const X_local = new THREE.Vector3();
@@ -815,10 +858,10 @@ export const updateShapeAfterTransform = (
             const center = (shape as Circle).centerC;
             (transformedShape as Circle).centerC.props.label = getNewLabel(center.props.label);
             (transformedShape as Circle).centerC.props.id = `point-${uuidv4()}`;
-            if ((shape as Circle).normal !== undefined) {
+            if ((shape as Circle).direction !== undefined) {
                 updateShapeAfterTransform(
-                    (shape as Circle).normal!,
-                    (transformedShape as Circle).normal!,
+                    (shape as Circle).direction!,
+                    (transformedShape as Circle).direction!,
                     labelUsed,
                     dag,
                     mode,

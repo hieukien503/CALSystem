@@ -53,7 +53,7 @@ export const isCollinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: G
     return L2_norm(cross_product.x, cross_product.y, cross_product.z) < epsilon;
 }
 
-const distance = (base: GeometryShape.Polygon, point: GeometryShape.Point) => {
+export const distance = (base: GeometryShape.Polygon, point: GeometryShape.Point) => {
     let [point1, point2, point3] = [base.points[0], base.points[1], base.points[2]];
     let norm = cross(
         point2.x - point1.x,
@@ -104,10 +104,9 @@ export const getDistance = (shape1: GeometryShape.Point, shape2: GeometryShape.P
 const getPerimeter = (shape: GeometryShape.Polygon) => {
     let perimeter = 0;
     for (let i = 0; i < shape.points.length; i++) {
-        perimeter += getDistance(shape.points[i], shape.points[i + 1]);
+        perimeter += getDistance(shape.points[i], shape.points[(i + 1) % shape.points.length]);
     }
 
-    perimeter += getDistance(shape.points[shape.points.length - 1], shape.points[0]);
     return perimeter;
 }
 
@@ -2025,6 +2024,7 @@ export const surface_area = (shape: GeometryShape.Shape) => {
 
     if ('base' in shape && 'apex' in shape) {
         let py: GeometryShape.Pyramid = shape as GeometryShape.Pyramid;
+        console.log(py);
         let perimeter = getPerimeter(py.base);
         let mid = midPoint(py.base.points[0], py.base.points[1]);
         let d = L2_norm(mid.x - py.apex.x, mid.y - py.apex.y, (mid.z ?? 0) - (py.apex.z ?? 0));
@@ -2314,15 +2314,53 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             return [];
         }
 
-        let n = c.normal ? {
-            x: c.normal.endVector.x - c.normal.startVector.x,
-            y: c.normal.endVector.y - c.normal.startVector.y,
-            z: (c.normal.endVector.z ?? 0) - (c.normal.startVector.z ?? 0)
-        } : {
+        let n = {
             x: 0,
             y: 0,
             z: 1
-        } 
+        }
+
+        if (c.direction) {
+            if ('startLine' in c.direction) {
+                n = {
+                    x: c.direction.endLine.x - c.direction.startLine.x,
+                    y: c.direction.endLine.y - c.direction.startLine.y,
+                    z: (c.direction.endLine.z ?? 0) - (c.direction.startLine.z ?? 0),
+                }
+            }
+
+            else if ('startRay' in c.direction) {
+                n = {
+                    x: c.direction.endRay.x - c.direction.startRay.x,
+                    y: c.direction.endRay.y - c.direction.startRay.y,
+                    z: (c.direction.endRay.z ?? 0) - (c.direction.startRay.z ?? 0),
+                }
+            }
+
+            else if ('startVector' in c.direction) {
+                n = {
+                    x: c.direction.endVector.x - c.direction.startVector.x,
+                    y: c.direction.endVector.y - c.direction.startVector.y,
+                    z: (c.direction.endVector.z ?? 0) - (c.direction.startVector.z ?? 0),
+                }
+            }
+
+            else if ('startSegment' in c.direction) {
+                n = {
+                    x: c.direction.endSegment.x - c.direction.startSegment.x,
+                    y: c.direction.endSegment.y - c.direction.startSegment.y,
+                    z: (c.direction.endSegment.z ?? 0) - (c.direction.startSegment.z ?? 0),
+                }
+            }
+
+            else {
+                n = {
+                    x: c.direction.norm.endVector.x - c.direction.norm.startVector.x,
+                    y: c.direction.norm.endVector.y - c.direction.norm.startVector.y,
+                    z: (c.direction.norm.endVector.z ?? 0) - (c.direction.norm.startVector.z ?? 0),
+                }
+            }
+        }
 
         if (Math.abs(n.x * p.x + n.y * p.y + n.z * (p.z ?? 0) - (n.x * c.centerC.x + n.y * c.centerC.y + n.z * (c.centerC.z ?? 0))) > epsilon) {
             return [];
@@ -2362,7 +2400,7 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
                     m.z
                 ),
                 d / 2,
-                c.normal ? {...c.normal} : undefined
+                c.direction ? {...c.direction} : undefined
             )
 
             let intersections = getIntersections2D(c1, c);
@@ -2409,14 +2447,52 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             return [];
         }
 
-        let n = c.normal ? {
-            x: c.normal.endVector.x - c.normal.startVector.x,
-            y: c.normal.endVector.y - c.normal.startVector.y,
-            z: (c.normal.endVector.z ?? 0) - (c.normal.startVector.z ?? 0)
-        } : {
+        let n = {
             x: 0,
             y: 0,
             z: 1
+        }
+
+        if (c.direction) {
+            if ('startLine' in c.direction) {
+                n = {
+                    x: c.direction.endLine.x - c.direction.startLine.x,
+                    y: c.direction.endLine.y - c.direction.startLine.y,
+                    z: (c.direction.endLine.z ?? 0) - (c.direction.startLine.z ?? 0),
+                }
+            }
+
+            else if ('startRay' in c.direction) {
+                n = {
+                    x: c.direction.endRay.x - c.direction.startRay.x,
+                    y: c.direction.endRay.y - c.direction.startRay.y,
+                    z: (c.direction.endRay.z ?? 0) - (c.direction.startRay.z ?? 0),
+                }
+            }
+
+            else if ('startVector' in c.direction) {
+                n = {
+                    x: c.direction.endVector.x - c.direction.startVector.x,
+                    y: c.direction.endVector.y - c.direction.startVector.y,
+                    z: (c.direction.endVector.z ?? 0) - (c.direction.startVector.z ?? 0),
+                }
+            }
+
+            else if ('startSegment' in c.direction) {
+                n = {
+                    x: c.direction.endSegment.x - c.direction.startSegment.x,
+                    y: c.direction.endSegment.y - c.direction.startSegment.y,
+                    z: (c.direction.endSegment.z ?? 0) - (c.direction.startSegment.z ?? 0),
+                }
+            }
+
+            else {
+                n = {
+                    x: c.direction.norm.endVector.x - c.direction.norm.startVector.x,
+                    y: c.direction.norm.endVector.y - c.direction.norm.startVector.y,
+                    z: (c.direction.norm.endVector.z ?? 0) - (c.direction.norm.startVector.z ?? 0),
+                }
+            }
         }
 
         if (Math.abs(n.x * p.x + n.y * p.y + n.z * (p.z ?? 0) - (n.x * center.x + n.y * center.y + n.z * (center.z ?? 0))) > epsilon) {
@@ -2462,7 +2538,7 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
                     m.z
                 ),
                 d / 2,
-                c.normal ? {...c.normal} : undefined
+                c.direction ? {...c.direction} : undefined
             )
 
             let intersections = getIntersections2D(c1, c);
@@ -2613,7 +2689,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             {...c.props},
             p,
             c.radius,
-            c.normal ? {...c.normal} : undefined
+            c.direction ? {...c.direction} : undefined
         );
 
         circle.type = 'Circle';
@@ -2631,7 +2707,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             {...sem.props},
             p1,
             p2,
-            sem.normal? {...sem.normal} : undefined
+            sem.direction? {...sem.direction} : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -2923,7 +2999,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('centerC' in o1 && 'radius' in o1) {
             let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
             let center = rotation(c.centerC, o2, degree, CCW) as GeometryShape.Point;
-            const circle = Factory.createCircle({...c.props}, center, c.radius, c.normal ? {...c.normal} : undefined);
+            const circle = Factory.createCircle({...c.props}, center, c.radius, c.direction ? {...c.direction} : undefined);
             circle.type = 'Circle';
             return circle;
         }
@@ -2939,7 +3015,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 {...sem.props},
                 p1,
                 p2,
-                sem.normal ? {...sem.normal} : undefined
+                sem.direction ? {...sem.direction} : undefined
             );
 
             semi.type = 'SemiCircle';
@@ -3079,7 +3155,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('centerC' in o1 && 'radius' in o1) {
             let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
             let center = rotation(c.centerC, o2, degree, CCW) as GeometryShape.Point;
-            const circle = Factory.createCircle({...c.props}, center, c.radius, c.normal ? {...c.normal} : undefined);
+            const circle = Factory.createCircle({...c.props}, center, c.radius, c.direction ? {...c.direction} : undefined);
             circle.type = 'Circle';
             return circle;
         }
@@ -3095,7 +3171,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 {...sem.props},
                 p1,
                 p2,
-                sem.normal ? {...sem.normal} : undefined
+                sem.direction ? {...sem.direction} : undefined
             );
 
             semi.type = 'SemiCircle';
@@ -3248,7 +3324,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
             {...c.props},
             p,
             Math.abs(k) * c.radius,
-            c.normal ? {...c.normal} : undefined
+            c.direction ? {...c.direction} : undefined
         );
 
         circle.type = 'Circle';
@@ -3266,7 +3342,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
             {...sem.props},
             p1,
             p2,
-            sem.normal ? {...sem.normal} : undefined
+            sem.direction ? {...sem.direction} : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -3461,7 +3537,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
             {...c.props},
             p,
             c.radius,
-            c.normal ? {...c.normal} : undefined
+            c.direction ? {...c.direction} : undefined
         );
 
         circle.type = 'Circle';
@@ -3479,7 +3555,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
             {...sem.props},
             p1,
             p2,
-            sem.normal ? {...sem.normal} : undefined
+            sem.direction ? {...sem.direction} : undefined
         );
 
         semi.type = 'SemiCircle';

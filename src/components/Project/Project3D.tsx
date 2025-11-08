@@ -845,6 +845,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     width={this.state.toolWidth}
                     height={window.innerHeight * 0.745}
                     dag={this.dag}
+                    labelUsed={this.labelUsed}
                     onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
                     onSelect={this.handleSelectObject}
                     onUpdateDAG={(dag) => this.updateAll(
@@ -858,9 +859,9 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     onSetMode={(mode) => this.setMode(mode)}
                     selectedPoints={this.state.selectedPoints}
                     selectedShapes={this.state.selectedShapes}
-                    //stageRef={undefined}
                     timeline={this.state.timeline}
                     setTimeline={this.setTimeline}
+                    onUpdateLabelUsed={this.updateLabelUsed}
                 />
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"

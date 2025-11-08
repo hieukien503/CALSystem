@@ -6,6 +6,7 @@ import * as utils3d from "../../../utils/utilities3D"
 import * as GeometryShape from "../../../types/geometry"
 import Latex from 'react-latex';
 import * as math from 'mathjs';
+import * as operations from '../../../utils/math_operation'
 
 interface AlgebraItemProps {
     color: string;
@@ -43,11 +44,11 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
                         <div className="algebraViewObjectStylebar"
                             style={{right: "0px"}}>
                                 <button type="button" className="button more">
-                                    <MoreVertIcon />
+                                    <MoreVertIcon style={{backgroundColor: 'rgb(249, 249, 249)'}}/>
                                 </button>
                         </div>
                         <div className="elemText">
-                            <div className="avPlainText" style={{fontSize: "16px", display: "inline-block", verticalAlign: "middle"}}>
+                            <div className="avPlainText" style={{fontSize: "12px", display: "inline-block", verticalAlign: "middle"}}>
                                 <Latex>{this.props.description}</Latex>
                             </div>
                         </div>
@@ -60,7 +61,11 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
 
 interface AlgebraInputItemProps {
     width: number;
+    dag: Map<string, GeometryShape.ShapeNode3D>;
+    labelUsed: string[];
     onClick: (e: React.MouseEvent) => void;
+    onUpdateDAG: (dag: Map<string, GeometryShape.ShapeNode3D>) => void;
+    onUpdateLabelUsed: (labelUsed: string[]) => void;
 }
 
 interface AlgebraInputItemState {
@@ -167,7 +172,7 @@ export class AlgebraInputItem extends React.Component<AlgebraInputItemProps, Alg
 
     render(): React.ReactNode {
         return (
-            <div style={{padding: '3px 3px 3px 23px', width: this.props.width, marginLeft: '0px', position: 'relative'}}
+            <div style={{padding: '3px 3px 3px 23px', width: '100%', marginLeft: '0px', position: 'relative'}}
                 className={`avInputItem`}
             >
                 <div 
@@ -177,7 +182,7 @@ export class AlgebraInputItem extends React.Component<AlgebraInputItemProps, Alg
                     <div className="elem">
                         <div className="marblePanel plus">
                             <button className="button flatButton" type="button" onClick={this.props.onClick}>
-                                <AddIcon />
+                                <AddIcon style={{backgroundColor: 'rgb(249, 249, 249)'}}/>
                             </button>
                         </div>
                         <input className="algebraInputField"
@@ -185,6 +190,7 @@ export class AlgebraInputItem extends React.Component<AlgebraInputItemProps, Alg
                             onKeyDown={this.handleKeyDown}
                             value={this.state.value_from_input}
                             onChange={(e) => this.setState({ value_from_input: e.target.value })}
+                            style={{background: 'none', fontSize: '12px'}}
                         >
                         </input>
                     </div>
@@ -202,99 +208,303 @@ interface AlgebraTool3DProps {
     width: number;
     height: number;
     dag: Map<string, GeometryShape.ShapeNode3D>;
+    labelUsed: string[];
     onSelect: (id: string, e: React.MouseEvent) => void;
     onUpdateDAG: (dag: Map<string, GeometryShape.ShapeNode3D>) => void;
+    onUpdateLabelUsed: (labelUsed: string[]) => void;
 }
 
 class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DState> {
+    private textId: number;
     constructor(props: AlgebraTool3DProps) {
         super(props);
+        this.textId = 0;
         this.state = {
-            items: [{
-                type: 'input',
-                latex: 'string',
-            }],
+            items: this.buildFromDAG(props.dag)
         };
     }
 
-    handleInputSubmit = (latex: string) => {
-        this.setState((prevState) => ({
-            items: [...prevState.items, { type: 'input', latex }],
-        }));
-    };
+    componentDidUpdate(prevProps: Readonly<AlgebraTool3DProps>, prevState: Readonly<{}>, snapshot?: any): void {
+        this.textId = 0;
+    }
 
-    handleNewShape = (shapeId: string) => {
-        this.setState((prevState) => ({
-            items: [...prevState.items, { type: 'shape', id: shapeId }],
-        }));
-    };
+    private producePlaneEquation = (plane: GeometryShape.Plane): string => {
+        const norm = {
+            x: plane.norm.endVector.x - plane.norm.startVector.x,
+            y: plane.norm.endVector.y - plane.norm.startVector.y,
+            z: (plane.norm.endVector.z ?? 0) - (plane.norm.startVector.z ?? 0)
+        };
+
+        const normLength = Math.sqrt(norm.x ** 2 + norm.y ** 2 + norm.z ** 2);
+        norm.x /= normLength;
+        norm.y /= normLength;
+        norm.z /= normLength;
+        const d = norm.x * plane.point.x + norm.y * plane.point.y + norm.z * (plane.point.z ?? 0);
+        function simplifyPlaneEquation(a: number, b: number, c: number, d: number): string {
+            const terms: string[] = [];
+
+            a = parseFloat(a.toFixed(2));
+            b = parseFloat(b.toFixed(2));
+            c = parseFloat(c.toFixed(2));
+            d = parseFloat(d.toFixed(2));
+            if (a !== 0) terms.push(`${formatCoeff(a)}x`);
+            if (b !== 0) terms.push(`${formatCoeff(b)}y`);
+            if (c !== 0) terms.push(`${formatCoeff(c)}z`);
+            if (d !== 0) terms.push(formatConst(d));
+
+            const expr = terms.join(' ');
+            return expr.length ? `${expr} = 0` : `0 = 0`;
+        }
+
+        function formatCoeff(coef: number): string {
+            // handle + and - signs cleanly
+            if (coef === 1) return '+';
+            if (coef === -1) return '-';
+            if (coef > 0) return `+${coef}`;
+            return `${coef}`; // negative already has "-"
+        }
+
+        function formatConst(d: number): string {
+            if (d > 0) return `+${d}`;
+            return `${d}`;
+        }
+        
+        const expr = simplifyPlaneEquation(norm.x, norm.y, norm.z, d);
+        return expr.replace(/^\+/, '');
+    }
+
+    private formatNumbers = (num: number): string => {
+        return parseFloat(num.toFixed(2)).toString();
+    }
+
+    private produceLineEquation = (line: GeometryShape.Line | GeometryShape.Ray): string => {
+        const dir = {
+            x: 0,
+            y: 0,
+            z: 0
+        }
+
+        if ('startLine' in line) {
+            dir.x = line.endLine.x - line.startLine.x
+            dir.y = line.endLine.y - line.startLine.y
+            dir.z = (line.endLine.z ?? 0) - (line.startLine.z ?? 0)
+        }
+        
+        else {
+            dir.x = line.endRay.x - line.startRay.x
+            dir.y = line.endRay.y - line.startRay.y
+            dir.z = (line.endRay.z ?? 0) - (line.startRay.z ?? 0)
+        }
+
+        const startPoint = {
+            x: 'startLine' in line ? line.startLine.x : line.startRay.x,
+            y: 'startLine' in line ? line.startLine.y : line.startRay.y,
+            z: 'startLine' in line ? line.startLine.z ?? 0 : line.startRay.z ?? 0
+        }
+
+        const dirLength = Math.sqrt(dir.x ** 2 + dir.y ** 2 + dir.z ** 2);
+        dir.x /= dirLength;
+        dir.y /= dirLength;
+        dir.z /= dirLength;
+        return String.raw`
+            x = ${startPoint.x === 0 ? '' : this.formatNumbers(startPoint.x)}${dir.x === 0 ? '' : (startPoint.x === 0 ? this.formatNumbers(dir.x) + 't' : (dir.x > 0 ? ' + ' : ' - ') + Math.abs(parseFloat(dir.x.toFixed(2))) + 't')}\\
+            y = ${startPoint.y === 0 ? '' : this.formatNumbers(startPoint.y)}${dir.y === 0 ? '' : (startPoint.y === 0 ? this.formatNumbers(dir.y) + 't' : (dir.y > 0 ? ' + ' : ' - ') + Math.abs(parseFloat(dir.y.toFixed(2))) + 't')}\\
+            z = ${startPoint.z === 0 ? '' : this.formatNumbers(startPoint.z)}${dir.z === 0 ? '' : (startPoint.z === 0 ? this.formatNumbers(dir.z) + 't' : (dir.z > 0 ? ' + ' : ' - ') + Math.abs(parseFloat(dir.z.toFixed(2))) + 't')}
+        `
+    }
+
+    private buildFromDAG = (dag: Map<string, GeometryShape.ShapeNode3D>): ({ type: 'shape', id: string } | { type: 'input', latex: string })[] => {
+        const array = Array.from(dag.keys());
+        const shapeItems: ({ type: 'shape', id: string } | { type: 'input', latex: string })[] = [];
+        array.forEach(id => {
+            if (!id.includes('Axis')) {
+                shapeItems.push({ type: 'shape' as const, id: id });
+            }
+        })
+        // Keep the last input item
+        return [...shapeItems, { type: 'input' as const, latex: '' }];
+    }
 
     private createDescription = (shapeNode: GeometryShape.ShapeNode3D): string => {
         let label = shapeNode.type.props.label;
-        const subscriptMap: Record<string, string> = {
-            '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-            '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-        };
+        const formatLabel = (label: string): string => {
+            const subscriptMap: Record<string, string> = {
+                '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+            };
+            
+            const fLabel = label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                return `${letter}_{${normal}}`;
+            });
 
-        const formatLabel = label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-            const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-            return `${letter}_{${normal}}`;
-        });
+            return fLabel;
+        }
+
+        const createLatexString = (shape: GeometryShape.Shape): string => {
+            if (shape.props.label) return `\\mathrm{${formatLabel(shape.props.label)}}`;
+            if ('x' in shape && 'y' in shape) {
+                return String.raw`
+                    \mathrm{Point}\left(${this.formatNumbers(shape.x)},${this.formatNumbers(shape.y)},${this.formatNumbers(shape.z ?? 0)}\right)
+                `
+            }
+
+            if ('startLine' in shape) {
+                return String.raw`
+                    \mathrm{Line}\left(${createLatexString(shape.startLine)},${createLatexString(shape.endLine)}\right)
+                `
+            }
+
+            if ('startSegment' in shape) {
+                return String.raw`
+                    \mathrm{Segment}\left(${createLatexString(shape.startSegment)},${createLatexString(shape.endSegment)}\right)
+                `
+            }
+
+            if ('startRay' in shape) {
+                return String.raw`
+                    \mathrm{Ray}\left(${createLatexString(shape.startRay)},${createLatexString(shape.endRay)}\right)
+                `
+            }
+
+            if ('startVector' in shape) {
+                return String.raw`
+                    \mathrm{Vector}\left(${createLatexString(shape.startVector)},${createLatexString(shape.endVector)}\right)
+                `
+            }
+
+            if ('centerC' in shape && 'radius' in shape) {
+                return String.raw`
+                    \mathrm{Vector}\left(${createLatexString(shape.centerC)},${this.formatNumbers(shape.radius)}${shape.direction ? ',' + createLatexString(shape.direction) : ''}\right)
+                `
+            }
+
+            if (shape.type === 'Polygon' || shape.type === 'RegularPolygon') {
+                let stringOfLabels: string[] = [];
+                let points = (shapeNode.type as GeometryShape.Polygon).points;
+                points.forEach(point => {
+                    stringOfLabels.push(createLatexString(point));
+                });
+
+                return String.raw`\mathrm{${shape}}\left(${stringOfLabels.join(',')}\right)\\`
+            }
+
+            if ('norm' in shape && 'point' in shape) {
+                return String.raw`
+                    \mathrm{Plane}\left(${createLatexString(shape.point)}${shape.norm ? ',' + createLatexString(shape.norm) : ''}\right)
+                `
+            }
+
+            return '';
+        }
 
         const shape = shapeNode.type.type;
         if (shape === 'Point') {
             if (shapeNode.id.includes('tmpPoint')) {
-                let label = shapeNode.id;
-                return `$Text${label.replace('tmpPoint', '')} = "${formatLabel}"$`;
+                this.textId += 1;
+                return `$Text${this.textId}: "${formatLabel(label)}"$`;
             }
             
-            return `$${formatLabel} = \\left(${((shapeNode.type as GeometryShape.Point).x.toFixed(2))},${(shapeNode.type as GeometryShape.Point).y.toFixed(2)}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}} = \\left(${this.formatNumbers((shapeNode.type as GeometryShape.Point).x)},${this.formatNumbers((shapeNode.type as GeometryShape.Point).y)},${this.formatNumbers((shapeNode.type as GeometryShape.Point).z ?? 0)}\\right)$`
         }
         
         else if (shape === 'Line') {
-            return `$${formatLabel} = Line\\left(${(shapeNode.type as GeometryShape.Line).startLine.props.label},${(shapeNode.type as GeometryShape.Line).endLine.props.label}\\right)$`
+            const str = String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Line}\left(${createLatexString((shapeNode.type as GeometryShape.Line).startLine)},${createLatexString((shapeNode.type as GeometryShape.Line).endLine)}\right)\\
+            = \begin{cases}
+            ${this.produceLineEquation(shapeNode.type as GeometryShape.Line)}
+            \end{cases}
+            \end{array}
+            \]`
+            return str;
         }
 
         else if (shape === 'Segment') {
-            return `$${formatLabel} = Segment\\left(${(shapeNode.type as GeometryShape.Segment).startSegment.props.label},${(shapeNode.type as GeometryShape.Segment).endSegment.props.label}\\right)$`
+            const v = {
+                x: (shapeNode.type as GeometryShape.Segment).endSegment.x - (shapeNode.type as GeometryShape.Segment).startSegment.x,
+                y: (shapeNode.type as GeometryShape.Segment).endSegment.y - (shapeNode.type as GeometryShape.Segment).startSegment.y,
+                z: ((shapeNode.type as GeometryShape.Segment).endSegment.z ?? 0) - ((shapeNode.type as GeometryShape.Segment).startSegment.z ?? 0)
+            }
+
+            const segmentLength = Math.sqrt(v.x ** 2 + v.y ** 2 + v.z ** 2);
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Segment}\left(${createLatexString((shapeNode.type as GeometryShape.Segment).startSegment)},${createLatexString((shapeNode.type as GeometryShape.Segment).endSegment)}\right)\\
+            Length = ${this.formatNumbers(segmentLength)}
+            \end{array}
+            \]`
         }
 
         else if (shape === 'Vector') {
-            return `$${formatLabel} = Vector\\left(${(shapeNode.type as GeometryShape.Vector).startVector.props.label},${(shapeNode.type as GeometryShape.Vector).endVector.props.label}\\right)$`
+            const dir = {
+                x: (shapeNode.type as GeometryShape.Vector).endVector.x - (shapeNode.type as GeometryShape.Vector).startVector.x,
+                y: (shapeNode.type as GeometryShape.Vector).endVector.y - (shapeNode.type as GeometryShape.Vector).startVector.y,
+                z: ((shapeNode.type as GeometryShape.Vector).endVector.z ?? 0) - ((shapeNode.type as GeometryShape.Vector).startVector.z ?? 0)
+            }
+            
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Vector}\left(${createLatexString((shapeNode.type as GeometryShape.Vector).startVector)},${createLatexString((shapeNode.type as GeometryShape.Vector).endVector)}\right)\\
+            = \begin{pmatrix}
+            ${this.formatNumbers(dir.x)}\\
+            ${this.formatNumbers(dir.y)}\\
+            ${this.formatNumbers(dir.z)}
+            \end{pmatrix}
+            \end{array}
+            \]
+            `
         }
 
         else if (shape === 'Ray') {
-            return `$${formatLabel} = Ray\\left(${(shapeNode.type as GeometryShape.Ray).startRay.props.label},${(shapeNode.type as GeometryShape.Ray).endRay.props.label}\\right)$`
+            const str = String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Ray}\left(${createLatexString((shapeNode.type as GeometryShape.Ray).startRay)},${createLatexString((shapeNode.type as GeometryShape.Ray).endRay)}\right)\\
+            = \begin{cases}
+            ${this.produceLineEquation(shapeNode.type as GeometryShape.Ray)}
+            \end{cases}
+            \end{array},t\ge 0
+            \]`
+            return str;
         }
 
         else if (['Polygon', 'RegularPolygon'].includes(shape)) {
-            let stringOfLabels = '';
+            let stringOfLabels: string[] = [];
             let points = (shapeNode.type as GeometryShape.Polygon).points;
             points.forEach(point => {
-                stringOfLabels = stringOfLabels + point.props.label;
+                stringOfLabels.push(createLatexString(point));
             });
 
-            return `$${formatLabel} = ${shape}\\left(${stringOfLabels}\\right)$`
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(${stringOfLabels.join(',')}\right)\\
+            Area = ${this.formatNumbers((shapeNode.type as GeometryShape.Polygon).area ?? 0)}
+            \end{array}
+            \]
+            `
         }
 
         else if (shape === 'Circle') {
-            return `$${formatLabel} = Circle\\left(${(shapeNode.type as GeometryShape.Circle).centerC.props.label},${(shapeNode.type as GeometryShape.Circle).radius}\\right)$`
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Vector}\left(${createLatexString((shapeNode.type as GeometryShape.Circle).centerC)},${this.formatNumbers((shapeNode.type as GeometryShape.Circle).radius)}${(shapeNode.type as GeometryShape.Circle).direction ? ',' + createLatexString((shapeNode.type as GeometryShape.Circle).direction!) : ''}\right)\\
+            Area = ${this.formatNumbers((shapeNode.type as GeometryShape.Circle).area ?? 0)}
+            \end{array}
+            `
         }
 
         else if (shape === 'Intersection') {
-            let str = `$${formatLabel} = ${shape}\\left(`
+            console.log(this.props.dag);
+            let str = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(`
             let labels = shapeNode.dependsOn.map(id => {
                 const node = this.props.dag.get(id)!;
-                let label = node.type.props.label;
-                const subscriptMap: Record<string, string> = {
-                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                };
-
-                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                    return `${letter}_{${normal}}`;
-                });
+                return createLatexString(node.type);
             });
             
             labels.slice(0, 2).forEach(label => {
@@ -303,7 +513,7 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
 
             str = str.slice(0, -1) + "\\right) = ";
             if (shapeNode.defined) {
-                str += `\\left(${(shapeNode.type as GeometryShape.Point).x.toFixed(2)},${(shapeNode.type as GeometryShape.Point).y.toFixed(2)}`
+                str += `${createLatexString((shapeNode.type as GeometryShape.Point))}`
             }
 
             else {
@@ -314,47 +524,54 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
         }
 
         else if (!(['Translation', 'Rotation', 'Reflection', 'Enlarge'].includes(shape))) {
-            let str = `$${formatLabel} = ${shape}\\left(`;
-            let labels = shapeNode.dependsOn.map(id => {
-                const node = this.props.dag.get(id)!;
-                let label = node.type.props.label;
-                const subscriptMap: Record<string, string> = {
-                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                };
-
-                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                    return `${letter}_{${normal}}`;
+            let str: string;
+            if (formatLabel(label) !== 'OxyPlane') {
+                str = String.raw`
+                \[
+                \begin{array}{l}
+                \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(
+                `;
+                console.log(shapeNode);
+                let labels = shapeNode.dependsOn.map(id => {
+                    const node = this.props.dag.get(id)!;
+                    return createLatexString(node.type);
                 });
-            });
-            
-            labels.slice(0, 2).forEach(label => {
-                str += label + ",";
-            });
+                
+                labels.slice(0, 2).forEach(label => {
+                    str += label + ",";
+                });
 
-            str = str.slice(0, -1) + "\\right)$";
+                if (shape === 'Prism') {
+                    str += `${this.formatNumbers(operations.distance((shapeNode.type as GeometryShape.Prism).base1, (shapeNode.type as GeometryShape.Prism).base2.points[0]))}`
+                }
+
+                str = (str[str.length - 1] === ',' ? str.slice(0, -1) : str) + "\\right)\\\\";
+            }
+
+            else {
+                str = `$\\mathrm{${formatLabel(label)}}`;
+            }
+
+            if ('norm' in shapeNode.type && 'point' in shapeNode.type) {
+                str += `: ${this.producePlaneEquation(shapeNode.type)}${formatLabel(label) !== 'OxyPlane' ? '\\end{array}\\]' : '$'}`;
+            }
+
+            else {
+                str += `Area = ${this.formatNumbers(operations.surface_area(shapeNode.type))}\\\\Volume = ${this.formatNumbers(operations.volume(shapeNode.type))}\\end{array}\\]`
+            }
+
             return str;
         }
 
         else {
             let verb = (shape === 'Translation' ? 'Translate' : (shape === 'Rotation' ? 'Rotate' : (shape === 'Reflection' ? 'Reflect' : 'Dilate')));
-            let str: string = `$${formatLabel} = ${verb}\\left(`;
+            let str: string = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${verb}}\\left(`;
             if (verb === 'Translate' || verb === 'Reflect') {
                 let labels = shapeNode.dependsOn.map(id => {
                     const node = this.props.dag.get(id)!;
-                    let label = node.type.props.label;
-                    const subscriptMap: Record<string, string> = {
-                        '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                        '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                    };
-
-                    return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                        const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                        return `${letter}_{${normal}}`;
-                    });
+                    return createLatexString(node.type);
                 });
-
+                
                 labels.slice(0, 2).forEach(label => {
                     str += label + ",";
                 });
@@ -365,16 +582,7 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
             else if (verb === 'Rotate') {
                 let labels = shapeNode.dependsOn.map(id => {
                     const node = this.props.dag.get(id)!;
-                    let label = node.type.props.label;
-                    const subscriptMap: Record<string, string> = {
-                        '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                        '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                    };
-
-                    return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                        const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                        return `${letter}_{${normal}}`;
-                    });
+                    return createLatexString(node.type);
                 });
                 
                 labels.slice(0, 2).forEach(label => {
@@ -385,8 +593,12 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
             }
 
             else {
-                let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
-                labels.forEach(label => {
+                let labels = shapeNode.dependsOn.map(id => {
+                    const node = this.props.dag.get(id)!;
+                    return createLatexString(node.type);
+                });
+                
+                labels.slice(0, 2).forEach(label => {
                     str += label + ",";
                 });
 
@@ -403,18 +615,19 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                 className="customScrollBar"
                 style={{
                     position: 'relative',
-                    width: this.props.width,
+                    width: '100%',
                     height: this.props.height,
                     display: 'flex',
                     flexDirection: 'row',
                     backgroundColor: '#f9f9f9',
-                    overflow: 'auto',
+                    overflowX: 'hidden',
+                    overflowY: 'auto'
                 }}
             >
-                <div style={{position: "relative", zoom: "1",  height: "100%"}}>
+                <div style={{position: "relative", zoom: "1",  height: "100%", width: '100%'}}>
                     <div
                         className="Tree algebraView"
-                        style={{position: "relative", zoom: "1", minHeight: "444px"}}>
+                        style={{position: "relative", zoom: "1", height: '100%'}}>
                         {this.state.items.map((item, index) => {
                             if (item.type === 'shape') {
                                 const shapeNode = this.props.dag.get(item.id);
@@ -431,7 +644,6 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                                         hidden={!shapeNode.defined}
                                         onToggleVisibility={() => {
                                             const visible = shapeNode.type.props.visible;
-                                            console.log(visible);
                                             shapeNode.type.props.visible.shape = !visible.shape;
                                             if ('x' in shapeNode.type && 'y' in shapeNode.type) {
                                                 shapeNode.type.props.visible.label = shapeNode.type.props.visible.shape;
@@ -449,6 +661,10 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                                         key={`input-${index}`}
                                         width={this.props.width}
                                         onClick={() => {}}
+                                        dag={this.props.dag}
+                                        onUpdateDAG={(dag) => this.props.onUpdateDAG(dag)}
+                                        labelUsed={this.props.labelUsed}
+                                        onUpdateLabelUsed={(labelUsed) => this.props.onUpdateLabelUsed(labelUsed)}
                                     />
                                 );
                             }

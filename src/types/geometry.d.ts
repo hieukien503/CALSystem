@@ -33,7 +33,7 @@ export interface Angle extends BaseShape {
 export interface SemiCircle extends BaseShape {
     start: Point,
     end: Point,
-    normal?: Vector
+    direction?: Line | Ray | Segment | Vector | Plane;
 }
 
 // Point type
@@ -72,7 +72,7 @@ export interface Polygon extends Shape2D {
 export interface Circle extends Shape2D {
     centerC: Point;
     radius: number;
-    normal?: Vector;
+    direction?: Line | Ray | Segment | Vector | Plane;
     area?: number;
 }
 

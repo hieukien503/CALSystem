@@ -57,12 +57,14 @@ export const createVector = (props: GeometryShape.ShapeProps, start: GeometrySha
     return r;
 }
 
-export const createCircle = (props: GeometryShape.ShapeProps, center: GeometryShape.Point, radius: number, normal?: GeometryShape.Vector): GeometryShape.Circle => {
+export const createCircle = (props: GeometryShape.ShapeProps, center: GeometryShape.Point, radius: number,
+    direction?: GeometryShape.Line | GeometryShape.Ray | GeometryShape.Segment | GeometryShape.Vector | GeometryShape.Plane
+): GeometryShape.Circle => {
     let c: GeometryShape.Circle = {
         centerC: center,
         radius: radius,
         props: props,
-        normal: normal,
+        direction: direction,
         type: 'Circle'
     }
 
@@ -70,12 +72,14 @@ export const createCircle = (props: GeometryShape.ShapeProps, center: GeometrySh
     return c;
 }
 
-export const createSemiCircle = (props: GeometryShape.ShapeProps, start: GeometryShape.Point, end: GeometryShape.Point, normal?: GeometryShape.Vector): GeometryShape.SemiCircle => {
+export const createSemiCircle = (props: GeometryShape.ShapeProps, start: GeometryShape.Point, end: GeometryShape.Point,
+    direction?: GeometryShape.Line | GeometryShape.Ray | GeometryShape.Segment | GeometryShape.Vector | GeometryShape.Plane
+): GeometryShape.SemiCircle => {
     let c: GeometryShape.SemiCircle = {
         start: start,
         end: end,
         props: props,
-        normal: normal,
+        direction: direction,
         type: 'SemiCircle'
     }
 

@@ -39,7 +39,7 @@ class AlgebraItem extends React.Component<AlgebraItemProps, {}> {
                         <div className="algebraViewObjectStylebar"
                             style={{right: "0px"}}>
                                 <button type="button" className="button more">
-                                    <MoreVertIcon />
+                                    <MoreVertIcon style={{backgroundColor: 'rgb(249, 249, 249)'}}/>
                                 </button>
                         </div>
                         <div className="elemText" style={{
@@ -80,72 +80,73 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
     componentDidUpdate(prevProps: Readonly<AlgebraToolProps>, prevState: Readonly<{}>, snapshot?: any): void {
         this.textId = 0;
     }
+
+    private formatNumbers = (num: number): string => {
+        return parseFloat(num.toFixed(2)).toString();
+    }
+
     private createDescription = (shapeNode: GeometryShape.ShapeNode): string => {
         let label = shapeNode.type.props.label;
-        const subscriptMap: Record<string, string> = {
-            '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-            '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-        };
+        const formatLabel = (label: string): string => {
+            const subscriptMap: Record<string, string> = {
+                '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+                '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+            };
 
-        const formatLabel = label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-            const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-            return `${letter}_{${normal}}`;
-        });
+            const fLabel = label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
+                const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
+                return `${letter}_{${normal}}`;
+            });
+
+            return fLabel;
+        }
 
         const shape = shapeNode.type.type;
         if (shape === 'Point') {
             if (shapeNode.id.includes('tmpPoint')) {
                 this.textId += 1;
-                return `$Text${this.textId} = "${label}"$`;
+                return `$Text${this.textId}: "${formatLabel(label)}"$`;
             }
             
-            return `$${formatLabel} = \\left(${((shapeNode.type as GeometryShape.Point).x.toFixed(2))},${(shapeNode.type as GeometryShape.Point).y.toFixed(2)}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}} = \\left(${this.formatNumbers((shapeNode.type as GeometryShape.Point).x)},${this.formatNumbers((shapeNode.type as GeometryShape.Point).y)}\\right)$`
         }
         
         else if (shape === 'Line') {
-            return `$${formatLabel} = Line\\left(${(shapeNode.type as GeometryShape.Line).startLine.props.label},${(shapeNode.type as GeometryShape.Line).endLine.props.label}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{Line}\\left(${formatLabel((shapeNode.type as GeometryShape.Line).startLine.props.label)},${formatLabel((shapeNode.type as GeometryShape.Line).endLine.props.label)}\\right)$`
         }
 
         else if (shape === 'Segment') {
-            return `$${formatLabel} = Segment\\left(${(shapeNode.type as GeometryShape.Segment).startSegment.props.label},${(shapeNode.type as GeometryShape.Segment).endSegment.props.label}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{Segment}\\left(${formatLabel((shapeNode.type as GeometryShape.Segment).startSegment.props.label)},${formatLabel((shapeNode.type as GeometryShape.Segment).endSegment.props.label)}\\right)$`
         }
 
         else if (shape === 'Vector') {
-            return `$${formatLabel} = Vector\\left(${(shapeNode.type as GeometryShape.Vector).startVector.props.label},${(shapeNode.type as GeometryShape.Vector).endVector.props.label}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{Vector}\\left(${formatLabel((shapeNode.type as GeometryShape.Vector).startVector.props.label)},${formatLabel((shapeNode.type as GeometryShape.Vector).endVector.props.label)}\\right))$`
         }
 
         else if (shape === 'Ray') {
-            return `$${formatLabel} = Ray\\left(${(shapeNode.type as GeometryShape.Ray).startRay.props.label},${(shapeNode.type as GeometryShape.Ray).endRay.props.label}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{Ray}\\left(${formatLabel((shapeNode.type as GeometryShape.Ray).startRay.props.label)},${formatLabel((shapeNode.type as GeometryShape.Ray).endRay.props.label)}\\right)$`
         }
 
         else if (['Polygon', 'RegularPolygon'].includes(shape)) {
-            let stringOfLabels = '';
+            let stringOfLabels: string[] = [];
             let points = (shapeNode.type as GeometryShape.Polygon).points;
             points.forEach(point => {
-                stringOfLabels = stringOfLabels + point.props.label;
+                stringOfLabels.push(formatLabel(point.props.label));
             });
 
-            return `$${formatLabel} = ${shape}\\left(${stringOfLabels}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(${stringOfLabels.join(',')}\\right)$`
         }
 
         else if (shape === 'Circle') {
-            return `$${formatLabel} = Circle\\left(${(shapeNode.type as GeometryShape.Circle).centerC.props.label},${(shapeNode.type as GeometryShape.Circle).radius}\\right)$`
+            return `$\\mathrm{${formatLabel(label)}}: Circle\\left(${formatLabel((shapeNode.type as GeometryShape.Circle).centerC.props.label)},${(shapeNode.type as GeometryShape.Circle).radius}\\right)$`
         }
 
         else if (shape === 'Intersection') {
-            let str = `$${formatLabel} = ${shape}\\left(`
+            let str = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(`
             let labels = shapeNode.dependsOn.map(id => {
                 const node = this.props.dag.get(id)!;
                 let label = node.type.props.label;
-                const subscriptMap: Record<string, string> = {
-                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                };
-
-                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                    return `${letter}_{${normal}}`;
-                });
+                return formatLabel(label);
             });
             
             labels.slice(0, 2).forEach(label => {
@@ -154,7 +155,7 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
 
             str = str.slice(0, -1) + "\\right) = ";
             if (shapeNode.defined) {
-                str += `\\left(${(shapeNode.type as GeometryShape.Point).x.toFixed(2)},${(shapeNode.type as GeometryShape.Point).y.toFixed(2)}`
+                str += `\\left(${this.formatNumbers((shapeNode.type as GeometryShape.Point).x)},${this.formatNumbers((shapeNode.type as GeometryShape.Point).y)}\\right)`
             }
 
             else {
@@ -165,19 +166,11 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
         }
 
         else if (!(['Translation', 'Rotation', 'Reflection', 'Enlarge'].includes(shape))) {
-            let str = `$${formatLabel} = ${shape}\\left(`;
+            let str = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(`;
             let labels = shapeNode.dependsOn.map(id => {
                 const node = this.props.dag.get(id)!;
                 let label = node.type.props.label;
-                const subscriptMap: Record<string, string> = {
-                    '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                    '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                };
-
-                return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                    const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                    return `${letter}_{${normal}}`;
-                });
+                return formatLabel(label);
             });
             
             labels.slice(0, 2).forEach(label => {
@@ -190,20 +183,12 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
 
         else {
             let verb = (shape === 'Translation' ? 'Translate' : (shape === 'Rotation' ? 'Rotate' : (shape === 'Reflection' ? 'Reflect' : 'Dilate')));
-            let str: string = `$${formatLabel} = ${verb}\\left(`;
+            let str: string = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${verb}}\\left(`;
             if (verb === 'Translate' || verb === 'Reflect') {
                 let labels = shapeNode.dependsOn.map(id => {
                     const node = this.props.dag.get(id)!;
                     let label = node.type.props.label;
-                    const subscriptMap: Record<string, string> = {
-                        '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                        '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                    };
-
-                    return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                        const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                        return `${letter}_{${normal}}`;
-                    });
+                    return formatLabel(label);
                 });
 
                 labels.slice(0, 2).forEach(label => {
@@ -217,15 +202,7 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                 let labels = shapeNode.dependsOn.map(id => {
                     const node = this.props.dag.get(id)!;
                     let label = node.type.props.label;
-                    const subscriptMap: Record<string, string> = {
-                        '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-                        '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
-                    };
-
-                    return label.replace(/([A-Za-z]+)([₀₁₂₃₄₅₆₇₈₉]+)/g, (_, letter, subs) => {
-                        const normal = (subs as string).split('').map(ch => subscriptMap[ch] || ch).join('');
-                        return `${letter}_{${normal}}`;
-                    });
+                    return formatLabel(label);
                 });
                 
                 labels.slice(0, 2).forEach(label => {
@@ -236,8 +213,13 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
             }
 
             else {
-                let labels = shapeNode.dependsOn.map(id => id.split('-')[id.length - 1]);
-                labels.forEach(label => {
+                let labels = shapeNode.dependsOn.map(id => {
+                    const node = this.props.dag.get(id)!;
+                    let label = node.type.props.label;
+                    return formatLabel(label);
+                });
+                
+                labels.slice(0, 2).forEach(label => {
                     str += label + ",";
                 });
 
@@ -260,36 +242,37 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                     display: 'flex',
                     flexDirection: 'row',
                     backgroundColor: '#f9f9f9',
-                    overflow: 'auto',
+                    overflowX: 'hidden',
+                    overflowY: 'auto'
                 }}
             >
                 <div style={{position: "relative", zoom: "1", height: "100%", width: '100%'}}>
                     <div
                         className="Tree algebraView"
                         style={{position: "relative", zoom: "1", height: '100%'}}>
-                    {entries.map(value => {
-                        return (
-                            <AlgebraItem
-                                key={value[1].id}
-                                color={value[1].defined ? value[1].type.props.color : "white"}
-                                isSelected={value[1].isSelected}
-                                description={this.createDescription(value[1])}
-                                onClick={(e) => this.props.onSelect(value[1].id, e)}
-                                shapeVisible={value[1].type.props.visible.shape}
-                                onToggleVisibility={() => {
-                                    const visible = value[1].type.props.visible;
-                                    console.log(visible);
-                                    value[1].type.props.visible.shape = !visible.shape;
-                                    if ('x' in value[1].type && 'y' in value[1].type) {
-                                        value[1].type.props.visible.label = value[1].type.props.visible.shape;
-                                    }
+                        {entries.map(value => {
+                            return (
+                                <AlgebraItem
+                                    key={value[1].id}
+                                    color={value[1].defined ? value[1].type.props.color : "white"}
+                                    isSelected={value[1].isSelected}
+                                    description={this.createDescription(value[1])}
+                                    onClick={(e) => this.props.onSelect(value[1].id, e)}
+                                    shapeVisible={value[1].type.props.visible.shape}
+                                    onToggleVisibility={() => {
+                                        const visible = value[1].type.props.visible;
+                                        console.log(visible);
+                                        value[1].type.props.visible.shape = !visible.shape;
+                                        if ('x' in value[1].type && 'y' in value[1].type) {
+                                            value[1].type.props.visible.label = value[1].type.props.visible.shape;
+                                        }
 
-                                    this.props.onUpdateDAG(utils.cloneDAG(this.props.dag));
-                                }}
-                                hidden={!value[1].defined}
-                            />
-                        )
-                    })}
+                                        this.props.onUpdateDAG(utils.cloneDAG(this.props.dag));
+                                    }}
+                                    hidden={!value[1].defined}
+                                />
+                            )
+                        })}
                     </div>
                 </div>
             </div>
