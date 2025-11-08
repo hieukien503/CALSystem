@@ -15,7 +15,7 @@ export const LINE_EXTENSION = 10;
 
 export const ARROW_DEFAULTS = {
     POINTER_LENGTH: 0.1,
-    POINTER_WIDTH: 0.1
+    POINTER_WIDTH: 0.15
 }
 
 export const BASE_SPACING = 12;

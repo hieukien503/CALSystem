@@ -66,7 +66,16 @@ class ThreeAxis {
         ));
 
         cone.renderOrder = 10;
+        
+        // Add label to cone
+        const label = utils3d.createLabel(
+            this.props.axisColor === '#ff0000' ? 'x' : (this.props.axisColor === '#00ff00' ? 'y' : 'z'),
+            new THREE.Vector3(0.2, 0.2, 0),
+            0, 0, 0,  // small Y offset
+            this.props.axisColor
+        );
 
+        cone.add(label);
         group.add(cone);
         const [x0, y0, z0] = [0, 0, 0];
 

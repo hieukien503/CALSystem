@@ -1,5 +1,5 @@
 import React, { RefObject } from "react";
-import { Line, Point, Shape, GeometryState, ShapeNode, DrawingMode, HistoryEntry, Segment, Ray, Vector, Circle, Polygon, Angle, SemiCircle, ShapeType } from "../../types/geometry"
+import { Line, Point, Shape, GeometryState, ShapeNode, DrawingMode, HistoryEntry, Segment, Ray, Vector, Circle, Polygon, Angle, SemiCircle } from "../../types/geometry"
 import Konva from "konva";
 import { Stage, Layer } from "react-konva";
 import { KonvaAxis } from "../../utils/KonvaAxis";
@@ -2557,7 +2557,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         else if (this.props.mode === 'length') {
             let perimeter: number = 0;
             let label: string = "";
-            let id: string = "";
             const selectedShapes = [...this.props.selectedShapes];
             const selectedPoints = [...this.props.selectedPoints];
             const pos = utils.convertToCustomCoords(
@@ -2571,7 +2570,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             if (selectedShapes.length === 1 && selectedPoints.length === 0) {
                 let shape = selectedShapes[0];
-                id = shape.props.label;
                 if ('startSegment' in shape) {
                     shape = shape as Segment;
                     const point = operation.point_projection(
@@ -2668,7 +2666,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             else if (selectedPoints.length === 2) {
                 perimeter = operation.getDistance(selectedPoints[0], selectedPoints[1]);
                 label = `${selectedPoints[0].props.label}${selectedPoints[1].props.label} = `
-                id = `${selectedPoints[0].props.label}${selectedPoints[1].props.label}`
                 x = (selectedPoints[0].x + selectedPoints[1].x) / 2;
                 y = (selectedPoints[0].y + selectedPoints[1].y) / 2;
             }
@@ -2715,7 +2712,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             tmpShapeNode.node!.hide();
             DAG.set(tmpShapeNode.id, tmpShapeNode);
-            console.log(DAG);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
                 gs: { ...this.props.geometryState },
@@ -2772,7 +2768,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 pos.x, pos.y
             );
 
-            let id: string = shape.props.id;
             let tmpShapeNode: ShapeNode = {
                 id: `tmpPoint-${tmpPoint.props.id}`,
                 dependsOn: [selectedShapes[0].props.id],
@@ -2787,7 +2782,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             tmpPoint.props.visible.shape = false;
             tmpShapeNode.node!.hide();
             DAG.set(tmpShapeNode.id, tmpShapeNode);
-            console.log(DAG);
             this.props.onUpdateLastFailedState();
             this.props.onUpdateAll({
                 gs: { ...this.props.geometryState },
@@ -5483,7 +5477,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             if ('points' in shape.type) {
                 let pts = shape.type.points;
                 if (node.rotationFactor !== undefined && node.scaleFactor !== undefined) {
-                    console.log(node.rotationFactor, node.scaleFactor);
                     const base = {x: 0, y: 0};
                     pts.forEach(pt => {
                         base.x += pt.x
@@ -5505,7 +5498,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     });
 
                     this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
-                    console.log(base, node.type);
                     if (this.layerUnchangeVisualRef.current) {
                         let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                         if (label) {

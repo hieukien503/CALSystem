@@ -845,9 +845,13 @@ input:focus {
     top: -2px;
 }
 
-.algebraView .avItem {
+.algebraView .avItem, .algebraView .avInputItem {
     padding: 0 !important;
     margin: 0 !important;
+}
+
+.avInputItem {
+    border-bottom: 1px solid #dcdcdc;
 }
 
 .avItem, .avItem.selectedItem {
@@ -892,6 +896,11 @@ input:focus {
     position: relative;
 }
 
+.marblePanel.plus {
+    position: absolute;
+    max-width: 24px;
+}
+
 .marble {
     height: 18px;
     width: 18px;
@@ -914,6 +923,13 @@ input:focus {
 
 .avItem .elemText {
     padding-top: 7px;
+    padding-bottom: 0px;
+    padding-left: 68px;
+    justify-content: left;
+}
+
+.algebraInputField {
+    padding-top: 10px;
     padding-bottom: 0px;
     padding-left: 68px;
     justify-content: left;

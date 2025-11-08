@@ -3,6 +3,7 @@ import AlgebraTool3D from "./Algebra/AlgebraTool3D";
 import { GeometryTool3D } from "./Geometry/GeometryTool";
 import { DrawingMode, ShapeNode3D, Point, Shape } from "../../types/geometry";
 import { AnimationTool3D } from "./Animation/AnimationTool3D";
+import * as constants from '../../types/constants';
 
 interface TimelineItem {
     object: string;
@@ -15,15 +16,16 @@ interface Tool3DProps {
     width: number;
     height: number;
     dag: Map<string, ShapeNode3D>;
+    labelUsed: string[];
     onUpdateWidth: (width: number) => void;
     onSetMode: (mode: DrawingMode) => void;
     onSelect: (id: string, e: React.MouseEvent) => void;
     onUpdateDAG: (dag: Map<string, ShapeNode3D>) => void;
     selectedPoints: Point[];
     selectedShapes: Shape[];
-    //stageRef: React.RefObject<any>;
     timeline: TimelineItem[];
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
+    onUpdateLabelUsed: (labelUsed: string[]) => void;
 }
 
 interface Tool3DState {
@@ -41,7 +43,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
     private changeMode = (mode: 'algebra' | 'geometry' | 'animation' = 'geometry', e: React.MouseEvent): void => {
         e.stopPropagation();
         this.setState({mode: mode}, () => {
-            this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, 300));
+            this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, constants.MIN_TOOL_WIDTH));
         })
     }
 
@@ -139,6 +141,8 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     dag={this.props.dag}
                                     onSelect={this.props.onSelect}
                                     onUpdateDAG={this.props.onUpdateDAG}
+                                    onUpdateLabelUsed={this.props.onUpdateLabelUsed}
+                                    labelUsed={this.props.labelUsed}
                                 /> : <AnimationTool3D
                                     width={this.props.width}
                                     height={this.props.height}
