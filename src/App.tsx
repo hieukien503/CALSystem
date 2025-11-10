@@ -13,6 +13,7 @@ import ProfilePage from "./View/ProfilePage";
 import SearchResults from "./View/SearchResults";
 import NewCalApp from "./View/NewCalApp";
 import EditProjectPage from "./View/EditProjectPage";
+import E403 from "./View/E403";
 import E404 from "./View/E404";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -36,7 +37,7 @@ function App() {
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/view/project" element={<NewCalApp />} />
-                        <Route path="/view/project/:_id" element={<CalApp selectedTool={selectedTool} setSelectedTool={setSelectedTool} />} />
+                        <Route path="/view/project/:id" element={<CalApp selectedTool={selectedTool} setSelectedTool={setSelectedTool} />} />
                         <Route path="/view/login" element={<Login />} />
                         <Route path="/view/forgot-password" element={<ForgotPassword />} />
                         <Route path="/view/signup" element={<SignUp />} />
@@ -44,6 +45,7 @@ function App() {
                         <Route path="/view/myprofile/" element={<MyProfilePage />} />
                         <Route path="/view/search" element={<SearchResults />} />
                         <Route path="/view/edit/project/:id" element={<EditProjectPage />} />
+                        <Route path="/view/403" element={<E403 />} />
                         <Route path="*" element={<E404 />} />
                     </Routes>
                 </main>

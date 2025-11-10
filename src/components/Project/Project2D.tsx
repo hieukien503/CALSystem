@@ -1014,13 +1014,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     // Save Project
     private saveProject = async () => {
         try {
+            const token = sessionStorage.getItem("token");
             const payload = {
                 title: this.props.title,
                 description: this.props.description,
                 sharing: this.props.sharing,
                 projectVersion: this.props.projectVersion,
                 collaborators: this.props.collaborators,
-                ownedBy: this.props.ownedBy,
+                //ownedBy: this.props.ownedBy,
                 geometryState: this.state.geometryState,
                 dag: serializeDAG(this.dag),
                 labelUsed: this.labelUsed,
@@ -1029,7 +1030,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
             await fetch(`http://localhost:3001/api/projects/${this.projectId}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify(payload)
             });
         } catch (err) {
@@ -1040,7 +1044,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     // Load Project
     public loadProject = async () => {
         try {
-            const res = await fetch(`http://localhost:3001/api/projects/${this.projectId}`);
+            const token = sessionStorage.getItem("token");
+            const res = await fetch(`http://localhost:3001/api/projects/${this.projectId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            });
             if (!res.ok) throw new Error("Failed to load project");
 
             const data = await res.json();

@@ -9,7 +9,7 @@ const Home = () => {
                     backgroundColor: "#46443f"
                 }}
             >
-                401: Unauthorized Access
+                403: Unauthorized Access
             </h1>
         </div>
     );
