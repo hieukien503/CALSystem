@@ -106,7 +106,6 @@ const EditProjectPage: React.FC = () => {
             }
 
             alert("Project updated successfully!");
-            navigate(`/view/profile/${project.ownedBy}`);
         } catch (err: any) {
             console.error("Error updating project:", err);
             alert("Failed to update project.");
@@ -230,7 +229,7 @@ const EditProjectPage: React.FC = () => {
                                 className="btn btn-secondary"
                                 onClick={() => navigate(-1)}
                             >
-                                Cancel
+                                Return
                             </button>
                             <button
                                 type="submit"
