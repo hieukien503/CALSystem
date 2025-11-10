@@ -13,22 +13,26 @@ const NewCalApp: React.FC = () => {
     const navigate = useNavigate();
 
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
+    const token = sessionStorage.getItem("token");
 
     useEffect(() => {
         const createNewProject = async () => {
             let res = await fetch("http://localhost:3001/api/projects", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: "Untitled Project" })
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    _id: user._id,
+                    title: "Untitled Project"
+                })
             });
             const project = await res.json();
 
             if (user) { // add new project to user's project list if new user
                 await fetch(`http://localhost:3001/api/projects/add/`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        userId: user._id,
+                        _id: user._id,
                         projectId: project._id,
                     })
                 });
