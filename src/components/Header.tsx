@@ -78,7 +78,8 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
                             >
                                 <option value="2d-graph">2D Geometry</option>
                                 <option value="3d-graph">3D Geometry</option>
-                                <option value="3d-calc">3D Calculator</option>
+                                {//<option value="3d-calc">3D Calculator</option>
+                                }
                             </select>
                         </li>
 
