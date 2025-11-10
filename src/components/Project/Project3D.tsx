@@ -32,10 +32,10 @@ interface Project3DProps {
         versionNumber: string;
         createdAt: string;
         updatedAt: string;
-        updatedBy: string;
+        updatedBy: string
     };
     collaborators: {id: string, role: string}[];
-    ownedBy: string;
+    //ownedBy: string;
 }
 
 interface Project3DState {

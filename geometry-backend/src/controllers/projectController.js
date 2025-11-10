@@ -10,7 +10,7 @@ exports.createProject = async (req, res) => {
             sharing: req.body.sharing || "private",
             projectVersion: req.body.projectVersion,
             collaborators: req.body.collaborators || [],
-            ownedBy: req.user.userId, // ✅ lấy userId từ token
+            ownedBy: req.body.user_Id || "",
             objects: req.body.objects || [],
             geometryState: req.body.geometryState || {},
             dag: req.body.dag || [],
@@ -30,14 +30,17 @@ exports.createProject = async (req, res) => {
 exports.loadProject = async (req, res) => {
     try {
         const project = await Project.findById(req.params.id);
+        const user = req.params.user;
         if (!project) return res.status(404).json({ message: "Project not found" });
 
-        const userId = req.user.userId;
-        const canView =
-            project.sharing === "public" ||
-            project.ownedBy === userId ||
-            (project.collaborators || []).includes(userId);
-
+        let canView = false;
+        if (project.ownedBy !== "") {
+            canView = project.sharing === "public" || project.ownedBy === user || (project.collaborators || []).includes(user);
+        }
+        else {
+            canView = true;
+        }
+        
         if (!canView)
             return res.status(403).json({ message: "Forbidden: private project" });
 
@@ -54,10 +57,11 @@ exports.updateProject = async (req, res) => {
         const project = await Project.findById(req.params.id);
         if (!project) return res.status(404).json({ error: "Project not found" });
 
-        const userId = req.user.userId;
+        const userId = req.user.id.toString();
         const canEdit =
             project.ownedBy === userId ||
-            (project.collaborators || []).includes(userId);
+            (project.collaborators || []).includes(userId) ||
+            project.ownedBy === "";
 
         if (!canEdit)
             return res.status(403).json({ error: "Forbidden: no edit permission" });
@@ -84,7 +88,7 @@ exports.bulkProject = async (req, res) => {
         }
         const projects = await Project.find({ _id: { $in: ids } });
 
-        const userId = req.user?.userId;
+        const userId = req.user?._id || null;
 
         const visible = projects.filter(p =>
             p.sharing === "public" ||
@@ -103,13 +107,13 @@ exports.bulkProject = async (req, res) => {
 // --- Add project to user's project list ---
 exports.addProjectToUser = async (req, res) => {
     try {
-        const { userId, projectId } = req.body;
-        if (!userId || !projectId) {
+        const { _id, projectId } = req.body;
+        if (!_id || !projectId) {
             return res.status(400).json({ message: "Missing userId or projectId" });
         }
 
         const user = await User.findOneAndUpdate(
-            { userId },
+            { _id },
             { $addToSet: { project: projectId } },
             { new: true }
         );
@@ -140,29 +144,41 @@ exports.deleteProject = async (req, res) => {
     }
 };
 
-// --- Rename project (owner or collaborator) ---
-exports.renameProject = async (req, res) => {
+// --- Update project info (title, description, sharing, collaborators, etc.) ---
+exports.updateProjectInfo = async (req, res) => {
     try {
         const { projectId } = req.params;
-        const { newTitle } = req.body;
+        const { title, description, sharing, collaborators } = req.body;
 
         const project = await Project.findById(projectId);
         if (!project) return res.status(404).json({ message: "Project not found" });
 
-        const userId = req.user.userId;
-        const canRename =
+        const userId = req.user._id;
+        const canEdit =
             project.ownedBy === userId ||
             (project.collaborators || []).includes(userId);
 
-        if (!canRename)
-            return res.status(403).json({ message: "Forbidden: cannot rename" });
+        if (!canEdit)
+            return res.status(403).json({ message: "Forbidden: cannot edit project" });
 
-        project.title = newTitle;
+        // ✅ Update fields if provided
+        if (title !== undefined) project.title = title;
+        if (description !== undefined) project.description = description;
+        if (sharing !== undefined) project.sharing = sharing;
+
+        // ✅ Handle collaborator updates (replace array)
+        if (Array.isArray(collaborators)) {
+            project.collaborators = collaborators.map(c => ({
+                email: c.email,
+                role: c.role || "viewer",
+            }));
+        }
+
+        // Save and return the updated project
         await project.save();
-
-        res.json({ message: "Project renamed successfully", project });
+        res.json({ message: "Project updated successfully", project });
     } catch (err) {
-        console.error("Error renaming project:", err.message);
-        res.status(500).json({ message: "Error renaming project", error: err.message });
+        console.error("Error updating project:", err.message);
+        res.status(500).json({ message: "Error updating project", error: err.message });
     }
 };

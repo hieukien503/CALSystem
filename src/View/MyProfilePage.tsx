@@ -56,15 +56,7 @@ const ProfilePage: React.FC = () => {
             })
                 .then((res) => res.json())
                 .then((data) => {
-                    console.log("Projects response:", data);
-                    if (Array.isArray(data)) {
-                        setProjects(data);
-                    } else if (Array.isArray(data.projects)) {
-                        setProjects(data.projects);
-                    } else {
-                        setProjects([]); // Prevent crash
-                        console.error("Unexpected API format for projects:", data);
-                    }
+                    setProjects(data);
                 })
                 .catch((err) => console.error("Error fetching projects:", err));
         } else {
