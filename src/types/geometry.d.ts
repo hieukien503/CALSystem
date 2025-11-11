@@ -28,6 +28,7 @@ export interface Angle extends BaseShape {
     vertex?: Point;
     vector1: Vector;
     vector2: Vector;
+    range: [number, number]
 }
 
 export interface SemiCircle extends BaseShape {
@@ -245,7 +246,7 @@ export interface GeometryState {
 }
 
 /** Drawing mode */
-type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
+type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'delete' |
                    'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'volume' | 'show_label' | 'show_object' | 'intersection' |
                    'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
                    'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length' | 'perpendicular_bisector' |

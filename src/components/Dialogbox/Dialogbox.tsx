@@ -3,6 +3,7 @@ import React, { createRef, RefObject } from 'react';
 interface DialogboxProps {
     title: string;
     input_label: string;
+    rotationMode: boolean;
     angleMode: boolean;
     position: { x: number; y: number };
     inputError: {
@@ -30,6 +31,12 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
             isHovered: false,
             isCCW: true,
             value_from_input: ''
+        }
+    }
+
+    componentDidUpdate(prevProps: Readonly<DialogboxProps>, prevState: Readonly<DialogboxState>, snapshot?: any): void {
+        if (!prevProps.angleMode && this.props.angleMode) {
+            this.setState({ value_from_input: "0to360" });
         }
     }
 
@@ -80,7 +87,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
         const { x, y } = this.props.position;
         return (
             <div 
-                className={`dialogComponent inputDialogComponent${this.props.angleMode !== undefined ? " angleInputDialog" : ""}`}
+                className={`dialogComponent inputDialogComponent${this.props.rotationMode ? " rotateInputDialog" : (this.props.angleMode ? " angleInputDialog" : "")}`}
                 style={{left: x, top: y, position: 'absolute'}}
                 ref={this.dialogRef}
             >
@@ -88,54 +95,70 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                     <div className='dialogMainPanel'>
                         <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
                         <div className='dialogContent'>
-                            <div>
-                                <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : (this.state.isHovered ? (this.state.isFocused ? " hoverState focusState" : " hoverState") : "")}`}
-                                    onMouseEnter={this.activeInputHover}
-                                    onMouseLeave={this.deactiveInputHover}
-                                >
-                                    <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
-                                    <div className='textField'>
-                                        <div className='TextFieldW'>
-                                            <div className='fieldContainer'>
-                                                <input
-                                                    ref={this.inputRef} 
-                                                    type='text'
-                                                    value={this.state.value_from_input}
-                                                    onChange={(e) => this.setState({ value_from_input: e.target.value })}
-                                                    className='TextField'
-                                                    autoComplete='off'
-                                                    onFocus={this.handleInputFocus}
-                                                    onBlur={this.handleInputBlur}
-                                                    placeholder={this.props.angleMode ? "30" : ""}
-                                                >
-                                                </input>
+                            {
+                                !this.props.angleMode ? (
+                                    <>
+                                        <div>
+                                            <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : (this.state.isHovered ? (this.state.isFocused ? " hoverState focusState" : " hoverState") : "")}`}
+                                                onMouseEnter={this.activeInputHover}
+                                                onMouseLeave={this.deactiveInputHover}
+                                            >
+                                                <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                                <div className='textField'>
+                                                    <div className='TextFieldW'>
+                                                        <div className='fieldContainer'>
+                                                            <input
+                                                                ref={this.inputRef} 
+                                                                type='text'
+                                                                value={this.state.value_from_input}
+                                                                onChange={(e) => this.setState({ value_from_input: e.target.value })}
+                                                                className='TextField'
+                                                                autoComplete='off'
+                                                                onFocus={this.handleInputFocus}
+                                                                onBlur={this.handleInputBlur}
+                                                                placeholder={this.props.rotationMode ? "30" : ""}
+                                                            >
+                                                            </input>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {this.props.inputError.label.length > 0 && <div className='errorLabel'>{this.props.inputError.label}</div>}
                                             </div>
                                         </div>
+                                        {this.props.rotationMode && 
+                                            <div className='radioButtonPanel'>
+                                                <div className={`radioButton${this.state.isCCW ? " selected" : ""}`}
+                                                    onClick={() => this.setState({isCCW: true})}
+                                                >
+                                                    <div className='radioBg ripple'>
+                                                        <div className='outerCircle'></div>
+                                                        <div className='innerCircle'></div>
+                                                    </div>
+                                                    <div className='label'>counterclockwise</div>
+                                                </div>
+                                                <div className={`radioButton${!this.state.isCCW ? " selected" : ""}`}
+                                                    onClick={() => this.setState({isCCW: false})}
+                                                >
+                                                    <div className='radioBg ripple'>
+                                                        <div className='outerCircle'></div>
+                                                        <div className='innerCircle'></div>
+                                                    </div>
+                                                    <div className='label'>clockwise</div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </>
+                                ) : (
+                                    <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
+                                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                        <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
+                                            this.setState({ value_from_input: e.target.value })
+                                        }}>
+                                            <option value="0to360">0&deg; - 360&deg;</option>
+                                            <option value="0to180">0&deg; - 180&deg;</option>
+                                        </select>
                                     </div>
-                                    {this.props.inputError.label.length > 0 && <div className='errorLabel'>{this.props.inputError.label}</div>}
-                                </div>
-                            </div>
-                            {this.props.angleMode && 
-                            <div className='radioButtonPanel'>
-                                <div className={`radioButton${this.state.isCCW ? " selected" : ""}`}
-                                    onClick={() => this.setState({isCCW: true})}
-                                >
-                                    <div className='radioBg ripple'>
-                                        <div className='outerCircle'></div>
-                                        <div className='innerCircle'></div>
-                                    </div>
-                                    <div className='label'>counterclockwise</div>
-                                </div>
-                                <div className={`radioButton${!this.state.isCCW ? " selected" : ""}`}
-                                    onClick={() => this.setState({isCCW: false})}
-                                >
-                                    <div className='radioBg ripple'>
-                                        <div className='outerCircle'></div>
-                                        <div className='innerCircle'></div>
-                                    </div>
-                                    <div className='label'>clockwise</div>
-                                </div>
-                            </div>
+                                )
                             }
                         </div>
                         <div className='dialogButtonPanel'>
@@ -144,7 +167,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                             </button>
                             <button type='button' className='okButton'
                                 onClick={() => {
-                                    const value = this.state.value_from_input || (this.props.angleMode ? "30" : "");
+                                    const value = this.state.value_from_input;
                                     this.props.onSubmitClick(value, this.state.isCCW);
                                 }}
                             >

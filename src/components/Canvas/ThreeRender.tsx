@@ -338,6 +338,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             )
         );
 
+        xAxisLine.props.id = 'line-xAxis';
+        yAxisLine.props.id = 'line-yAxis';
+        zAxisLine.props.id = 'line-zAxis';
+
         DAG.set(xAxisLine.props.id, {
             id: xAxisLine.props.id,
             type: xAxisLine,
@@ -381,6 +385,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             )
         );
 
+        oxyPlane.props.id = 'plane-OxyPlane';
         DAG.set(oxyPlane.props.id, {
             id: oxyPlane.props.id,
             type: oxyPlane,
@@ -2433,9 +2438,34 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else if (this.props.mode === 'regular_polygon') {
             const selectedPoints = [...this.props.selectedPoints];
             const selectedShapes = [...this.props.selectedShapes];
-
             if (selectedShapes.length === 1) {
-                if (selectedPoints.length !== 0 || !('startSegment' in selectedShapes[0])) {
+                if (selectedPoints.length !== 0 && 'startSegment' in selectedShapes[0]) {
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    });
+
+                    return;
+                }
+
+                return;
+            }
+
+            if (selectedShapes.length === 2) {
+                if (selectedPoints.length !== 0) {
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    });
+
+                    return;
+                }
+
+                if (!('startSegment' in selectedShapes[0] || ('norm' in selectedShapes[0] && 'point' in selectedShapes[1])) ||
+                    !('startSegment' in selectedShapes[1] || ('norm' in selectedShapes[0] && 'point' in selectedShapes[0]))
+                ) {
                     this.props.onUpdateLastFailedState();
                     this.props.onSelectedChange({
                         selectedShapes: [],
@@ -2451,14 +2481,43 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     return;
                 }
 
-                const segment = selectedShapes[0] as Segment;
+                const segment = 'startSegment' in selectedShapes[0] ? selectedShapes[0] as Segment : selectedShapes[1] as Segment;
+                const plane = 'norm' in selectedShapes[0] && 'point' in selectedShapes[0] ? selectedShapes[0] as Plane : selectedShapes[1] as Plane;
+
+                const distance = (
+                    plane: {a: number, b: number, c: number, d: number},
+                    point: {x: number, y: number, z: number}
+                ): number => {
+                    return Math.abs(plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d) / Math.sqrt(plane.a ** 2 + plane.b ** 2 + plane.c ** 2);
+                }
+
+                const n = {
+                    x: plane.norm.endVector.x - plane.norm.startVector.x,
+                    y: plane.norm.endVector.y - plane.norm.startVector.y,
+                    z: (plane.norm.endVector.z ?? 0) - (plane.norm.startVector.z ?? 0)
+                }
+
                 let [start, end] = [segment.startSegment, segment.endSegment];
-                if ((start.z !== undefined && start.z !== 0) || (end.z !== undefined && end.z !== 0)) {
+                const p1 = {
+                    x: start.x,
+                    y: start.y,
+                    z: (start.z ?? 0)
+                };
+
+                const p2 = {
+                    x: end.x,
+                    y: end.y,
+                    z: (end.z ?? 0)
+                };
+
+                const d = -(n.x * plane.point.x + n.y * plane.point.y + n.z * (plane.point.z ?? 0));
+                if (distance({a: n.x, b: n.y, c: n.z, d: d}, p1) > constants.EPSILON || distance({a: n.x, b: n.y, c: n.z, d: d}, p2) > constants.EPSILON) {
                     this.props.onUpdateLastFailedState();
                     this.props.onSelectedChange({
                         selectedShapes: [],
                         selectedPoints: []
                     });
+
                     return;
                 }
 
@@ -2474,7 +2533,17 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     }
 
                     labelUsed.push(label);
-                    let newEnd = operation.rotation(start, end, 180 - angle, false) as Point;
+                    const line = Factory.createLine(
+                        utils.createLineDefaultShapeProps(''),
+                        structuredClone(end),
+                        Factory.createPoint(
+                            utils.createPlaneDefaultShapeProps(''),
+                            end.x + plane.norm.endVector.x - plane.norm.startVector.x,
+                            end.y + plane.norm.endVector.y - plane.norm.startVector.y,
+                            (end.z ?? 0) + (plane.norm.endVector.z ?? 0) - (plane.norm.startVector.z ?? 0)
+                        )
+                    )
+                    let newEnd = operation.rotation(start, line, angle, false) as Point;
                     newEnd.props = utils.createPointDefaultShapeProps(label);
                     start = end;
                     end = newEnd;
@@ -2482,10 +2551,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
 
                 let idx = 0;
-                let poly_label = `regular_poly${idx}`;
+                let poly_label = `regPoly${idx}`;
                 while (labelUsed.includes(poly_label)) {
                     idx += 1;
-                    poly_label = `regular_poly${idx}`;
+                    poly_label = `regPoly${idx}`;
                 }
 
                 labelUsed.push(poly_label);
@@ -2504,7 +2573,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     DAG.set(point.props.id, {
                         id: point.props.id,
                         type: point,
-                        dependsOn: [polygon.props.id],
+                        dependsOn: [polygon.props.id, plane.props.id],
                         isSelected: false,
                         defined: true
                     });
@@ -2543,7 +2612,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 let shapeNode: ShapeNode3D = {
                     id: polygon.props.id,
                     type: polygon,
-                    dependsOn: polygonPoints.map(point => point.props.id),
+                    dependsOn: [...polygonPoints.map(point => point.props.id), plane.props.id],
                     defined: true,
                     isSelected: false,
                     rotationFactor: {
@@ -2567,21 +2636,61 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
             else {
                 if (selectedPoints.length !== 2) return;
+                if (selectedShapes.length === 0) return;
+                if (!('norm' in selectedShapes[0] && 'point' in selectedShapes[0])) {
+                    this.props.onUpdateLastFailedState();
+                    this.props.onSelectedChange({
+                        selectedShapes: [],
+                        selectedPoints: []
+                    });
+
+                    return;
+                }
+
                 const vertices = this.props.data;
                 if (!vertices || typeof vertices !== 'number') {
                     this.props.onRenderDialogbox(this.props.mode);
                     return;
                 }
 
+                const plane = selectedShapes[0] as Plane;
+                const distance = (
+                    plane: {a: number, b: number, c: number, d: number},
+                    point: {x: number, y: number, z: number}
+                ): number => {
+                    return Math.abs(plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d) / Math.sqrt(plane.a ** 2 + plane.b ** 2 + plane.c ** 2);
+                }
+
+                const n = {
+                    x: plane.norm.endVector.x - plane.norm.startVector.x,
+                    y: plane.norm.endVector.y - plane.norm.startVector.y,
+                    z: (plane.norm.endVector.z ?? 0) - (plane.norm.startVector.z ?? 0)
+                }
+
                 let [start, end] = [selectedPoints[0], selectedPoints[1]];
-                if ((start.z !== undefined && start.z !== 0) || (end.z !== undefined && end.z !== 0)) {
+                const p1 = {
+                    x: start.x,
+                    y: start.y,
+                    z: (start.z ?? 0)
+                };
+
+                const p2 = {
+                    x: end.x,
+                    y: end.y,
+                    z: (end.z ?? 0)
+                };
+
+                const d = -(n.x * plane.point.x + n.y * plane.point.y + n.z * (plane.point.z ?? 0));
+                if (distance({a: n.x, b: n.y, c: n.z, d: d}, p1) > constants.EPSILON || distance({a: n.x, b: n.y, c: n.z, d: d}, p2) > constants.EPSILON) {
                     this.props.onUpdateLastFailedState();
                     this.props.onSelectedChange({
                         selectedShapes: [],
                         selectedPoints: []
                     });
+
                     return;
                 }
+
                 let angle = (vertices - 2) * 180 / vertices;
                 let points: Point[] = [];
                 const labelUsed = [...this.props.labelUsed];
@@ -2602,10 +2711,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
 
                 let idx = 0;
-                let poly_label = `regular_poly${idx}`;
+                let poly_label = `regPoly${idx}`;
                 while (labelUsed.includes(poly_label)) {
                     idx += 1;
-                    poly_label = `regular_poly${idx}`;
+                    poly_label = `regPoly${idx}`;
                 }
 
                 labelUsed.push(poly_label);
@@ -4124,7 +4233,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const [selectedPoints, selectedShapes] = [[...this.props.selectedPoints], [...this.props.selectedShapes]];
             if (selectedPoints.length === 0) {
                 if (selectedShapes.length !== 2) return;
-                if (!(selectedShapes[0].props.id.includes('line-')) || !(selectedShapes[1].props.id.includes('line-'))) {
+                if (!(selectedShapes[0].props.id.includes('line-') || selectedShapes[0].props.id.includes('plane-')) || 
+                    !(selectedShapes[1].props.id.includes('line-') || selectedShapes[1].props.id.includes('plane-'))
+                ) {
                     this.props.onUpdateLastFailedState();
                     this.props.onSelectedChange({
                         selectedShapes: [],
@@ -4133,106 +4244,174 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
                     return;
                 }
-                // 2 lines
-                // convert them to Line
-                let [start1, end1] = operation.getStartAndEnd(selectedShapes[0]);
-                let [start2, end2] = operation.getStartAndEnd(selectedShapes[1]);
 
-                let tmpSelectedShapes = [
-                    Factory.createLine(
-                        selectedShapes[0].props,
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            start1.x,
-                            start1.y,
-                            start1.z
+                if (selectedShapes[0].props.id.includes('line-') && selectedShapes[1].props.id.includes('line-')) {
+                    // 2 lines
+                    // convert them to Line
+                    let [start1, end1] = operation.getStartAndEnd(selectedShapes[0]);
+                    let [start2, end2] = operation.getStartAndEnd(selectedShapes[1]);
+
+                    let tmpSelectedShapes = [
+                        Factory.createLine(
+                            selectedShapes[0].props,
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                start1.x,
+                                start1.y,
+                                start1.z
+                            ),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                end1.x,
+                                end1.y,
+                                end1.z
+                            ),
                         ),
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            end1.x,
-                            end1.y,
-                            end1.z
-                        ),
-                    ),
-                    Factory.createLine(
-                        selectedShapes[1].props,
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            start2.x,
-                            start2.y
-                        ),
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            end2.x,
-                            end2.y
-                        ),
+                        Factory.createLine(
+                            selectedShapes[1].props,
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                start2.x,
+                                start2.y
+                            ),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                end2.x,
+                                end2.y
+                            ),
+                        )
+                    ]
+                    
+                    let vertex = operation.getIntersections2D(
+                        tmpSelectedShapes[0],
+                        tmpSelectedShapes[1]
                     )
-                ]
+
+                    let tmpVertex = Factory.createPoint(
+                        utils.createPointDefaultShapeProps(''),
+                        vertex[0].coors ? vertex[0].coors.x : 0,
+                        vertex[0].coors ? vertex[0].coors.y : 0
+                    )
+
+                    let label = utils.getAngleLabel(0);
+                    let idx = 0;
+                    while (this.props.labelUsed.includes(label)) {
+                        idx++;
+                        label = utils.getAngleLabel(idx);
+                    }
+
+                    this.props.onLabelUsed([...this.props.labelUsed, label]);
+
+                    let a = Factory.createAngle(
+                        utils.createAngleDefaultShapeProps(`${label}`),
+                        Factory.createVector(
+                            utils.createVectorDefaultShapeProps(''),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                start1.x, start1.y, (start1.z ?? 0)
+                            ),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                end1.x, end1.y, (end1.z ?? 0)
+                            )
+                        ),
+                        Factory.createVector(
+                            utils.createVectorDefaultShapeProps(''),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                start2.x, start2.y, (start2.z ?? 0)
+                            ),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                end2.x, end2.y, (end2.z ?? 0)
+                            )
+                        ),
+                        [0, 180],
+                        tmpVertex
+                    )
+
+
+                    let shapeNode: ShapeNode3D = {
+                        id: a.props.id,
+                        dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
+                        type: a,
+                        defined: vertex[0].coors !== undefined && vertex[0].ambiguous === false,
+                        isSelected: false
+                    }
+
+                    DAG.set(a.props.id, shapeNode);
+                    this.props.onUpdateLastFailedState();
+                    this.props.onUpdateAll({
+                        gs: {...this.props.geometryState},
+                        dag: DAG,
+                        selectedPoints: [],
+                        selectedShapes: []
+                    });
+                }
                 
-                let vertex = operation.getIntersections2D(
-                    tmpSelectedShapes[0],
-                    tmpSelectedShapes[1]
-                )
+                else if (
+                    (selectedShapes[0].props.id.includes('line-') && selectedShapes[1].props.id.includes('plane-')) ||
+                    (selectedShapes[1].props.id.includes('line-') && selectedShapes[0].props.id.includes('plane-'))
+                ) {
+                    const [start, end] = operation.getStartAndEnd(selectedShapes[0].props.id.includes('line-') ? selectedShapes[0] : selectedShapes[1]);
+                    const pl: Plane = selectedShapes[0].props.id.includes('line-') ? selectedShapes[1] as Plane : selectedShapes[0] as Plane;
+                    let vertex = operation.getIntersections3D(
+                        selectedShapes[0],
+                        selectedShapes[1]
+                    )
 
-                let tmpVertex = Factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    vertex[0].coors ? vertex[0].coors.x : 0,
-                    vertex[0].coors ? vertex[0].coors.y : 0
-                )
+                    let tmpVertex = Factory.createPoint(
+                        utils.createPointDefaultShapeProps(''),
+                        vertex[0].coors ? vertex[0].coors.x : 0,
+                        vertex[0].coors ? vertex[0].coors.y : 0,
+                        vertex[0].coors ? vertex[0].coors.z : 0
+                    )
 
-                let label = utils.getAngleLabel(0);
-                let idx = 0;
-                while (this.props.labelUsed.includes(label)) {
-                    idx++;
-                    label = utils.getAngleLabel(idx);
-                }
+                    let label = utils.getAngleLabel(0);
+                    let idx = 0;
+                    while (this.props.labelUsed.includes(label)) {
+                        idx++;
+                        label = utils.getAngleLabel(idx);
+                    }
 
-                this.props.onLabelUsed([...this.props.labelUsed, label]);
+                    this.props.onLabelUsed([...this.props.labelUsed, label]);
 
-                let a = Factory.createAngle(
-                    utils.createAngleDefaultShapeProps(`${label}`),
-                    Factory.createVector(
-                        utils.createVectorDefaultShapeProps(''),
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            start1.x, start1.y, (start1.z ?? 0)
+                    let a = Factory.createAngle(
+                        utils.createAngleDefaultShapeProps(`${label}`),
+                        Factory.createVector(
+                            utils.createVectorDefaultShapeProps(''),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                start.x, start.y, (start.z ?? 0)
+                            ),
+                            Factory.createPoint(
+                                utils.createPointDefaultShapeProps(''),
+                                end.x, end.y, (end.z ?? 0)
+                            )
                         ),
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            end1.x, end1.y, (end1.z ?? 0)
-                        )
-                    ),
-                    Factory.createVector(
-                        utils.createVectorDefaultShapeProps(''),
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            start2.x, start2.y, (start2.z ?? 0)
-                        ),
-                        Factory.createPoint(
-                            utils.createPointDefaultShapeProps(''),
-                            end2.x, end2.y, (end2.z ?? 0)
-                        )
-                    ),
-                    tmpVertex
-                )
+                        structuredClone(pl.norm),
+                        [0, 180],
+                        tmpVertex
+                    )
 
 
-                let shapeNode: ShapeNode3D = {
-                    id: a.props.id,
-                    dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
-                    type: a,
-                    defined: vertex[0].coors !== undefined && vertex[0].ambiguous === false,
-                    isSelected: false
+                    let shapeNode: ShapeNode3D = {
+                        id: a.props.id,
+                        dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
+                        type: a,
+                        defined: vertex[0].coors !== undefined && vertex[0].ambiguous === false,
+                        isSelected: false
+                    }
+
+                    DAG.set(a.props.id, shapeNode);
+                    this.props.onUpdateLastFailedState();
+                    this.props.onUpdateAll({
+                        gs: {...this.props.geometryState},
+                        dag: DAG,
+                        selectedPoints: [],
+                        selectedShapes: []
+                    });
                 }
-
-                DAG.set(a.props.id, shapeNode);
-                this.props.onUpdateLastFailedState();
-                this.props.onUpdateAll({
-                    gs: {...this.props.geometryState},
-                    dag: DAG,
-                    selectedPoints: [],
-                    selectedShapes: []
-                });
             }
 
             else {
@@ -4310,6 +4489,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         point2,
                         point3
                     ),
+                    [0, 180],
                     point2
                 )
 
