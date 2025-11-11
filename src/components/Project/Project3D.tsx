@@ -13,6 +13,7 @@ import { MathCommandLexer } from "../../antlr4/parser/MathCommandLexer";
 import { CharStreams, CommonTokenStream } from "antlr4ts";
 import { MathCommandParser } from "../../antlr4/parser/MathCommandParser";
 import ASTGen from "../../antlr4/astgen/ASTGen";
+import * as THREE from 'three';
 const math = require('mathjs');
 
 interface TimelineItem {
@@ -297,7 +298,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         dag: Map<string, ShapeNode3D>,
         selectedShapes: Shape[],
         selectedPoints: Point[]
-    }) => {
+    }, storeHistory: boolean = true) => {
         state.dag.forEach((node, key) => {
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
@@ -316,7 +317,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 message: ''
             }
         }, () => {
-            if (!this.lastFailedState) {
+            if (!this.lastFailedState && storeHistory) {
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
@@ -456,13 +457,95 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private handleUndoClick = () => {
+        console.log(this.historyStack);
+        function disposeGroup(group: THREE.Group) {
+            if (!group) return;
+
+            // 1. Traverse all descendants
+            group.traverse(object => {
+                // 2. Only check Meshes and dispose their resources
+                if (object instanceof THREE.Mesh) {
+                    // Dispose Geometry
+                    if (object.geometry) {
+                        object.geometry.dispose();
+                    }
+
+                    // Dispose Material and Textures
+                    if (object.material) {
+                        // If the material is an array, iterate through it (e.g., MultiMaterial)
+                        if (Array.isArray(object.material)) {
+                            object.material.forEach(material => material.dispose());
+                        } 
+                        
+                        else {
+                            // Dispose textures associated with the material
+                            for (const key in object.material) {
+                                const value = object.material[key];
+                                if (value && typeof value === 'object' && 'isTexture' in value) {
+                                    value.dispose();
+                                }
+                            }
+                            // Dispose the material itself
+                            object.material.dispose();
+                        }
+                    }
+                }
+            });
+
+            // 3. Remove all children from the group/scene hierarchy
+            // Note: The loop runs backwards to safely remove items from the collection
+            for (let i = group.children.length - 1; i >= 0; i--) {
+                const child = group.children[i];
+                
+                // **Important:** If the child is a nested Group, call disposeGroup on it first.
+                if (child instanceof THREE.Group) {
+                    disposeGroup(child);
+                } else {
+                    // For other objects, just remove them from the group.
+                    group.remove(child);
+                }
+            }
+
+            // 4. Finally, remove the group itself from its parent (e.g., the scene)
+            if (group.parent) {
+                group.parent.remove(group);
+            }
+        }
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {
-                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key) ||
-                    this.lastFailedState?.selectedShapes.find(shape => shape.props.id === key)
+                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key)
                 ) {
                     this.labelUsed = this.labelUsed.filter(label => label !== dag.get(key)!.type.props.label);
+                    const node = dag.get(key)
+                    if (node !== undefined && node.node !== undefined) {
+                        if (node.node instanceof THREE.Group) disposeGroup(node.node);
+                        else if (node.node instanceof THREE.Mesh) {
+                            if (node.node.geometry) {
+                                node.node.geometry.dispose();
+                            }
+
+                            // Dispose Material and Textures
+                            if (node.node.material) {
+                                // If the material is an array, iterate through it (e.g., MultiMaterial)
+                                if (Array.isArray(node.node.material)) {
+                                    node.node.material.forEach(material => material.dispose());
+                                } 
+                                
+                                else {
+                                    // Dispose textures associated with the material
+                                    for (const key in node.node.material) {
+                                        const value = node.node.material[key];
+                                        if (value && typeof value === 'object' && 'isTexture' in value) {
+                                            value.dispose();
+                                        }
+                                    }
+                                    // Dispose the material itself
+                                    node.node.material.dispose();
+                                }
+                            }
+                        }
+                    }
                     dag.delete(key);
                 }
             });
@@ -490,7 +573,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         }
 
         this.dag = copyState.dag;
-        this.labelUsed = copyState.label_used;
+        this.labelUsed = copyState.label_used
 
         this.setState({
             mode: 'edit',
@@ -962,7 +1045,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                             this.dag,
                             this.state.selectedPoints,
                             this.state.selectedShapes,
-                            this.labelUsed
+                            this.labelUsed,
+                            true
                         )
                     }}
                     onRenderMenuRightClick={this.setRightMenuClick}
