@@ -73,7 +73,7 @@ export const createLineDefaultShapeProps = (label: string, radius: number = 0, l
         labelXOffset: labelXOffset,
         labelYOffset: labelYOffset,
         labelZOffset: labelZOffset,
-        id: `line-${label}`
+        id: `line-${uuidv4()}`
     }
 };
 
@@ -89,7 +89,7 @@ export const createVectorDefaultShapeProps = (label: string, radius: number = 0,
         labelXOffset: labelXOffset,
         labelYOffset: labelYOffset,
         labelZOffset: labelZOffset,
-        id: `vector-${label}`
+        id: `vector-${uuidv4()}`
     }
 };
 
@@ -105,7 +105,7 @@ export const createCircleDefaultShapeProps = (label: string, radius: number, lab
         color: 'black',
         visible: {shape: true, label: false},
         fill: true,
-        id: `circle-${label}`
+        id: `circle-${uuidv4()}`
     }
 }
 
@@ -121,7 +121,7 @@ export const createSphereDefaultShapeProps = (label: string, radius: number, lab
         color: 'red',
         visible: {shape: true, label: false},
         fill: true,
-        id: `sphere-${label}`
+        id: `sphere-${uuidv4()}`
     }
 };
 
@@ -137,7 +137,7 @@ export const createSemiCircleDefaultShapeProps = (label: string, radius: number,
         color: 'black',
         visible: {shape: true, label: false},
         fill: true,
-        id: `semi-${label}`
+        id: `semi-${uuidv4()}`
     }
 };
 
@@ -153,7 +153,7 @@ export const createPolygonDefaultShapeProps = (label: string, radius: number = 0
         visible: {shape: true, label: false},
         color: 'red',
         fill: true,
-        id: `polygon-${label}`,
+        id: `polygon-${uuidv4()}`,
         opacity: 0.1
     }
 };
@@ -170,7 +170,7 @@ export const createAngleDefaultShapeProps = (label: string, radius: number = 0, 
         visible: {shape: true, label: false},
         color: 'green',
         fill: true,
-        id: `angle-${label}`,
+        id: `angle-${uuidv4()}`,
         opacity: 0.1
     }
 };
@@ -187,7 +187,7 @@ export const createPlaneDefaultShapeProps = (label: string, radius: number = 0, 
         visible: {shape: true, label: false},
         color: 'blue', // Light blue color for plane
         fill: true,
-        id: `plane-${label}`,
+        id: `plane-${uuidv4()}`,
         opacity: 0.3
     }
 };
@@ -204,7 +204,7 @@ export const createCylinderDefaultShapeProps = (label: string, radius: number, l
         visible: {shape: true, label: false},
         color: '#FF7276', // Light red color for cylinder
         fill: true,
-        id: `cylinder-${label}`,
+        id: `cylinder-${uuidv4()}`,
         opacity: 0.5
     }
 };

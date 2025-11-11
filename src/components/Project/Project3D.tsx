@@ -57,6 +57,7 @@ interface Project3DState {
         title: string,
         input_label: string;
         angleMode: boolean;
+        rotationMode: boolean;
     } | undefined;
     /** For user input */
     data: number | {type: string, label: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
@@ -188,7 +189,39 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private handleKeyDown = (e: KeyboardEvent): void => {
+        const target = e.target as HTMLElement;
+        const isTextInput =
+            target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            (target as HTMLInputElement).isContentEditable;
 
+        if (isTextInput) return; // ✅ Allow normal typing
+
+        // ✅ Only handle global shortcuts here
+        e.preventDefault();
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+            this.dag.forEach((node, key) => {
+                node.isSelected = true;
+            });
+        }
+
+        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            this.handleUndoClick();
+        }
+
+        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+            this.handleRedoClick();
+        }
+
+        else if (e.key === 'Delete') {
+            this.setMode('delete');
+        }
+
+        else if (e.key === 'Escape') {
+            this.dag.forEach((node, key) => {
+                node.isSelected = false;
+            });
+        }
     }
 
     private handleWindowResize = () => {
@@ -494,7 +527,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Point',
                     input_label: 'Enter point in form (x, y, z)',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 }
             });
         }
@@ -504,7 +538,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Circle: Center, Radius and Direction',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -515,7 +550,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Sphere: Center & Radius',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -526,7 +562,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Cone',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -537,7 +574,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Cylinder',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -548,7 +586,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Prism',
                     input_label: 'Height',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -559,7 +598,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Regular Polygon',
                     input_label: 'Vertices',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -570,7 +610,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Rotate around Point',
                     input_label: 'Angle (in degree)',
-                    angleMode: true
+                    angleMode: false,
+                    rotationMode: true
                 },
                 isMenuRightClick: undefined
             });
@@ -581,7 +622,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Segment with Given Length',
                     input_label: 'Length',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -592,7 +634,20 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Dilate from Point',
                     input_label: 'Scale factor',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'angle') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Angle',
+                    input_label: 'Angle Range',
+                    angleMode: true,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -862,7 +917,16 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     timeline={this.state.timeline}
                     setTimeline={this.setTimeline}
                     onUpdateLabelUsed={this.updateLabelUsed}
+                    onRenderErrorDialogbox={(msg) => {
+                        this.setState({
+                            error: {
+                                label: 'Invalid command',
+                                message: `The command is invalid. Please try again`
+                            }
+                        })}
+                    }
                 />
+                
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
                     id="resizer"
@@ -915,6 +979,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     onCancelClick={() => this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})}
                     position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
                     ref={this.dialogRef}
+                    rotationMode={this.state.isDialogBox.rotationMode}
                 />)}
                 {this.state.error.message.length > 0 && <ErrorDialogbox 
                     position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}

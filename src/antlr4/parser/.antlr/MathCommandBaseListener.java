@@ -436,6 +436,18 @@ public class MathCommandBaseListener implements MathCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterNrootExpr(MathCommandParser.NrootExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNrootExpr(MathCommandParser.NrootExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterAbsExpr(MathCommandParser.AbsExprContext ctx) { }
 	/**
 	 * {@inheritDoc}

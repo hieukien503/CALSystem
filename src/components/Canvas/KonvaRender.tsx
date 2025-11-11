@@ -112,6 +112,15 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.handleDrawing(); // ✅ call same function again
         }
 
+        else if (
+            (this.props.mode === 'angle') &&
+            this.props.data.radius !== prevProps.data.radius &&
+            this.props.data.radius !== undefined &&
+            typeof this.props.data.radius === 'string'
+        ) {
+            this.handleDrawing(); // ✅ call same function again
+        }
+
         if (
             prevProps.geometryState !== this.props.geometryState ||
             prevProps.dag !== this.props.dag
@@ -1590,9 +1599,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             shape.vector2.endVector.y - shape.vector2.startVector.y,
         )
 
-        const degree = endAngle - startAngle;
+        let degree = endAngle - startAngle;
+        if (shape.range && shape.range[1] === 180) {
+            degree = (degree < 0 ? 180 + degree : degree);
+        }
 
-        let a = (degree !== 90) ? new Konva.Shape({
+        console.log(degree);
+
+        let a = (Math.abs(degree) !== 90) ? new Konva.Shape({
             sceneFunc: function (context, shape) {
                 const r = shape.attrs.radius;
                 const x = 0;
@@ -1615,7 +1629,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             fill: `rgba(${r},${g},${b},${opacity})`,
             stroke: props.color,
             strokeWidth: scaledStrokeWidth,
-            hitStrokeWidth: 5
+            hitStrokeWidth: 5,
+            id: shape.props.id
         }) : new Konva.Line({
             x: screenPos.x,
             y: screenPos.y,
@@ -2339,6 +2354,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         else if (this.props.mode === 'angle') {
             const [selectedPoints, selectedShapes] = [[...this.props.selectedPoints], [...this.props.selectedShapes]];
+            const data = this.props.data.radius;
+            if (data === undefined || (data !== undefined && typeof data !== 'string')) {
+                this.props.onRenderDialogbox(this.props.mode);
+                return
+            }
+
+            const range: [number, number] = (data === "0to180" ? [0, 180] : [0, 360]);
             if (selectedPoints.length === 0) {
                 if (selectedShapes.length !== 2) return;
                 if (!(selectedShapes[0].props.id.includes('line-')) || !(selectedShapes[1].props.id.includes('line-'))) {
@@ -2350,6 +2372,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                     return;
                 }
+
                 // 2 lines
                 // convert them to Line
                 let [start1, end1] = operation.getStartAndEnd(selectedShapes[0]);
@@ -2430,6 +2453,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             end2.x, end2.y, (end2.z ?? 0)
                         )
                     ),
+                    range,
                     tmpVertex
                 )
 
@@ -2528,6 +2552,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         point2,
                         point3
                     ),
+                    range,
                     point2
                 )
 
@@ -4417,10 +4442,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
 
                 let idx = 1;
-                let poly_label = `regular_poly${idx}`;
+                let poly_label = `regPoly${idx}`;
                 while (labelUsed.includes(poly_label)) {
                     idx += 1;
-                    poly_label = `regular_poly${idx}`;
+                    poly_label = `regPoly${idx}`;
                 }
 
                 labelUsed.push(poly_label);
@@ -4534,10 +4559,10 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
 
                 let idx = 1;
-                let poly_label = `regular_poly${idx}`;
+                let poly_label = `regPoly${idx}`;
                 while (labelUsed.includes(poly_label)) {
                     idx += 1;
-                    poly_label = `regular_poly${idx}`;
+                    poly_label = `regPoly${idx}`;
                 }
 
                 labelUsed.push(poly_label);
@@ -6256,8 +6281,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             let angle = utils.cleanAngle(operation.angleBetween3Points(A, B, C));
             let BA = {
-                x: A.x - B.x,
-                y: A.y - B.y
+                x: (angle < 0 && ((node.type as Angle).range && (node.type as Angle).range[1] === 180)) ? C.x - B.x : A.x - B.x,
+                y: (angle < 0 && ((node.type as Angle).range && (node.type as Angle).range[1] === 180)) ? C.y - B.y : A.y - B.y
+            }
+
+            if ((node.type as Angle).range && (node.type as Angle).range[1] === 180) {
+                angle = (angle < 0 ? 180 + angle : angle);
             }
 
             const angleFromXAxis = (v: { x: number, y: number }) => {
@@ -6267,7 +6296,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let startAngle = utils.cleanAngle(angleFromXAxis(BA));
             let parent = node.node!.getParent();
             if (parent) {
-                let s = (angle !== 90) ? new Konva.Shape({
+                let s = (Math.abs(angle) !== 90) ? new Konva.Shape({
                     sceneFunc: ((context, shape) => {
                         const r = shape.attrs.radius;
                         const x = 0;
@@ -6347,52 +6376,37 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // Handle 2 lines
             let [shape1, shape2] = [this.props.dag.get(ids[0]), this.props.dag.get(ids[1])];
             if (!shape1 || !shape2) {
-                return node;
+                return { ...node! };
             }
 
             // Convert them to Line
             let [start1, end1] = operation.getStartAndEnd(shape1.type);
             let [start2, end2] = operation.getStartAndEnd(shape2.type);
 
-            const tmpShape1 = Factory.createLine(
-                shape1.type.props,
-                Factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    start1.x,
-                    start1.y
-                ),
-                Factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    end1.x,
-                    end1.y
-                ),
-            );
-
-            const tmpShape2 = Factory.createLine(
-                shape2.type.props,
-                Factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    start2.x,
-                    start2.y
-                ),
-                Factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    end2.x,
-                    end2.y
-                ),
-            )
-
-            let angle = utils.cleanAngle(operation.angleBetweenLines(tmpShape1, tmpShape2));
-            let start = {
-                x: tmpShape1.endLine.x - tmpShape1.startLine.x,
-                y: tmpShape1.endLine.y - tmpShape1.startLine.y
+            const v1 = {
+                x: end1.x - start1.x,
+                y: end1.y - start1.y
             }
 
-            const angleFromXAxis = (v: { x: number, y: number }) => {
-                return (math.parse('atan2(y, x)').evaluate({ x: v.x, y: v.y })) * 180 / Math.PI;
+            const v2 = {
+                x: end2.x - start2.x,
+                y: end2.y - start2.y
             }
 
-            let startAngle = utils.cleanAngle(angleFromXAxis(start));
+            const angleFromXAxis = (v: {x: number, y: number}): number => {
+                let degree = (math.parse('atan2(y, x)').evaluate({ x: v.x, y: v.y })) * 180 / Math.PI;
+                if (degree < 0) {
+                    degree += 360;
+                }
+
+                return degree;
+            }
+
+            let angle = angleFromXAxis(v2) - angleFromXAxis(v1);
+            if ((node.type as Angle).range && (node.type as Angle).range[1] === 180) {
+                angle = (angle < 0 ? angle + 180 : angle);
+            }
+
             let intersection = operation.getIntersections2D(shape1.type as Line, shape2.type as Line);
             let vertex: Point | undefined = intersection[0].coors === undefined ? undefined :
                 Factory.createPoint(
@@ -6400,6 +6414,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     intersection[0].coors.x,
                     intersection[0].coors.y
                 )
+
             if (angle === 0 || !vertex) {
                 if (this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -6415,7 +6430,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             else {
                 let parent = node.node!.getParent();
                 if (parent) {
-                    let s = (Math.abs(angle - 90) < constants.EPSILON) ? new Konva.Shape({
+                    let s = Math.abs(angle) !== 90 ? new Konva.Shape({
                         sceneFunc: ((context, shape) => {
                             const r = shape.attrs.radius;
                             const x = 0;
@@ -6430,10 +6445,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                             context.closePath();
                             context.fillStrokeShape(shape);
                         }),
-                        x: vertex.x,
-                        y: vertex.y,
+                        x: utils.convertToScreenCoords(
+                            {x: vertex.x,y: vertex.y},
+                            {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2},
+                            this.props.geometryState.spacing
+                        ).x,
+                        y: utils.convertToScreenCoords(
+                            {x: vertex.x,y: vertex.y},
+                            {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2},
+                            this.props.geometryState.spacing
+                        ).y,
                         radius: 10,
-                        startAngle: startAngle,
+                        startAngle: -angleFromXAxis(v1),
                         angle: angle,
                         fill: node.node!.fill(),
                         stroke: node.node!.stroke(),
@@ -6441,8 +6464,16 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         hitStrokeWidth: 5,
                         id: node.node!.id()
                     }) : new Konva.Line({
-                        x: vertex.x,
-                        y: vertex.y,
+                        x: utils.convertToScreenCoords(
+                            {x: vertex.x,y: vertex.y},
+                            {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2},
+                            this.props.geometryState.spacing
+                        ).x,
+                        y: utils.convertToScreenCoords(
+                            {x: vertex.x,y: vertex.y},
+                            {x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2},
+                            this.props.geometryState.spacing
+                        ).y,
                         points: [
                             0, 0,
                             10, 0,
@@ -6454,7 +6485,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         stroke: node.node!.stroke(),
                         strokeWidth: node.node!.strokeWidth(),
                         hitStrokeWidth: 5,
-                        rotation: startAngle,
+                        rotation: angleFromXAxis(v1),
                         closed: true,
                         draggable: false,
                         id: node.node!.id()
@@ -6477,17 +6508,22 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             if (!(node.type as Angle).vertex || !vertex) {
-                (node.type as Angle).vertex = vertex
+                (node.type as Angle).vertex = vertex;
             }
 
             else {
-                this.updatePointPos((node.type as Angle).vertex!, vertex!.x, vertex!.y);
+                (node.type as Angle).vertex!.x = vertex!.x;
+                (node.type as Angle).vertex!.y = vertex!.y;
             }
 
-            this.updatePointPos((node.type as Angle).vector1.startVector, 0, 0);
-            this.updatePointPos((node.type as Angle).vector1.endVector, start.x + (node.type as Angle).vector1.startVector.x, start.y + (node.type as Angle).vector1.startVector.y);
-            this.updatePointPos((node.type as Angle).vector2.startVector, 0, 0);
-            this.updatePointPos((node.type as Angle).vector2.endVector, (tmpShape2.endLine.x - tmpShape2.startLine.x) + (node.type as Angle).vector2.startVector.x, (tmpShape2.endLine.y - tmpShape2.startLine.y) + (node.type as Angle).vector2.startVector.y);
+            (node.type as Angle).vector1.startVector.x = start1.x;
+            (node.type as Angle).vector1.startVector.y = start1.y;
+            (node.type as Angle).vector1.endVector.x = end1.x;
+            (node.type as Angle).vector1.endVector.y = end1.y;
+            (node.type as Angle).vector2.startVector.x = start2.x;
+            (node.type as Angle).vector2.startVector.y = start2.y;
+            (node.type as Angle).vector2.endVector.x = end2.x;
+            (node.type as Angle).vector2.endVector.y = end2.y;
         }
 
         return { ...node! };
