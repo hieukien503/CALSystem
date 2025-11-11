@@ -82,7 +82,8 @@ export const clone = (
     dag: Map<string, ShapeNode3D>,
     selectedPoints: Point[],
     selectedShapes: Shape[],
-    label_used: string[]
+    label_used: string[],
+    cloneType: boolean = false
 ) => {
     const copyState = structuredClone(state);
     const copySelectedPoints = structuredClone(selectedPoints);
@@ -92,13 +93,14 @@ export const clone = (
     dag.forEach((node, key) => {
         copyDAG.set(key, {
             id: key,
-            type: node.type,
+            type: cloneType ? structuredClone(node.type) : node.type,
             scaleFactor: node.scaleFactor,
             rotationFactor: structuredClone(node.rotationFactor),
             dependsOn: Array.from(node.dependsOn),
             defined: node.defined,
             isSelected: node.isSelected,
-            side: node.side
+            side: node.side,
+            isDraggable: node.isDraggable
         })
     })
 
@@ -122,7 +124,8 @@ export const cloneDAG = (dag: Map<string, ShapeNode3D>): Map<string, ShapeNode3D
             dependsOn: Array.from(node.dependsOn),
             defined: node.defined,
             isSelected: node.isSelected,
-            side: node.side
+            side: node.side,
+            isDraggable: node.isDraggable
         })
     });
 
@@ -220,7 +223,7 @@ export const projectPointOntoLineSegment = (
 
 export const snapToShape3D = (
     DAG: Map<string, ShapeNode3D>,
-    object: THREE.Object3D<THREE.Object3DEventMap>,
+    object: THREE.Object3D<THREE.Object3DEventMap> | undefined,
     pos: THREE.Vector3
 ): {
     position: THREE.Vector3,
@@ -234,6 +237,13 @@ export const snapToShape3D = (
     let position = pos.clone();
     let rotFactor: { center: THREE.Vector3, phi: number; theta: number } | undefined = undefined;
     let scaleFactor: number | undefined = undefined;
+    if (!object) {
+        return {
+            position: position,
+            rotFactor: rotFactor,
+            scaleFactor: scaleFactor
+        }
+    }
 
     const node = DAG.get(object.name);
     if (node) {
@@ -509,7 +519,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             points[i].type = shapeType;
@@ -553,7 +564,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             segment.type = shapeType;
@@ -571,7 +583,8 @@ export const updateShapeAfterTransform = (
                 degree: (data.rotation ? data.rotation.degree : 0),
                 CCW: (data.rotation ? data.rotation.CCW : true)
             } : undefined,
-            scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+            isDraggable: false
         };
 
         dag.set(transformedShape.props.id, shapeNode);
@@ -608,7 +621,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let shapeNode2: ShapeNode3D = {
@@ -622,7 +636,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let anotherShapeNode = {
@@ -636,7 +651,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             transformedShape.type = shapeType;
@@ -677,7 +693,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let shapeNode2: ShapeNode3D = {
@@ -691,7 +708,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let anotherShapeNode = {
@@ -705,7 +723,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             transformedShape.type = shapeType;
@@ -746,7 +765,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let shapeNode2: ShapeNode3D = {
@@ -760,7 +780,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let anotherShapeNode = {
@@ -774,7 +795,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             transformedShape.type = shapeType;
@@ -815,7 +837,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let shapeNode2: ShapeNode3D = {
@@ -829,7 +852,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let anotherShapeNode = {
@@ -843,7 +867,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             transformedShape.type = shapeType;
@@ -893,7 +918,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let anotherShapeNode = {
@@ -907,7 +933,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             transformedShape.type = shapeType;
@@ -946,7 +973,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let shapeNode2: ShapeNode3D = {
@@ -960,7 +988,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             }
 
             let anotherShapeNode = {
@@ -974,7 +1003,8 @@ export const updateShapeAfterTransform = (
                     degree: (data.rotation ? data.rotation.degree : 0),
                     CCW: (data.rotation ? data.rotation.CCW : true)
                 } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined
+                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+                isDraggable: false
             };
 
             transformedShape.type = shapeType;
@@ -1001,7 +1031,8 @@ export const updateShapeAfterTransform = (
                 degree: (data.rotation ? data.rotation.degree : 0),
                 CCW: (data.rotation ? data.rotation.CCW : true)
             } : undefined,
-            scaleFactor: data.scale_factor ? data.scale_factor : undefined
+            scaleFactor: data.scale_factor ? data.scale_factor : undefined,
+            isDraggable: false
         };
 
         transformedShape.type = shapeType;

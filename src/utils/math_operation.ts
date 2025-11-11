@@ -2392,15 +2392,15 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
         else {
             let m = midPoint(p, c.centerC);
             let c1: GeometryShape.Circle = Factory.createCircle(
-                {...c.props},
+                structuredClone(c.props),
                 Factory.createPoint(
-                    {...p.props},
+                    structuredClone(p.props),
                     m.x,
                     m.y,
                     m.z
                 ),
                 d / 2,
-                c.direction ? {...c.direction} : undefined
+                c.direction ? structuredClone(c.direction) : undefined
             )
 
             let intersections = getIntersections2D(c1, c);
@@ -2530,15 +2530,15 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             }
 
             let c1: GeometryShape.Circle = Factory.createCircle(
-                {...c.props},
+                structuredClone(c.props),
                 Factory.createPoint(
-                    {...p.props},
+                    structuredClone(p.props),
                     m.x,
                     m.y,
                     m.z
                 ),
                 d / 2,
-                c.direction ? {...c.direction} : undefined
+                c.direction ? structuredClone(c.direction) : undefined
             )
 
             let intersections = getIntersections2D(c1, c);
@@ -2582,7 +2582,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     if ('startVector' in o1) {
         let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
         let vector = Factory.createVector(
-            {...v.props},
+            structuredClone(v.props),
             reflection(v.startVector, o2) as GeometryShape.Point,
             reflection(v.endVector, o2) as GeometryShape.Point
         );
@@ -2635,7 +2635,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             };
 
             const point = Factory.createPoint(
-                {...p.props},
+                structuredClone(p.props),
                 2 * foot.x - p.x,
                 2 * foot.y - p.y,
                 2 * foot.z - (p.z ?? 0)
@@ -2648,7 +2648,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         else if ('x' in o2 && 'y' in o2) {
             let p2: GeometryShape.Point = o2 as GeometryShape.Point;
             const point = Factory.createPoint(
-                {...p.props},
+                structuredClone(p.props),
                 2 * p2.x - p.x,
                 2 * p2.y - p.y,
                 2 * (p2.z ?? 0) - (p.z ?? 0)
@@ -2669,7 +2669,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
             let numerator = n.x * (p.x - pl.point.x) + n.y * (p.y - pl.point.y) + n.z * ((p.z ?? 0) - (pl.point.z ?? 0));
             let denominator = dot(n.x, n.y, n.z, n.x, n.y, n.z);
             const point = Factory.createPoint(
-                {...p.props},
+                structuredClone(p.props),
                 p.x - (2 * n.x * numerator) / denominator,
                 p.y - (2 * n.y * numerator) / denominator,
                 (p.z ?? 0) - (2 * n.z * numerator) / denominator
@@ -2686,10 +2686,10 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
         let p = reflection(c.centerC, o2) as GeometryShape.Point;
         const circle = Factory.createCircle(
-            {...c.props},
+            structuredClone(c.props),
             p,
             c.radius,
-            c.direction ? {...c.direction} : undefined
+            c.direction ? structuredClone(c.direction) : undefined
         );
 
         circle.type = 'Circle';
@@ -2704,10 +2704,10 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         ];
         
         const semi = Factory.createSemiCircle(
-            {...sem.props},
+            structuredClone(sem.props),
             p1,
             p2,
-            sem.direction? {...sem.direction} : undefined
+            sem.direction? structuredClone(sem.direction) : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -2722,7 +2722,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         })
 
         const polygon = Factory.createPolygon(
-            {...o1.props},
+            structuredClone(o1.props),
             points
         );
 
@@ -2732,7 +2732,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
 
     else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
         let [start2, end2] = getStartAndEnd(o1);
-        let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
+        let [props1, props2] = 'startSegment' in o1 ? [structuredClone(o1.startSegment.props), structuredClone(o1.endSegment.props)] : ('startRay' in o1 ? [structuredClone(o1.startRay.props), structuredClone(o1.endRay.props)] : [structuredClone(o1.startLine.props), structuredClone(o1.endLine.props)]);
         let [start3, end3] = [
             reflection(Factory.createPoint(
                 props1,
@@ -2748,19 +2748,19 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         ]
 
         if ('startSegment' in o1) {
-            const segment = Factory.createSegment({...o1.props}, start3, end3);
+            const segment = Factory.createSegment(structuredClone(o1.props), start3, end3);
             segment.type = 'Segment';
             return segment;
         }
 
         else if ('startRay' in o1) {
-            const ray = Factory.createRay({...o1.props}, start3, end3);
+            const ray = Factory.createRay(structuredClone(o1.props), start3, end3);
             ray.type = 'Ray';
             return ray;
         }
             
         else {
-            const line =  Factory.createLine({...o1.props}, start3, end3);
+            const line =  Factory.createLine(structuredClone(o1.props), start3, end3);
             line.type = 'Line';
             return line;
         }
@@ -2770,7 +2770,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
         let c: GeometryShape.Sphere = o1 as GeometryShape.Sphere;
         let p = reflection(c.centerS, o2) as GeometryShape.Point;
         const s = Factory.createSphere(
-            {...c.props},
+            structuredClone(c.props),
             p,
             c.radius
         );
@@ -2782,9 +2782,9 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     else if ('point' in o1 && 'norm' in o1) {
         let pl: GeometryShape.Plane = o1 as GeometryShape.Plane;
         const plane = Factory.createPlane(
-            {...pl.props},
+            structuredClone(pl.props),
             reflection(pl.point, o2) as GeometryShape.Point,
-            {...pl.norm}
+            structuredClone(pl.norm)
         );
 
         plane.type = 'Plane';
@@ -2794,7 +2794,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
         const cylinder = Factory.createCylinder(
-            {...cy.props},
+            structuredClone(cy.props),
             reflection(cy.centerBase1, o2) as GeometryShape.Point,
             reflection(cy.centerBase2, o2) as GeometryShape.Point,
             cy.radius
@@ -2807,7 +2807,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     else if ('base1' in o1 && 'base2' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
         const prism = Factory.createPrism(
-            {...pr.props},
+            structuredClone(pr.props),
             reflection(pr.base1, o2) as GeometryShape.Polygon,
             reflection(pr.base2, o2) as GeometryShape.Polygon,
         );
@@ -2819,7 +2819,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     else if ('base' in o1 && 'apex' in o1) {
         let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
         const pyramid = Factory.createPyramid(
-            {...py.props},
+            structuredClone(py.props),
             reflection(py.base, o2) as GeometryShape.Polygon,
             reflection(py.apex, o2) as GeometryShape.Point
         );
@@ -2831,7 +2831,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
     else if ('center' in o1 && 'apex' in o1) {
         let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
         const cone = Factory.createCone(
-            {...py.props},
+            structuredClone(py.props),
             reflection(py.center, o2) as GeometryShape.Point,
             reflection(py.apex, o2) as GeometryShape.Point,
             py.radius
@@ -2955,7 +2955,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             }
 
             const point = Factory.createPoint(
-                {...p1.props},
+                structuredClone(p1.props),
                 rotated_point.x,
                 rotated_point.y
             );
@@ -2966,23 +2966,23 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 
         else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
             let [start, end] = getStartAndEnd(o1);
-            let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
-            let [A, B] = [Factory.createPoint({...props1}, start.x, start.y), Factory.createPoint({...props2}, end.x, end.y)];
+            let [props1, props2] = 'startSegment' in o1 ? [structuredClone(o1.startSegment.props), structuredClone(o1.endSegment.props)] : ('startRay' in o1 ? [structuredClone(o1.startRay.props), structuredClone(o1.endRay.props)] : [structuredClone(o1.startLine.props), structuredClone(o1.endLine.props)]);
+            let [A, B] = [Factory.createPoint(structuredClone(props1), start.x, start.y), Factory.createPoint(structuredClone(props2), end.x, end.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
             if ('startSegment' in o1) {
-                const segment = Factory.createSegment({...o1.props}, A, B);
+                const segment = Factory.createSegment(structuredClone(o1.props), A, B);
                 segment.type = 'Segment';
                 return segment;
             }
 
             else if ('startRay' in o1) {
-                const ray = Factory.createRay({...o1.props}, A, B);
+                const ray = Factory.createRay(structuredClone(o1.props), A, B);
                 ray.type = 'Ray';
                 return ray;
             }
                 
             else {
-                const line =  Factory.createLine({...o1.props}, A, B);
+                const line =  Factory.createLine(structuredClone(o1.props), A, B);
                 line.type = 'Line';
                 return line;
             }
@@ -2991,7 +2991,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('startVector' in o1) {
             let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
             let [A, B] = [rotation(v.startVector, o2, degree, CCW) as GeometryShape.Point, rotation(v.endVector, o2, degree, CCW) as GeometryShape.Point];
-            const vector = Factory.createVector({...v.props}, A, B);
+            const vector = Factory.createVector(structuredClone(v.props), A, B);
             vector.type = 'Vector';
             return vector;
         }
@@ -2999,7 +2999,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('centerC' in o1 && 'radius' in o1) {
             let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
             let center = rotation(c.centerC, o2, degree, CCW) as GeometryShape.Point;
-            const circle = Factory.createCircle({...c.props}, center, c.radius, c.direction ? {...c.direction} : undefined);
+            const circle = Factory.createCircle(structuredClone(c.props), center, c.radius, c.direction ? structuredClone(c.direction) : undefined);
             circle.type = 'Circle';
             return circle;
         }
@@ -3012,10 +3012,10 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             ];
 
             const semi = Factory.createSemiCircle(
-                {...sem.props},
+                structuredClone(sem.props),
                 p1,
                 p2,
-                sem.direction ? {...sem.direction} : undefined
+                sem.direction ? structuredClone(sem.direction) : undefined
             );
 
             semi.type = 'SemiCircle';
@@ -3029,7 +3029,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 points.push(rotation(p, o2, degree, CCW) as GeometryShape.Point);
             })
 
-            const polygon = Factory.createPolygon({...poly.props}, points);
+            const polygon = Factory.createPolygon(structuredClone(poly.props), points);
             polygon.type = o1.type;
             return polygon;
         }
@@ -3037,7 +3037,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
             let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
             const cylinder = Factory.createCylinder(
-                {...cy.props},
+                structuredClone(cy.props),
                 rotation(cy.centerBase1, o2, degree, CCW) as GeometryShape.Point,
                 rotation(cy.centerBase2, o2, degree, CCW) as GeometryShape.Point,
                 cy.radius
@@ -3050,7 +3050,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('base1' in o1 && 'base2' in o1) {
             let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
             const prism = Factory.createPrism(
-                {...pr.props},
+                structuredClone(pr.props),
                 rotation(pr.base1, o2, degree, CCW) as GeometryShape.Polygon,
                 rotation(pr.base2, o2, degree, CCW) as GeometryShape.Polygon,
             );
@@ -3062,7 +3062,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('base' in o1 && 'apex' in o1) {
             let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
             const pyramid = Factory.createPyramid(
-                {...py.props},
+                structuredClone(py.props),
                 rotation(py.base, o2, degree, CCW) as GeometryShape.Polygon,
                 rotation(py.apex, o2, degree, CCW) as GeometryShape.Point
             );
@@ -3074,7 +3074,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('center' in o1 && 'apex' in o1) {
             let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
             const cone = Factory.createCone(
-                {...py.props},
+                structuredClone(py.props),
                 rotation(py.center, o2, degree, CCW) as GeometryShape.Point,
                 rotation(py.apex, o2, degree, CCW) as GeometryShape.Point,
                 py.radius
@@ -3110,7 +3110,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             let dot_uv = dot(v.x, v.y, v.z, u.x, u.y, u.z);
 
             const point = Factory.createPoint(
-                {...p.props},
+                structuredClone(p.props),
                 start.x + u.x * symbolicCos(radian) + symbolicSin(radian) * crossProd.x + (1 - symbolicCos(radian)) * dot_uv * v.x,
                 start.y + u.y * symbolicCos(radian) + symbolicSin(radian) * crossProd.y + (1 - symbolicCos(radian)) * dot_uv * v.y,
                 (start.z ?? 0) + u.z * symbolicCos(radian) + symbolicSin(radian) * crossProd.z + (1 - symbolicCos(radian)) * dot_uv * v.z
@@ -3122,23 +3122,23 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
 
         else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
             let [start, end] = getStartAndEnd(o1);
-            let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
-            let [A, B] = [Factory.createPoint({...props1}, start.x, start.y), Factory.createPoint({...props2}, end.x, end.y)];
+            let [props1, props2] = 'startSegment' in o1 ? [structuredClone(o1.startSegment.props), structuredClone(o1.endSegment.props)] : ('startRay' in o1 ? [structuredClone(o1.startRay.props), structuredClone(o1.endRay.props)] : [structuredClone(o1.startLine.props), structuredClone(o1.endLine.props)]);
+            let [A, B] = [Factory.createPoint(structuredClone(props1), start.x, start.y), Factory.createPoint(structuredClone(props2), end.x, end.y)];
             [A, B] = [rotation(A, o2, degree, CCW) as GeometryShape.Point, rotation(B, o2, degree, CCW) as GeometryShape.Point];
             if ('startSegment' in o1) {
-                const segment = Factory.createSegment({...o1.props}, A, B);
+                const segment = Factory.createSegment(structuredClone(o1.props), A, B);
                 segment.type = 'Segment';
                 return segment;
             }
 
             else if ('startRay' in o1) {
-                const ray = Factory.createRay({...o1.props}, A, B);
+                const ray = Factory.createRay(structuredClone(o1.props), A, B);
                 ray.type = 'Ray';
                 return ray;
             }
                 
             else {
-                const line =  Factory.createLine({...o1.props}, A, B);
+                const line =  Factory.createLine(structuredClone(o1.props), A, B);
                 line.type = 'Line';
                 return line;
             }
@@ -3147,7 +3147,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('startVector' in o1) {
             let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
             let [A, B] = [rotation(v.startVector, o2, degree, CCW) as GeometryShape.Point, rotation(v.endVector, o2, degree, CCW) as GeometryShape.Point];
-            const vector = Factory.createVector({...v.props}, A, B);
+            const vector = Factory.createVector(structuredClone(v.props), A, B);
             vector.type = 'Vector';
             return vector;
         }
@@ -3155,7 +3155,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('centerC' in o1 && 'radius' in o1) {
             let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
             let center = rotation(c.centerC, o2, degree, CCW) as GeometryShape.Point;
-            const circle = Factory.createCircle({...c.props}, center, c.radius, c.direction ? {...c.direction} : undefined);
+            const circle = Factory.createCircle(structuredClone(c.props), center, c.radius, c.direction ? structuredClone(c.direction) : undefined);
             circle.type = 'Circle';
             return circle;
         }
@@ -3168,10 +3168,10 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
             ];
 
             const semi = Factory.createSemiCircle(
-                {...sem.props},
+                structuredClone(sem.props),
                 p1,
                 p2,
-                sem.direction ? {...sem.direction} : undefined
+                sem.direction ? structuredClone(sem.direction) : undefined
             );
 
             semi.type = 'SemiCircle';
@@ -3185,7 +3185,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
                 points.push(rotation(p, o2, degree, CCW) as GeometryShape.Point);
             })
 
-            const polygon = Factory.createPolygon({...poly.props}, points);
+            const polygon = Factory.createPolygon(structuredClone(poly.props), points);
             polygon.type = o1.type;
             return polygon;
         }
@@ -3193,7 +3193,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
             let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
             const cylinder = Factory.createCylinder(
-                {...cy.props},
+                structuredClone(cy.props),
                 rotation(cy.centerBase1, o2, degree, CCW) as GeometryShape.Point,
                 rotation(cy.centerBase2, o2, degree, CCW) as GeometryShape.Point,
                 cy.radius
@@ -3206,7 +3206,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('base1' in o1 && 'base2' in o1) {
             let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
             const prism = Factory.createPrism(
-                {...pr.props},
+                structuredClone(pr.props),
                 rotation(pr.base1, o2, degree, CCW) as GeometryShape.Polygon,
                 rotation(pr.base2, o2, degree, CCW) as GeometryShape.Polygon,
             );
@@ -3218,7 +3218,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('base' in o1 && 'apex' in o1) {
             let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
             const pyramid = Factory.createPyramid(
-                {...py.props},
+                structuredClone(py.props),
                 rotation(py.base, o2, degree, CCW) as GeometryShape.Polygon,
                 rotation(py.apex, o2, degree, CCW) as GeometryShape.Point
             );
@@ -3230,7 +3230,7 @@ export const rotation = (o1: GeometryShape.Shape, o2: GeometryShape.Shape, degre
         else if ('center' in o1 && 'apex' in o1) {
             let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
             const cone = Factory.createCone(
-                {...py.props},
+                structuredClone(py.props),
                 rotation(py.center, o2, degree, CCW) as GeometryShape.Point,
                 rotation(py.apex, o2, degree, CCW) as GeometryShape.Point,
                 py.radius
@@ -3293,7 +3293,7 @@ export const exradius = (A: GeometryShape.Point, B: GeometryShape.Point, C: Geom
 
 export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: number): GeometryShape.Shape => {
     if (k === 0) {
-        return {...o2};
+        return structuredClone(o2);
     }
 
     if ('x' in o1 && 'y' in o1) {
@@ -3307,7 +3307,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         // o2p' = k*o2o1 => p' - o2 = k(o1 - o2)
 
         const point = Factory.createPoint(
-            {...o1.props},
+            structuredClone(o1.props),
             o2.x + Math.abs(k) * v.x,
             o2.y + Math.abs(k) * v.y,
             (o2.z ?? 0) + v.z
@@ -3321,10 +3321,10 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
         let p = enlarge(c.centerC, o2, k) as GeometryShape.Point;
         const circle = Factory.createCircle(
-            {...c.props},
+            structuredClone(c.props),
             p,
             Math.abs(k) * c.radius,
-            c.direction ? {...c.direction} : undefined
+            c.direction ? structuredClone(c.direction) : undefined
         );
 
         circle.type = 'Circle';
@@ -3339,10 +3339,10 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         ];
 
         const semi = Factory.createSemiCircle(
-            {...sem.props},
+            structuredClone(sem.props),
             p1,
             p2,
-            sem.direction ? {...sem.direction} : undefined
+            sem.direction ? structuredClone(sem.direction) : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -3357,7 +3357,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         })
 
         const polygon = Factory.createPolygon(
-            {...o1.props},
+            structuredClone(o1.props),
             points
         );
 
@@ -3367,7 +3367,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
 
     else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
         let [start2, end2] = getStartAndEnd(o1);
-        let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
+        let [props1, props2] = 'startSegment' in o1 ? [structuredClone(o1.startSegment.props), structuredClone(o1.endSegment.props)] : ('startRay' in o1 ? [structuredClone(o1.startRay.props), structuredClone(o1.endRay.props)] : [structuredClone(o1.startLine.props), structuredClone(o1.endLine.props)]);
         let [start3, end3] = [
             enlarge(Factory.createPoint(
                 props1,
@@ -3383,19 +3383,19 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         ]
 
         if ('startSegment' in o1) {
-            const segment = Factory.createSegment({...o1.props}, start3, end3);
+            const segment = Factory.createSegment(structuredClone(o1.props), start3, end3);
             segment.type = 'Segment';
             return segment;
         }
 
         else if ('startRay' in o1) {
-            const ray = Factory.createRay({...o1.props}, start3, end3);
+            const ray = Factory.createRay(structuredClone(o1.props), start3, end3);
             ray.type = 'Ray';
             return ray;
         }
             
         else {
-            const line =  Factory.createLine({...o1.props}, start3, end3);
+            const line =  Factory.createLine(structuredClone(o1.props), start3, end3);
             line.type = 'Line';
             return line;
         }
@@ -3404,7 +3404,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
     else if ('startVector' in o1) {
         let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
         const vector = Factory.createVector(
-            {...v.props},
+            structuredClone(v.props),
             enlarge(v.startVector, o2, k) as GeometryShape.Point,
             enlarge(v.endVector, o2, k) as GeometryShape.Point
         );
@@ -3417,7 +3417,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
         let c: GeometryShape.Sphere = o1 as GeometryShape.Sphere;
         let p = enlarge(c.centerS, o2, k) as GeometryShape.Point;
         const sphere = Factory.createSphere(
-            {...c.props},
+            structuredClone(c.props),
             p,
             Math.abs(k) * c.radius
         );
@@ -3429,9 +3429,9 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
     else if ('point' in o1 && 'norm' in o1) {
         let pl: GeometryShape.Plane = o1 as GeometryShape.Plane;
         const plane = Factory.createPlane(
-            {...pl.props},
+            structuredClone(pl.props),
             enlarge(pl.point, o2, k) as GeometryShape.Point,
-            {...pl.norm}
+            structuredClone(pl.norm)
         );
 
         plane.type = 'Plane';
@@ -3441,7 +3441,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
         const cylinder = Factory.createCylinder(
-            {...cy.props},
+            structuredClone(cy.props),
             enlarge(cy.centerBase1, o2, k) as GeometryShape.Point,
             enlarge(cy.centerBase2, o2, k) as GeometryShape.Point,
             cy.radius
@@ -3454,7 +3454,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
     else if ('base1' in o1 && 'base2' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
         const prism = Factory.createPrism(
-            {...pr.props},
+            structuredClone(pr.props),
             enlarge(pr.base1, o2, k) as GeometryShape.Polygon,
             enlarge(pr.base2, o2, k) as GeometryShape.Polygon,
         );
@@ -3466,7 +3466,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
     else if ('base' in o1 && 'apex' in o1) {
         let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
         const pyramid = Factory.createPyramid(
-            {...py.props},
+            structuredClone(py.props),
             enlarge(py.base, o2, k) as GeometryShape.Polygon,
             enlarge(py.apex, o2, k) as GeometryShape.Point
         );
@@ -3478,7 +3478,7 @@ export const enlarge = (o1: GeometryShape.Shape, o2: GeometryShape.Point, k: num
     else if ('center' in o1 && 'apex' in o1) {
         let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
         const cone = Factory.createCone(
-            {...py.props},
+            structuredClone(py.props),
             enlarge(py.center, o2, k) as GeometryShape.Point,
             enlarge(py.apex, o2, k) as GeometryShape.Point,
             py.radius
@@ -3520,7 +3520,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     if ('x' in o1 && 'y' in o1) {
         let p: GeometryShape.Point = o1 as GeometryShape.Point;
         const point = Factory.createPoint(
-            {...o1.props},
+            structuredClone(o1.props),
             p.x + (o2.endVector.x - o2.startVector.x),
             p.y + (o2.endVector.y - o2.startVector.y),
             (p.z ?? 0) + ((o2.endVector.z ?? 0) - (o2.startVector.z ?? 0))
@@ -3534,10 +3534,10 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         let c: GeometryShape.Circle = o1 as GeometryShape.Circle;
         let p = translation(c.centerC, o2) as GeometryShape.Point;
         const circle = Factory.createCircle(
-            {...c.props},
+            structuredClone(c.props),
             p,
             c.radius,
-            c.direction ? {...c.direction} : undefined
+            c.direction ? structuredClone(c.direction) : undefined
         );
 
         circle.type = 'Circle';
@@ -3552,10 +3552,10 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         ];
 
         const semi = Factory.createSemiCircle(
-            {...sem.props},
+            structuredClone(sem.props),
             p1,
             p2,
-            sem.direction ? {...sem.direction} : undefined
+            sem.direction ? structuredClone(sem.direction) : undefined
         );
 
         semi.type = 'SemiCircle';
@@ -3570,7 +3570,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         })
 
         const polygon = Factory.createPolygon(
-            {...o1.props},
+            structuredClone(o1.props),
             points
         );
 
@@ -3580,7 +3580,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
 
     else if ('startSegment' in o1 || 'startRay' in o1 || 'startLine' in o1) {
         let [start2, end2] = getStartAndEnd(o1);
-        let [props1, props2] = 'startSegment' in o1 ? [{...o1.startSegment.props}, {...o1.endSegment.props}] : ('startRay' in o1 ? [{...o1.startRay.props}, {...o1.endRay.props}] : [{...o1.startLine.props}, {...o1.endLine.props}]);
+        let [props1, props2] = 'startSegment' in o1 ? [structuredClone(o1.startSegment.props), structuredClone(o1.endSegment.props)] : ('startRay' in o1 ? [structuredClone(o1.startRay.props), structuredClone(o1.endRay.props)] : [structuredClone(o1.startLine.props), structuredClone(o1.endLine.props)]);
         let [start3, end3] = [
             translation(Factory.createPoint(
                 props1,
@@ -3596,19 +3596,19 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         ]
 
         if ('startSegment' in o1) {
-            const segment = Factory.createSegment({...o1.props}, start3, end3);
+            const segment = Factory.createSegment(structuredClone(o1.props), start3, end3);
             segment.type = 'Segment';
             return segment;
         }
 
         else if ('startRay' in o1) {
-            const ray = Factory.createRay({...o1.props}, start3, end3);
+            const ray = Factory.createRay(structuredClone(o1.props), start3, end3);
             ray.type = 'Ray';
             return ray;
         }
             
         else {
-            const line =  Factory.createLine({...o1.props}, start3, end3);
+            const line =  Factory.createLine(structuredClone(o1.props), start3, end3);
             line.type = 'Line';
             return line;
         }
@@ -3617,7 +3617,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     else if ('startVector' in o1) {
         let v: GeometryShape.Vector = o1 as GeometryShape.Vector;
         const vector = Factory.createVector(
-            {...v.props},
+            structuredClone(v.props),
             translation(v.startVector, o2) as GeometryShape.Point,
             translation(v.endVector, o2) as GeometryShape.Point
         );
@@ -3630,7 +3630,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
         let c: GeometryShape.Sphere = o1 as GeometryShape.Sphere;
         let p = translation(c.centerS, o2) as GeometryShape.Point;
         const sphere = Factory.createSphere(
-            {...c.props},
+            structuredClone(c.props),
             p,
             c.radius
         );
@@ -3642,9 +3642,9 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     else if ('point' in o1 && 'norm' in o1) {
         let pl: GeometryShape.Plane = o1 as GeometryShape.Plane;
         const plane = Factory.createPlane(
-            {...pl.props},
+            structuredClone(pl.props),
             translation(pl.point, o2) as GeometryShape.Point,
-            {...pl.norm}
+            structuredClone(pl.norm)
         );
 
         plane.type = 'Plane';
@@ -3654,7 +3654,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     else if ('centerBase1' in o1 && 'centerBase2' in o1 && 'radius' in o1) {
         let cy: GeometryShape.Cylinder = o1 as GeometryShape.Cylinder;
         const cylinder = Factory.createCylinder(
-            {...cy.props},
+            structuredClone(cy.props),
             translation(cy.centerBase1, o2) as GeometryShape.Point,
             translation(cy.centerBase2, o2) as GeometryShape.Point,
             cy.radius
@@ -3667,7 +3667,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     else if ('base1' in o1 && 'base2' in o1) {
         let pr: GeometryShape.Prism = o1 as GeometryShape.Prism;
         const prism = Factory.createPrism(
-            {...pr.props},
+            structuredClone(pr.props),
             translation(pr.base1, o2) as GeometryShape.Polygon,
             translation(pr.base2, o2) as GeometryShape.Polygon
         );
@@ -3679,7 +3679,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     else if ('base' in o1 && 'apex' in o1) {
         let py: GeometryShape.Pyramid = o1 as GeometryShape.Pyramid;
         const pyramid = Factory.createPyramid(
-            {...py.props},
+            structuredClone(py.props),
             translation(py.base, o2) as GeometryShape.Polygon,
             translation(py.apex, o2) as GeometryShape.Point
         );
@@ -3691,7 +3691,7 @@ export const translation = (o1: GeometryShape.Shape, o2: GeometryShape.Vector): 
     else if ('center' in o1 && 'apex' in o1) {
         let py: GeometryShape.Cone = o1 as GeometryShape.Cone;
         const cone = Factory.createCone(
-            {...py.props},
+            structuredClone(py.props),
             translation(py.center, o2) as GeometryShape.Point,
             translation(py.apex, o2) as GeometryShape.Point,
             py.radius

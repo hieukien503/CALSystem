@@ -26,6 +26,7 @@ interface Tool3DProps {
     timeline: TimelineItem[];
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
     onUpdateLabelUsed: (labelUsed: string[]) => void;
+    onRenderErrorDialogbox: (message: string) => void;
 }
 
 interface Tool3DState {
@@ -143,6 +144,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     onUpdateDAG={this.props.onUpdateDAG}
                                     onUpdateLabelUsed={this.props.onUpdateLabelUsed}
                                     labelUsed={this.props.labelUsed}
+                                    onRenderErrorDialogbox={this.props.onRenderErrorDialogbox}
                                 /> : <AnimationTool3D
                                     width={this.props.width}
                                     height={this.props.height}

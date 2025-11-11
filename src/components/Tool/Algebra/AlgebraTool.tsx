@@ -116,11 +116,37 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
         }
 
         else if (shape === 'Segment') {
-            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{Segment}\\left(${formatLabel((shapeNode.type as GeometryShape.Segment).startSegment.props.label)},${formatLabel((shapeNode.type as GeometryShape.Segment).endSegment.props.label)}\\right)$`
+            const v = {
+                x: (shapeNode.type as GeometryShape.Segment).endSegment.x - (shapeNode.type as GeometryShape.Segment).startSegment.x,
+                y: (shapeNode.type as GeometryShape.Segment).endSegment.y - (shapeNode.type as GeometryShape.Segment).startSegment.y,
+            }
+
+            const segmentLength = Math.sqrt(v.x ** 2 + v.y ** 2);
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Segment}\left(${formatLabel((shapeNode.type as GeometryShape.Segment).startSegment.props.label)},${formatLabel((shapeNode.type as GeometryShape.Segment).endSegment.props.label)}\right)\\
+            Length = ${this.formatNumbers(segmentLength)}
+            \end{array}
+            \]`
         }
 
         else if (shape === 'Vector') {
-            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{Vector}\\left(${formatLabel((shapeNode.type as GeometryShape.Vector).startVector.props.label)},${formatLabel((shapeNode.type as GeometryShape.Vector).endVector.props.label)}\\right))$`
+            const dir = {
+                x: (shapeNode.type as GeometryShape.Vector).endVector.x - (shapeNode.type as GeometryShape.Vector).startVector.x,
+                y: (shapeNode.type as GeometryShape.Vector).endVector.y - (shapeNode.type as GeometryShape.Vector).startVector.y,
+            }
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Vector}\left(${formatLabel((shapeNode.type as GeometryShape.Vector).startVector.props.label)},${formatLabel((shapeNode.type as GeometryShape.Vector).endVector.props.label)}\right))\\
+            = = \begin{pmatrix}
+            ${this.formatNumbers(dir.x)}\\
+            ${this.formatNumbers(dir.y)}
+            \end{pmatrix}
+            \end{array}
+            \]
+            `
         }
 
         else if (shape === 'Ray') {
@@ -134,11 +160,25 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                 stringOfLabels.push(formatLabel(point.props.label));
             });
 
-            return `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(${stringOfLabels.join(',')}\\right)$`
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(${stringOfLabels.join(',')}\right)\\
+            Area = ${this.formatNumbers((shapeNode.type as GeometryShape.Polygon).area ?? 0)}
+            \end{array}
+            \]
+            `
         }
 
         else if (shape === 'Circle') {
-            return `$\\mathrm{${formatLabel(label)}}: Circle\\left(${formatLabel((shapeNode.type as GeometryShape.Circle).centerC.props.label)},${(shapeNode.type as GeometryShape.Circle).radius}\\right)$`
+            return String.raw`
+            \[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{Vector}\left(${formatLabel((shapeNode.type as GeometryShape.Circle).centerC.props.label)},${(shapeNode.type as GeometryShape.Circle).radius}\right)\\
+            Area = ${this.formatNumbers((shapeNode.type as GeometryShape.Circle).area ?? 0)}
+            \end{array}
+            \]
+            `
         }
 
         else if (shape === 'Intersection') {
@@ -166,7 +206,10 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
         }
 
         else if (!(['Translation', 'Rotation', 'Reflection', 'Enlarge'].includes(shape))) {
-            let str = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(`;
+            let str = String.raw
+            `\[
+            \begin{array}{l}
+            \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(`;
             let labels = shapeNode.dependsOn.map(id => {
                 const node = this.props.dag.get(id)!;
                 let label = node.type.props.label;
@@ -177,7 +220,42 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                 str += label + ",";
             });
 
-            str = str.slice(0, -1) + "\\right)$";
+            str = str.slice(0, -1) + "\\right)";
+            if (shapeNode.type.type === 'Angle') {
+                const v1 = {
+                    x: (shapeNode.type as GeometryShape.Angle).vector1.endVector.x - (shapeNode.type as GeometryShape.Angle).vector1.startVector.x,
+                    y: (shapeNode.type as GeometryShape.Angle).vector1.endVector.y - (shapeNode.type as GeometryShape.Angle).vector1.startVector.y
+                }
+
+                const v2 = {
+                    x: (shapeNode.type as GeometryShape.Angle).vector2.endVector.x - (shapeNode.type as GeometryShape.Angle).vector2.startVector.x,
+                    y: (shapeNode.type as GeometryShape.Angle).vector2.endVector.y - (shapeNode.type as GeometryShape.Angle).vector2.startVector.y
+                }
+
+                const angleFromXAxis = (v: {x: number, y: number}): number => {
+                    let degree = Math.atan2(v.y, v.x) * 180 / Math.PI;
+                    if (degree < 0) {
+                        degree += 360;
+                    }
+
+                    return degree;
+                }
+
+                let angle = angleFromXAxis(v2) - angleFromXAxis(v1);
+                if ((shapeNode.type as GeometryShape.Angle).range && (shapeNode.type as GeometryShape.Angle).range[1] === 180) {
+                    angle = (angle < 0 ? angle + 180 : angle);
+                }
+
+                else {
+                    angle = (angle < 0 ? angle + 360 : angle);
+                }
+
+                str += String.raw`
+                    \\= ${this.formatNumbers(Math.abs(angle))}^{\circ}
+                `
+            }
+
+            str += String.raw`\end{array}\]`
             return str;
         }
 

@@ -13,6 +13,7 @@ import { MathCommandLexer } from "../../antlr4/parser/MathCommandLexer";
 import { CharStreams, CommonTokenStream } from "antlr4ts";
 import { MathCommandParser } from "../../antlr4/parser/MathCommandParser";
 import ASTGen from "../../antlr4/astgen/ASTGen";
+import * as THREE from 'three';
 const math = require('mathjs');
 
 interface TimelineItem {
@@ -57,6 +58,7 @@ interface Project3DState {
         title: string,
         input_label: string;
         angleMode: boolean;
+        rotationMode: boolean;
     } | undefined;
     /** For user input */
     data: number | {type: string, label: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | undefined;
@@ -188,7 +190,39 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private handleKeyDown = (e: KeyboardEvent): void => {
+        const target = e.target as HTMLElement;
+        const isTextInput =
+            target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            (target as HTMLInputElement).isContentEditable;
 
+        if (isTextInput) return; // ✅ Allow normal typing
+
+        // ✅ Only handle global shortcuts here
+        e.preventDefault();
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+            this.dag.forEach((node, key) => {
+                node.isSelected = true;
+            });
+        }
+
+        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            this.handleUndoClick();
+        }
+
+        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+            this.handleRedoClick();
+        }
+
+        else if (e.key === 'Delete') {
+            this.setMode('delete');
+        }
+
+        else if (e.key === 'Escape') {
+            this.dag.forEach((node, key) => {
+                node.isSelected = false;
+            });
+        }
     }
 
     private handleWindowResize = () => {
@@ -264,7 +298,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         dag: Map<string, ShapeNode3D>,
         selectedShapes: Shape[],
         selectedPoints: Point[]
-    }) => {
+    }, storeHistory: boolean = true) => {
         state.dag.forEach((node, key) => {
             if (!state.selectedPoints.find(value => value.props.id === key) && !state.selectedShapes.find(value => value.props.id === key)) {
                 node.isSelected = false;
@@ -283,7 +317,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 message: ''
             }
         }, () => {
-            if (!this.lastFailedState) {
+            if (!this.lastFailedState && storeHistory) {
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
@@ -423,13 +457,95 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private handleUndoClick = () => {
+        console.log(this.historyStack);
+        function disposeGroup(group: THREE.Group) {
+            if (!group) return;
+
+            // 1. Traverse all descendants
+            group.traverse(object => {
+                // 2. Only check Meshes and dispose their resources
+                if (object instanceof THREE.Mesh) {
+                    // Dispose Geometry
+                    if (object.geometry) {
+                        object.geometry.dispose();
+                    }
+
+                    // Dispose Material and Textures
+                    if (object.material) {
+                        // If the material is an array, iterate through it (e.g., MultiMaterial)
+                        if (Array.isArray(object.material)) {
+                            object.material.forEach(material => material.dispose());
+                        } 
+                        
+                        else {
+                            // Dispose textures associated with the material
+                            for (const key in object.material) {
+                                const value = object.material[key];
+                                if (value && typeof value === 'object' && 'isTexture' in value) {
+                                    value.dispose();
+                                }
+                            }
+                            // Dispose the material itself
+                            object.material.dispose();
+                        }
+                    }
+                }
+            });
+
+            // 3. Remove all children from the group/scene hierarchy
+            // Note: The loop runs backwards to safely remove items from the collection
+            for (let i = group.children.length - 1; i >= 0; i--) {
+                const child = group.children[i];
+                
+                // **Important:** If the child is a nested Group, call disposeGroup on it first.
+                if (child instanceof THREE.Group) {
+                    disposeGroup(child);
+                } else {
+                    // For other objects, just remove them from the group.
+                    group.remove(child);
+                }
+            }
+
+            // 4. Finally, remove the group itself from its parent (e.g., the scene)
+            if (group.parent) {
+                group.parent.remove(group);
+            }
+        }
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {
-                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key) ||
-                    this.lastFailedState?.selectedShapes.find(shape => shape.props.id === key)
+                if (this.lastFailedState?.selectedPoints.find(point => point.props.id === key)
                 ) {
                     this.labelUsed = this.labelUsed.filter(label => label !== dag.get(key)!.type.props.label);
+                    const node = dag.get(key)
+                    if (node !== undefined && node.node !== undefined) {
+                        if (node.node instanceof THREE.Group) disposeGroup(node.node);
+                        else if (node.node instanceof THREE.Mesh) {
+                            if (node.node.geometry) {
+                                node.node.geometry.dispose();
+                            }
+
+                            // Dispose Material and Textures
+                            if (node.node.material) {
+                                // If the material is an array, iterate through it (e.g., MultiMaterial)
+                                if (Array.isArray(node.node.material)) {
+                                    node.node.material.forEach(material => material.dispose());
+                                } 
+                                
+                                else {
+                                    // Dispose textures associated with the material
+                                    for (const key in node.node.material) {
+                                        const value = node.node.material[key];
+                                        if (value && typeof value === 'object' && 'isTexture' in value) {
+                                            value.dispose();
+                                        }
+                                    }
+                                    // Dispose the material itself
+                                    node.node.material.dispose();
+                                }
+                            }
+                        }
+                    }
                     dag.delete(key);
                 }
             });
@@ -457,7 +573,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         }
 
         this.dag = copyState.dag;
-        this.labelUsed = copyState.label_used;
+        this.labelUsed = copyState.label_used
 
         this.setState({
             mode: 'edit',
@@ -494,7 +610,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Point',
                     input_label: 'Enter point in form (x, y, z)',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 }
             });
         }
@@ -504,7 +621,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Circle: Center, Radius and Direction',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -515,7 +633,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Sphere: Center & Radius',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -526,7 +645,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Cone',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -537,7 +657,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Cylinder',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -548,7 +669,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Prism',
                     input_label: 'Height',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -559,7 +681,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Regular Polygon',
                     input_label: 'Vertices',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -570,7 +693,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Rotate around Point',
                     input_label: 'Angle (in degree)',
-                    angleMode: true
+                    angleMode: false,
+                    rotationMode: true
                 },
                 isMenuRightClick: undefined
             });
@@ -581,7 +705,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Segment with Given Length',
                     input_label: 'Length',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -592,7 +717,20 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 isDialogBox: {
                     title: 'Dilate from Point',
                     input_label: 'Scale factor',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
+                },
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'angle') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Angle',
+                    input_label: 'Angle Range',
+                    angleMode: true,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -862,7 +1000,16 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     timeline={this.state.timeline}
                     setTimeline={this.setTimeline}
                     onUpdateLabelUsed={this.updateLabelUsed}
+                    onRenderErrorDialogbox={(msg) => {
+                        this.setState({
+                            error: {
+                                label: 'Invalid command',
+                                message: `The command is invalid. Please try again`
+                            }
+                        })}
+                    }
                 />
+                
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
                     id="resizer"
@@ -898,7 +1045,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                             this.dag,
                             this.state.selectedPoints,
                             this.state.selectedShapes,
-                            this.labelUsed
+                            this.labelUsed,
+                            true
                         )
                     }}
                     onRenderMenuRightClick={this.setRightMenuClick}
@@ -915,6 +1063,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     onCancelClick={() => this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})}
                     position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
                     ref={this.dialogRef}
+                    rotationMode={this.state.isDialogBox.rotationMode}
                 />)}
                 {this.state.error.message.length > 0 && <ErrorDialogbox 
                     position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}

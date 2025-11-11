@@ -1,12 +1,16 @@
-import React from "react";
+import React, { RefObject } from "react";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AddIcon from '@mui/icons-material/Add';
 import * as utils from "../../../utils/utilities";
 import * as utils3d from "../../../utils/utilities3D"
 import * as GeometryShape from "../../../types/geometry"
 import Latex from 'react-latex';
-import * as math from 'mathjs';
-import * as operations from '../../../utils/math_operation'
+import * as operations from '../../../utils/math_operation';
+import { MathCommandLexer } from "../../../antlr4/parser/MathCommandLexer";
+import { CharStreams, CommonTokenStream } from "antlr4ts";
+import { MathCommandParser } from "../../../antlr4/parser/MathCommandParser";
+import ASTGen from "../../../antlr4/astgen/ASTGen";
+import SuggestionList from "../../Suggestion";
 
 interface AlgebraItemProps {
     color: string;
@@ -66,136 +70,362 @@ interface AlgebraInputItemProps {
     onClick: (e: React.MouseEvent) => void;
     onUpdateDAG: (dag: Map<string, GeometryShape.ShapeNode3D>) => void;
     onUpdateLabelUsed: (labelUsed: string[]) => void;
+    onRenderErrorDiaglogbox: (message: string) => void;
 }
 
 interface AlgebraInputItemState {
     value_from_input: string;
+    params: {
+        start: number, end: number, text: string, selected: boolean
+    }[];
+    suggestionIdx: {
+        keywordIdx: number, commandIdx: number
+    }
+    suggestedItem: {
+        keyword: string;
+        commands: {
+            instruction: string;
+            description: string;
+        }[]
+    }[];
+    matchString: string,
+    position: {
+        top: number,
+        left: number
+    }
 }
 
 export class AlgebraInputItem extends React.Component<AlgebraInputItemProps, AlgebraInputItemState> {
-    private tex: string;
+    private commandList: {
+        keyword: string;
+        commands: {
+            instruction: string;
+            description: string;
+        }[]
+    }[];
+    
+    private inputRef: RefObject<HTMLInputElement | null>;
     constructor(props: AlgebraInputItemProps) {
         super(props);
         this.state = {
-            value_from_input: ''
+            value_from_input: '',
+            params: [],
+            suggestionIdx: {
+                keywordIdx: 0, commandIdx: -1
+            },
+            suggestedItem: [],
+            matchString: '',
+            position: {
+                top: 0, left: 0
+            }
         }
-        this.tex = '';
+        this.inputRef = React.createRef<HTMLInputElement>();
+        this.commandList = [
+            {
+                keyword: "Point",
+                commands: [{
+                    instruction: "Point(number, number, number)",
+                    description: "Create point in 3D"
+                }],
+            },
+            {
+                keyword: "Sphere",
+                commands: [
+                    {
+                        instruction: "Sphere(Point, Point)",
+                        description: "Create a sphere with center and a point"
+                    },
+                    {
+                        instruction: "Sphere(Point, number)",
+                        description: "Create a sphere with center and radius"
+                    }
+                ]
+            },
+            {
+                keyword: "Line",
+                commands: [
+                    {
+                        instruction: "Line(Point, Point)",
+                        description: "Create a line passes through 2 points"
+                    },
+                    {
+                        instruction: "Line(Point, Line)",
+                        description: "Create a line passes through one point and parallel to other line"
+                    },
+                    {
+                        instruction: "Line(Point, Vector)",
+                        description: "Create a line passes through one point and has given direction vector"
+                    }
+                ]
+            },
+            {
+                keyword: "Plane",
+                commands: [
+                    {
+                        instruction: "Plane(Polygon)",
+                        description: "Create a plane contains the polygon"
+                    },
+                    {
+                        instruction: "Plane(Point, Line)",
+                        description: "Create a plane passes through a point and perpendicular to line"
+                    },
+                    {
+                        instruction: "Plane(Point, Plane)",
+                        description: "Create a plane passes through a point and parallel to plane"
+                    },
+                    {
+                        instruction: "Plane(Point, Vector, Vector)",
+                        description: "Create a plane from a point and 2 vectors"
+                    },
+                    {
+                        instruction: "Plane(Point, Point, Point)",
+                        description: "Create a plane passes through 3 points"
+                    },
+                    {
+                        instruction: "Plane(Line, Line)",
+                        description: "Create a plane contains 2 lines"
+                    }
+                ]
+            },
+            {
+                keyword: "Angle",
+                commands: [
+                    {
+                        instruction: "Angle(Vector)",
+                        description: "Measure the angle between given vector and Ox"
+                    },
+                    {
+                        instruction: "Angle(Point)",
+                        description: "Measure the angle between the vector formed by the given point and origin, and Ox"
+                    },
+                    {
+                        instruction: "Angle(Vector, Vector)",
+                        description: "Measure the angle between 2 vectors"
+                    },
+                    {
+                        instruction: "Angle(Line, Line)",
+                        description: "Measure the angle between 2 lines"
+                    },
+                    {
+                        instruction: "Angle(Line, Plane)",
+                        description: "Measure the angle between line and plane"
+                    },
+                    {
+                        instruction: "Angle(Plane, Plane)",
+                        description: "Measure the angle between 2 planes"
+                    },
+                    {
+                        instruction: "Angle(Point, Point, Point)",
+                        description: "Measure the angle between 3 points, where second point is the vertex"
+                    }
+                ]
+            },
+            {
+                keyword: "Vector",
+                commands: [
+                    {
+                        instruction: "Vector(Point, Point)",
+                        description: "Create a vector with start point and end point"
+                    },
+                    {
+                        instruction: "Vector(Point)",
+                        description: "Create a vector from point, with origin as the start point"
+                    }
+                ]
+            },
+            {
+                keyword: "Polygon",
+                commands: [
+                    {
+                        instruction: "Polygon(Point, Point, ...)",
+                        description: "Create a polygon from the list of points"
+                    },
+                    {
+                        instruction: "Polygon(Point, Point, number, Plane)",
+                        description: "Create a regular polygon with 2 starting vertices and number of edges, lies on the plane"
+                    }
+                ]
+            }
+        ]
     }
+
+    componentDidUpdate(prevProps: Readonly<AlgebraInputItemProps>, prevState: Readonly<AlgebraInputItemState>, snapshot?: any): void {
+        if (prevState.value_from_input !== this.state.value_from_input) {
+            const cursorPos = this.inputRef.current?.selectionStart || this.state.value_from_input.length;
+    
+            // Find the start of the current word by looking backwards for delimiters
+            let wordStart = cursorPos - 1;
+            while (wordStart >= 0 && /[a-zA-Z]/.test(this.state.value_from_input[wordStart])) {
+            wordStart--;
+            }
+            wordStart++;
+            
+            const currentWord = this.state.value_from_input.substring(wordStart, cursorPos);
+            
+            // Only show suggestions if we're typing a word
+            if (currentWord && /^[a-zA-Z]+$/.test(currentWord)) {
+                const matches = this.commandList.filter(cmd =>
+                    cmd.keyword.startsWith(currentWord)
+                );
+
+                this.setState({
+                    suggestedItem: matches,
+                    suggestionIdx: {
+                        keywordIdx: 0, commandIdx: -1
+                    }
+                })
+            } 
+            
+            else {
+                this.setState({
+                    suggestedItem: []
+                })
+            }
+        }
+    }
+
+    private handleFocus = () => {
+        if (this.inputRef.current) {
+            const rect = this.inputRef.current.getBoundingClientRect();
+            this.setState({position: {
+                top: rect.bottom + 12, // add scroll offset
+                left: rect.left + 58,
+            }});
+        }
+    };
+
+    private extractParams = (signature: string) => {
+        const match = signature.match(/\(([^)]+)\)/);
+        if (!match) return [];
+        return match[1].split(',').map(p => p.trim());
+    };
+
+    private handleSubmit = (): void => {
+        try {
+            const DAG = utils3d.cloneDAG(this.props.dag);
+            const labelUsed = [...this.props.labelUsed];
+            const inputStream = CharStreams.fromString(this.state.value_from_input);
+            const lexer = new MathCommandLexer(inputStream);
+            const tokens = new CommonTokenStream(lexer);
+            const parser = new MathCommandParser(tokens);
+            const tree = parser.program();
+            const ast = new ASTGen(DAG, labelUsed);
+            ast.visit(tree);
+            this.props.onUpdateDAG(DAG);
+            this.props.onUpdateLabelUsed(labelUsed);
+        }
+        
+        catch (error) {
+            this.props.onRenderErrorDiaglogbox('Invalid command!');
+        }
+
+        finally {
+            this.setState({
+                value_from_input: ''
+            })
+        }
+    }
+
+    private handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        this.setState({ value_from_input: newValue });
+    }
+
+    private insertCommand = (command: { instruction: string, description: string }) => {
+        const signature = command.instruction;
+        const params = this.extractParams(signature);
+        // Find where to insert the command
+        const cursorPos = this.inputRef.current?.selectionStart || this.state.value_from_input.length;
+        
+        // Find the start of the current word
+        let wordStart = cursorPos - 1;
+        while (wordStart >= 0 && /[a-zA-Z]/.test(this.state.value_from_input[wordStart])) {
+            wordStart--;
+        }
+
+        wordStart++;
+        
+        // Replace the current word with the signature
+        const before = this.state.value_from_input.substring(0, wordStart);
+        const after = this.state.value_from_input.substring(cursorPos);
+        const newInput = before + signature + after;
+        
+        const placeHolders: {
+            start: number, end: number, text: string, selected: boolean
+        }[] = [];
+        let searchStart = wordStart;
+
+        params.forEach((param) => {
+            const paramIndex = (before + signature).indexOf(param, searchStart);
+            if (paramIndex !== -1) {
+                placeHolders.push({
+                    start: paramIndex,
+                    end: paramIndex + param.length,
+                    text: param,
+                    selected: false
+                });
+
+                searchStart = paramIndex + param.length;
+            }
+        });
+        
+        this.setState({
+            value_from_input: newInput,
+            suggestedItem: [],
+            suggestionIdx: { keywordIdx: 0, commandIdx: -1 },
+            params: placeHolders,
+            matchString: ''
+        },() => {
+            // 2️⃣ After state is updated, set the DOM value directly
+            if (this.inputRef.current) {
+                this.inputRef.current.value = newInput;
+            }
+        })
+    };
 
     private handleKeyDown = (e: React.KeyboardEvent): void => {
         if (e.key === 'Enter') {
-            try {
-                const node = math.parse(this.state.value_from_input);
-                this.tex = node.toTex({
-                    handler: (node: math.MathNode, options: any): string => {
-                        if ((node as math.ParenthesisNode).isParenthesisNode === true) {
-                            const innerExpr = (node as math.ParenthesisNode).content;
-                            return `\\left(${innerExpr.toTex(options)}\\right)`
-                        }
-
-                        if ((node as math.OperatorNode).isOperatorNode === true) {
-                            const [left, right] = (node as math.OperatorNode).args;
-                           return `${left.toTex(options)}${(node as math.OperatorNode).op}${(node as math.OperatorNode).op === '^' ? '{' : ''}${right.toTex(options)}${(node as math.OperatorNode).op === '^' ? '}' : ''}`
-                        }
-
-                        if ((node as math.FunctionNode).isFunctionNode === true) {
-                            switch ((node as math.FunctionNode).fn.name) {
-                                case 'sqrt': {
-                                    if ((node as math.FunctionNode).args.length === 1) {
-                                        return node.toTex(options);
-                                    }
-
-                                    else if ((node as math.FunctionNode).args.length === 2) {
-                                        const [base, arg] = (node as math.FunctionNode).args;
-                                        return `\\sqrt[${base.toTex(options)}]{${arg.toTex(options)}}`
-                                    }
-
-                                    throw new Error('Invalid square root command');
-                                }
-
-                                case 'log': {
-                                    if ((node as math.FunctionNode).args.length === 1) {
-                                        return node.toTex(options);
-                                    }
-
-                                    if ((node as math.FunctionNode).args.length === 2) {
-                                        const [base, arg] = (node as math.FunctionNode).args;
-                                        return `\\log_[${base.toTex(options)}]{\\left(${arg.toTex(options)}\\right)}`
-                                    }
-
-                                    throw new Error('Invalid log command');
-                                }
-
-                                case 'sin': {
-                                    if ((node as math.FunctionNode).args.length === 1) {
-                                        return `\\sin\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
-                                    }
-
-                                    throw new Error('Invalid sin command');
-                                }
-
-                                case 'cos': {
-                                    if ((node as math.FunctionNode).args.length === 1) {
-                                        return `\\cos\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
-                                    }
-
-                                    throw new Error('Invalid cos command');
-                                }
-
-                                case 'tan': {
-                                    if ((node as math.FunctionNode).args.length === 1) {
-                                        return `\\tan\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
-                                    }
-
-                                    throw new Error('Invalid tan command');
-                                }
-
-                                case 'cot': {
-                                    if ((node as math.FunctionNode).args.length === 1) {
-                                        return `\\cot\\left(${(node as math.FunctionNode).args[0].toTex(options)}\\right)`;
-                                    }
-
-                                    throw new Error('Invalid cot command');
-                                }
-                            }
-                        }
-                        return node.toTex();
-                    }
-                });
-            }
-            
-            catch (error) {
-                this.tex = ''; // Avoid rendering broken math
-            }
+            this.handleSubmit();
         }
-    }
+    }   
 
     render(): React.ReactNode {
         return (
-            <div style={{padding: '3px 3px 3px 23px', width: '100%', marginLeft: '0px', position: 'relative'}}
-                className={`avInputItem`}
-            >
-                <div 
-                    className={`TreeItem newRadioButtonTreeItemParent`}
-                    style={{display: "inline"}}
+            <>
+                <div style={{padding: '3px 3px 3px 23px', width: '100%', marginLeft: '0px', position: 'relative'}}
+                    className={`avInputItem`}
                 >
-                    <div className="elem">
-                        <div className="marblePanel plus">
-                            <button className="button flatButton" type="button" onClick={this.props.onClick}>
-                                <AddIcon style={{backgroundColor: 'rgb(249, 249, 249)'}}/>
-                            </button>
+                    <div 
+                        className={`TreeItem newRadioButtonTreeItemParent`}
+                        style={{display: "inline"}}
+                    >
+                        <div className="elem">
+                            <div className="marblePanel plus">
+                                <button className="button flatButton" type="button" onClick={this.props.onClick}>
+                                    <AddIcon style={{backgroundColor: 'rgb(249, 249, 249)'}}/>
+                                </button>
+                            </div>
+                            <input className="algebraInputField"
+                                placeholder={"Input..."}
+                                onKeyDown={this.handleKeyDown}
+                                onFocus={this.handleFocus}
+                                value={this.state.value_from_input}
+                                onChange={this.handleChange}
+                                style={{background: 'none', fontSize: '16px'}}
+                                ref={this.inputRef}
+                            >
+                            </input>
+                            {this.state.suggestedItem.length > 0 && <SuggestionList
+                                position={this.state.position}
+                                suggestedItems={this.state.suggestedItem}
+                                onUpdateSuggestionIdx={(idx) => this.setState({suggestionIdx: idx})}
+                                onSelectCommand={(cmd) => this.insertCommand(cmd)}
+                            />}
                         </div>
-                        <input className="algebraInputField"
-                            placeholder={"Input..."}
-                            onKeyDown={this.handleKeyDown}
-                            value={this.state.value_from_input}
-                            onChange={(e) => this.setState({ value_from_input: e.target.value })}
-                            style={{background: 'none', fontSize: '12px'}}
-                        >
-                        </input>
                     </div>
                 </div>
-            </div>
+            </>
+            
         )
     }
 }
@@ -212,6 +442,7 @@ interface AlgebraTool3DProps {
     onSelect: (id: string, e: React.MouseEvent) => void;
     onUpdateDAG: (dag: Map<string, GeometryShape.ShapeNode3D>) => void;
     onUpdateLabelUsed: (labelUsed: string[]) => void;
+    onRenderErrorDialogbox: (message: string) => void;
 }
 
 class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DState> {
@@ -226,6 +457,11 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
 
     componentDidUpdate(prevProps: Readonly<AlgebraTool3DProps>, prevState: Readonly<{}>, snapshot?: any): void {
         this.textId = 0;
+        if (prevProps.dag !== this.props.dag) {
+            this.setState({
+                items: this.buildFromDAG(this.props.dag)
+            });
+        }
     }
 
     private producePlaneEquation = (plane: GeometryShape.Plane): string => {
@@ -265,8 +501,8 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
         }
 
         function formatConst(d: number): string {
-            if (d > 0) return `+${d}`;
-            return `${d}`;
+            if (d > 0) return `-${d}`;
+            return `+${d}`;
         }
         
         const expr = simplifyPlaneEquation(norm.x, norm.y, norm.z, d);
@@ -306,10 +542,13 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
         dir.x /= dirLength;
         dir.y /= dirLength;
         dir.z /= dirLength;
+        const x = String.raw`${startPoint.x === 0 ? (dir.x === 0 ? '0' : '') : this.formatNumbers(startPoint.x)}${dir.x === 0 ? '' : (startPoint.x === 0 ? (this.formatNumbers(dir.x) === '1' ? '' : this.formatNumbers(dir.x)) + 't' : (dir.x > 0 ? ' + ' : ' - ') + (this.formatNumbers(Math.abs(parseFloat(dir.x.toFixed(2)))) === '1' ? '' : this.formatNumbers(Math.abs(parseFloat(dir.x.toFixed(2)))))+ 't')}`
+        const y = String.raw`${startPoint.y === 0 ? (dir.y === 0 ? '0' : '') : this.formatNumbers(startPoint.y)}${dir.y === 0 ? '' : (startPoint.y === 0 ? (this.formatNumbers(dir.y) === '1' ? '' : this.formatNumbers(dir.y)) + 't' : (dir.y > 0 ? ' + ' : ' - ') + (this.formatNumbers(Math.abs(parseFloat(dir.y.toFixed(2)))) === '1' ? '' : this.formatNumbers(Math.abs(parseFloat(dir.y.toFixed(2)))))+ 't')}`
+        const z = String.raw`${startPoint.z === 0 ? (dir.z === 0 ? '0' : '') : this.formatNumbers(startPoint.z)}${dir.z === 0 ? '' : (startPoint.z === 0 ? (this.formatNumbers(dir.z) === '1' ? '' : this.formatNumbers(dir.z)) + 't' : (dir.z > 0 ? ' + ' : ' - ') + (this.formatNumbers(Math.abs(parseFloat(dir.z.toFixed(2)))) === '1' ? '' : this.formatNumbers(Math.abs(parseFloat(dir.z.toFixed(2)))))+ 't')}`
         return String.raw`
-            x = ${startPoint.x === 0 ? '' : this.formatNumbers(startPoint.x)}${dir.x === 0 ? '' : (startPoint.x === 0 ? this.formatNumbers(dir.x) + 't' : (dir.x > 0 ? ' + ' : ' - ') + Math.abs(parseFloat(dir.x.toFixed(2))) + 't')}\\
-            y = ${startPoint.y === 0 ? '' : this.formatNumbers(startPoint.y)}${dir.y === 0 ? '' : (startPoint.y === 0 ? this.formatNumbers(dir.y) + 't' : (dir.y > 0 ? ' + ' : ' - ') + Math.abs(parseFloat(dir.y.toFixed(2))) + 't')}\\
-            z = ${startPoint.z === 0 ? '' : this.formatNumbers(startPoint.z)}${dir.z === 0 ? '' : (startPoint.z === 0 ? this.formatNumbers(dir.z) + 't' : (dir.z > 0 ? ' + ' : ' - ') + Math.abs(parseFloat(dir.z.toFixed(2))) + 't')}
+            x = ${x}\\
+            y = ${y}\\
+            z = ${z}
         `
     }
 
@@ -386,7 +625,15 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                     stringOfLabels.push(createLatexString(point));
                 });
 
-                return String.raw`\mathrm{${shape}}\left(${stringOfLabels.join(',')}\right)\\`
+                let str = String.raw`\mathrm{${shape.type}}\left(${stringOfLabels.join(',')}`;
+                if (shape.type === 'RegularPolygon') {
+                    str += ',' + (shape as GeometryShape.Polygon).points.length.toString() + ',';
+                    const plane = this.props.dag.get(shapeNode.dependsOn[2])!;
+                    str += createLatexString(plane.type);
+                }
+
+                str += String.raw`\right)\\`
+                return str;
             }
 
             if ('norm' in shape && 'point' in shape) {
@@ -479,10 +726,18 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                 stringOfLabels.push(createLatexString(point));
             });
 
+            let str = String.raw`\mathrm{${shape}}\left(${stringOfLabels.join(',')}`;
+            if (shape === 'RegularPolygon') {
+                str += ',' + (shapeNode.type as GeometryShape.Polygon).points.length.toString() + ',';
+                const plane = this.props.dag.get(shapeNode.dependsOn[2])!;
+                str += createLatexString(plane.type);
+            }
+
+            str += String.raw`\right)\\`
             return String.raw`
             \[
             \begin{array}{l}
-            \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(${stringOfLabels.join(',')}\right)\\
+            \mathrm{${formatLabel(label)}}: ${str}
             Area = ${this.formatNumbers((shapeNode.type as GeometryShape.Polygon).area ?? 0)}
             \end{array}
             \]
@@ -523,6 +778,35 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
             return str;
         }
 
+        else if ('norm' in shapeNode.type && 'point' in shapeNode.type) {
+            let str: string;
+            if (formatLabel(label) !== 'OxyPlane') {
+                str = String.raw`
+                \[
+                \begin{array}{l}
+                \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(
+                `;
+                console.log(shapeNode);
+                let labels = shapeNode.dependsOn.map(id => {
+                    const node = this.props.dag.get(id)!;
+                    return createLatexString(node.type);
+                });
+                
+                labels.forEach(label => {
+                    str += label + ",";
+                });
+
+                str = (str[str.length - 1] === ',' ? str.slice(0, -1) : str) + "\\right)\\\\";
+            }
+
+            else {
+                str = `$\\mathrm{${formatLabel(label)}}`;
+            }
+
+            str += `: ${this.producePlaneEquation(shapeNode.type as GeometryShape.Plane)}${formatLabel(label) !== 'OxyPlane' ? '\\end{array}\\]' : '$'}`;
+            return str;
+        }
+
         else if (!(['Translation', 'Rotation', 'Reflection', 'Enlarge'].includes(shape))) {
             let str: string;
             if (formatLabel(label) !== 'OxyPlane') {
@@ -537,7 +821,7 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                     return createLatexString(node.type);
                 });
                 
-                labels.slice(0, 2).forEach(label => {
+                labels.forEach(label => {
                     str += label + ",";
                 });
 
@@ -552,14 +836,7 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                 str = `$\\mathrm{${formatLabel(label)}}`;
             }
 
-            if ('norm' in shapeNode.type && 'point' in shapeNode.type) {
-                str += `: ${this.producePlaneEquation(shapeNode.type)}${formatLabel(label) !== 'OxyPlane' ? '\\end{array}\\]' : '$'}`;
-            }
-
-            else {
-                str += `Area = ${this.formatNumbers(operations.surface_area(shapeNode.type))}\\\\Volume = ${this.formatNumbers(operations.volume(shapeNode.type))}\\end{array}\\]`
-            }
-
+            str += `Area = ${this.formatNumbers(operations.surface_area(shapeNode.type))}\\\\Volume = ${this.formatNumbers(operations.volume(shapeNode.type))}\\end{array}\\]`;
             return str;
         }
 
@@ -589,7 +866,13 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                     str += label + ",";
                 });
 
-                str += ((shapeNode.rotationFactor!.CCW ? -1 : 1) * shapeNode.rotationFactor!.degree).toString() + "^\\circ\\right)$";
+                if ('CCW' in shapeNode.rotationFactor! && 'degree' in shapeNode.rotationFactor!) {
+                    str += ((shapeNode.rotationFactor!.CCW ? -1 : 1) * shapeNode.rotationFactor!.degree).toString() + "^\\circ\\right)$";
+                }
+                
+                else {
+                    str += str.slice(0, -1) + "\\right)$"
+                }
             }
 
             else {
@@ -665,6 +948,7 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                                         onUpdateDAG={(dag) => this.props.onUpdateDAG(dag)}
                                         labelUsed={this.props.labelUsed}
                                         onUpdateLabelUsed={(labelUsed) => this.props.onUpdateLabelUsed(labelUsed)}
+                                        onRenderErrorDiaglogbox={this.props.onRenderErrorDialogbox}
                                     />
                                 );
                             }

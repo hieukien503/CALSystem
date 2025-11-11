@@ -69,7 +69,8 @@ import {
     createPolygonDefaultShapeProps,
     createSphereDefaultShapeProps,
     createVectorDefaultShapeProps,
-    getExcelLabel
+    getExcelLabel,
+    incrementLabel
 } from '../../utils/utilities'
 import * as operations from "../../utils/math_operation"
 import * as factory from "../../utils/Factory";
@@ -131,7 +132,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitProgram = (ctx: ProgramContext): unknown => {
-        const shapeInfo = this.visit(ctx.expr()) as { shape: geometry.Shape, defined: boolean };
+        const shapeInfo = this.visit(ctx.expr()) as { shape: geometry.Shape, defined: boolean, dependsOn: string[] };
         const shape = shapeInfo.shape;
         if ('x' in shape && 'y' in shape) {
             let label = getExcelLabel('A', 0);
@@ -147,8 +148,9 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 id: shape.props.id,
                 defined: shapeInfo.defined,
                 isSelected: false,
-                dependsOn: [],
-                type: shape
+                dependsOn: shapeInfo.dependsOn,
+                type: shape,
+                isDraggable: true
             })
         }
 
@@ -164,7 +166,6 @@ class ASTGen implements MathCommandVisitor<unknown> {
             this.labelUsed.push(label);
             shape.props.label = label;
             shape.props.id = mode === 'vector' ? `vector-${label}` : `line-${label}`;
-
             switch (mode) {
                 case 'vector': {
                     const dir = {
@@ -179,10 +180,11 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
                     let shapeNode: geometry.ShapeNode3D = {
                         id: shape.props.id,
+                        defined: shapeInfo.defined,
+                        isSelected: false,
+                        dependsOn: shapeInfo.dependsOn,
                         type: shape,
-                        dependsOn: [(shape as geometry.Vector).startVector.props.id, (shape as geometry.Vector).endVector.props.id],
-                        defined: true,
-                        isSelected: false
+                        isDraggable: true
                     }
 
             
@@ -203,10 +205,11 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
                     let shapeNode: geometry.ShapeNode3D = {
                         id: shape.props.id,
+                        defined: shapeInfo.defined,
+                        isSelected: false,
+                        dependsOn: shapeInfo.dependsOn,
                         type: shape,
-                        dependsOn: [(shape as geometry.Line).startLine.props.id, (shape as geometry.Line).endLine.props.id],
-                        defined: true,
-                        isSelected: false
+                        isDraggable: true
                     }
 
             
@@ -227,10 +230,11 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
                     let shapeNode: geometry.ShapeNode3D = {
                         id: shape.props.id,
+                        defined: shapeInfo.defined,
+                        isSelected: false,
+                        dependsOn: shapeInfo.dependsOn,
                         type: shape,
-                        dependsOn: [(shape as geometry.Ray).startRay.props.id, (shape as geometry.Ray).endRay.props.id],
-                        defined: true,
-                        isSelected: false
+                        isDraggable: true
                     }
 
             
@@ -251,10 +255,11 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
                     let shapeNode: geometry.ShapeNode3D = {
                         id: shape.props.id,
+                        defined: shapeInfo.defined,
+                        isSelected: false,
+                        dependsOn: shapeInfo.dependsOn,
                         type: shape,
-                        dependsOn: [(shape as geometry.Segment).startSegment.props.id, (shape as geometry.Segment).endSegment.props.id],
-                        defined: true,
-                        isSelected: false
+                        isDraggable: true
                     }
 
             
@@ -277,10 +282,11 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
             let shapeNode: geometry.ShapeNode3D = {
                 id: shape.props.id,
+                defined: shapeInfo.defined,
+                isSelected: false,
+                dependsOn: shapeInfo.dependsOn,
                 type: shape,
-                dependsOn: [(shape as geometry.Circle).centerC.props.id],
-                defined: true,
-                isSelected: false
+                isDraggable: true
             }
 
 
@@ -340,19 +346,21 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     id: segment.props.id,
                     type: segment,
                     dependsOn: [p.props.id, pNext.props.id, poly.props.id],
-                    defined: true,
-                    isSelected: false
+                    defined: shapeInfo.defined,
+                    isSelected: false,
+                    isDraggable: true
                 }
 
                 this.DAG.set(segment.props.id, shapeNode);
             }
 
             let shapeNode: geometry.ShapeNode3D = {
-                id: poly.props.id,
-                type: poly,
-                dependsOn: dependencies,
-                defined: true,
-                isSelected: false
+                id: shape.props.id,
+                defined: shapeInfo.defined,
+                isSelected: false,
+                dependsOn: shapeInfo.dependsOn,
+                type: shape,
+                isDraggable: true
             }
     
             this.DAG.set(poly.props.id, shapeNode);
@@ -368,15 +376,37 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
             this.labelUsed.push(label);
             shape.props.label = label;
-            shape.props.id = `angle-${label}`;
             let shapeNode: geometry.ShapeNode3D = {
                 id: shape.props.id,
+                defined: shapeInfo.defined,
+                isSelected: false,
+                dependsOn: shapeInfo.dependsOn,
                 type: shape,
-                dependsOn: [(shape as geometry.Angle).vector1.props.id, (shape as geometry.Angle).vector2.props.id],
-                defined: true,
-                isSelected: false
+                isDraggable: true
             }
 
+
+            this.DAG.set(shape.props.id, shapeNode);
+        }
+
+        else if ('norm' in shape && 'point' in shape) {
+            let idx = 0;
+            let label = `plane${idx}`;
+            while (this.labelUsed.includes(label)) {
+                idx += 1;
+                label = `plane${idx}`;
+            }
+
+            this.labelUsed.push(label);
+            shape.props.label = label;
+            let shapeNode: geometry.ShapeNode3D = {
+                id: shape.props.id,
+                defined: shapeInfo.defined,
+                isSelected: false,
+                dependsOn: shapeInfo.dependsOn,
+                type: shape,
+                isDraggable: false
+            }
 
             this.DAG.set(shape.props.id, shapeNode);
         }
@@ -396,7 +426,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 this.visit(ctx.numberExpr(1)) as number,
                 this.visit(ctx.numberExpr(2)) as number
             ),
-            defined: true
+            defined: true,
+            dependsOn: []
         }
     }
 
@@ -577,7 +608,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitLineDef = (ctx: LineDefContext): unknown => {
-        let point1 = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean };
+        let defined: boolean = true;
+        let point1 = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
         if (!point1.defined) {
             return {
                 shape: factory.createLine(
@@ -591,24 +623,28 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         0, 0, 0
                     )
                 ),
-                defined: false
+                defined: false,
+                dependsOn: []
             }
         }
 
         if (ctx.pointExpr().length === 2) {
-            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            const dist = Math.sqrt((point2.shape.x - point1.shape.x) ** 2 + (point2.shape.y - point1.shape.y) ** 2 + ((point2.shape.z ?? 0) - (point1.shape.z ?? 0)) ** 2);
+            if (dist < EPSILON) defined = false;
             return {
                 shape: factory.createLine(
                     createLineDefaultShapeProps(''),
                     point1.shape,
                     point2.shape
                 ),
-                defined: point2.defined
+                defined: point2.defined && defined,
+                dependsOn: [point1.shape.props.id, point2.shape.props.id]
             }
         }
 
         else if (ctx.lineExpr()) {
-            let lineExpr = this.visit(ctx.lineExpr()!) as { shape: geometry.Line, defined: boolean };
+            let lineExpr = this.visit(ctx.lineExpr()!) as { shape: geometry.Line, defined: boolean, dependsOn: string[] };
             // Return a line parallel to the given lineExpr passing through point1
             return {
                 shape: factory.createLine(
@@ -621,12 +657,13 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         (point1.shape.z ?? 0) + ((lineExpr.shape.endLine.z ?? 0) - (lineExpr.shape.startLine.z ?? 0))
                     )
                 ),
-                defined: lineExpr.defined
+                defined: lineExpr.defined,
+                dependsOn: [point1.shape.props.id, lineExpr.shape.props.id]
             }
         }
 
         else {
-            let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
+            let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
             return {
                 shape: factory.createLine(
                     createLineDefaultShapeProps(''),
@@ -638,13 +675,14 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         (point1.shape.z ?? 0) + ((vectorExpr.shape.endVector.z ?? 0) - (vectorExpr.shape.startVector.z ?? 0))
                     )
                 ),
-                defined: vectorExpr.defined
+                defined: vectorExpr.defined,
+                dependsOn: [point1.shape.props.id, vectorExpr.shape.props.id]
             }
         }
     }
 
     visitSphereDef = (ctx: SphereDefContext): unknown => {
-        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         if (!center.defined) {
             return {
                 shape: factory.createSphere(
@@ -652,17 +690,21 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     center.shape,
                     0
                 ),
-                defined: false
+                defined: false,
+                dependsOn: [center.shape.props.id]
             }
         }
 
+        let defined: boolean = true;
         if (ctx.pointExpr().length === 2) {
-            let pointOnSphere = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let pointOnSphere = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
             let radius = Math.sqrt(
                 Math.pow(pointOnSphere.shape.x - center.shape.x, 2) +
                 Math.pow(pointOnSphere.shape.y - center.shape.y, 2) +
                 Math.pow((pointOnSphere.shape.z ?? 0) - (center.shape.z ?? 0), 2)
             );
+
+            if (radius < EPSILON) defined = false;
             
             return {
                 shape: factory.createSphere(
@@ -670,13 +712,14 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     center.shape,
                     radius
                 ),
-                defined: pointOnSphere.defined
+                defined: pointOnSphere.defined && defined,
+                dependsOn: [center.shape.props.id, pointOnSphere.shape.props.id]
             }
         }
 
         let radius = this.visit(ctx.numberExpr()!) as number;
         if (radius < 0) {
-            throw new Error("Sphere radius cannot be negative.");
+            defined = false;
         }
 
         return {
@@ -685,13 +728,14 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 center.shape,
                 radius
             ),
-            defined: true
+            defined: defined,
+            dependsOn: [center.shape.props.id]
         }
     }
 
     visitAngleDef = (ctx: AngleDefContext): unknown => {
         if (ctx.vectorExpr().length === 1) {
-            let vector = this.visit(ctx.vectorExpr(0)) as { shape: geometry.Vector, defined: boolean };
+            let vector = this.visit(ctx.vectorExpr(0)) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
             return {
                 shape: factory.createAngle(
                     createAngleDefaultShapeProps(''),
@@ -706,14 +750,16 @@ class ASTGen implements MathCommandVisitor<unknown> {
                             1, 0, 0
                         )
                     ),
-                    vector.shape
+                    vector.shape,
+                    [0, 180]
                 ),
-                defined: vector.defined
+                defined: vector.defined,
+                dependsOn: [vector.shape.props.id]
             }
         }
 
         if (ctx.pointExpr().length === 1) {
-            let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+            let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
             return {
                 shape: factory.createAngle(
                     createAngleDefaultShapeProps(''),
@@ -736,28 +782,32 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         ),
                         point.shape
                     ),
+                    [0, 180]
                 ),
-                defined: point.defined
+                defined: point.defined,
+                dependsOn: [point.shape.props.id]
             }
         }
 
         if (ctx.vectorExpr().length === 2) {
-            let vector1 = this.visit(ctx.vectorExpr(0)) as { shape: geometry.Vector, defined: boolean };
-            let vector2 = this.visit(ctx.vectorExpr(1)) as { shape: geometry.Vector, defined: boolean };
+            let vector1 = this.visit(ctx.vectorExpr(0)) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
+            let vector2 = this.visit(ctx.vectorExpr(1)) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
 
             return {
                 shape: factory.createAngle(
                     createAngleDefaultShapeProps(''),
                     vector1.shape,
-                    vector2.shape
+                    vector2.shape,
+                    [0, 180],
                 ),
-                defined: vector1.defined && vector2.defined
+                defined: vector1.defined && vector2.defined,
+                dependsOn: [vector1.shape.props.id, vector2.shape.props.id]
             }
         }
 
         if (ctx.lineExpr().length === 1) {
-            let line = this.visit(ctx.lineExpr(0)) as { shape: geometry.Line, defined: boolean };
-            let plane = this.visit(ctx.planeExpr(0)!) as { shape: geometry.Plane, defined: boolean };
+            let line = this.visit(ctx.lineExpr(0)) as { shape: geometry.Line, defined: boolean, dependsOn: string[] };
+            let plane = this.visit(ctx.planeExpr(0)!) as { shape: geometry.Plane, defined: boolean, dependsOn: string[] };
             const intersection = operations.getIntersections3D(line.shape, plane.shape);
             const pointIntersection = intersection[0].coors;
 
@@ -800,20 +850,48 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         line.shape.startLine,
                         line.shape.endLine
                     ),
+                    [0, 180],
                     factory.createPoint(
                         createPointDefaultShapeProps(''),
                         pointIntersection?.x ?? 0, pointIntersection?.y ?? 0, pointIntersection?.z ?? 0
                     )
                 ),
-                defined: line.defined && plane.defined
+                defined: line.defined && plane.defined,
+                dependsOn: [line.shape.props.id, plane.shape.props.id]
+            }
+        }
+
+        if (ctx.pointExpr().length === 3) {
+            let p1 = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
+            let p2 = this.visit(ctx.pointExpr(1)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
+            let p3 = this.visit(ctx.pointExpr(2)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
+
+            return {
+                shape: factory.createAngle(
+                    createAngleDefaultShapeProps(''),
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        p1.shape,
+                        p2.shape
+                    ),
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        p3.shape,
+                        p2.shape
+                    ),
+                    [0, 180],
+                    p2.shape
+                ),
+                defined: p1.defined && p2.defined && p3.defined,
+                dependsOn: [p1.shape.props.id, p2.shape.props.id, p3.shape.props.id]
             }
         }
     }
 
     visitVectorDef = (ctx: VectorDefContext): unknown => {
         if (ctx.COMMA() !== undefined) {
-            let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
-            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
 
             return {
                 shape: factory.createVector(
@@ -821,11 +899,12 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     point1.shape,
                     point2.shape
                 ),
-                defined: point1.defined && point2.defined
+                defined: point1.defined && point2.defined,
+                dependsOn: [point1.defined, point2.defined]
             }
         }
 
-        let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         return {
             shape: factory.createVector(
                 createVectorDefaultShapeProps(''),
@@ -835,22 +914,25 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 ),
                 point.shape
             ),
-            defined: point.defined
+            defined: point.defined,
+            dependsOn: [point.shape.props.id]
         }
     }
 
     visitCircleDef = (ctx: CircleDefContext): unknown => {
+        let defined: boolean = true;
         if (ctx.pointExpr().length === 2) {
-            let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
-            let pointOnCircle = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            let pointOnCircle = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
             let radius = Math.sqrt(
                 Math.pow(pointOnCircle.shape.x - center.shape.x, 2) +
                 Math.pow(pointOnCircle.shape.y - center.shape.y, 2) +
                 Math.pow((pointOnCircle.shape.z ?? 0) - (center.shape.z ?? 0), 2)
             );
 
+            if (radius < EPSILON) defined = false;
             if (ctx.directionExpr()) {
-                let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean };
+                let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
                 // Ensure the direction vector is a unit vector
                 let dirLength = Math.sqrt(
                     (direction.shape.endVector.x - direction.shape.startVector.x) ** 2 +
@@ -859,7 +941,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 );
 
                 if (dirLength < EPSILON) {
-                    throw new Error("Direction vector cannot be zero.");
+                    defined = false;
                 }
 
                 return {
@@ -869,7 +951,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         radius,
                         direction.shape
                     ),
-                    defined: center.defined && direction.defined && pointOnCircle.defined
+                    defined: center.defined && direction.defined && pointOnCircle.defined && defined,
+                    dependsOn: [center.shape.props.id, pointOnCircle.shape.props.id, direction.shape.props.id]
                 }
             }
             
@@ -889,14 +972,50 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         )
                     )
                 ),
-                defined: center.defined && pointOnCircle.defined
+                defined: center.defined && pointOnCircle.defined && defined,
+                dependsOn: [center.shape.props.id, pointOnCircle.shape.props.id]
             }
         }
 
         if (ctx.pointExpr().length === 3) {
-            let pointOnCircle1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
-            let pointOnCircle2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
-            let pointOnCircle3 = this.visit(ctx.pointExpr(2)) as { shape:  geometry.Point, defined: boolean };
+            let pointOnCircle1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            let pointOnCircle2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            let pointOnCircle3 = this.visit(ctx.pointExpr(2)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            const distance = (p1: {x: number, y: number, z: number}, p2: {x: number, y: number, z: number}): number => {
+                return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2 + (p2.z - p1.z) ** 2);
+            }
+
+            const d1 = distance({
+                x: pointOnCircle1.shape.x,
+                y: pointOnCircle1.shape.y,
+                z: (pointOnCircle1.shape.z ?? 0)
+            }, {
+                x: pointOnCircle2.shape.x,
+                y: pointOnCircle2.shape.y,
+                z: (pointOnCircle2.shape.z ?? 0)
+            });
+
+            const d2 = distance({
+                x: pointOnCircle3.shape.x,
+                y: pointOnCircle3.shape.y,
+                z: (pointOnCircle3.shape.z ?? 0)
+            }, {
+                x: pointOnCircle2.shape.x,
+                y: pointOnCircle2.shape.y,
+                z: (pointOnCircle2.shape.z ?? 0)
+            });
+
+            const d3 = distance({
+                x: pointOnCircle1.shape.x,
+                y: pointOnCircle1.shape.y,
+                z: (pointOnCircle1.shape.z ?? 0)
+            }, {
+                x: pointOnCircle3.shape.x,
+                y: pointOnCircle3.shape.y,
+                z: (pointOnCircle3.shape.z ?? 0)
+            });
+
+            if (d1 < EPSILON || d2 < EPSILON || d3 < EPSILON) defined = false;
 
             let [center, radius] = [operations.circumcenter(pointOnCircle1.shape, pointOnCircle2.shape, pointOnCircle3.shape), operations.circumradius(pointOnCircle1.shape, pointOnCircle2.shape, pointOnCircle3.shape)];
             // Compute the normal vector of the circle plane
@@ -914,7 +1033,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
             const cross = operations.cross(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
             if (Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2) < EPSILON) {
-                throw new Error("The three points are collinear, cannot define a circle.");
+                defined = false;
             }
 
             return {
@@ -939,18 +1058,19 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         )
                     )
                 ),
-                defined: pointOnCircle1.defined && pointOnCircle2.defined && pointOnCircle3.defined
+                defined: pointOnCircle1.defined && pointOnCircle2.defined && pointOnCircle3.defined && defined,
+                dependsOn: [pointOnCircle1.shape.props.id, pointOnCircle2.shape.props.id, pointOnCircle3.shape.props.id]
             }
         }
 
-        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         let radius = this.visit(ctx.numberExpr()!) as number;
         if (radius < 0) {
-            throw new Error("Circle radius cannot be negative.");
+            defined = false
         }
 
         if (ctx.directionExpr()) {
-            let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean };
+            let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
             // Ensure the direction vector is a unit vector
             let dirLength = Math.sqrt(
                 (direction.shape.endVector.x - direction.shape.startVector.x) ** 2 +
@@ -959,7 +1079,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
             );
 
             if (dirLength < EPSILON) {
-                throw new Error("Direction vector cannot be zero.");
+                defined = false;
             }
 
             return {
@@ -969,7 +1089,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     radius,
                     direction.shape
                 ),
-                defined: center.defined && direction.defined
+                defined: center.defined && direction.defined && defined,
+                dependsOn: [center.shape.props.id, direction.shape.props.id]
             }
         }
 
@@ -979,89 +1100,116 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 center.shape,
                 radius,
             ),
-            defined: center.defined
+            defined: center.defined,
+            dependsOn: [center.shape.props.id]
         }
     }
 
     visitPlaneDef = (ctx: PlaneDefContext): unknown => {
-        if (ctx.SHAPE_ID() !== undefined) {
-            let shapeId = ctx.SHAPE_ID()!.text;
-            let keys = Array.from(this.DAG.keys());
-            for (let key of keys) {
-                const node = this.DAG.get(key);
-                if (node && node.type.props.label === shapeId) {
-                    // Check if the shape is a polygon
-                    let shape = this.DAG.get(key);
-                    if (shape && 'points' in shape.type) {
-                        // Form a plane from the polygon
-                        let points = shape.type.points;
-                        if (points.length < 3) {
-                            throw new Error("A polygon must have at least 3 points to define a plane.");
-                        }
-
-                        // Caculate the normal vector of the plane using the first three points
-                        let p1 = {
-                            x: points[0].x,
-                            y: points[0].y,
-                            z: points[0].z
-                        }
-
-                        let p2 = {
-                            x: points[1].x,
-                            y: points[1].y,
-                            z: points[1].z
-                        }
-
-                        let p3 = {
-                            x: points[2].x,
-                            y: points[2].y,
-                            z: points[2].z
-                        }
-
-                        let cross = operations.cross(
-                            p2.x - p1.x, p2.y - p1.y, (p2.z ?? 0) - (p1.z ?? 0),
-                            p3.x - p1.x, p3.y - p1.y, (p3.z ?? 0) - (p1.z ?? 0)
-                        );
-
-                        let crossLength = Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2);
-                        if (crossLength < EPSILON) {
-                            throw new Error("The first three points of the polygon are collinear, cannot define a plane.");
-                        }
-
-                        let normal = {
-                            x: cross.x / Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2),
-                            y: cross.y / Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2),
-                            z: cross.z / Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2)
-                        }
-
-                        return {
-                            shape: factory.createPlane(
-                                createPlaneDefaultShapeProps(''),
-                                points[0],
-                                factory.createVector(
-                                    createVectorDefaultShapeProps(''),
-                                    points[0],
-                                    factory.createPoint(
-                                        createPointDefaultShapeProps(''),
-                                        points[0].x + normal.x,
-                                        points[0].y + normal.y,
-                                        (points[0].z ?? 0) + (normal.z ?? 0)
-                                    )
-                                )
-                            ),
-                            defined: node.defined
-                        }
-                    }
-                }
+        let defined: boolean = true;
+        if (ctx.polygonExpr() !== undefined) {
+            let polygonExpr = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean, dependsOn: string[] }
+            let points = polygonExpr.shape.points;
+            if (points.length < 3) {
+                defined = false;
             }
 
-            throw new Error(`Shape with ID ${shapeId} not found or is not a polygon.`);
+            // Caculate the normal vector of the plane using the first three points
+            let p1 = {
+                x: points[0].x,
+                y: points[0].y,
+                z: points[0].z
+            }
+
+            let p2 = {
+                x: points[1].x,
+                y: points[1].y,
+                z: points[1].z
+            }
+
+            let p3 = {
+                x: points[2].x,
+                y: points[2].y,
+                z: points[2].z
+            }
+
+            let cross = operations.cross(
+                p2.x - p1.x, p2.y - p1.y, (p2.z ?? 0) - (p1.z ?? 0),
+                p3.x - p1.x, p3.y - p1.y, (p3.z ?? 0) - (p1.z ?? 0)
+            );
+
+            let crossLength = Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2);
+            if (crossLength < EPSILON) {
+                defined = false;
+            }
+
+            let normal = {
+                x: cross.x / Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2),
+                y: cross.y / Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2),
+                z: cross.z / Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2)
+            }
+
+            return {
+                shape: factory.createPlane(
+                    createPlaneDefaultShapeProps(''),
+                    points[0],
+                    factory.createVector(
+                        createVectorDefaultShapeProps(''),
+                        points[0],
+                        factory.createPoint(
+                            createPointDefaultShapeProps(''),
+                            points[0].x + normal.x,
+                            points[0].y + normal.y,
+                            (points[0].z ?? 0) + (normal.z ?? 0)
+                        )
+                    )
+                ),
+                defined: polygonExpr.defined && defined,
+                dependsOn: [polygonExpr.shape.props.id]
+            }
         }
 
         if (ctx.pointExpr().length === 3) {
-            let p1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
-            let p2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
-            let p3 = this.visit(ctx.pointExpr(2)) as { shape:  geometry.Point, defined: boolean };
+            let p1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            let p2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            let p3 = this.visit(ctx.pointExpr(2)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+
+            
+            const distance = (p1: {x: number, y: number, z: number}, p2: {x: number, y: number, z: number}): number => {
+                return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2 + (p2.z - p1.z) ** 2);
+            }
+
+            const d1 = distance({
+                x: p1.shape.x,
+                y: p1.shape.y,
+                z: (p1.shape.z ?? 0)
+            }, {
+                x: p2.shape.x,
+                y: p2.shape.y,
+                z: (p2.shape.z ?? 0)
+            });
+
+            const d2 = distance({
+                x: p3.shape.x,
+                y: p3.shape.y,
+                z: (p3.shape.z ?? 0)
+            }, {
+                x: p2.shape.x,
+                y: p2.shape.y,
+                z: (p2.shape.z ?? 0)
+            });
+
+            const d3 = distance({
+                x: p1.shape.x,
+                y: p1.shape.y,
+                z: (p1.shape.z ?? 0)
+            }, {
+                x: p3.shape.x,
+                y: p3.shape.y,
+                z: (p3.shape.z ?? 0)
+            });
+
+            if (d1 < EPSILON || d2 < EPSILON || d3 < EPSILON) defined = false;
 
             let cross = operations.cross(
                 p2.shape.x - p1.shape.x, p2.shape.y - p1.shape.y, (p2.shape.z ?? 0) - (p1.shape.z ?? 0),
@@ -1070,7 +1218,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
             let crossLength = Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2);
             if (crossLength < EPSILON) {
-                throw new Error("The first three points of the polygon are collinear, cannot define a plane.");
+                defined = false;
             }
 
             let normal = {
@@ -1094,13 +1242,14 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         )
                     )
                 ),
-                defined: p1.defined && p2.defined && p3.defined
+                defined: p1.defined && p2.defined && p3.defined && defined,
+                dependsOn: [p1.shape.props.id, p2.shape.props.id, p3.shape.props.id]
             }
         }
 
         if (ctx.lineExpr().length === 2) {
-            let l1 = this.visit(ctx.lineExpr(0)) as { shape: geometry.Line, defined: boolean };
-            let l2 = this.visit(ctx.lineExpr(1)) as { shape: geometry.Line, defined: boolean };
+            let l1 = this.visit(ctx.lineExpr(0)) as { shape: geometry.Line, defined: boolean, dependsOn: string[] };
+            let l2 = this.visit(ctx.lineExpr(1)) as { shape: geometry.Line, defined: boolean, dependsOn: string[] };
             // Check if two lines are coincident
             let dir1 = {
                 x: l1.shape.endLine.x - l1.shape.startLine.x,
@@ -1125,7 +1274,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
             if (Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2) < EPSILON) {
                 // Lines are parallel, check if they are coincident
                 if (Math.sqrt(cross1.x ** 2 + cross1.y ** 2 + cross1.z ** 2) < EPSILON) {
-                    throw new Error("The two lines are coincident, cannot define a unique plane.");
+                    defined = false;
                 }
 
                 // Parallel, form a plane using one line and a point from the other line
@@ -1153,7 +1302,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                             )
                         )
                     ),
-                    defined: l1.defined && l2.defined
+                    defined: l1.defined && l2.defined && defined,
+                    dependsOn: [l1.shape.props.id, l2.shape.props.id]
                 }
             }
 
@@ -1181,14 +1331,15 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         )
                     )
                 ),
-                defined: l1.defined && l2.defined
+                defined: l1.defined && l2.defined && defined,
+                dependsOn: [l1.shape.props.id, l2.shape.props.id]
             }
         }
 
         if (ctx.pointExpr().length === 1) {
-            let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+            let point = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
             if (ctx.planeExpr()) {
-                let planeExpr = this.visit(ctx.planeExpr()!) as { shape: geometry.Plane, defined: boolean };
+                let planeExpr = this.visit(ctx.planeExpr()!) as { shape: geometry.Plane, defined: boolean, dependsOn: string[] };
                 // Return a plane parallel to the given plane passing through the point
                 return {
                     shape: factory.createPlane(
@@ -1196,12 +1347,13 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         point.shape,
                         planeExpr.shape.norm
                     ),
-                    defined: point.defined && planeExpr.defined
+                    defined: point.defined && planeExpr.defined,
+                    dependsOn: [point.shape.props.id, planeExpr.shape.props.id]
                 }
             }
 
             if (ctx.lineExpr()) {
-                let lineExpr = this.visit(ctx.lineExpr(0)!) as { shape: geometry.Line, defined: boolean };
+                let lineExpr = this.visit(ctx.lineExpr(0)!) as { shape: geometry.Line, defined: boolean, dependsOn: string[] };
                 // Return a plane perpendicular to the line passing through the point
                 let dir = {
                     x: lineExpr.shape.endLine.x - lineExpr.shape.startLine.x,
@@ -1232,13 +1384,14 @@ class ASTGen implements MathCommandVisitor<unknown> {
                             ),
                         )
                     ),
-                    defined: point.defined && lineExpr.defined
+                    defined: point.defined && lineExpr.defined,
+                    dependsOn: [point.shape.props.id, lineExpr.shape.props.id]
                 }
             }
 
             if (ctx.vectorExpr()) {
-                let vectorExpr1 = this.visit(ctx.vectorExpr(0)!) as { shape: geometry.Vector, defined: boolean };
-                let vectorExpr2 = this.visit(ctx.vectorExpr(1)!) as { shape: geometry.Vector, defined: boolean };
+                let vectorExpr1 = this.visit(ctx.vectorExpr(0)!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
+                let vectorExpr2 = this.visit(ctx.vectorExpr(1)!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
                 // Return a plane defined by the two vectors originating from the point
                 let dir1 = {
                     x: vectorExpr1.shape.endVector.x - vectorExpr1.shape.startVector.x,
@@ -1255,7 +1408,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 let cross = operations.cross(dir1.x, dir1.y, dir1.z, dir2.x, dir2.y, dir2.z);
                 let crossLength = Math.sqrt(cross.x ** 2 + cross.y ** 2 + cross.z ** 2);
                 if (crossLength < EPSILON) {
-                    throw new Error("The two vectors are collinear, cannot define a unique plane.");
+                    defined = false;
                 }
 
                 let normal = {
@@ -1280,22 +1433,23 @@ class ASTGen implements MathCommandVisitor<unknown> {
                             ),
                         )
                     ),
-                    defined: point.defined && vectorExpr1.defined && vectorExpr2.defined
+                    defined: point.defined && vectorExpr1.defined && vectorExpr2.defined && defined,
+                    dependsOn: [point.defined, vectorExpr1.defined, vectorExpr2.defined]
                 }
             }
         }
     }
 
     visitPointExpr = (ctx: PointExprContext): unknown => {
-        if (ctx.POINT_ID() !== undefined) {
-            let label = ctx.POINT_ID()!.text;
+        if (ctx.SHAPE_ID() !== undefined) {
+            let label = ctx.SHAPE_ID()!.text;
             let keys = Array.from(this.DAG.keys());
             for (let key of keys) {
                 const node = this.DAG.get(key);
                 if (node && node.type.props.label === label) {
                     // Check if the shape is a point
                     if ('x' in node.type && 'y' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${label} is not a point.`);
@@ -1309,31 +1463,133 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitPointList = (ctx: PointListContext): unknown => {
-        let arr: { shape:  geometry.Point, defined: boolean }[] = [];
+        let arr: { shape:  geometry.Point, defined: boolean, dependsOn: string[] }[] = [];
         if (ctx.pointList() !== undefined) {
-            let point = this.visit(ctx.pointExpr()!) as { shape:  geometry.Point, defined: boolean };
-            arr = this.visit(ctx.pointList()!) as { shape:  geometry.Point, defined: boolean }[];
+            let point = this.visit(ctx.pointExpr()!) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+            arr = this.visit(ctx.pointList()!) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] }[];
             arr.unshift(point);
             return arr;
         }
 
-        let point = this.visit(ctx.pointExpr()) as { shape:  geometry.Point, defined: boolean };
+        let point = this.visit(ctx.pointExpr()) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         arr.push(point);
         return arr;
     }
 
     visitPolygonDef = (ctx: PolygonDefContext): unknown => {
-        let points = this.visit(ctx.pointList()) as { shape: geometry.Point, defined: boolean }[];
-        if (points.length < 3) {
-            throw new Error("A polygon must have at least 3 points.");
-        }
+        let defined: boolean = true;
+        if (ctx.pointList()!) {
+            let points = this.visit(ctx.pointList()!) as { shape: geometry.Point, defined: boolean, dependsOn: string[] }[];
+            if (points.length < 3) {
+                defined = false;
+            }
 
-        return {
-            shape: factory.createPolygon(
-                createPolygonDefaultShapeProps(''),
-                points.map(p => p.shape)
-            ),
-            defined: points.every(p => p.defined === true)
+            if (!operations.checkCoplanar(points.map(p => p.shape))) defined = false;
+            for (let i = 0; i < points.length - 1; i++) {
+                for (let j = i + 1; j < points.length; j++) {
+                    const dist = Math.sqrt((points[j].shape.x - points[i].shape.x) ** 2 + (points[j].shape.y - points[i].shape.y) ** 2 + ((points[j].shape.z ?? 0) - (points[i].shape.z ?? 0)) ** 2);
+                    if (dist < EPSILON) {
+                        defined = false;
+                        break;
+                    }
+                }
+
+                if (defined === false) break;
+            }
+
+            return {
+                shape: factory.createPolygon(
+                    createPolygonDefaultShapeProps(''),
+                    points.map(p => p.shape)
+                ),
+                defined: points.every(p => p.defined === true) && defined,
+                dependsOn: points.map(p => p.shape.props.id)
+            }
+        }
+        
+        else {
+            let point1 = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
+            let point2 = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
+            let numVertices = this.visit(ctx.numberExpr()!) as number;
+            let plane = this.visit(ctx.planeExpr()!) as { shape: geometry.Plane, defined: boolean, dependsOn: string[] };
+            if (!Number.isInteger(numVertices) || numVertices < 3) {
+                defined = false;
+            }
+
+            const distance = (
+                plane: {a: number, b: number, c: number, d: number},
+                point: {x: number, y: number, z: number}
+            ): number => {
+                return Math.abs(plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d) / Math.sqrt(plane.a ** 2 + plane.b ** 2 + plane.c ** 2);
+            }
+
+            const n = {
+                x: plane.shape.norm.endVector.x - plane.shape.norm.startVector.x,
+                y: plane.shape.norm.endVector.y - plane.shape.norm.startVector.y,
+                z: (plane.shape.norm.endVector.z ?? 0) - (plane.shape.norm.startVector.z ?? 0)
+            }
+
+            const p1 = {
+                x: point1.shape.x,
+                y: point1.shape.y,
+                z: (point1.shape.z ?? 0)
+            };
+
+            const p2 = {
+                x: point2.shape.x,
+                y: point2.shape.y,
+                z: (point2.shape.z ?? 0)
+            };
+
+            const d = -(n.x * plane.shape.point.x + n.y * plane.shape.point.y + n.z * (plane.shape.point.z ?? 0));
+            if (distance({a: n.x, b: n.y, c: n.z, d: d}, p1) > EPSILON || distance({a: n.x, b: n.y, c: n.z, d: d}, p2) > EPSILON) {
+                defined = false;
+            }
+
+            const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2 + (p2.z - p1.z) ** 2);
+            if (dist < EPSILON) {
+                defined = false;
+            }
+
+            const angle = ((numVertices - 2) * 180) / numVertices;
+            let tmpStart = structuredClone(point1.shape), tmpEnd = structuredClone(point2.shape);
+            const pts: geometry.Point[] = [point1.shape, point2.shape];
+            for (let i = 2; i < numVertices; i++) {
+                const line = factory.createLine(
+                    createLineDefaultShapeProps(''),
+                    tmpEnd,
+                    factory.createPoint(
+                        createPointDefaultShapeProps(''),
+                        tmpEnd.x + n.x, tmpEnd.y + n.y, (tmpEnd.z ?? 0) + n.z
+                    )
+                );
+
+                const newPoint = operations.rotation(tmpStart, line, angle, false) as geometry.Point;
+                let label = getExcelLabel('A', 0);
+                let idx = 0;
+                while (this.labelUsed.includes(label)) {
+                    idx++;
+                    label = getExcelLabel('A', idx);
+                }
+
+                this.labelUsed.push(label);
+                newPoint.props.label = label;
+                pts.push(newPoint);
+                tmpStart = tmpEnd;
+                tmpEnd = newPoint;
+            }
+
+            const dependencies = pts.map(point => point.props.id);
+            dependencies.push(plane.shape.props.id);
+
+            return {
+                shape: factory.createPolygon(
+                    createPolygonDefaultShapeProps(''),
+                    pts,
+                ),
+                defined: point1.defined && point2.defined && defined,
+                dependsOn: dependencies
+            }
         }
     }
 
@@ -1346,7 +1602,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 if (node && node.type.props.label === shapeId) {
                     // Check if the shape is a polygon
                     if ('points' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a polygon.`);
@@ -1368,7 +1624,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 if (node && node.type.props.label === shapeId) {
                     // Check if the shape is a line
                     if ('startLine' in node.type && 'endLine' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a line.`);
@@ -1383,7 +1639,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
     visitDirExpr = (ctx: DirExprContext): unknown => {
         if (ctx.pointExpr() !== undefined) {
-            let point = this.visit(ctx.pointExpr()!) as { shape: geometry.Point, defined: boolean };
+            let point = this.visit(ctx.pointExpr()!) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
             return {
                 shape: point.shape,
                 defined: point.defined
@@ -1391,7 +1647,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
         }
 
         if (ctx.vectorExpr() !== undefined) {
-            let vector = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
+            let vector = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
             return {
                 shape: vector.shape,
                 defined: vector.defined
@@ -1410,9 +1666,9 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitSegmentDef = (ctx: SegmentDefContext): unknown => {
-        let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         if (ctx.pointExpr().length === 2) {
-            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
             return {
                 shape: factory.createSegment(
                     createLineDefaultShapeProps(''),
@@ -1424,10 +1680,6 @@ class ASTGen implements MathCommandVisitor<unknown> {
         }
 
         let length = this.visit(ctx.numberExpr()!) as number;
-        if (length <= 0) {
-            throw new Error("Segment length must be positive.");
-        }
-
         return {
             shape: factory.createSegment(
                 createLineDefaultShapeProps(''),
@@ -1439,25 +1691,27 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     point1.shape.z
                 )
             ),
-            defined: point1.defined
+            defined: point1.defined,
+            dependsOn: [point1.shape.props.id]
         }
     }
 
     visitRayDef = (ctx: RayDefContext): unknown => {
-        let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
+        let point1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         if (ctx.pointExpr().length === 2) {
-            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+            let point2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
             return {
                 shape: factory.createRay(
                     createLineDefaultShapeProps(''),
                     point1.shape,
                     point2.shape
                 ),
-                defined: point1.defined && point2.defined
+                defined: point1.defined && point2.defined,
+                dependsOn: [point1.shape.props.id && point2.shape.props.id]
             }
         }
 
-        let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
+        let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
         return {
             shape: factory.createRay(
                 createLineDefaultShapeProps(''),
@@ -1469,7 +1723,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     (point1.shape.z ?? 0) + ((vectorExpr.shape.endVector.z ?? 0) - (vectorExpr.shape.startVector.z ?? 0))
                 )
             ),
-            defined: point1.defined && vectorExpr.defined
+            defined: point1.defined && vectorExpr.defined,
+            dependsOn: [point1.shape.props.id && vectorExpr.shape.props.id]
         }
     }
 
@@ -1482,7 +1737,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 if (node && node.type.props.label === label) {
                     // Check if the shape is a vector
                     if ('startVector' in node.type && 'endVector' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${label} is not a vector.`);
@@ -1509,14 +1764,14 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         ('startRay' in node.type && 'endRay' in node.type) ||
                         ('norm' in node.type && 'point' in node.type)
                     ) {
-                        return ('startVector' in node.type ? { shape: node.type, defined: node.defined } : (
+                        return ('startVector' in node.type ? { shape: node.type, defined: node.defined, dependsOn: node.dependsOn } : (
                             'startSegment' in node.type ? {
                                 shape: factory.createVector(
                                     createVectorDefaultShapeProps(''),
                                     node.type.startSegment,
                                     node.type.endSegment
                                 ),
-                                defined: node.defined
+                                defined: node.defined, dependsOn: node.dependsOn
                             } : (
                                 'startLine' in node.type ? {
                                     shape: factory.createVector(
@@ -1524,7 +1779,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                                         node.type.startLine,
                                         node.type.endLine
                                     ),
-                                    defined: node.defined
+                                    defined: node.defined, dependsOn: node.dependsOn
                                 } : (
                                     'startRay' in node.type ? {
                                         shape: factory.createVector(
@@ -1532,8 +1787,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                                             node.type.startRay,
                                             node.type.endRay
                                         ),
-                                        defined: node.defined
-                                    } : { shape: node.type.norm, defined: node.defined }
+                                        defined: node.defined, dependsOn: node.dependsOn
+                                    } : { shape: node.type.norm, defined: node.defined, dependsOn: node.dependsOn }
                                 )
                             )
                         ))
@@ -1602,7 +1857,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     if (
                         ('norm' in node.type && 'point' in node.type)
                     ) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${label} is not a plane.`);
@@ -1624,7 +1879,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 if (node && node.type.props.label === shapeId) {
                     // Check if the shape is a line
                     if ('startSegment' in node.type && 'endSegment' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a segment.`);
@@ -1646,7 +1901,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 if (node && node.type.props.label === shapeId) {
                     // Check if the shape is a line
                     if ('startRay' in node.type && 'endRay' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a ray.`);
@@ -1660,14 +1915,12 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitConeDef = (ctx: ConeDefContext): unknown => {
-        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
-        let apex = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
-        if (!center.defined || !apex.defined) {
-
-        }
+        let defined: boolean = true;
+        let center = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+        let apex = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         let radius = this.visit(ctx.numberExpr()!) as number;
         if (radius <= 0) {
-            throw new Error(`Radius can not be negative or 0`);
+            defined = false;
         }
 
         return {
@@ -1676,7 +1929,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 center.shape,
                 apex.shape, radius
             ),
-            defined: true
+            defined: center.defined && apex.defined && defined,
+            dependsOn: [center.shape.props.id, apex.shape.props.id]
         };
     }
 
@@ -1689,7 +1943,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 if (node && node.type.props.label === shapeId) {
                     // Check if the shape is a line
                     if ('cone' in node.type && 'apex' in node.type && 'radius' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a cone.`);
@@ -1703,11 +1957,12 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitCylinderDef = (ctx: CylinderDefContext): unknown => {
-        let center1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean };
-        let center2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean };
+        let defined: boolean = true;
+        let center1 = this.visit(ctx.pointExpr(0)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
+        let center2 = this.visit(ctx.pointExpr(1)) as { shape:  geometry.Point, defined: boolean, dependsOn: string[] };
         let radius = this.visit(ctx.numberExpr()!) as number;
         if (radius <= 0) {
-            throw new Error(`Radius can not be negative or 0`);
+            defined = false;
         }
 
         return {
@@ -1716,7 +1971,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 center1.shape,
                 center2.shape, radius
             ),
-            defined: center1.defined && center2.defined
+            defined: center1.defined && center2.defined,
+            dependsOn: [center1.shape.props.id, center2.shape.props.id]
         }
     }
 
@@ -1728,7 +1984,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 const node = this.DAG.get(key);
                 if (node && node.type.props.label === shapeId) {
                     if ('centerBase1' in node.type && 'centerBase2' in node.type && 'radius' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a cylinder.`);
@@ -1742,18 +1998,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitIntersectionDef = (ctx: IntersectionDefContext): unknown => {
-        let shape1 = this.visit(ctx.expr(0)) as { shape: geometry.Shape, defined: boolean };
-        let shape2 = this.visit(ctx.expr(1)) as { shape: geometry.Shape, defined: boolean };
-        if (!shape1.defined || !shape2.defined) {
-            return {
-                shape: factory.createPoint(
-                    createPointDefaultShapeProps(''),
-                    0, 0, 0
-                ),
-                defined: false
-            }
-        }
-
+        let shape1 = this.visit(ctx.expr(0)) as { shape: geometry.Shape, defined: boolean, dependsOn: string[] };
+        let shape2 = this.visit(ctx.expr(1)) as { shape: geometry.Shape, defined: boolean, dependsOn: string[] };
         try {
             const intersections = operations.getIntersections3D(shape1.shape, shape2.shape);
             if (intersections.length === 0) {
@@ -1768,7 +2014,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     intersection.coors?.y ?? 0, 
                     intersection.coors?.z ?? 0, 
                 ),
-                defined: !intersection.ambiguous
+                defined: !intersection.ambiguous,
+                dependsOn: [shape1.shape.props.id, shape2.shape.props.id]
             }
         }
 
@@ -1778,16 +2025,57 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitPrismDef = (ctx: PrismDefContext): unknown => {
-        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean };
-        let direction = this.visit(ctx.directionExpr()!) as { shape: geometry.Vector, defined: boolean };
+        let defined: boolean = true;
+        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean, dependsOn: string[] };
+        let height = this.visit(ctx.numberExpr()!) as number;
+        if (height <= 0) defined = false;
+        const base = polygon.shape;
+        const v1 = {
+            x: base.points[1].x - base.points[0].x,
+            y: base.points[1].y - base.points[0].y,
+            z: (base.points[1].z ?? 0) - (base.points[0].z ?? 0)
+        };
+
+        const v2 = {
+            x: base.points[2].x - base.points[1].x,
+            y: base.points[2].y - base.points[1].y,
+            z: (base.points[2].z ?? 0) - (base.points[1].z ?? 0)
+        }
+
+        let n = operations.cross(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+        n = {
+            x: n.x / Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) * height,
+            y: n.y / Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) * height,
+            z: n.z / Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) * height
+        };
+
+        // Create the top polygon by translating the base polygon along the normal vector
+        const topPoints = base.points.map(pt => {
+            return factory.createPoint(
+                createPointDefaultShapeProps(incrementLabel(pt.props.label)),
+                pt.x + n.x,
+                pt.y + n.y,
+                (pt.z ?? 0) + n.z
+            )
+        });
+
+        const top = factory.createPolygon(
+            createPolygonDefaultShapeProps(''),
+            topPoints
+        );
+
+        const prism = factory.createPrism(
+            createPlaneDefaultShapeProps(''),
+            polygon.shape,
+            top
+        );
+
+        prism.props.color = '#FF7276';
 
         return {
-            shape: factory.createPrism(
-                createCylinderDefaultShapeProps('', 0),
-                polygon.shape,
-                operations.translation(polygon.shape, direction.shape) as geometry.Polygon,
-            ),
-            defined: polygon.defined && direction.defined
+            shape: prism,
+            defined: polygon.defined && defined,
+            dependsOn: [polygon.shape.props.id]
         }
     }
 
@@ -1799,7 +2087,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 const node = this.DAG.get(key);
                 if (node && node.type.props.label === shapeId) {
                     if ('base1' in node.type && 'base2' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a prism.`);
@@ -1813,16 +2101,17 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitTetrahedronDef = (ctx: TetrahedronDefContext): unknown => {
+        let defined: boolean = true;
         if (ctx.pointExpr().length === 4) {
             let [p1, p2, p3, apex] = [
-                this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean },
-                this.visit(ctx.pointExpr(1)) as { shape: geometry.Point, defined: boolean },
-                this.visit(ctx.pointExpr(2)) as { shape: geometry.Point, defined: boolean },
-                this.visit(ctx.pointExpr(3)) as { shape: geometry.Point, defined: boolean }
+                this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] },
+                this.visit(ctx.pointExpr(1)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] },
+                this.visit(ctx.pointExpr(2)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] },
+                this.visit(ctx.pointExpr(3)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] }
             ];
 
             if (operations.checkCoplanar([p1.shape, p2.shape, p3.shape, apex.shape])) {
-                throw new Error('Cannot form a tetrahedron with 4 coplanar points');
+                defined = false;
             }
 
             const checkCollinear = (a: geometry.Point, b: geometry.Point, c: geometry.Point): boolean => {
@@ -1854,7 +2143,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
             if (checkCollinear(p1.shape, p2.shape, p3.shape) || checkCollinear(p1.shape, p2.shape, apex.shape) ||
                 checkCollinear(p1.shape, p3.shape, apex.shape) || checkCollinear(p2.shape, p3.shape, apex.shape)
             ) {
-                throw new Error('Cannot form a tetrahedron with 3 collinear points');
+                defined = false;
             }
 
             return {
@@ -1865,18 +2154,19 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         [p1.shape, p2.shape, p3.shape]
                     ), apex.shape
                 ),
-                defined: p1.defined && p2.defined && p3.defined && apex.defined
+                defined: p1.defined && p2.defined && p3.defined && apex.defined && defined,
+                dependsOn: [p1.shape.props.id, p2.shape.props.id, p3.shape.props.id, apex.shape.props.id]
             }
         }
 
-        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean }
-        let apex = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean }
+        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean, dependsOn: string[] }
+        let apex = this.visit(ctx.pointExpr(0)) as { shape: geometry.Point, defined: boolean, dependsOn: string[] }
         if (polygon.shape.points.length !== 3) {
             throw new Error('Use the Pyramid command instead');
         }
 
         if (operations.checkCoplanar([...polygon.shape.points.map(p => p), apex.shape])) {
-            throw new Error('Cannot form a tetrahedron with 4 coplanar points');
+            defined = false;
         }
 
         return {
@@ -1884,7 +2174,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 createCylinderDefaultShapeProps('', 0),
                 polygon.shape, apex.shape
             ),
-            defined: polygon.defined && apex.defined
+            defined: polygon.defined && apex.defined && defined,
+            dependsOn: [polygon.shape.props.id, apex.shape.props.id]
         }
     }
     
@@ -1897,7 +2188,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 if (node && node.type.props.label === shapeId) {
                     if ('apex' in node.type && 'base' in node.type) {
                         const base = node.type.base as geometry.Polygon;
-                        if (base.points.length === 3) return { shape: node.type, defined: node.defined };
+                        if (base.points.length === 3) return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a tetrahedron.`);
@@ -1911,8 +2202,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
     }
 
     visitPyramidDef = (ctx: PyramidDefContext): unknown => {
-        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean };
-        let point = this.visit(ctx.pointExpr()!) as { shape: geometry.Point, defined: boolean };
+        let polygon = this.visit(ctx.polygonExpr()!) as { shape: geometry.Polygon, defined: boolean, dependsOn: string[] };
+        let point = this.visit(ctx.pointExpr()!) as { shape: geometry.Point, defined: boolean, dependsOn: string[] };
 
         return {
             shape: factory.createPyramid(
@@ -1920,7 +2211,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 polygon.shape,
                 point.shape,
             ),
-            defined: polygon.defined && point.defined
+            defined: polygon.defined && point.defined,
+            dependsOn: [polygon.shape.props.id, point.shape.props.id]
         }
     }
 
@@ -1932,7 +2224,7 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 const node = this.DAG.get(key);
                 if (node && node.type.props.label === shapeId) {
                     if ('apex' in node.type && 'base' in node.type) {
-                        return { shape: node.type, defined: node.defined };
+                        return { shape: node.type, defined: node.defined, dependsOn: node.dependsOn };
                     }
 
                     throw new Error(`Shape with ID ${shapeId} is not a tetrahedron.`);
@@ -1947,8 +2239,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
 
     visitTransformDef = (ctx: TransformDefContext): unknown => {
         if (ctx.TRANSLATE()) {
-            let shape = this.visit(ctx.shapeExpr()!) as { shape: geometry.Shape, defined: boolean };
-            let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean };
+            let shape = this.visit(ctx.shapeExpr()!) as { shape: geometry.Shape, defined: boolean, dependsOn: string[] };
+            let vectorExpr = this.visit(ctx.vectorExpr()!) as { shape: geometry.Vector, defined: boolean, dependsOn: string[] };
             const translatedShape = operations.translation(shape.shape, vectorExpr.shape);
         }
 
