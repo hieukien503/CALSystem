@@ -55,6 +55,7 @@ interface Project2DState {
         title: string,
         input_label: string;
         angleMode: boolean;
+        rotationMode: boolean;
     } | undefined;
     /** For user input */
     data: {
@@ -282,7 +283,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleUndoClick = () => {
-        console.log(this.lastFailedState, this.historyStack);
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {
@@ -582,6 +582,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     };
 
     private setMode = (mode: DrawingMode) => {
+        let data: number | undefined | string;
         if (mode === 'delete') {
             let selected: string[] = [];
             this.dag.forEach((node, key) => {
@@ -602,6 +603,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         }
 
         else {
+            if (mode === 'angle') {
+                if (data === undefined || (data !== undefined && typeof data !== 'string')) {
+                    this.setDialogbox(mode);
+                }
+            }
+
             this.dag.forEach((node, key) => {
                 node.isSelected = false;
                 if (node.node === undefined) return;
@@ -643,7 +650,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: {
                     title: 'Circle: Center & Radius',
                     input_label: 'Radius',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -654,7 +662,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: {
                     title: 'Regular Polygon',
                     input_label: 'Vertices',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -665,7 +674,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: {
                     title: 'Rotate around Point',
                     input_label: 'Angle (in degree)',
-                    angleMode: true
+                    angleMode: false,
+                    rotationMode: true
                 },
                 isMenuRightClick: undefined
             });
@@ -676,7 +686,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: {
                     title: 'Segment with Given Length',
                     input_label: 'Length',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -687,7 +698,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: {
                     title: 'Dilate from Point',
                     input_label: 'Scale factor',
-                    angleMode: false
+                    angleMode: false,
+                    rotationMode: false
                 },
                 isMenuRightClick: undefined
             });
@@ -699,8 +711,24 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     title: 'Rename',
                     input_label: 'New name',
                     angleMode: false,
+                    rotationMode: false
                 },
                 data: {...this.state.data, id_to_change: id_to_change},
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'angle') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Angle',
+                    input_label: 'Angle Range',
+                    angleMode: true,
+                    rotationMode: false
+                },
+                selectedPoints: [],
+                selectedShapes: [],
+                mode: mode,
                 isMenuRightClick: undefined
             });
         }
@@ -780,6 +808,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private receiveData = (value: string, CCW: boolean = true): void => {
+        console.log(value);
         if (['segment_length', 'circle'].includes(this.state.mode)) {
             try {
                 const radius = math.evaluate(value);
@@ -854,6 +883,21 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     }
                 })
             }
+        }
+
+        else if (this.state.mode === 'angle') {
+            this.setState({
+                data: {
+                    radius: value,
+                    vertices: undefined,
+                    rotation: undefined
+                },
+                error: {
+                    label: '',
+                    message: '',
+                },
+                isDialogBox: undefined
+            });
         }
 
         else if (this.state.mode === 'rotation') {
@@ -1166,6 +1210,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onCancelClick={() => this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})}
                     position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
                     ref={this.dialogRef}
+                    rotationMode={this.state.isDialogBox.rotationMode}
                 />)}
                 {this.state.error.message.length > 0 && <ErrorDialogbox 
                     position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}

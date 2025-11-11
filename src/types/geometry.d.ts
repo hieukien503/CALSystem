@@ -28,6 +28,7 @@ export interface Angle extends BaseShape {
     vertex?: Point;
     vector1: Vector;
     vector2: Vector;
+    range: [number, number]
 }
 
 export interface SemiCircle extends BaseShape {
@@ -210,14 +211,20 @@ export interface ShapeNode3D {
     scaleFactor?: number;
     /** For rotation */
     rotationFactor?: {
-        degree: number;
-        CCW: boolean;
+        center: THREE.Vector3;
+        phi: number;
+        theta: number
+    } | {
+        degree: number,
+        CCW: boolean
     };
-    node?: THREE.Group | THREE.Mesh;
+    node?: THREE.Object3D;
     /** For tangent line and angle bisector */
     side? : 0 | 1;
     /** Selected or not */
     isSelected: boolean;
+    /** Draggable or not */
+    isDraggable: boolean;
 }
 
 // Geometry state
@@ -245,7 +252,7 @@ export interface GeometryState {
 }
 
 /** Drawing mode */
-type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'edit' | 'delete' |
+type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' | 'circle' | 'ray' | 'delete' |
                    'angle' | 'undo' | 'redo' | 'clear' | 'length' | 'area' | 'volume' | 'show_label' | 'show_object' | 'intersection' |
                    'circle_2_points' | 'parallel' | 'perpendicular' | 'midpoint' | 'orthocenter' | 'incenter' | 'centroid' |
                    'circumcenter' | 'incircle' | 'circumcircle' | 'excenter' | 'excircle' | 'segment_length' | 'perpendicular_bisector' |

@@ -9,11 +9,11 @@ expr: shapeExpr;
 pointDef: POINT? LR (numberExpr COMMA numberExpr COMMA numberExpr) RR;
 sphereDef: SPHERE LR (pointExpr COMMA (pointExpr | numberExpr)) RR;
 planeDef: PLANE LR (
-            SHAPE_ID | 
-            (pointExpr COMMA (planeExpr | lineExpr)) | 
+            polygonExpr | 
+            (pointExpr COMMA (planeExpr | lineExpr | vectorExpr)) | 
             (lineExpr COMMA lineExpr) |
+            (pointExpr COMMA pointExpr COMMA pointExpr) |
             (pointExpr COMMA vectorExpr COMMA vectorExpr) |
-            (pointExpr COMMA pointExpr COMMA pointExpr)
         ) RR;
 lineDef: LINE LR (
             (pointExpr COMMA pointExpr) |
@@ -56,7 +56,7 @@ transformDef: (
 cylinderDef: CYLINDER LR (pointExpr COMMA pointExpr COMMA numberExpr) RR;
 tetrahedronDef: TETRAHEDRON LR ((polygonExpr | (pointExpr COMMA pointExpr COMMA pointExpr)) COMMA pointExpr) RR;
 coneDef: CONE LR (pointExpr COMMA numberExpr COMMA pointExpr) RR;
-prismDef: PRISM LR (polygonExpr COMMA directionExpr) RR;
+prismDef: PRISM LR (polygonExpr COMMA numberExpr) RR;
 pyramidDef: PYRAMID LR (polygonExpr COMMA pointExpr) RR;
 
 numberExpr: additiveExpr;
@@ -119,8 +119,8 @@ nrootExpr: NROOT LR (numberExpr COMMA numberExpr) RR;
 absExpr: ABS LR numberExpr RR;
 expExpr: EXP LR numberExpr RR;
 
-pointExpr: POINT_ID | pointDef;
-lineExpr: lineDef | SHAPE_ID;
+pointExpr: SHAPE_ID | pointDef;
+lineExpr: lineDef | SHAPE_ID | segmentDef | rayDef;
 dirExpr: pointExpr | vectorExpr | LR (numberExpr COMMA numberExpr COMMA numberExpr) RR;
 vectorExpr: vectorDef | SHAPE_ID;
 planeExpr: planeDef | SHAPE_ID;
@@ -177,8 +177,7 @@ NROOT: 'nroot';
 X: 'x';
 Y: 'y';
 Z: 'z';
-POINT_ID: [A-Z][A-Za-z0-9]*[']?([_][A-Za-z0-9]+)?;
-SHAPE_ID: [a-z][A-Za-z0-9]*[']?([_][A-Za-z0-9]+)?;
+SHAPE_ID: [A-Za-z][A-Za-z0-9]*[']?([_][A-Za-z0-9]+)?;
 LR: '(';
 RR: ')';
 LC: '{';

@@ -357,6 +357,16 @@ public interface MathCommandListener extends ParseTreeListener {
 	 */
 	void exitSqrtExpr(MathCommandParser.SqrtExprContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MathCommandParser#nrootExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterNrootExpr(MathCommandParser.NrootExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MathCommandParser#nrootExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitNrootExpr(MathCommandParser.NrootExprContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MathCommandParser#absExpr}.
 	 * @param ctx the parse tree
 	 */
