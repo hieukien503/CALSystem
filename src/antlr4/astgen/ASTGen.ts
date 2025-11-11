@@ -149,7 +149,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 defined: shapeInfo.defined,
                 isSelected: false,
                 dependsOn: shapeInfo.dependsOn,
-                type: shape
+                type: shape,
+                isDraggable: true
             })
         }
 
@@ -182,7 +183,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         defined: shapeInfo.defined,
                         isSelected: false,
                         dependsOn: shapeInfo.dependsOn,
-                        type: shape
+                        type: shape,
+                        isDraggable: true
                     }
 
             
@@ -206,7 +208,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         defined: shapeInfo.defined,
                         isSelected: false,
                         dependsOn: shapeInfo.dependsOn,
-                        type: shape
+                        type: shape,
+                        isDraggable: true
                     }
 
             
@@ -230,7 +233,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         defined: shapeInfo.defined,
                         isSelected: false,
                         dependsOn: shapeInfo.dependsOn,
-                        type: shape
+                        type: shape,
+                        isDraggable: true
                     }
 
             
@@ -254,7 +258,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                         defined: shapeInfo.defined,
                         isSelected: false,
                         dependsOn: shapeInfo.dependsOn,
-                        type: shape
+                        type: shape,
+                        isDraggable: true
                     }
 
             
@@ -280,7 +285,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 defined: shapeInfo.defined,
                 isSelected: false,
                 dependsOn: shapeInfo.dependsOn,
-                type: shape
+                type: shape,
+                isDraggable: true
             }
 
 
@@ -341,7 +347,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                     type: segment,
                     dependsOn: [p.props.id, pNext.props.id, poly.props.id],
                     defined: shapeInfo.defined,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: true
                 }
 
                 this.DAG.set(segment.props.id, shapeNode);
@@ -352,7 +359,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 defined: shapeInfo.defined,
                 isSelected: false,
                 dependsOn: shapeInfo.dependsOn,
-                type: shape
+                type: shape,
+                isDraggable: true
             }
     
             this.DAG.set(poly.props.id, shapeNode);
@@ -373,7 +381,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 defined: shapeInfo.defined,
                 isSelected: false,
                 dependsOn: shapeInfo.dependsOn,
-                type: shape
+                type: shape,
+                isDraggable: true
             }
 
 
@@ -395,7 +404,8 @@ class ASTGen implements MathCommandVisitor<unknown> {
                 defined: shapeInfo.defined,
                 isSelected: false,
                 dependsOn: shapeInfo.dependsOn,
-                type: shape
+                type: shape,
+                isDraggable: false
             }
 
             this.DAG.set(shape.props.id, shapeNode);

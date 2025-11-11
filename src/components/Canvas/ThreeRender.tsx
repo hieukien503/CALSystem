@@ -14,7 +14,7 @@ import * as constants3d from '../../types/constants3D';
 import * as operation from '../../utils/math_operation'
 import ThreeAxis from '../../utils/ThreeAxis';
 import ThreeGrid from '../../utils/ThreeGrid';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls'
 
 interface ThreeDCanvasProps {
     width: number;
@@ -43,7 +43,7 @@ interface ThreeDCanvasProps {
         dag: Map<string, ShapeNode3D>,
         selectedShapes: Shape[],
         selectedPoints: Point[]
-    }) => void;
+    }, storeHistory?: boolean) => void;
     onSelectedShapesChange: (s: Shape[]) => void;
     onSelectedPointsChange: (s: Point[]) => void;
     onGeometryStateChange: (s: GeometryState) => void;
@@ -124,6 +124,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.disposeResources();
         this.rendererRef.current!.domElement.removeEventListener('pointerdown', this.handleMouseDown);
         this.rendererRef.current!.domElement.removeEventListener('contextmenu', this.handleContextMenu);
+        this.rendererRef.current!.domElement.removeEventListener('wheel', this.onMouseWheel);
+        this.transformControlsRef.current!.removeEventListener('dragging-changed', this.onDraggingChanged);
+        this.transformControlsRef.current!.removeEventListener('change', this.handleChange);
+        this.transformControlsRef.current!.removeEventListener('objectChange', this.onMouseUp)
+        this.sceneRef.current!.remove(this.transformControlsRef.current!.getHelper())
     }
 
     private handleContextMenu = (e: MouseEvent) => {
@@ -347,7 +352,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             type: xAxisLine,
             dependsOn: [],
             isSelected: false,
-            defined: true
+            defined: true,
+            isDraggable: false,
+            node: xAxis
         });
 
         DAG.set(yAxisLine.props.id, {
@@ -355,7 +362,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             type: yAxisLine,
             dependsOn: [],
             isSelected: false,
-            defined: true
+            defined: true,
+            isDraggable: false,
+            node: yAxis
         });
 
         DAG.set(zAxisLine.props.id, {
@@ -363,7 +372,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             type: zAxisLine,
             dependsOn: [],
             isSelected: false,
-            defined: true
+            defined: true,
+            isDraggable: false,
+            node: zAxis
         });
 
         const oxyPlane = Factory.createPlane(
@@ -391,7 +402,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             type: oxyPlane,
             dependsOn: [],
             isSelected: false,
-            defined: true
+            defined: true,
+            isDraggable: false,
+            node: mesh
         });
 
         this.props.onUpdateAll({
@@ -407,14 +420,224 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         controls.dampingFactor = 0.05;
         controls.enableZoom = false;
         this.controlsRef.current = controls;
-        
+
+        // Add transform controls
+        const transformControls = new TransformControls(this.cameraRef.current, this.rendererRef.current.domElement);
+        transformControls.addEventListener('dragging-changed', this.onDraggingChanged);
+        transformControls.addEventListener('change', this.handleChange);
+        transformControls.addEventListener('objectChange', this.onMouseUp)
+
+        this.transformControlsRef.current = transformControls;
+        this.sceneRef.current!.add(transformControls.getHelper())
         renderer.domElement.addEventListener('wheel', this.onMouseWheel, { passive: false });
         requestAnimationFrame(this.animate);
     }
 
+    onMouseUp = (e: any) => {
+        this.props.onUpdateAll({
+            gs: { ...this.props.geometryState },
+            dag: utils3d.cloneDAG(this.props.dag),
+            selectedPoints: this.props.selectedPoints,
+            selectedShapes: this.props.selectedShapes
+        }, false);
+    }
+
+    onDraggingChanged = (e: any) => {
+        this.controlsRef.current!.enabled = false;
+        this.props.pushHistory(this.props.getSnapshot());
+        if (!e.value && this.transformControlsRef.current) { // Dragging stopped
+            this.transformControlsRef.current.detach();
+            this.controlsRef.current!.enabled = true;
+        }
+    };
+
+    handleChange = () => {
+        if (!this.transformControlsRef.current) return;
+        const object = this.transformControlsRef.current!.object;
+        if (object) {
+            const name = object.parent ? object.parent.name : object.name;
+            const node = this.props.dag.get(name);
+            console.log(node);
+            if (!node) return;
+            if (!node.isDraggable) return;
+            this.updateAndPropagate(name, (node) => {
+                if ('x' in node.type && 'y' in node.type) {
+                    // Update x, y, z
+                    let shape: THREE.Object3D | undefined;
+                    if (node.dependsOn.length > 0) {
+                        shape = this.props.dag.get(node.dependsOn[0])?.node;
+                    }
+                    
+                    let posInfo = utils3d.snapToShape3D(
+                        this.props.dag, shape, object.position
+                    );
+    
+                    // object.position.copy(posInfo.position);
+                    // console.log(object.position);
+                    node.type.x = object.position.x;
+                    node.type.y = object.position.z;
+                    node.type.z = object.position.y;
+                    node.rotationFactor = posInfo.rotFactor;
+                    node.scaleFactor = posInfo.scaleFactor;
+                    return { ...node! };
+                }
+
+                return { ...node! }
+            })
+        }
+    }
+
+    private findChildren = (id: string): string[] => {
+        if (!this.props.dag.get(id)) {
+            return [];
+        }
+
+        let children: string[] = [];
+        this.props.dag.forEach((value, key) => {
+            if (value.dependsOn.includes(id)) {
+                children.push(key)
+            }
+        })
+
+        return children;
+    }
+
+    private updateAndPropagate = (id: string, updateFn: (node: ShapeNode3D) => ShapeNode3D): void => {
+        const node = this.props.dag.get(id);
+        if (!node) return;
+
+        const visited = new Set<string>();
+        const stack: string[] = [];
+
+        // Perform topological sort to get nodes in dependency order
+        const topologicalSort = (nodeId: string) => {
+            if (visited.has(nodeId)) return;
+            visited.add(nodeId);
+            this.findChildren(nodeId).forEach(childId => topologicalSort(childId));
+            stack.push(nodeId);
+        };
+
+        topologicalSort(id);
+        const updated = updateFn(node);
+        this.props.dag.set(id, updated);
+
+        stack.reverse().forEach(nodeId => {
+            if (nodeId !== id) { // Skip the initial node
+                const stack_node = this.props.dag.get(nodeId);
+                if (stack_node) {
+                    this.props.dag.set(nodeId, updateFn(stack_node));
+                }
+            }
+        });
+    }
+
+    // private computeUpdateFor = (node: ShapeNode3D): ShapeNode3D => {
+    //     let map = {
+    //         'Point': this.updatePoint,
+    //         'Segment': this.updateSegment,
+    //         'Line': this.updateLine,
+    //         'Ray': this.updateRay,
+    //         'Polygon': this.updatePolygon,
+    //         'Circle': this.updateCircle,
+    //         'Vector': this.updateVector,
+    //         'Circle2Point': this.updateCircle2Point,
+    //         'Intersection': this.updateIntersection,
+    //         'Midpoint': this.updateMidpoint,
+    //         'Centroid': this.updateCentroid,
+    //         'Orthocenter': this.updateOrthocenter,
+    //         'Circumcenter': this.updateCircumcenter,
+    //         'Incenter': this.updateIncenter,
+    //         'AngleBisector': this.updateAngleBisector,
+    //         'Incircle3Point': this.updateIncircle3Point,
+    //         'PerpendicularBisector': this.updatePerpendicularBisector,
+    //         'PerpendicularLine': this.updatePerpendicularLine,
+    //         'TangentLine': this.updateTangentLine,
+    //         'ParallelLine': this.updateParallelLine,
+    //         'Circumcircle': this.updateCircle3Point,
+    //         'SemiCircle': this.updateSemiCircle,
+    //         'Angle': this.updateAngle,
+    //         'Reflection': this.updateReflection,
+    //         'Rotation': this.updateRotation,
+    //         'Projection': this.updateProjection,
+    //         'Enlarge': this.updateEnlarge,
+    //         'Excenter': this.updateExcenter,
+    //         'Excircle': this.updateExcircle,
+    //         'RegularPolygon': this.updateRegularPoly,
+    //         'Translation': this.updateTranslation,
+    //         'PerpendicularPlane': this.updatePerpendicularPlane,
+    //         'ParallelPlane': this.updateParallelPlane,
+    //         'Prism': this.updatePrism,
+    //         'Pyramid': this.updatePyramid,
+    //         'Cylinder': this.updateCylinder,
+    //         'Cone': this.updateCone,
+    //         'Tetrahedron': this.updateTetrahedron,
+    //         'Sphere': this.updateSphere,
+    //         'Sphere2Points': this.updateSphere2Points
+    //     }
+
+    //     if (node.type.type in map) {
+    //         // Type assertion ensures only valid keys are used
+    //         return map[node.type.type as keyof typeof map](node);
+    //     }
+
+    //     return node;
+    // }
+
     disposeResources = () => {
         if (this.controlsRef.current) {
             this.controlsRef.current.dispose();
+        }
+
+        function disposeGroup(group: THREE.Group) {
+            if (!group) return;
+
+            // 1. Traverse all descendants
+            group.traverse(object => {
+                // 2. Only check Meshes and dispose their resources
+                if (object instanceof THREE.Mesh) {
+                    // Dispose Geometry
+                    if (object.geometry) {
+                        object.geometry.dispose();
+                    }
+
+                    // Dispose Material and Textures
+                    if (object.material) {
+                        // If the material is an array, iterate through it (e.g., MultiMaterial)
+                        if (Array.isArray(object.material)) {
+                            object.material.forEach(material => material.dispose());
+                        } else {
+                            // Dispose textures associated with the material
+                            for (const key in object.material) {
+                                const value = object.material[key];
+                                if (value && typeof value === 'object' && 'isTexture' in value) {
+                                    value.dispose();
+                                }
+                            }
+                            // Dispose the material itself
+                            object.material.dispose();
+                        }
+                    }
+                }
+            });
+
+            // 3. Remove all children from the group/scene hierarchy
+            // Note: The loop runs backwards to safely remove items from the collection
+            for (let i = group.children.length - 1; i >= 0; i--) {
+                const child = group.children[i];
+                
+                // **Important:** If the child is a nested Group, call disposeGroup on it first.
+                if (child instanceof THREE.Group) {
+                    disposeGroup(child);
+                } else {
+                    // For other objects, just remove them from the group.
+                    group.remove(child);
+                }
+            }
+
+            // 4. Finally, remove the group itself from its parent (e.g., the scene)
+            if (group.parent) {
+                group.parent.remove(group);
+            }
         }
 
         if (this.sceneRef.current && this.rendererRef.current) {
@@ -428,6 +651,10 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     else {
                         object.material.dispose();
                     }
+                }
+
+                else if (object instanceof THREE.Group) {
+                    disposeGroup(object);
                 }
             });
 
@@ -555,7 +782,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             const defaultNormal = utils3d.convertToVector3(0, 1, 0);
             const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, norm);
             mesh.quaternion.copy(quaternion);
-            labelPosition.copy(mesh.position).add(new THREE.Vector3(0, 2.5, 0));
+            labelPosition.add(new THREE.Vector3(0, 2.5, 0));
         }
         
         else if ('centerBase1' in shape && 'centerBase2' in shape && 'radius' in shape) {
@@ -628,7 +855,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             mesh = group as unknown as THREE.Mesh;
             let center = utils3d.convertToVector3(sp.centerS.x, sp.centerS.y, sp.centerS.z ?? 0)
             mesh.position.set(center.x, center.y, center.z);
-            labelPosition.copy(mesh.position).add(new THREE.Vector3(0, sp.radius + 0.5, 0));
+            labelPosition.add(new THREE.Vector3(0, sp.radius + 0.5, 0));
         }
         
         else if ('apex' in shape && 'base' in shape) {
@@ -810,7 +1037,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
         // Create group to hold mesh and label
         const group = new THREE.Group();
-        group.add(mesh);
 
         // Add label if visible
         if (shape.props.visible.label) {
@@ -823,10 +1049,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 constants3d.FONT_DEFAULTS.COLOR
             );
             
-            group.add(label);
+            mesh.add(label);
         }
 
         group.name = shape.props.id;
+        group.add(mesh);
         return group;
     }
         
@@ -921,7 +1148,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
         
             mesh = utils3d.createDashLine(points, c.props) as unknown as THREE.Mesh;
-            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
+            labelPosition.add(new THREE.Vector3(0, 0, 0));
         }
         
         else if ('x' in shape && 'y' in shape) {
@@ -930,7 +1157,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             mesh = new THREE.Mesh(geometry, material);
             let pConvert = utils3d.convertToVector3(p.x, p.y, p.z ?? 0);
             mesh.position.set(pConvert.x, pConvert.y, pConvert.z);
-            labelPosition.copy(mesh.position).add(new THREE.Vector3(0, shape.props.radius + 0.5, 0));
+            labelPosition.add(new THREE.Vector3(0, shape.props.radius + 0.5, 0));
         }
         
         else if ('startLine' in shape && 'endLine' in shape) {
@@ -946,7 +1173,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             points.push(P2)
 
             mesh = utils3d.createDashLine(points, l.props) as unknown as THREE.Mesh;
-            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
+            labelPosition.add(new THREE.Vector3(0, 0, 0));
         }
 
         else if ('startRay' in shape && 'endRay' in shape) {
@@ -961,7 +1188,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             points.push(P3);
 
             mesh = utils3d.createDashLine(points, r.props) as unknown as THREE.Mesh;
-            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
+            labelPosition.add(new THREE.Vector3(0, 0, 0));
         }
         
         else if ('startSegment' in shape && 'endSegment' in shape) {
@@ -974,7 +1201,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             points.push(P2)
 
             mesh = utils3d.createDashLine(points, s.props) as unknown as THREE.Mesh;
-            labelPosition.copy(mesh!.position).add(new THREE.Vector3(0, 0, 0));
+            labelPosition.add(new THREE.Vector3(0, 0, 0));
         }
         
         else if ("points" in shape) {
@@ -1099,7 +1326,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         if (!mesh) return null;
         // Create group to hold mesh and label
         const group = new THREE.Group();
-        group.add(mesh);
 
         // Add label if visible
         if (shape.props.visible.label) {
@@ -1112,10 +1338,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 constants3d.FONT_DEFAULTS.COLOR
             );
             
-            group.add(label);
+            mesh.add(label);
         }
 
         group.name = shape.props.id;
+        group.add(mesh);
         return group;
     }
 
@@ -1200,6 +1427,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.props.dag.forEach(shape => {
             if (shape.defined && shape.type.props.visible.shape && !['line-xAxis', 'line-yAxis', 'line-zAxis', 'plane-OxyPlane'].includes(shape.type.props.id)) {
                 const mesh = this.createShape(shape.type);
+                shape.node = mesh as unknown as THREE.Object3D;
                 if (mesh) {
                     mesh.renderOrder = visualPriority[shape.type.type] ?? 0; // Higher priority shapes render on top
                     this.sceneRef.current!.add(mesh);
@@ -1256,7 +1484,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     id: point.props.id,
                     isSelected: false,
                     defined: true,
-                    dependsOn: []
+                    dependsOn: [],
+                    isDraggable: true
                 });
 
                 this.props.onLabelUsed(labelUsed);
@@ -1302,7 +1531,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: vector,
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: true
                     }
 
             
@@ -1330,10 +1560,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: line,
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: true
                     };
-
-            
 
                     DAG.set(line.props.id, shapeNode);
                     this.props.onUpdateLastFailedState();
@@ -1360,7 +1589,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: ray,
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: true
                     };
 
             
@@ -1389,7 +1619,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: segment,
                         dependsOn: [p1.props.id, p2.props.id],
                         defined: true,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: true
                     };
 
             
@@ -1437,7 +1668,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: sphere,
                 dependsOn: [point.props.id],
                 defined: true,
-                isSelected: false
+                isSelected: false,
+                isDraggable: false
             }
 
             DAG.set(sphere.props.id, shapeNode);
@@ -1474,6 +1706,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id],
                 defined: true,
                 isSelected: false,
+                isDraggable: false
             }
 
             sphere.type = 'Sphere2Point';
@@ -1519,7 +1752,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     type: circle,
-                    dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                    dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id],
+                    isDraggable: false
                 };
 
                 circle.type = 'Circumcircle';
@@ -1550,7 +1784,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: false,
                     isSelected: false,
                     type: circle,
-                    dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id] 
+                    dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id],
+                    isDraggable: true 
                 };
 
                 circle.type = 'Circumcircle';
@@ -1590,7 +1825,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id],
                     defined: true,
                     isSelected: false,
-                    type: midpoint
+                    type: midpoint,
+                    isDraggable: true
                 });
 
                 midpoint.type = 'Midpoint';
@@ -1635,7 +1871,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: [selectedShapes[0].props.id],
                         defined: true,
                         isSelected: false,
-                        type: midpoint
+                        type: midpoint,
+                        isDraggable: true
                     });
 
                     midpoint.type = 'Midpoint';
@@ -1662,7 +1899,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: [selectedShapes[0].props.id],
                         defined: true,
                         isSelected: false,
-                        type: midpoint
+                        type: midpoint,
+                        isDraggable: true
                     });
 
                     this.props.onUpdateLastFailedState();
@@ -1737,7 +1975,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: [selectedPoints[0].props.id, selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false,
-                    type: newLine
+                    type: newLine,
+                    isDraggable: true
                 });
 
                 newLine.type = 'ParallelLine';
@@ -1791,7 +2030,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: [selectedPoints[0].props.id, selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false,
-                    type: newLine
+                    type: newLine,
+                    isDraggable: true
                 });
 
                 this.props.onUpdateLastFailedState();
@@ -1849,6 +2089,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 defined: true,
                 isSelected: false,
                 scaleFactor: length,
+                isDraggable: true
             }
 
             let shapeNodeSegment: ShapeNode3D = {
@@ -1856,7 +2097,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: segment,
                 dependsOn: [selectedPoints[0].props.id, point.props.id],
                 defined: true,
-                isSelected: false
+                isSelected: false,
+                isDraggable: true
             }
 
             DAG.set(shapeNodePoint.id, shapeNodePoint);
@@ -1934,6 +2176,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     type: plane,
+                    isDraggable: true
                 });
 
                 plane.type = 'PerpendicularBisector';
@@ -2004,6 +2247,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     type: plane,
+                    isDraggable: true
                 });
 
                 plane.type = 'PerpendicularBisector';
@@ -2095,7 +2339,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             type: segment,
                             dependsOn: [p.props.id, pNext.props.id, polygon.props.id],
                             defined: true,
-                            isSelected: false
+                            isSelected: false,
+                            isDraggable: true
                         }
 
                         DAG.set(segment.props.id, shapeNode);
@@ -2106,7 +2351,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: polygon,
                         dependsOn: dependencies,
                         defined: true,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: true
                     }
             
                     DAG.set(polygon.props.id, shapeNode);
@@ -2198,7 +2444,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             type: line,
                             defined: true,
                             isSelected: false,
-                            side: i === 0 ? 0 : 1
+                            side: i === 0 ? 0 : 1,
+                            isDraggable: false
                         };
 
                         line.type = 'AngleBisector';
@@ -2250,7 +2497,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             type: line,
                             defined: false,
                             isSelected: false,
-                            side: i === 0 ? 0 : 1
+                            side: i === 0 ? 0 : 1,
+                            isDraggable: false
                         };
 
                         line.type = 'AngleBisector';
@@ -2348,7 +2596,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     type: newLine,
-                    side: 0
+                    side: 0,
+                    isDraggable: true
                 });
 
                 newLine.type = 'AngleBisector';
@@ -2419,7 +2668,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     side: (i === 0 ? 0 : 1),
                     defined: tangentLines.length === 0 ? false : (tangentLines.length === 1 ? i === 0 : true),
                     type: line,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: true
                 });
 
                 line.type = 'TangentLine'
@@ -2575,7 +2825,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: point,
                         dependsOn: [polygon.props.id, plane.props.id],
                         isSelected: false,
-                        defined: true
+                        defined: true,
+                        isDraggable: false
                     });
                 });
 
@@ -2603,7 +2854,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: segment,
                         dependsOn: [p.props.id, pNext.props.id, polygon.props.id],
                         defined: true,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: true
                     }
 
                     DAG.set(segment.props.id, shapeNode);
@@ -2618,7 +2870,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     rotationFactor: {
                         degree: angle,
                         CCW: true
-                    }
+                    },
+                    isDraggable: true
                 }
 
                 polygon.type = 'RegularPolygon';
@@ -2733,6 +2986,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: [polygon.props.id],
                         isSelected: false,
                         defined: true,
+                        isDraggable: true
                     });
                 });
 
@@ -2760,7 +3014,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         type: segment,
                         dependsOn: [p.props.id, pNext.props.id, polygon.props.id],
                         defined: true,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: true
                     }
 
                     DAG.set(segment.props.id, shapeNode);
@@ -2775,7 +3030,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     rotationFactor: {
                         degree: angle,
                         CCW: true
-                    }
+                    },
+                    isDraggable: true
                 }
 
                 polygon.type = 'RegularPolygon';
@@ -2830,7 +3086,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
                     defined: intersect.coors !== undefined && !intersect.ambiguous,
                     isSelected: false,
-                    side: idx === 0 ? 0 : 1
+                    side: idx === 0 ? 0 : 1,
+                    isDraggable: false
                 }
 
                 DAG.set(point.props.id, shapeNode);
@@ -2919,6 +3176,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 dependsOn: selectedPoints.map(point => point.props.id),
                 defined: true,
                 isSelected: false,
+                isDraggable: false
             });
 
             this.props.onUpdateLastFailedState();
@@ -2995,6 +3253,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: selectedPoints.map(point => point.props.id),
                     defined: true,
                     isSelected: false,
+                    isDraggable: false
                 });
 
                 this.props.onUpdateLastFailedState();
@@ -3092,6 +3351,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: [point.props.id, shape.props.id],
                         defined: true,
                         isSelected: false,
+                        isDraggable: false
                     });
 
                     this.props.onUpdateLastFailedState();
@@ -3155,6 +3415,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: points.map(point => point.props.id),
                         defined: true,
                         isSelected: false,
+                        isDraggable: false
                     });
 
                     this.props.onUpdateLastFailedState();
@@ -3257,6 +3518,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             dependsOn: [shape1.props.id, shape2.props.id],
                             defined: true,
                             isSelected: false,
+                            isDraggable: false
                         });
                     }
 
@@ -3315,6 +3577,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                             dependsOn: [shape1.props.id, shape2.props.id],
                             defined: true,
                             isSelected: false,
+                            isDraggable: false
                         });
                     }
 
@@ -3408,7 +3671,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: circle,
                     dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: true
                 };
 
                 
@@ -3481,6 +3745,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
                     isSelected: false,
+                    isDraggable: true
                 });
 
                 this.props.onLabelUsed(labelUsed);
@@ -3507,7 +3772,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: circle,
                     dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: true
                 };
 
                 DAG.set(circle.props.id, shapeNode);
@@ -3534,7 +3800,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: circle,
                     dependsOn: [center.props.id, selectedShapes[0].props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: true
                 };
 
                 DAG.set(circle.props.id, shapeNode);
@@ -3589,7 +3856,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: cylinder,
                 dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id],
                 defined: true,
-                isSelected: false
+                isSelected: false,
+                isDraggable: false
             };
 
             DAG.set(cylinder.props.id, shapeNode);
@@ -3615,7 +3883,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: base,
                     dependsOn: [selectedPoints[i].props.id, cylinder.props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: false
                 };
 
                 DAG.set(base.props.id, shapeNode);
@@ -3672,7 +3941,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 defined: true,
                 isSelected: false,
                 type: cone,
-                dependsOn: selectedPoints.map(point => point.props.id)
+                dependsOn: selectedPoints.map(point => point.props.id),
+                isDraggable: false
             });
 
             idx = 0;
@@ -3695,7 +3965,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 type: base,
                 dependsOn: [selectedPoints[0].props.id, cone.props.id],
                 defined: true,
-                isSelected: false
+                isSelected: false,
+                isDraggable: false
             };
 
             DAG.set(base.props.id, shapeNode);
@@ -3784,7 +4055,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: segment,
                     dependsOn: [p.props.id, pNext.props.id, pyramid.props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: false
                 }
 
                 DAG.set(segment.props.id, shapeNode);
@@ -3795,7 +4067,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 defined: true,
                 isSelected: false,
                 type: pyramid,
-                dependsOn: [polygon.props.id, selectedPoints[0].props.id]
+                dependsOn: [polygon.props.id, selectedPoints[0].props.id],
+                isDraggable: false
             });
 
             this.props.onUpdateLastFailedState();
@@ -3921,7 +4194,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     type: pt,
-                    dependsOn: [base.points[idx].props.id, prism.props.id]
+                    dependsOn: [base.points[idx].props.id, prism.props.id],
+                    isDraggable: false
                 });
 
                 DAG.set(segment.props.id, {
@@ -3929,7 +4203,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     type: segment,
-                    dependsOn: [base.points[idx].props.id, pt.props.id, prism.props.id]
+                    dependsOn: [base.points[idx].props.id, pt.props.id, prism.props.id],
+                    isDraggable: false
                 })
             });
 
@@ -3938,7 +4213,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 defined: true,
                 isSelected: false,
                 type: top,
-                dependsOn: [base.props.id]
+                dependsOn: [base.props.id],
+                isDraggable: false
             });
 
             DAG.set(prism.props.id, {
@@ -3946,7 +4222,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 defined: true,
                 isSelected: false,
                 type: prism,
-                dependsOn: [base.props.id]
+                dependsOn: [base.props.id],
+                isDraggable: false
             });
 
             this.props.onUpdateLastFailedState();
@@ -4020,7 +4297,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 defined: true,
                 isSelected: false,
                 type: tetra,
-                dependsOn: selectedPoints.map(point => point.props.id)
+                dependsOn: selectedPoints.map(point => point.props.id),
+                isDraggable: false
             });
 
             for (let i = 0; i < 3; i++) {
@@ -4046,7 +4324,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: segment,
                     dependsOn: [p.props.id, pNext.props.id, tetra.props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: false
                 }
 
                 DAG.set(segment.props.id, shapeNode);
@@ -4075,7 +4354,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     type: segment,
                     dependsOn: [p.props.id, pNext.props.id, tetra.props.id],
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: false
                 }
 
                 DAG.set(segment.props.id, shapeNode);
@@ -4161,7 +4441,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     dependsOn: [shape.props.id, selectedPoints[0].props.id],
-                    type: plane
+                    type: plane,
+                    isDraggable: false
                 });
 
                 this.props.onUpdateLastFailedState();
@@ -4215,7 +4496,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     defined: true,
                     isSelected: false,
                     dependsOn: [shape.props.id, selectedPoints[0].props.id],
-                    type: plane
+                    type: plane,
+                    isDraggable: false
                 });
 
                 this.props.onUpdateLastFailedState();
@@ -4336,7 +4618,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
                         type: a,
                         defined: vertex[0].coors !== undefined && vertex[0].ambiguous === false,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: false
                     }
 
                     DAG.set(a.props.id, shapeNode);
@@ -4400,7 +4683,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         dependsOn: [selectedShapes[0].props.id, selectedShapes[1].props.id],
                         type: a,
                         defined: vertex[0].coors !== undefined && vertex[0].ambiguous === false,
-                        isSelected: false
+                        isSelected: false,
+                        isDraggable: false
                     }
 
                     DAG.set(a.props.id, shapeNode);
@@ -4499,7 +4783,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     dependsOn: [selectedPoints[0].props.id, selectedPoints[1].props.id, selectedPoints[2].props.id],
                     type: a,
                     defined: true,
-                    isSelected: false
+                    isSelected: false,
+                    isDraggable: false
                 };
 
         
@@ -4533,7 +4818,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, this.cameraRef.current);
 
-            const children = this.sceneRef.current.children.filter(obj => !(obj instanceof THREE.GridHelper));
+            const children = this.sceneRef.current.children.filter(obj => !(obj instanceof THREE.GridHelper || obj === this.transformControlsRef.current!.getHelper()));
 
             // Intersect with your 3D objects
             let intersects = raycaster.intersectObjects(children, true); // true = check all descendants
@@ -4641,7 +4926,46 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             return;
         }
 
-        this.controlsRef.current!.enabled = true;
+        else {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            const rect = this.rendererRef.current.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, this.cameraRef.current);
+
+            const children = this.sceneRef.current.children.filter(obj => !(obj instanceof THREE.GridHelper || obj === this.transformControlsRef.current!.getHelper()));
+
+            // Intersect with your 3D objects
+            let intersects = raycaster.intersectObjects(children, true); // true = check all descendants
+            const objects = intersects.filter(item => !(item.object instanceof THREE.Sprite));
+            const realObjects: THREE.Object3D[] = [];
+            objects.forEach(obj => {
+                function getTopParent(object: THREE.Object3D): THREE.Object3D {
+                    let current = object;
+                    while (current.parent && !(current.parent instanceof THREE.Scene)) {
+                        current = current.parent;
+                    }
+
+                    return current;
+                }
+
+                realObjects.push(getTopParent(obj.object));
+            });
+
+            const uniqueObjects = Array.from(new Set(realObjects));
+            uniqueObjects.sort((a, b) => (b.renderOrder ?? 0) - (a.renderOrder ?? 0));
+
+            const shape = uniqueObjects.length > 0 ? uniqueObjects[0] : undefined;
+            if (shape && !['line-xAxis', 'line-yAxis', 'line-zAxis', 'plane-OxyPlane'].includes(shape.name) && this.transformControlsRef.current!.object !== shape) {
+                this.transformControlsRef.current!.attach(shape.children[0]);
+            }
+
+            else if (!shape || ['line-xAxis', 'line-yAxis', 'line-zAxis', 'plane-OxyPlane'].includes(shape.name)) {
+                this.transformControlsRef.current!.detach();
+                this.controlsRef.current!.enabled = true;
+            }
+        }
     }
 
     private screenToWorld(screen: THREE.Vector2): THREE.Vector3 {
@@ -4698,7 +5022,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             rotationFactor: rotFactor,
             defined: true,
             isSelected: true,
-            side: point.type === 'Intersection' ? 0 : undefined
+            side: point.type === 'Intersection' ? 0 : undefined,
+            isDraggable: point.type === 'Point'
         };
 
         DAG.set(shapeNode.id, shapeNode);

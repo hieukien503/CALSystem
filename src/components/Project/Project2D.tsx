@@ -283,7 +283,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private handleUndoClick = () => {
-        console.log(this.lastFailedState, this.historyStack);
         if (this.lastFailedState) {
             const dag = utils.cloneDAG(this.dag);
             this.dag.forEach((node, key) => {

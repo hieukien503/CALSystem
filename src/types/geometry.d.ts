@@ -211,14 +211,20 @@ export interface ShapeNode3D {
     scaleFactor?: number;
     /** For rotation */
     rotationFactor?: {
-        degree: number;
-        CCW: boolean;
+        center: THREE.Vector3;
+        phi: number;
+        theta: number
+    } | {
+        degree: number,
+        CCW: boolean
     };
-    node?: THREE.Group | THREE.Mesh;
+    node?: THREE.Object3D;
     /** For tangent line and angle bisector */
     side? : 0 | 1;
     /** Selected or not */
     isSelected: boolean;
+    /** Draggable or not */
+    isDraggable: boolean;
 }
 
 // Geometry state
