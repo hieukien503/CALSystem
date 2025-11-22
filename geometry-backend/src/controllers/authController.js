@@ -124,7 +124,7 @@ const forgotPassword = async (req, res) => {
             },
         });
 
-        const resetLink = `http://localhost:3001/reset-password/${resetToken}`;
+        const resetLink = `https://bk-geometry.onrender.com/reset-password/${resetToken}`;
         const mailOptions = {
             to: user.email,
             from: process.env.EMAIL_USER,

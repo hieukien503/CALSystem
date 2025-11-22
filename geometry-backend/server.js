@@ -10,9 +10,14 @@ const publicRoutes = require("./src/routes/publicRoutes"); // 👈 add this
 
 const app = express();
 
+const allowedOrigins = [
+    "http://localhost:3000", // Local React development URL
+    "https://bk-geometry-fe.onrender.com", // 👈 YOUR DEPLOYED FRONTEND URL
+];
+
 // ✅ allow your React dev origin
 app.use(cors({
-    origin: "http://localhost:3000",  // React frontend
+    origin: allowedOrigins,  // React frontend
     methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
 }));

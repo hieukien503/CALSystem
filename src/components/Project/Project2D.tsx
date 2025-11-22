@@ -1072,7 +1072,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     labelUsed: this.labelUsed,
                     animation: this.state.timeline,
                 };
-                await fetch(`http://localhost:3001/api/projects/${this.projectId}/`, {
+                await fetch(`https://bk-geometry.onrender.com/api/projects/${this.projectId}/`, {
                     method: "PATCH",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -1091,7 +1091,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         try {
             const token = sessionStorage.getItem("token");
             const user = JSON.parse(sessionStorage.getItem("user") || "null");
-            const res = await fetch(`http://localhost:3001/api/projects/${this.projectId}/${user?._id || "null"}`, {
+            const res = await fetch(`https://bk-geometry.onrender.com/api/projects/${this.projectId}/${user?._id || "null"}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },

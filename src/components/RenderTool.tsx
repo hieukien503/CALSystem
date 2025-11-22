@@ -38,7 +38,7 @@ const RenderTool: React.FC<RenderToolProps> = ({
 
         const token = sessionStorage.getItem("token");
 
-        fetch(`http://localhost:3001/api/projects/${id}/${user?._id || "null"}`, {
+        fetch(`https://bk-geometry.onrender.com/api/projects/${id}/${user?._id || "null"}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then(async (res) => {
