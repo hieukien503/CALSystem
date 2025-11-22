@@ -2,10 +2,10 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useParams } from "react-router-dom";
-import dynamic from 'next/dynamic';
+import { lazy, Suspense } from 'react';
 
-const Project3D = dynamic(() => import('./Project/Project3D'), { ssr: false });
-const Project2D = dynamic(() => import('./Project/Project2D'), { ssr: false });
+const Project3D = lazy(() => import('./Project/Project3D'));
+const Project2D = lazy(() => import('./Project/Project2D'));
 
 interface User {
     _id: string;
@@ -64,39 +64,41 @@ const RenderTool: React.FC<RenderToolProps> = ({
     // if you want to display default empty project when no id
     if (!project && !id) {
         return (
-            selectedTool === "3d-graph" ? (
-                <Project3D
-                    id={uuidv4()}
-                    title={'3D Geometry'}
-                    description={'Test Geometry'}
-                    sharing={'public'}
-                    projectVersion={{
-                        versionName: 'alpha',
-                        versionNumber: '1.0',
-                        createdAt: new Date().toString(),
-                        updatedAt: new Date().toString(),
-                        updatedBy: user?.name || ""
-                    }}
-                    //ownedBy='Kien'
-                    collaborators={[]}
-                />
-            ) : (
-                <Project2D
-                    id={uuidv4()}
-                    title={'2D Geometry'}
-                    description={'Test Geometry'}
-                    sharing={'public'}
-                    projectVersion={{
-                        versionName: 'alpha',
-                        versionNumber: '1.0',
-                        createdAt: new Date().toString(),
-                        updatedAt: new Date().toString(),
-                        updatedBy: user?.name || ""
-                    }}
-                    //ownedBy='Kien'
-                    collaborators={[]}
-                />
-            )
+            <Suspense fallback={<div className="p-5 text-center">Loading tool...</div>}>
+                {selectedTool === "3d-graph" ? (
+                    <Project3D
+                        id={uuidv4()}
+                        title={'3D Geometry'}
+                        description={'Test Geometry'}
+                        sharing={'public'}
+                        projectVersion={{
+                            versionName: 'alpha',
+                            versionNumber: '1.0',
+                            createdAt: new Date().toString(),
+                            updatedAt: new Date().toString(),
+                            updatedBy: user?.name || ""
+                        }}
+                        //ownedBy='Kien'
+                        collaborators={[]}
+                    />
+                ) : (
+                    <Project2D
+                        id={uuidv4()}
+                        title={'2D Geometry'}
+                        description={'Test Geometry'}
+                        sharing={'public'}
+                        projectVersion={{
+                            versionName: 'alpha',
+                            versionNumber: '1.0',
+                            createdAt: new Date().toString(),
+                            updatedAt: new Date().toString(),
+                            updatedBy: user?.name || ""
+                        }}
+                        //ownedBy='Kien'
+                        collaborators={[]}
+                    />
+                )}
+            </Suspense>
         );
     }
 
