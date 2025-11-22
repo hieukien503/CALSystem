@@ -31,8 +31,8 @@ const SearchResults: React.FC = () => {
         setLoading(true);
 
         Promise.all([
-            fetch(`http://localhost:3001/api/search?q=${encodeURIComponent(query)}`).then(r => r.json()),
-            fetch(`http://localhost:3001/api/search/users?q=${encodeURIComponent(query)}`).then(r => r.json()),
+            fetch(`https://bk-geometry.onrender.com/api/search?q=${encodeURIComponent(query)}`).then(r => r.json()),
+            fetch(`https://bk-geometry.onrender.com/api/search/users?q=${encodeURIComponent(query)}`).then(r => r.json()),
         ])
             .then(([projectData, userData]) => {
                 setProjects(projectData.results || []);

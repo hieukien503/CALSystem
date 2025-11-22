@@ -30,7 +30,7 @@ const ProfilePage: React.FC = () => {
         const userId = id || loggedInUser?._id;
         if (!userId) return;
 
-        fetch(`http://localhost:3001/api/auth/profile/${userId}`, {
+        fetch(`https://bk-geometry.onrender.com/api/auth/profile/${userId}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then((res) => res.json())
@@ -46,7 +46,7 @@ const ProfilePage: React.FC = () => {
 
     useEffect(() => { 
         if (viewedUser && viewedUser.project.length > 0) {
-            fetch("http://localhost:3001/api/projects/bulk", {
+            fetch("https://bk-geometry.onrender.com/api/projects/bulk", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

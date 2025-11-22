@@ -10,9 +10,14 @@ const publicRoutes = require("./src/routes/publicRoutes"); // 👈 add this
 
 const app = express();
 
+const allowedOrigins = [
+    "http://localhost:3000", // Local React development URL
+    "https://bkgeometry.onrender.com", // 👈 YOUR DEPLOYED FRONTEND URL
+];
+
 // ✅ allow your React dev origin
 app.use(cors({
-    origin: "http://localhost:3000",  // React frontend
+    origin: allowedOrigins,  // React frontend
     methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
@@ -30,7 +35,7 @@ app.use("/api", publicRoutes); // 👈 /api/home and /api/search
 
 // Start server
 const PORT = process.env.PORT || 3001;
-//const PORT = 3001;
-app.listen(PORT, () => {
+const HOST = '0.0.0.0';
+app.listen(PORT, HOST, () => {
     
 });

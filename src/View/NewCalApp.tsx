@@ -17,7 +17,7 @@ const NewCalApp: React.FC = () => {
 
     useEffect(() => {
         const createNewProject = async () => {
-            let res = await fetch("http://localhost:3001/api/projects", {
+            let res = await fetch("https://bk-geometry.onrender.com/api/projects", {
                 method: "POST",
                 headers: 
                     token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } :
@@ -30,7 +30,7 @@ const NewCalApp: React.FC = () => {
             const project = await res.json();
 
             if (user) { // add new project to user's project list if new user
-                await fetch(`http://localhost:3001/api/projects/add/`, {
+                await fetch(`https://bk-geometry.onrender.com/api/projects/add/`, {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
                     body: JSON.stringify({

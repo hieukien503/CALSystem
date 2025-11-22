@@ -29,7 +29,7 @@ const ProfilePage: React.FC = () => {
         const userId = id || loggedInUser?._id;
         if (!userId) return;
 
-        fetch(`http://localhost:3001/api/auth/profile/${userId}`, {
+        fetch(`https://bk-geometry.onrender.com/api/auth/profile/${userId}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then((res) => res.json())
@@ -46,7 +46,7 @@ const ProfilePage: React.FC = () => {
     // Load projects of the viewed user
     useEffect(() => {
         if (viewedUser && viewedUser.project && viewedUser.project.length > 0) {
-            fetch("http://localhost:3001/api/projects/bulk", {
+            fetch("https://bk-geometry.onrender.com/api/projects/bulk", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -91,7 +91,7 @@ const ProfilePage: React.FC = () => {
         if (!window.confirm("Are you sure you want to delete this project?")) return;
 
         try {
-            const res = await fetch(`http://localhost:3001/api/projects/${projId}`, {
+            const res = await fetch(`https://bk-geometry.onrender.com/api/projects/${projId}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,
