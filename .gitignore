@@ -27,3 +27,22 @@ parse_text.py
 test.ts
 
 .env
+
+# ==========================
+# BACKEND: geometry-backend
+# ==========================
+
+# Ignore backend node_modules
+geometry-backend/node_modules/
+
+# Ignore backend environment files
+geometry-backend/.env
+geometry-backend/*.env
+
+# Ignore backend build outputs (nếu bạn build)
+geometry-backend/dist/
+geometry-backend/build/
+
+# Ignore backend logs
+geometry-backend/*.log
+geometry-backend/logs/
