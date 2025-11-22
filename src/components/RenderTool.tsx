@@ -1,9 +1,11 @@
 ﻿import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Project2D from './Project/Project2D';
-import Project3D from './Project/Project3D';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useParams } from "react-router-dom";
+import dynamic from 'next/dynamic';
+
+const Project3D = dynamic(() => import('./Project/Project3D'), { ssr: false });
+const Project2D = dynamic(() => import('./Project/Project2D'), { ssr: false });
 
 interface User {
     _id: string;
