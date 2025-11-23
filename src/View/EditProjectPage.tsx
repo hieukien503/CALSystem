@@ -31,7 +31,7 @@ const EditProjectPage: React.FC = () => {
 
         const fetchProject = async () => {
             try {
-                const res = await fetch(`https://bk-geometry.onrender.com/api/projects/${id}`, {
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const data = await res.json();
@@ -86,7 +86,7 @@ const EditProjectPage: React.FC = () => {
 
         setSaving(true);
         try {
-            const res = await fetch(`https://bk-geometry.onrender.com/api/projects/${project._id}`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${project._id}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

@@ -65,6 +65,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
     private moveFrameId: number | null = null;
     private zoomFrameId: number | null = null;
     private newCreatedPoint: Point[];
+    private isBatchUpdating: boolean = false;
 
     constructor(props: CanvasProps) {
         super(props);
@@ -202,7 +203,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.layerUnchangeVisualRef.current?.batchDraw();
 
             let numLoops = this.props.geometryState.numLoops + (newScale > oldScale ? 1 : (newScale < oldScale ? -1 : 0));
-            numLoops = (numLoops < 0 ? 7 : (numLoops === 8 ? 0 : numLoops));
             const calcNextInterval = (interval: number, forward: boolean) => {
                 let multiplier = [2, 2.5, 2];
                 let base = 1;
@@ -230,12 +230,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             let axisTickInterval = this.props.geometryState.axisTickInterval;
-            if (numLoops % 8 === 1 && newScale > oldScale) {
-                axisTickInterval = calcNextInterval(axisTickInterval, false);
-            }
-
-            else if (numLoops % 8 === 0 && newScale < oldScale) {
-                axisTickInterval = calcNextInterval(axisTickInterval, true);
+            if (Math.abs(numLoops) % 8 === 0) {
+                axisTickInterval = calcNextInterval(axisTickInterval, newScale < oldScale);
             }
 
             this.props.onGeometryStateChange({
@@ -312,7 +308,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
             }
 
-            if (this.props.mode === 'intersection' && children.filter(item => !item.id().includes('point-')).length > 1) {
+            if (this.props.mode === 'intersection' && children.filter(item => !item.id().includes('point-') && !item.id().includes('polygon-')).length > 1) {
                 this.createPoint(position, children);
                 return;
             }
@@ -730,7 +726,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(point.props.id));
                 if (label) {
                     label.destroy();
@@ -801,7 +797,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     this.props.stageRef.current!, this.props.geometryState.axisTickInterval
                 );
 
-                if (!shape) {
+                if (!shape && !this.props.isSnapToGrid) {
                     posInfo.position = {
                         x: (posInfo.position.x - this.layerMathObjectRef.current!.x()) / this.layerMathObjectRef.current!.scaleX(),
                         y: (posInfo.position.y - this.layerMathObjectRef.current!.y()) / this.layerMathObjectRef.current!.scaleY(),
@@ -813,7 +809,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 node.rotationFactor = posInfo.rotFactor;
                 node.scaleFactor = posInfo.scaleFactor;
 
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.setAttrs(this.createLabel(node).getAttrs());
@@ -823,7 +819,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 return { ...node };
             };
 
-            this.updateAndPropagate(c.id(), updateFn);
+            this.updateAndPropagateBatch([c.id()], updateFn);
         });
 
         c.on('dragend', (e) => {
@@ -897,7 +893,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(line.props.id));
                 if (label) {
                     label.destroy();
@@ -957,8 +953,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             node1.position({ x: node1.x() + dx, y: node1.y() + dy });
             node2.position({ x: node2.x() + dx, y: node2.y() + dy });
-            this.updateAndPropagate(p1.id, this.computeUpdateFor);
-            this.updateAndPropagate(p2.id, this.computeUpdateFor);
+            this.updateAndPropagateBatch([p1.id, p2.id], this.computeUpdateFor);
         });
 
         l.on('dragend', (e) => {
@@ -1013,7 +1008,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(segment.props.id));
                 if (label) {
                     label.destroy();
@@ -1074,8 +1069,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             node1.position({ x: node1.x() + dx, y: node1.y() + dy });
             node2.position({ x: node2.x() + dx, y: node2.y() + dy });
-            this.updateAndPropagate(p1.id, this.computeUpdateFor);
-            this.updateAndPropagate(p2.id, this.computeUpdateFor);
+            this.updateAndPropagateBatch([p1.id, p2.id], this.computeUpdateFor);
         });
 
         s.on('dragend', (e) => {
@@ -1133,7 +1127,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(vector.props.id));
                 if (label) {
                     label.destroy();
@@ -1193,8 +1187,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             node1.position({ x: node1.x() + dx, y: node1.y() + dy });
             node2.position({ x: node2.x() + dx, y: node2.y() + dy });
-            this.updateAndPropagate(p1.id, this.computeUpdateFor);
-            this.updateAndPropagate(p2.id, this.computeUpdateFor);
+            this.updateAndPropagateBatch([p1.id, p2.id], this.computeUpdateFor);
         });
 
         v.on('dragend', (e) => {
@@ -1254,7 +1247,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(circle.props.id));
                 if (label) {
                     label.destroy();
@@ -1312,7 +1305,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             oldPos = pos;
 
             node.position({ x: node.x() + dx, y: node.y() + dy });
-            this.updateAndPropagate(p.id, this.computeUpdateFor);
+            this.updateAndPropagateBatch([p.id], this.computeUpdateFor);
         });
 
         c.on('dragend', (e) => {
@@ -1365,7 +1358,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(polygon.props.id));
                 if (label) {
                     label.destroy();
@@ -1431,7 +1424,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 oldPos = pos;
 
                 point.position({ x: point.x() + dx, y: point.y() + dy });
-                this.updateAndPropagate(node.id, this.computeUpdateFor);
+                this.updateAndPropagateBatch([node.id], this.computeUpdateFor);
             })
         });
 
@@ -1493,7 +1486,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(ray.props.id));
                 if (label) {
                     label.destroy();
@@ -1553,8 +1546,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             node1.position({ x: node1.x() + dx, y: node1.y() + dy });
             node2.position({ x: node2.x() + dx, y: node2.y() + dy });
-            this.updateAndPropagate(p1.id, this.computeUpdateFor);
-            this.updateAndPropagate(p2.id, this.computeUpdateFor);
+            this.updateAndPropagateBatch([p1.id, p2.id], this.computeUpdateFor);
         });
 
         r.on('dragend', (e) => {
@@ -1581,7 +1573,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const scale = (this.layerMathObjectRef.current!.scaleX() ?? 1);
         const scaledStrokeWidth = props.line_size / scale;
         const angle = (x: number, y: number): number => {
-            let degree = (math.parse('atan2(y, x)').evaluate({ x: x, y: y })) * 180 / Math.PI;
+            let degree = Math.atan2(y, x) * 180 / Math.PI;
             if (degree < 0) {
                 degree += 360;
             }
@@ -1604,9 +1596,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             degree = (degree < 0 ? 180 + degree : degree);
         }
 
-        console.log(degree);
-
-        let a = (Math.abs(degree) !== 90) ? new Konva.Shape({
+        let a = (Math.abs(Math.abs(degree) - 90) > constants.EPSILON) ? new Konva.Shape({
             sceneFunc: function (context, shape) {
                 const r = shape.attrs.radius;
                 const x = 0;
@@ -1636,9 +1626,9 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             y: screenPos.y,
             points: [
                 0, 0,
-                10, 0,
-                10, -10,
-                0, -10
+                10 / this.props.geometryState.zoom_level, 0,
+                10 / this.props.geometryState.zoom_level, -10 / this.props.geometryState.zoom_level,
+                0, -10 / this.props.geometryState.zoom_level
             ],
 
             fill: `rgba(${r},${g},${b},${opacity})`,
@@ -1649,7 +1639,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             id: props.id,
             hitStrokeWidth: 5,
             draggable: false,
-            rotation: startAngle,
+            rotation: -startAngle,
         })
 
         a.visible(props.visible.shape && degree !== 0);
@@ -1660,7 +1650,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(shape.props.id));
                 if (label) {
                     label.destroy();
@@ -1714,7 +1704,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             e.cancelBubble = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(semicircle.props.id));
                 if (label) {
                     label.destroy();
@@ -1774,8 +1764,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             node1.position({ x: node1.x() + dx, y: node1.y() + dy });
             node2.position({ x: node2.x() + dx, y: node2.y() + dy });
-            this.updateAndPropagate(p1.id, this.computeUpdateFor);
-            this.updateAndPropagate(p2.id, this.computeUpdateFor);
+            this.updateAndPropagateBatch([p1.id, p2.id], this.computeUpdateFor);
         });
 
         semiCircle.on('dragend', (e) => {
@@ -4853,6 +4842,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     point_coor.y
                 );
 
+                point.type = 'Projection';
                 let shapeNode: ShapeNode = {
                     id: point.props.id,
                     dependsOn: [selectedPoints[0].props.id, selectedShapes[0].props.id],
@@ -4862,7 +4852,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     node: this.createKonvaShape(point)
                 };
 
-                point.type = 'Projection';
                 DAG.set(point.props.id, shapeNode);
                 this.props.onLabelUsed(labelUsed);
                 this.props.onUpdateLastFailedState();
@@ -4903,42 +4892,96 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         return children;
     }
 
-    private updateAndPropagate = (id: string, updateFn: (node: ShapeNode) => ShapeNode) => {
+    private updateAndPropagateBatch = (ids: string[], updateFn: (node: ShapeNode) => ShapeNode) => {
         const DAG = utils.cloneDAG(this.props.dag);
-        const node = DAG.get(id);
-        if (!node) return;
-
         const visited = new Set<string>();
-        const stack: string[] = [];
+        const allAffectedNodes = new Set<string>();
 
-        // Perform topological sort to get nodes in dependency order
-        const topologicalSort = (nodeId: string) => {
+        // Set flag to prevent individual label updates
+        this.isBatchUpdating = true;
+
+        // Collect all nodes that need updating (including dependencies)
+        const collectAffectedNodes = (nodeId: string) => {
             if (visited.has(nodeId)) return;
             visited.add(nodeId);
-            this.findChildren(nodeId).forEach(childId => topologicalSort(childId));
-            stack.push(nodeId);
+            allAffectedNodes.add(nodeId);
+            
+            this.findChildren(nodeId).forEach(childId => {
+                collectAffectedNodes(childId);
+            });
         };
 
-        topologicalSort(id);
-        const updated = updateFn(node);
-        DAG.set(id, updated);
-
-        stack.reverse().forEach(nodeId => {
-            if (nodeId !== id) { // Skip the initial node
-                const stack_node = DAG.get(nodeId);
-                if (stack_node) {
-                    DAG.set(nodeId, this.computeUpdateFor(stack_node));
-                }
+        // Collect all affected nodes from all input IDs
+        ids.forEach(id => {
+            const node = DAG.get(id);
+            if (node) {
+                DAG.set(id, updateFn(node));
+                collectAffectedNodes(id);
             }
         });
 
+        // Perform topological sort on all affected nodes
+        const stack: string[] = [];
+        const sortVisited = new Set<string>();
+
+        const topologicalSort = (nodeId: string) => {
+            if (sortVisited.has(nodeId)) return;
+            sortVisited.add(nodeId);
+            
+            this.findChildren(nodeId).forEach(childId => {
+                if (allAffectedNodes.has(childId)) {
+                    topologicalSort(childId);
+                }
+            });
+            
+            stack.push(nodeId);
+        };
+
+        // Sort all affected nodes
+        allAffectedNodes.forEach(nodeId => {
+            if (!sortVisited.has(nodeId)) {
+                topologicalSort(nodeId);
+            }
+        });
+
+        // Update all nodes in dependency order
+        stack.reverse().forEach(nodeId => {
+            const node = DAG.get(nodeId);
+            if (node) {
+                const updated = this.computeUpdateFor(node);
+                DAG.set(nodeId, updated);
+            }
+        });
+
+        // Clear flag
+        this.isBatchUpdating = false;
+
+        // Now update all labels at once, after all geometry is updated
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
+            allAffectedNodes.forEach(nodeId => {
+                const node = DAG.get(nodeId);
+                if (node && node.node) {
+                    let label = this.layerUnchangeVisualRef.current!.getChildren().find(
+                        labelNode => labelNode.id().includes(node.node!.id())
+                    );
+                    if (label) {
+                        label.setAttrs(this.createLabel(node).getAttrs());
+                    }
+                }
+            });
+            
+            // Single batch draw for all label updates
+            this.layerUnchangeVisualRef.current.batchDraw();
+        }
+
+        // Single state update with all changes
         this.props.onUpdateAll({
             gs: { ...this.props.geometryState },
             dag: DAG,
             selectedPoints: this.props.selectedPoints,
             selectedShapes: this.props.selectedShapes
         }, false);
-    }
+    };
 
     private computeUpdateFor = (node: ShapeNode): ShapeNode => {
         let map = {
@@ -5001,7 +5044,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 const newY = cy + r * Math.sin(angle);
                 node.node!.position({ x: newX, y: newY });
                 this.updatePointPos(node.type as Point, newX, newY);
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.setAttrs(this.createLabel(node).getAttrs());
@@ -5035,7 +5078,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     });
 
                     this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
-                    if (this.layerUnchangeVisualRef.current) {
+                    if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                         let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                         if (label) {
                             label.setAttrs(this.createLabel(node).getAttrs());
@@ -5054,7 +5097,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                             node.node!.position({x: pos.x, y: pos.y});
                             this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
-                            if (this.layerUnchangeVisualRef.current) {
+                            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                                 if (label) {
                                     label.setAttrs(this.createLabel(node).getAttrs());
@@ -5116,7 +5159,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updatePointPos(node.type as Point, node.node!.x(), node.node!.y());
         }
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             if (node.id.includes('tmpPoint')) {
                 let splits = node.type.props.label.split(' = ');
                 if (splits.length > 0) {
@@ -5146,7 +5189,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         const line = node.node! as Konva.Line;
         line.points([posA.x, posA.y, posB.x, posB.y]);
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -5177,15 +5220,13 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const line = node.node! as Konva.Line;
         line.points([posA.x - length * norm_dx, posA.y - length * norm_dy, posB.x + length * norm_dx, posB.y + length * norm_dy]);
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
             }
         }
 
-        [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [posA.x, posA.y];
-        [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [posB.x, posB.y];
         this.updatePointPos((node.type as Line).startLine, posA.x, posA.y);
         this.updatePointPos((node.type as Line).endLine, posB.x, posB.y);
         return { ...node! };
@@ -5210,7 +5251,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         const line = node.node! as Konva.Line;
         line.points([posA.x, posA.y, posB.x + length * norm_dx, posB.y + length * norm_dy]);
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -5242,7 +5283,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updatePointPos(point, polygon.points()[2 * idx], polygon.points()[2 * idx + 1]);
         })
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -5262,7 +5303,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         let circleNode = node.node! as Konva.Circle;
         circleNode.position((centerNode).node!.position());
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -5288,7 +5329,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         this.updatePointPos((node.type as Vector).startVector, posA.x, posA.y);
         this.updatePointPos((node.type as Vector).endVector, posB.x, posB.y);
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -5313,7 +5354,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let point = node.node! as Konva.Circle;
             point.position({ x: (posA.x + posB.x) / 2, y: (posA.y + posB.y) / 2 });
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.setAttrs(this.createLabel(node).getAttrs());
@@ -5337,7 +5378,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
                 let point = node.node! as Konva.Circle;
                 point.position(pos);
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.setAttrs(this.createLabel(node).getAttrs());
@@ -5357,7 +5398,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 );
 
                 point.position(pos);
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.setAttrs(this.createLabel(node).getAttrs());
@@ -5396,7 +5437,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             point.show();
             node.defined = true;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show()
@@ -5411,7 +5452,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         catch (error) {
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -5446,7 +5487,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             point.show();
             node.defined = true;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show()
@@ -5461,7 +5502,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         catch (error) {
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -5496,7 +5537,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             point.show();
             node.defined = true;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show();
@@ -5511,7 +5552,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         catch (error) {
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -5546,7 +5587,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             point.show();
             node.defined = true;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show();
@@ -5561,7 +5602,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         catch (error) {
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -5588,7 +5629,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         this.updatePointPos((node.type as Circle).centerC, posA.x, posA.y);
         (node.type as Circle).radius = point.radius() / this.props.geometryState.spacing;
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -5610,7 +5651,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         if (intersections.length === 1) {
             if (intersections[0].coors === undefined || intersections[0].ambiguous) {
                 node.node!.hide();
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.hide();
@@ -5623,11 +5664,17 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
             }
 
-            node.node!.position({ x: intersections[0].coors!.x, y: intersections[0].coors!.y })
+            const pos = utils.convertToScreenCoords(
+                { x: intersections[0].coors!.x, y: intersections[0].coors!.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            );
+
+            node.node!.position({ x: pos.x, y: pos.y })
             node.node!.show();
             node.defined = true;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show();
@@ -5635,7 +5682,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
             }
 
-            this.updatePointPos(node.type as Point, intersections[0].coors!.x, intersections[0].coors!.y);
+            this.updatePointPos(node.type as Point, pos.x, pos.y);
             node.defined = intersections[0].coors !== undefined && !intersections[0].ambiguous;
             return { ...node! };
         }
@@ -5645,7 +5692,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             node.node!.hide();
             node.defined = false;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -5658,11 +5705,17 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         }
 
         else {
-            node.node!.position({ x: intersections[i].coors!.x, y: intersections[i].coors!.y })
+            const pos = utils.convertToScreenCoords(
+                { x: intersections[i].coors!.x, y: intersections[i].coors!.y },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            );
+
+            node.node!.position({ x: pos.x, y: pos.y })
             node.node!.show();
             node.defined = true;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show();
@@ -5670,7 +5723,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 }
             }
 
-            this.updatePointPos(node.type as Point, intersections[i].coors!.x, intersections[i].coors!.y);
+            this.updatePointPos(node.type as Point, pos.x, pos.y);
             node.defined = intersections[i].coors !== undefined && !intersections[i].ambiguous;
             return { ...node! };
         }
@@ -5706,7 +5759,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let l = node.node! as Konva.Line;
             l.points([line.point.x - length * norm_dx, line.point.y - length * norm_dy, line.point.x + length * norm_dx, line.point.y + length * norm_dy]);
             node.node!.show();
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show();
@@ -5741,7 +5794,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 line.show();
                 node.defined = true;
 
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.show();
@@ -5756,7 +5809,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 node.node!.hide();
                 node.defined = false;
 
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.hide();
@@ -5791,24 +5844,38 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 Factory.createPoint(node.type.props, posC.x, posC.y)
             ]
 
-            let angle = utils.cleanAngle(operation.angleBetween3Points(A, B, C));
+            const angle = (x: number, y: number): number => {
+                let degree = (math.parse('atan2(y, x)').evaluate({ x: x, y: y })) * 180 / Math.PI;
+                if (degree < 0) {
+                    degree += 360;
+                }
+
+                return degree;
+            }
+
+            const startAngle = angle(
+                (node.type as Angle).vector1.endVector.x - (node.type as Angle).vector1.startVector.x,
+                (node.type as Angle).vector1.endVector.y - (node.type as Angle).vector1.startVector.y,
+            );
+
+            const endAngle = angle(
+                (node.type as Angle).vector2.endVector.x - (node.type as Angle).vector2.startVector.x,
+                (node.type as Angle).vector2.endVector.y - (node.type as Angle).vector2.startVector.y,
+            )
+
+            let degree = endAngle - startAngle;
             let BA = {
-                x: (angle < 0 && ((node.type as Angle).range && (node.type as Angle).range[1] === 180)) ? C.x - B.x : A.x - B.x,
-                y: (angle < 0 && ((node.type as Angle).range && (node.type as Angle).range[1] === 180)) ? C.y - B.y : A.y - B.y
+                x: A.x - B.x,
+                y: A.y - B.y
             }
 
             if ((node.type as Angle).range && (node.type as Angle).range[1] === 180) {
-                angle = (angle < 0 ? 180 + angle : angle);
+                degree = (degree < 0 ? 180 + degree : degree);
             }
 
-            const angleFromXAxis = (v: { x: number, y: number }) => {
-                return (math.parse('atan2(y, x)').evaluate({ x: v.x, y: v.y })) * 180 / Math.PI;
-            }
-
-            let startAngle = utils.cleanAngle(angleFromXAxis(BA));
             let parent = node.node!.getParent();
             if (parent) {
-                let s = (Math.abs(angle) !== 90) ? new Konva.Shape({
+                let s = (Math.abs(Math.abs(degree) - 90) > constants.EPSILON) ? new Konva.Shape({
                     sceneFunc: ((context, shape) => {
                         const r = shape.attrs.radius;
                         const x = 0;
@@ -5826,8 +5893,8 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     x: B.x,
                     y: B.y,
                     radius: 10,
-                    startAngle: startAngle,
-                    angle: angle,
+                    startAngle: -startAngle,
+                    angle: degree,
                     fill: node.node!.fill(),
                     stroke: node.node!.stroke(),
                     strokeWidth: node.node!.strokeWidth(),
@@ -5838,28 +5905,26 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     y: B.y,
                     points: [
                         0, 0,
-                        10, 0,
-                        10, -10,
-                        0, -10
+                        10 / this.props.geometryState.zoom_level, 0,
+                        10 / this.props.geometryState.zoom_level, -10 / this.props.geometryState.zoom_level,
+                        0, -10 / this.props.geometryState.zoom_level
                     ],
 
                     fill: node.node!.fill(),
                     stroke: node.node!.stroke(),
                     strokeWidth: node.node!.strokeWidth(),
                     hitStrokeWidth: 5,
-                    rotation: startAngle,
+                    rotation: -startAngle,
                     closed: true,
                     draggable: false,
                     id: node.node!.id()
                 });
 
-                node.node!.destroy();
-                node.node! = s;
-                parent.add(s);
+                node.node!.setAttrs(s.getAttrs());
             }
 
-            if (angle === 0) {
-                if (this.layerUnchangeVisualRef.current) {
+            if (degree === 0) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.hide();
@@ -5868,7 +5933,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             }
 
             else {
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.show();
@@ -5928,7 +5993,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 )
 
             if (angle === 0 || !vertex) {
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.hide();
@@ -5997,20 +6062,18 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         stroke: node.node!.stroke(),
                         strokeWidth: node.node!.strokeWidth(),
                         hitStrokeWidth: 5,
-                        rotation: angleFromXAxis(v1),
+                        rotation: -angleFromXAxis(v1),
                         closed: true,
                         draggable: false,
                         id: node.node!.id()
                     });
 
-                    node.node!.destroy();
-                    node.node! = s;
-                    parent.add(s);
+                    node.node!.setAttrs(s.getAttrs());
                 }
 
                 node.defined = true;
 
-                if (this.layerUnchangeVisualRef.current) {
+                if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                     let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                     if (label) {
                         label.show();
@@ -6069,7 +6132,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updatePointPos((node.type as Circle).centerC, circumcenter.x, circumcenter.y);
             (node.type as Circle).radius = circumradius / this.props.geometryState.spacing;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show();
@@ -6083,7 +6146,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         catch (error) {
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -6123,7 +6186,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updatePointPos((node.type as Circle).centerC, incenter.x, incenter.y);
             (node.type as Circle).radius = inradius / this.props.geometryState.spacing;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show();
@@ -6137,7 +6200,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         catch (error) {
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -6182,7 +6245,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         arc.position({ x: M.x, y: M.y });
         arc.rotation(startAngle);
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -6362,7 +6425,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [reflected.end.x, reflected.end.y];
         }
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -6401,7 +6464,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             // No tangents found, hide the line
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -6421,11 +6484,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
             let line: Konva.Line = node.node! as Konva.Line;
             line.points([l.point.x - length * norm_dx, l.point.y - length * norm_dy, l.point.x + length * norm_dx, l.point.y + length * norm_dy]);
-            this.updatePointPos((node.type as Line).startLine, line.points()[0], line.points()[1]);
-            this.updatePointPos((node.type as Line).startLine, line.points()[2], line.points()[3]);
+            [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [(point.type as Point).x, (point.type as Point).y];
+            [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [(point.type as Point).x + norm_dx, (point.type as Point).y + norm_dy];
+
             node.side! === 0 ? (node.node! as Konva.Line).show() : (node.node! as Konva.Line).hide();
             node.defined = true;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     if (node.side === 1) {
@@ -6447,7 +6511,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             node.node!.hide();
             node.defined = false;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -6464,12 +6528,12 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
         let line: Konva.Line = node.node! as Konva.Line;
         line.points([match.point.x - length * norm_dx, match.point.y - length * norm_dy, match.point.x + length * norm_dx, match.point.y + length * norm_dy]);
-        this.updatePointPos((node.type as Line).startLine, line.points()[0], line.points()[1]);
-        this.updatePointPos((node.type as Line).startLine, line.points()[2], line.points()[3]);
+        [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [(point.type as Point).x, (point.type as Point).y];
+        [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [(point.type as Point).x + norm_dx, (point.type as Point).y + norm_dy];
         line.show();
         node.defined = true;
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.show();
@@ -6488,25 +6552,33 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 return { ...node! };
             }
 
-            let segmentPos = ((shape).node! as Konva.Line).points();
+            const [s, e] = operation.getStartAndEnd(shape.type);
             let midPoint = {
-                x: (segmentPos[2] + segmentPos[0]) / 2,
-                y: (segmentPos[3] + segmentPos[1]) / 2
+                x: (s.x + e.x) / 2,
+                y: (s.y + e.y) / 2
             }
 
-            const dx = segmentPos[1] - segmentPos[3];
-            const dy = segmentPos[2] - segmentPos[0];
+            const dx = e.x - s.x;
+            const dy = e.y - s.y;
 
-            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
-            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
-            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+            const ux = -dy, uy = dx;
+
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
+            let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
+            let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
+
+            const pointPos = utils.convertToScreenCoords(
+                midPoint,
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            );
 
             let line: Konva.Line = node.node! as Konva.Line;
-            line.points([midPoint.x - length * norm_dx, midPoint.y - length * norm_dy, midPoint.x + length * norm_dx, midPoint.y + length * norm_dy]);
-            this.updatePointPos((node.type as Line).startLine, line.points()[0], line.points()[1]);
-            this.updatePointPos((node.type as Line).startLine, line.points()[2], line.points()[3]);
+            line.points([pointPos.x - length * norm_ux, pointPos.y - length * norm_uy, pointPos.x + length * norm_ux, pointPos.y + length * norm_uy]);
+            [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [midPoint.x, midPoint.y];
+            [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [midPoint.x + norm_ux, midPoint.y + norm_uy];
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.setAttrs(this.createLabel(node).getAttrs());
@@ -6529,19 +6601,27 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 y: (posA.y + posB.y) / 2
             }
 
-            const dx = posA.x - posB.x;
-            const dy = posB.y - posB.y;
+            const dx = posB.x - posA.x;
+            const dy = posB.y - posA.y;
 
-            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
-            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
-            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+            const ux = -dy, uy = dx;
+
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
+            let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
+            let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
+
+            const pointPos = utils.convertToCustomCoords(
+                midPoint,
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            );
 
             let line: Konva.Line = node.node! as Konva.Line;
-            line.points([midPoint.x - length * norm_dx, midPoint.y - length * norm_dy, midPoint.x + length * norm_dx, midPoint.y + length * norm_dy]);
-            this.updatePointPos((node.type as Line).startLine, line.points()[0], line.points()[1]);
-            this.updatePointPos((node.type as Line).startLine, line.points()[2], line.points()[3]);
+            line.points([midPoint.x - length * norm_ux, midPoint.y - length * norm_uy, midPoint.x + length * norm_ux, midPoint.y + length * norm_uy]);
+            [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [pointPos.x, pointPos.y];
+            [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [pointPos.x + norm_ux, pointPos.y + norm_uy];
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.setAttrs(this.createLabel(node).getAttrs());
@@ -6559,22 +6639,27 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             return { ...node! };
         }
 
-        // shape1 is point, shape2 is line/segment/ray
-        let segmentPos = ((end).node! as Konva.Line).points();
-        let pointPos = ((start).node! as Konva.Circle).position();
+        const pointPos = ((start).node! as Konva.Circle).position();
+        const [s, e] = operation.getStartAndEnd(end.type);
+        const dx = e.x - s.x;
+        const dy = e.y - s.y;
+        const ux = -dy, uy = dx;
 
-        const dx = segmentPos[1] - segmentPos[3];
-        const dy = segmentPos[2] - segmentPos[0];
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
+        let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
+        let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
 
-        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
-        let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
-        let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+        const pointCustom = utils.convertToCustomCoords(
+            pointPos,
+            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+            this.props.geometryState.spacing
+        );
 
         let line: Konva.Line = node.node! as Konva.Line;
-        line.points([pointPos.x - length * norm_dx, pointPos.y - length * norm_dy, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
-        this.updatePointPos((node.type as Line).startLine, line.points()[0], line.points()[1]);
-        this.updatePointPos((node.type as Line).startLine, line.points()[2], line.points()[3]);
-        if (this.layerUnchangeVisualRef.current) {
+        line.points([pointPos.x - length * norm_ux, pointPos.y - length * norm_uy, pointPos.x + length * norm_ux, pointPos.y + length * norm_uy]);
+        [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [pointCustom.x, pointCustom.y];
+        [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [pointCustom.x + norm_ux, pointCustom.y + norm_uy];
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -6591,22 +6676,27 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             return { ...node! };
         }
 
-        // shape1 is point, shape2 is line/segment/ray
-        let segmentPos = ((end).node! as Konva.Line).points();
-        let pointPos = ((start).node! as Konva.Circle).position();
+        const pointPos = ((start).node! as Konva.Circle).position();
+        const [s, e] = operation.getStartAndEnd(end.type);
+        const dx = e.x - s.x;
+        const dy = e.y - s.y;
+        const ux = dx, uy = dy;
 
-        const dx = segmentPos[2] - segmentPos[0];
-        const dy = segmentPos[3] - segmentPos[1];
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
+        let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
+        let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
 
-        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
-        let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
-        let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+        const pointCustom = utils.convertToCustomCoords(
+            pointPos,
+            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+            this.props.geometryState.spacing
+        );
 
         let line: Konva.Line = node.node! as Konva.Line;
-        line.points([pointPos.x - length * norm_dx, pointPos.y - length * norm_dy, pointPos.x + length * norm_dx, pointPos.y + length * norm_dy]);
-        this.updatePointPos((node.type as Line).startLine, line.points()[0], line.points()[1]);
-        this.updatePointPos((node.type as Line).startLine, line.points()[2], line.points()[3]);
-        if (this.layerUnchangeVisualRef.current) {
+        line.points([pointPos.x - length * norm_ux, pointPos.y - length * norm_uy, pointPos.x + length * norm_ux, pointPos.y + length * norm_uy]);
+        [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [pointCustom.x, pointCustom.y];
+        [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [pointCustom.x + norm_ux, pointCustom.y + norm_uy];
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -6637,7 +6727,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         point.position({ x: newPos.x, y: newPos.y });
         [(node.type as Point).x, (node.type as Point).y] = [projected_point.x, projected_point.y];
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -6684,7 +6774,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updatePointPos((node.type as Circle).centerC, excenter[idx].x, excenter[idx].y);
             (node.type as Circle).radius = exradius[idx] / this.props.geometryState.spacing;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.setAttrs(this.createLabel(node).getAttrs());
@@ -6697,7 +6787,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         catch (error) {
             node.node!.hide();
             node.defined = false;
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show()
@@ -6744,7 +6834,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             node.defined = true;
             this.updatePointPos(node.type as Point, excenter[idx].x, excenter[idx].y);
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.show()
@@ -6760,7 +6850,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             node.node!.hide();
             node.defined = false;
 
-            if (this.layerUnchangeVisualRef.current) {
+            if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                 if (label) {
                     label.hide();
@@ -6943,7 +7033,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [rotated_obj.end.x, rotated_obj.end.y];
         }
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -7122,7 +7212,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [enlarge_obj.end.x, enlarge_obj.end.y];
         }
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -7297,7 +7387,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             [(node.type as SemiCircle).end.x, (node.type as SemiCircle).end.y] = [translate_obj.end.x, translate_obj.end.y];
         }
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -7343,7 +7433,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.updatePointPos(point, points[idx].x, points[idx].y);
         });
 
-        if (this.layerUnchangeVisualRef.current) {
+        if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
                 label.setAttrs(this.createLabel(node).getAttrs());
@@ -7440,7 +7530,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     node.node!.position(position);
                     this.updatePointPos(node.type as Point, position.x, position.y);
 
-                    if (this.layerUnchangeVisualRef.current) {
+                    if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                         let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
                         if (label) {
                             label.setAttrs(this.createLabel(node).getAttrs());
@@ -7450,7 +7540,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                     return { ...node };
                 };
 
-                this.updateAndPropagate(pNode.id(), updateFn);
+                this.updateAndPropagateBatch([pNode.id()], updateFn);
             })
         }
 

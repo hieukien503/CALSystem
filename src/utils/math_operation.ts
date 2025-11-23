@@ -50,7 +50,7 @@ export const isCollinear = (A: GeometryShape.Point, B: GeometryShape.Point, C: G
     }
     
     let cross_product = cross(AB.x, AB.y, AB.z, AC.x, AC.y, AC.z);
-    return L2_norm(cross_product.x, cross_product.y, cross_product.z) < epsilon;
+    return L2_norm(cross_product.x, cross_product.y, cross_product.z) <= epsilon;
 }
 
 export const distance = (base: GeometryShape.Polygon, point: GeometryShape.Point) => {
@@ -150,7 +150,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                     (start2.z ?? 0) - (start.z ?? 0)
                 )
 
-                if (L2_norm(crossProduct1.x, crossProduct1.y, crossProduct1.z) > epsilon || (L2_norm(crossProduct1.x, crossProduct1.y, crossProduct1.z) < epsilon && L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) > epsilon)) {
+                if (L2_norm(crossProduct1.x, crossProduct1.y, crossProduct1.z) > epsilon || (L2_norm(crossProduct1.x, crossProduct1.y, crossProduct1.z) <= epsilon && L2_norm(crossProduct2.x, crossProduct2.y, crossProduct2.z) > epsilon)) {
                     return [
                         {
                             coors: undefined,
@@ -176,7 +176,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             let dotProduct = dot(v.x, v.y, v.z, end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0));
 
             if ('startRay' in shape1) {
-                if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                if (Math.abs(dotProduct) <= epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
                     return [
                         {
                             coors: {
@@ -206,7 +206,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 )
 
                 if ('startRay' in shape2) {
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         return [
                             {
                                 coors: {
@@ -222,7 +222,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 else if ('startSegment' in shape2) {
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         return [
                             {
                                 coors: {
@@ -265,7 +265,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             else if ('startSegment' in shape1) {
-                if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                if (Math.abs(dotProduct) <= epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
                     return [
                         {
                             coors: {
@@ -309,7 +309,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 )
 
                 if ('startRay' in shape2) {
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         return [
                             {
                                 coors: {
@@ -325,7 +325,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 else if ('startSegment' in shape2) {
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         return [
                             {
                                 coors: {
@@ -384,7 +384,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 )
 
                 if ('startRay' in shape2) {
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         return [
                             {
                                 coors: {
@@ -400,7 +400,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 else if ('startSegment' in shape2) {
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         return [
                             {
                                 coors: {
@@ -463,7 +463,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             const b = -2 * dot(u1.x, u1.y, u1.z, u.x, u.y, u.z);
             const c = dot(u1.x, u1.y, u1.z, u1.x, u1.y, u1.z) - r * r;
             let discriminant = b * b - 4 * a * c;
-            if (Math.abs(discriminant) < epsilon) {
+            if (Math.abs(discriminant) <= epsilon) {
                 discriminant = 0;
             }
 
@@ -625,7 +625,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
 
                 let dotProduct = dot(v.x, v.y, v.z, end.x - start.x, end.y - start.y, (end.z ?? 0) - (start.z ?? 0));
                 if ('startRay' in shape1) {
-                    if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                    if (Math.abs(dotProduct) <= epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
                         continue;
                     }
 
@@ -644,7 +644,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         v1.z
                     )
 
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         continue;
                     }
 
@@ -666,7 +666,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 }
 
                 else if ('startSegment' in shape1) {
-                    if (Math.abs(dotProduct) < epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
+                    if (Math.abs(dotProduct) <= epsilon || (dotProduct < 0 && Math.abs(dotProduct) > epsilon)) {
                         continue;
                     }
 
@@ -689,7 +689,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         v1.z
                     )
 
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         continue;
                     }
 
@@ -726,7 +726,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         v1.z
                     )
 
-                    if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                    if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                         continue;
                     }
 
@@ -813,7 +813,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             const b = -2 * dot(u1.x, u1.y, u1.z, u.x, u.y, u.z);
             const c = dot(u1.x, u1.y, u1.z, u1.x, u1.y, u1.z) - r * r;
             let discriminant = b * b - 4 * a * c;
-            if (Math.abs(discriminant) < epsilon) {
+            if (Math.abs(discriminant) <= epsilon) {
                 discriminant = 0;
             }
 
@@ -1000,7 +1000,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             let circle2: GeometryShape.Circle = shape2 as GeometryShape.Circle
             // Two circles intersection
             let d = getDistance(circle1.centerC, circle2.centerC);
-            if (d < epsilon && Math.abs(circle1.radius - circle2.radius) < epsilon) {
+            if (d <= epsilon && Math.abs(circle1.radius - circle2.radius) <= epsilon) {
                 return [
                     {
                         coors: undefined,
@@ -1013,7 +1013,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 ]
             }
 
-            if (d < epsilon) {
+            if (d <= epsilon) {
                 return [
                     {
                         coors: undefined,
@@ -1048,7 +1048,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 z: (circle1.centerC.z ?? 0) + a * ((circle2.centerC.z ?? 0) - (circle1.centerC.z ?? 0)) / d
             };
 
-            if (h < epsilon) {
+            if (h <= epsilon) {
                 return [
                     {
                         coors: p,
@@ -1153,7 +1153,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
 
             let d = symbolicSqrt(Math.pow(center1.x - circle2.centerC.x, 2) + Math.pow(center1.y - circle2.centerC.y, 2) + Math.pow(center1.z - (circle2.centerC.z ?? 0), 2));
             let r = symbolicSqrt(Math.pow(center1.x - shape1.start.x, 2) + Math.pow(center1.y - shape1.end.y, 2) + Math.pow(center1.z - (shape1.end.z ?? 0), 2));
-            if (d < epsilon && Math.abs(r - circle2.radius) < epsilon) {
+            if (d <= epsilon && Math.abs(r - circle2.radius) <= epsilon) {
                 return [
                     {
                         coors: undefined,
@@ -1166,7 +1166,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 ]
             }
 
-            if (d < epsilon) {
+            if (d <= epsilon) {
                 return [
                     {
                         coors: undefined,
@@ -1201,7 +1201,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 z: (center1.z ?? 0) + a * ((center1.z ?? 0) - (center1.z ?? 0)) / d
             };
 
-            if (h < epsilon) {
+            if (h <= epsilon) {
                 return [
                     {
                         coors: p,
@@ -1262,7 +1262,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
             let d = symbolicSqrt(Math.pow(center1.x - center2.x, 2) + Math.pow(center1.y - center2.y, 2) + Math.pow(center1.z - (center2.z ?? 0), 2));
             let r1 = symbolicSqrt(Math.pow(center1.x - shape1.start.x, 2) + Math.pow(center1.y - shape1.end.y, 2) + Math.pow(center1.z - (shape1.end.z ?? 0), 2));
             let r2 = symbolicSqrt(Math.pow(center2.x - shape2.start.x, 2) + Math.pow(center2.y - shape2.end.y, 2) + Math.pow(center2.z - (shape2.end.z ?? 0), 2));
-            if (d < epsilon && Math.abs(r1 - r2) < epsilon) {
+            if (d <= epsilon && Math.abs(r1 - r2) <= epsilon) {
                 return [
                     {
                         coors: undefined,
@@ -1275,7 +1275,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 ]
             }
 
-            if (d < epsilon) {
+            if (d <= epsilon) {
                 return [
                     {
                         coors: undefined,
@@ -1310,7 +1310,7 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                 z: (center1.z ?? 0) + a * ((center1.z ?? 0) - (center1.z ?? 0)) / d
             };
 
-            if (h < epsilon) {
+            if (h <= epsilon) {
                 return [
                     {
                         coors: p,
@@ -1414,7 +1414,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             )
 
             if (A === null) {
-                if (Math.abs(n.x * (pl.point.x - start.x) + n.y * (pl.point.y - start.y) + n.z * ((pl.point.z ?? 0 - (start.z ?? 0)))) < epsilon) {
+                if (Math.abs(n.x * (pl.point.x - start.x) + n.y * (pl.point.y - start.y) + n.z * ((pl.point.z ?? 0 - (start.z ?? 0)))) <= epsilon) {
                     return [
                         {
                             coors: undefined,
@@ -1447,7 +1447,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             )
 
             if ('startRay' in shape1) {
-                if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                     return [
                         {
                             coors: {
@@ -1463,7 +1463,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             }
 
             else if ('startSegment' in shape1) {
-                if (Math.abs(dotProduct2) < epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
+                if (Math.abs(dotProduct2) <= epsilon || (dotProduct2 < 0 && Math.abs(dotProduct2) > epsilon)) {
                     return [
                         {
                             coors: {
@@ -1520,7 +1520,7 @@ export const getIntersections3D = (shape1: GeometryShape.Shape, shape2: Geometry
             const b = -2 * dot(u1.x, u1.y, u1.z, u.x, u.y, u.z);
             const c = dot(u1.x, u1.y, u1.z, u1.x, u1.y, u1.z) - r * r;
             let discriminant = b * b - 4 * a * c;
-            if (Math.abs(discriminant) < epsilon) {
+            if (Math.abs(discriminant) <= epsilon) {
                 discriminant = 0;
             }
 
@@ -1677,7 +1677,7 @@ export const planeIntersection = (shape1: GeometryShape.Plane, shape2: GeometryS
     }
 
     const crossProduct = cross(n1.x, n1.y, n1.z, n2.x, n2.y, n2.z);
-    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) < epsilon) {
+    if (L2_norm(crossProduct.x, crossProduct.y, crossProduct.z) <= epsilon) {
         // The planes are parallel or coincident
         return undefined;
     }
@@ -1725,7 +1725,7 @@ export const planeIntersectionSphere = (shape1: GeometryShape.Plane, shape2: Geo
         return undefined; // No intersection
     }
 
-    if (Math.abs(d - shape2.radius) < epsilon) {
+    if (Math.abs(d - shape2.radius) <= epsilon) {
         // The plane is tangent to the sphere
         let t = (n.x * shape1.point.x + n.y * shape1.point.y + (n.z ?? 0) * (shape1.point.z ?? 0) - (n.x * shape2.centerS.x + n.y * shape2.centerS.y + n.z * (shape2.centerS.z ?? 0))) / dot(n.x, n.y, n.z, n.x, n.y, n.z);
         return {
@@ -1757,11 +1757,11 @@ export const SphereIntersectionSphere = (shape1: GeometryShape.Sphere, shape2: G
         return undefined; // No intersection
     }
 
-    if (d < epsilon && shape1.radius === shape2.radius) {
+    if (d <= epsilon && shape1.radius === shape2.radius) {
         throw new Error('The spheres are coincident');
     }
 
-    if (d < epsilon) {
+    if (d <= epsilon) {
         return undefined;
     }
 
@@ -1773,7 +1773,7 @@ export const SphereIntersectionSphere = (shape1: GeometryShape.Sphere, shape2: G
         z: (shape1.centerS.z ?? 0) + a * ((shape2.centerS.z ?? 0) - (shape1.centerS.z ?? 0)) / d
     }
 
-    if (h < epsilon) {
+    if (h <= epsilon) {
         return P; // One intersection point
     }
 
@@ -2366,7 +2366,7 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             return [];
         }
 
-        if (Math.abs(d - c.radius) < epsilon) {
+        if (Math.abs(d - c.radius) <= epsilon) {
             let v = {
                 x: c.centerC.x - p.x,
                 y: c.centerC.y - p.y,
@@ -2499,7 +2499,7 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             return [];
         }
 
-        if (Math.abs(d - r) < epsilon) {
+        if (Math.abs(d - r) <= epsilon) {
             let v = {
                 x: center.x - p.x,
                 y: center.y - p.y,
@@ -2612,7 +2612,7 @@ export const reflection = (o1: GeometryShape.Shape, o2: GeometryShape.Shape): Ge
                 d.x, d.y, d.z
             )
 
-            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
+            if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) <= epsilon) {
                 return structuredClone(o1);
             }
 
@@ -2870,7 +2870,7 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
             d.x, d.y, d.z
         )
 
-        if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) < epsilon) {
+        if (L2_norm(cross_uv.x, cross_uv.y, cross_uv.z) <= epsilon) {
             return structuredClone(o1);
         }
 
@@ -2881,28 +2881,22 @@ export const point_projection = (o1: GeometryShape.Point, o2: GeometryShape.Shap
 
         let denom = dot(d.x, d.y, d.z, d.x, d.y, d.z);
         let t = dot_uv / denom;
-        if (('startSegment' in o2 && ((t >= 0 && Math.abs(t) < epsilon) && (t <= 1 && Math.abs(t - 1) < epsilon))) || ('startRay' in o2 && (t >= 0 && Math.abs(t) < epsilon)) || 'startLine' in o2) {
-            let v1 = {
-                x: d.x * t,
-                y: d.y * t,
-                z: d.z * t
-            }
-
-            let foot = {
-                x: start.x + v1.x,
-                y: start.y + v1.y,
-                z: (start.z ?? 0) + v1.z
-            }
-
-            return {
-                x: foot.x,
-                y: foot.y,
-                z: foot.z
-            }
+        let v1 = {
+            x: d.x * t,
+            y: d.y * t,
+            z: d.z * t
         }
-        
-        else {
-            throw new Error('Projected point out of bound');
+
+        let foot = {
+            x: start.x + v1.x,
+            y: start.y + v1.y,
+            z: (start.z ?? 0) + v1.z
+        }
+
+        return {
+            x: foot.x,
+            y: foot.y,
+            z: foot.z
         }
     }
 
