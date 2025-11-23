@@ -181,19 +181,32 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
             `
         }
 
-        else if (shape === 'Intersection') {
-            let str = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(`
+        else if (shape === 'Intersection' || shape === 'Midpoint') {
+            let str = String.raw`
+                \[
+                \begin{array}{l}
+                \mathrm{${formatLabel(label)}}: \mathrm{${shape === 'Midpoint' && shapeNode.dependsOn.length === 1 ? 'Center' : shape}}\left(
+            `
             let labels = shapeNode.dependsOn.map(id => {
                 const node = this.props.dag.get(id)!;
                 let label = node.type.props.label;
                 return formatLabel(label);
             });
             
-            labels.slice(0, 2).forEach(label => {
-                str += label + ",";
-            });
+            if (shape === 'Intersection' || (shape === 'Midpoint' && labels.length === 2)) {
+                labels.slice(0, 2).forEach(label => {
+                    str += label + ",";
+                });
+            }
+            
+            else {
+                console.log(labels);
+                labels.forEach(label => {
+                    str += label + ",";
+                });
+            }
 
-            str = str.slice(0, -1) + "\\right) = ";
+            str = str.slice(0, -1) + "\\right)\\\\=";
             if (shapeNode.defined) {
                 str += `\\left(${this.formatNumbers((shapeNode.type as GeometryShape.Point).x)},${this.formatNumbers((shapeNode.type as GeometryShape.Point).y)}\\right)`
             }
@@ -202,6 +215,24 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                 str += `undefined`
             }
 
+            str += String.raw`\end{array}\]`;
+
+            return str;
+        }
+
+        else if (['Incircle', 'Circumcircle', 'Excircle'].includes(shape)) {
+            let str = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(`;
+            let labels = shapeNode.dependsOn.map(id => {
+                const node = this.props.dag.get(id)!;
+                let label = node.type.props.label;
+                return formatLabel(label);
+            });
+
+            labels.forEach(label => {
+                str += label + ",";
+            });
+
+            str = str.slice(0, -1) + "\\right)$";
             return str;
         }
 

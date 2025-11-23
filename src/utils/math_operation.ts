@@ -2,7 +2,7 @@ import * as GeometryShape from '../types/geometry';
 import * as Factory from './Factory'
 const math = require('mathjs');
 
-const epsilon = 1e-5;
+const epsilon = 0.01;
 
 export const cross = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
     return {
@@ -517,15 +517,6 @@ export const getIntersections2D = (shape1: GeometryShape.Shape, shape2: Geometry
                         },
 
                         ambiguous: false
-                    },
-                    {
-                        coors: {
-                            x: start.x + u.x * t,
-                            y: start.y + u.y * t,
-                            z: (start.z ?? 0) + u.z * t
-                        },
-
-                        ambiguous: true
                     }
                 ]
             }
@@ -2366,6 +2357,7 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             return [];
         }
 
+        console.log(d, c.radius);
         if (Math.abs(d - c.radius) <= epsilon) {
             let v = {
                 x: c.centerC.x - p.x,
