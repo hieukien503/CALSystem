@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ShapeNode3D, ShapeProps, GeometryState, Shape, Point, Vector, Ray, Segment, Line, ShapeType, 
-        Polygon, SemiCircle, Circle, Plane } from '../types/geometry';
+        Polygon, Circle, Plane } from '../types/geometry';
 import * as constants3d from '../types/constants3D';
 import * as operation from '../utils/math_operation';
 import * as utils from './utilities';
@@ -479,6 +479,10 @@ export const updateShapeAfterTransform = (
     transformObject: Shape | undefined
 ): void => {
     const getNewLabel = (oldLabel: string) => {
+        if (oldLabel === '') {
+            return '';
+        }
+        
         let label = utils.incrementLabel(oldLabel);
         while (labelUsed.includes(label)) {
             label = utils.incrementLabel(label);
@@ -943,76 +947,13 @@ export const updateShapeAfterTransform = (
             dag.set(transformedShape.props.id, anotherShapeNode);
         }
 
-        else if ('start' in shape && 'end' in shape) {
-            const startPoint = (shape as SemiCircle).start, endPoint = (shape as SemiCircle).end;
-            (transformedShape as SemiCircle).start.props.label = getNewLabel(startPoint.props.label);
-            (transformedShape as SemiCircle).start.props.id = `point-${uuidv4()}`
-            labelUsed.push((transformedShape as SemiCircle).start.props.label);
-            (transformedShape as SemiCircle).end.props.label = getNewLabel(endPoint.props.label);
-            (transformedShape as SemiCircle).end.props.id = `point-${uuidv4()}`
-            labelUsed.push((transformedShape as SemiCircle).end.props.label);
-            let semi_label = `semi0`;
-            let index = 0;
-            while (labelUsed.includes(semi_label)) {
-                index++;
-                semi_label = `semi${index}`;
-            }
-
-            labelUsed.push(semi_label);
-            transformedShape.props.label = semi_label;
-            transformedShape.props.id = `semi-${semi_label}`;
-
-            let shapeNode1: ShapeNode3D = {
-                id: (transformedShape as SemiCircle).start.props.id,
-                defined: true,
-                isSelected: false,
-                dependsOn: [startPoint.props.id, transformObject!.props.id],
-                type: (transformedShape as SemiCircle).start,
-                node: undefined,
-                rotationFactor: mode === 'rotation' ? {
-                    degree: (data.rotation ? data.rotation.degree : 0),
-                    CCW: (data.rotation ? data.rotation.CCW : true)
-                } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
-                isDraggable: false
-            }
-
-            let shapeNode2: ShapeNode3D = {
-                id: (transformedShape as SemiCircle).end.props.id,
-                defined: true,
-                isSelected: false,
-                dependsOn: [endPoint.props.id, transformObject!.props.id],
-                type: (transformedShape as SemiCircle).end,
-                node: undefined,
-                rotationFactor: mode === 'rotation' ? {
-                    degree: (data.rotation ? data.rotation.degree : 0),
-                    CCW: (data.rotation ? data.rotation.CCW : true)
-                } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
-                isDraggable: false
-            }
-
-            let anotherShapeNode = {
-                id: transformedShape.props.id,
-                defined: true,
-                isSelected: false,
-                dependsOn: [shape.props.id, transformObject!.props.id, shapeNode1.id, shapeNode2.id],
-                type: transformedShape,
-                node: undefined,
-                rotationFactor: mode === 'rotation' ? {
-                    degree: (data.rotation ? data.rotation.degree : 0),
-                    CCW: (data.rotation ? data.rotation.CCW : true)
-                } : undefined,
-                scaleFactor: data.scale_factor ? data.scale_factor : undefined,
-                isDraggable: false
-            };
-
-            transformedShape.type = shapeType;
-            shapeNode1.type.type = shapeType;
-            shapeNode2.type.type = shapeType;
-            dag.set(shapeNode1.id, shapeNode1);
-            dag.set(shapeNode2.id, shapeNode2);
-            dag.set(transformedShape.props.id, anotherShapeNode);
+        else if ('point' in shape && 'norm' in shape) {
+            const p = (shape as Plane).point;
+            (transformedShape as Plane).point.props.label = getNewLabel(p.props.label);
+            (transformedShape as Plane).point.props.id = `point-${uuidv4()}`;
+            const norm = (shape as Plane).norm;
+            (transformedShape as Plane).norm.props.label = getNewLabel(norm.props.label);
+            (transformedShape as Plane).norm.props.id = `vector-${uuidv4()}`;
         }
     }
 
@@ -1038,4 +979,94 @@ export const updateShapeAfterTransform = (
         transformedShape.type = shapeType;
         dag.set(transformedShape.props.id, anotherShapeNode);
     }
+}
+
+export function projectToScreen(v: THREE.Vector3, camera: THREE.Camera, canvas: HTMLCanvasElement) {
+    const vScreen = v.clone().project(camera);
+    const x = (vScreen.x + 1) * 0.5 * canvas.clientWidth;
+    const y = (-vScreen.y + 1) * 0.5 * canvas.clientHeight;
+
+    return { x, y };
+}
+
+// Distance from mouse to 2D point
+function distance2D(p1: {x: number, y: number}, p2: {x: number, y: number}) {
+    const dx = p1.x - p2.x;
+    const dy = p1.y - p2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+interface Candidate {
+    group: {shape: THREE.Object3D, point: THREE.Vector3};
+    priority: number; // point=3, line=2, mesh=1
+    distance: number; // 2D distance to mouse
+}
+
+export function pickFromGroups(mouse: {x:number, y:number}, canvas: HTMLCanvasElement, camera: THREE.Camera,
+    groups: {shape: THREE.Object3D, point: THREE.Vector3}[],
+) {
+    const candidates: Candidate[] = [];
+    const hitRadius = 8;
+
+    groups.forEach(g => {
+        const obj = g.shape;
+        const p = g.point;
+
+        // Determine priority
+        let priority = 0;
+        if (obj instanceof THREE.Points || (obj instanceof THREE.Mesh && obj.geometry.type === 'SphereGeometry')) {
+            priority = 3; // point
+        } 
+        
+        else if (obj instanceof THREE.Line || obj instanceof Line2) {
+            priority = 2; // line
+        } 
+        
+        else if (obj instanceof THREE.Mesh) {
+            priority = 1; // mesh/plane
+        } 
+        
+        else {
+            if ('children' in obj && obj.children.length > 0) {
+                // Check children to determine type
+                for (let i = 0; i < obj.children.length; i++) {
+                    const child = obj.children[i];
+                    if (child instanceof THREE.Points || (child instanceof THREE.Mesh && child.geometry.type === 'SphereGeometry')) {
+                        priority = 3;
+                        break;
+                    }
+
+                    else if (child instanceof THREE.Line || child instanceof Line2) {
+                        priority = Math.max(priority, 2);
+                    }
+
+                    else if (child instanceof THREE.Mesh) {
+                        priority = Math.max(priority, 1);
+                    }
+                }
+            }
+
+            else return; // unsupported object
+        }
+
+        // Project intersection point to screen
+        const screenPos = projectToScreen(p, camera, canvas);
+        const d = distance2D(mouse, screenPos);
+        console.log(mouse, p, screenPos, d);
+
+        if (d <= hitRadius) {
+            candidates.push({
+                group: g,
+                priority,
+                distance: d
+            });
+        }
+    });
+
+    if (candidates.length === 0) return null;
+
+    // Sort: higher priority first, then smaller distance
+    candidates.sort((a, b) => b.priority - a.priority || a.distance - b.distance);
+
+    return candidates[0].group; // return the selected ShapeGroup
 }

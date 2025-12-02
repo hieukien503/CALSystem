@@ -2042,10 +2042,26 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             konvaShape = this.drawAngle(shape as Angle);
         }
 
-        if (shape.type === 'Translation' || shape.type === 'Projection' || shape.type === 'Reflection' ||
-            shape.type === 'Rotation' || shape.type === 'Enlarge'
+        if (['Translation', 'Reflection', 'Rotation', 'Enlarge', 'Projection', 'Circumcircle', 'Excircle', 
+            'Incircle', 'Midpoint', 'Intersection', 'Orthocenter', 'Centroid', 'Incenter', 'Excenter', 
+            'Circumcenter', 'AngleBisector', 'TangentLine'].includes(shape.type)
         ) {
             konvaShape.draggable(false);
+        }
+
+        else if (shape.type === 'RegularPolygon') {
+            // Only allow the first 2 points in the dependency list to be draggable
+            const node = this.props.dag.get(shape.props.id);
+            if (node) {
+                node.dependsOn.forEach((depId, index) => {
+                    if (index > 1) {
+                        const depNode = this.props.dag.get(depId);
+                        if (depNode) {
+                            depNode.node!.draggable(false);
+                        }
+                    }
+                })
+            }
         }
 
         return konvaShape;
@@ -4325,7 +4341,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                         isSelected: false
                     });
 
-                    line.type = 'TangentLine'
+                    line.type = 'TangentLine';
                 }
 
                 this.props.onLabelUsed(labelUsed);
@@ -6450,18 +6466,14 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         let [A, c] = [
             Factory.createPoint(
                 point.type.props,
-                point.node!.x(),
-                point.node!.y()
+                (point.type as Point).x,
+                (point.type as Point).y,
             ),
 
             Factory.createCircle(
                 circle.type.props,
-                Factory.createPoint(
-                    utils.createPointDefaultShapeProps(''),
-                    circle.node!.x(),
-                    circle.node!.y()
-                ),
-                (circle.node! as Konva.Circle).radius(),
+                (circle.type as Circle).centerC,
+                (circle.type as Circle).radius,
             )
         ]
 
@@ -6485,9 +6497,25 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             let l = newTangents[0];
             const dx = l.direction.x;
             const dy = l.direction.y;
-            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
-            let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
-            let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+            const norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+            const norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+            const sScr = utils.convertToScreenCoords(
+                { x: 0, y: 0 },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            )
+
+            const eScr = utils.convertToScreenCoords(
+                { x: dx, y: dy },
+                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+                this.props.geometryState.spacing
+            )
+
+            const ux = eScr.x - sScr.x;
+            const uy = eScr.y - sScr.y;
+            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
+            let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
+            let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
             let line: Konva.Line = node.node! as Konva.Line;
             const pos = utils.convertToScreenCoords(
                 { x: l.point.x, y: l.point.y },
@@ -6495,7 +6523,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 this.props.geometryState.spacing
             );
 
-            line.points([pos.x - length * norm_dx, pos.y - length * norm_dy, pos.x + length * norm_dx, pos.y + length * norm_dy]);
+            line.points([pos.x - length * norm_ux, pos.y - length * norm_uy, pos.x + length * norm_ux, pos.y + length * norm_uy]);
             [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [(point.type as Point).x, (point.type as Point).y];
             [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [(point.type as Point).x + norm_dx, (point.type as Point).y + norm_dy];
 
@@ -6535,9 +6563,26 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         const dx = match.direction.x;
         const dy = match.direction.y;
-        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(dx * dx + dy * dy) / this.props.geometryState.zoom_level;
-        let norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
-        let norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+        const norm_dx = dx / Math.sqrt(dx * dx + dy * dy);
+        const norm_dy = dy / Math.sqrt(dx * dx + dy * dy);
+        const sScr = utils.convertToScreenCoords(
+            { x: 0, y: 0 },
+            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+            this.props.geometryState.spacing
+        )
+
+        const eScr = utils.convertToScreenCoords(
+            { x: dx, y: dy },
+            { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
+            this.props.geometryState.spacing
+        )
+
+        const ux = eScr.x - sScr.x;
+        const uy = eScr.y - sScr.y;
+        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
+        let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
+        let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
+        let line: Konva.Line = node.node! as Konva.Line;
 
         const pos = utils.convertToScreenCoords(
             { x: match.point.x, y: match.point.y },
@@ -6545,8 +6590,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             this.props.geometryState.spacing
         )
 
-        let line: Konva.Line = node.node! as Konva.Line;
-        line.points([pos.x - length * norm_dx, pos.y - length * norm_dy, pos.x + length * norm_dx, pos.y + length * norm_dy]);
+        line.points([pos.x - length * norm_ux, pos.y - length * norm_uy, pos.x + length * norm_ux, pos.y + length * norm_uy]);
         [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [(point.type as Point).x, (point.type as Point).y];
         [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [(point.type as Point).x + norm_dx, (point.type as Point).y + norm_dy];
         line.show();
@@ -6571,31 +6615,60 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 return { ...node! };
             }
 
+            // Get segment endpoints in CUSTOM coordinates
             const [s, e] = operation.getStartAndEnd(shape.type);
-            let midPoint = {
+            const customMidPoint = {
                 x: (s.x + e.x) / 2,
                 y: (s.y + e.y) / 2
             }
 
-            const dx = e.x - s.x;
-            const dy = e.y - s.y;
+            // Compute direction in CUSTOM coordinates
+            const customDir = { x: e.x - s.x, y: e.y - s.y };
+            
+            // Perpendicular in CUSTOM coordinates
+            const customPerpDir = { x: -customDir.y, y: customDir.x };
+            const customPerpLen = Math.sqrt(customPerpDir.x ** 2 + customPerpDir.y ** 2);
+            const customNormPerpX = customPerpDir.x / customPerpLen;
+            const customNormPerpY = customPerpDir.y / customPerpLen;
 
-            const ux = -dy, uy = dx;
-
-            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
-            let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
-            let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
-
-            const pointPos = utils.convertToScreenCoords(
-                midPoint,
+            // Convert midpoint to SCREEN coordinates for rendering
+            const screenMidPoint = utils.convertToScreenCoords(
+                customMidPoint,
                 { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
                 this.props.geometryState.spacing
             );
 
+            // Get screen-space direction from the visual shape for rendering
+            const shapePoints = (shape.node! as Konva.Line | Konva.Arrow).points();
+            const screenDir = {
+                x: shapePoints[2] - shapePoints[0],
+                y: shapePoints[3] - shapePoints[1]
+            };
+            
+            // Perpendicular in SCREEN coordinates
+            const screenPerpDir = { x: -screenDir.y, y: screenDir.x };
+            const screenPerpLen = Math.sqrt(screenPerpDir.x ** 2 + screenPerpDir.y ** 2);
+            const screenNormPerpX = screenPerpDir.x / screenPerpLen;
+            const screenNormPerpY = screenPerpDir.y / screenPerpLen;
+
+            // Calculate length for visual rendering
+            const length = 2 * Math.max(
+                this.props.stageRef.current!.width(), 
+                this.props.stageRef.current!.height()
+            ) / this.props.geometryState.zoom_level;
+
+            // Update visual line using SCREEN coordinates
             let line: Konva.Line = node.node! as Konva.Line;
-            line.points([pointPos.x - length * norm_ux, pointPos.y - length * norm_uy, pointPos.x + length * norm_ux, pointPos.y + length * norm_uy]);
-            [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [midPoint.x, midPoint.y];
-            [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [midPoint.x + norm_ux, midPoint.y + norm_uy];
+            line.points([
+                screenMidPoint.x - length * screenNormPerpX, 
+                screenMidPoint.y - length * screenNormPerpY, 
+                screenMidPoint.x + length * screenNormPerpX, 
+                screenMidPoint.y + length * screenNormPerpY
+            ]);
+
+            // Store in CUSTOM coordinates
+            [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [customMidPoint.x, customMidPoint.y];
+            [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [customMidPoint.x + customNormPerpX, customMidPoint.y + customNormPerpY];
 
             if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -6607,38 +6680,61 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
         else if (node.dependsOn.length === 2) {
             const [id1, id2] = node.dependsOn;
-            const [start, end] = [this.props.dag.get(id1), this.props.dag.get(id2)];
-            if (!start || !end) {
+            const [startNode, endNode] = [this.props.dag.get(id1), this.props.dag.get(id2)];
+            if (!startNode || !endNode) {
                 return { ...node! };
             }
 
-            const posA = (start).node!.position();
-            const posB = (end).node!.position();
+            // Get point positions in SCREEN coordinates
+            const posA = startNode.node!.position();
+            const posB = endNode.node!.position();
 
-            let midPoint = {
+            const screenMidPoint = {
                 x: (posA.x + posB.x) / 2,
                 y: (posA.y + posB.y) / 2
             }
 
-            const dx = posB.x - posA.x;
-            const dy = posB.y - posA.y;
+            // Compute direction in SCREEN coordinates for rendering
+            const screenDir = { x: posB.x - posA.x, y: posB.y - posA.y };
+            const screenPerpDir = { x: -screenDir.y, y: screenDir.x };
+            const screenPerpLen = Math.sqrt(screenPerpDir.x ** 2 + screenPerpDir.y ** 2);
+            const screenNormPerpX = screenPerpDir.x / screenPerpLen;
+            const screenNormPerpY = screenPerpDir.y / screenPerpLen;
 
-            const ux = -dy, uy = dx;
+            // Calculate length for visual rendering
+            const length = 2 * Math.max(
+                this.props.stageRef.current!.width(), 
+                this.props.stageRef.current!.height()
+            ) / this.props.geometryState.zoom_level;
 
-            let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
-            let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
-            let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
-
-            const pointPos = utils.convertToCustomCoords(
-                midPoint,
-                { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
-                this.props.geometryState.spacing
-            );
-
+            // Update visual line using SCREEN coordinates
             let line: Konva.Line = node.node! as Konva.Line;
-            line.points([midPoint.x - length * norm_ux, midPoint.y - length * norm_uy, midPoint.x + length * norm_ux, midPoint.y + length * norm_uy]);
-            [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [pointPos.x, pointPos.y];
-            [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [pointPos.x + norm_ux, pointPos.y + norm_uy];
+            line.points([
+                screenMidPoint.x - length * screenNormPerpX, 
+                screenMidPoint.y - length * screenNormPerpY, 
+                screenMidPoint.x + length * screenNormPerpX, 
+                screenMidPoint.y + length * screenNormPerpY
+            ]);
+
+            // Get point data in CUSTOM coordinates for storage
+            const customPosA = startNode.type as Point;
+            const customPosB = endNode.type as Point;
+            
+            const customMidPoint = {
+                x: (customPosA.x + customPosB.x) / 2,
+                y: (customPosA.y + customPosB.y) / 2
+            }
+
+            // Compute direction in CUSTOM coordinates for storage
+            const customDir = { x: customPosB.x - customPosA.x, y: customPosB.y - customPosA.y };
+            const customPerpDir = { x: -customDir.y, y: customDir.x };
+            const customPerpLen = Math.sqrt(customPerpDir.x ** 2 + customPerpDir.y ** 2);
+            const customNormPerpX = customPerpDir.x / customPerpLen;
+            const customNormPerpY = customPerpDir.y / customPerpLen;
+
+            // Store in CUSTOM coordinates
+            [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [customMidPoint.x, customMidPoint.y];
+            [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [customMidPoint.x + customNormPerpX, customMidPoint.y + customNormPerpY];
 
             if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
                 let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
@@ -6653,31 +6749,62 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
     private updatePerpendicularLine = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.props.dag.get(id1), this.props.dag.get(id2)];
-        if (!start || !end) {
-            return { ...node! };
-        }
+        const [pointNode, lineNode] = [this.props.dag.get(id1), this.props.dag.get(id2)];
+        if (!pointNode || !lineNode) return { ...node! };
 
-        const pointPos = ((start).node! as Konva.Circle).position();
-        const [s, e] = operation.getStartAndEnd(end.type);
-        const dx = e.x - s.x;
-        const dy = e.y - s.y;
-        const ux = -dy, uy = dx;
+        // Get point position in SCREEN coordinates
+        const pointPos = pointNode.node!.position();
 
-        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
-        let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
-        let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
+        // Get line direction in CUSTOM coordinates (from the stored type)
+        const [s, e] = operation.getStartAndEnd(lineNode.type);
+        const customDir = { x: e.x - s.x, y: e.y - s.y };
+        
+        // Compute perpendicular in CUSTOM coordinates
+        const customPerpDir = { x: -customDir.y, y: customDir.x };
+        const customPerpLen = Math.sqrt(customPerpDir.x ** 2 + customPerpDir.y ** 2);
+        const customNormPerpX = customPerpDir.x / customPerpLen;
+        const customNormPerpY = customPerpDir.y / customPerpLen;
 
+        // For visual rendering, get line points in SCREEN coordinates
+        const linePoints = (lineNode.node! as Konva.Line).points();
+        const screenDir = { 
+            x: linePoints[2] - linePoints[0], 
+            y: linePoints[3] - linePoints[1] 
+        };
+        
+        // Compute perpendicular in SCREEN coordinates for rendering
+        const screenPerpDir = { x: -screenDir.y, y: screenDir.x };
+        const screenPerpLen = Math.sqrt(screenPerpDir.x ** 2 + screenPerpDir.y ** 2);
+        const screenNormPerpX = screenPerpDir.x / screenPerpLen;
+        const screenNormPerpY = screenPerpDir.y / screenPerpLen;
+
+        // Extend line in screen space for visual
+        const length = 2 * Math.max(
+            this.props.stageRef.current!.width(), 
+            this.props.stageRef.current!.height()
+        ) / this.props.geometryState.zoom_level;
+
+        // Update visual line using SCREEN coordinates
+        const perpLine = node.node! as Konva.Line;
+        perpLine.points([
+            pointPos.x - length * screenNormPerpX, 
+            pointPos.y - length * screenNormPerpY,
+            pointPos.x + length * screenNormPerpX, 
+            pointPos.y + length * screenNormPerpY
+        ]);
+
+        // Convert point to CUSTOM coordinates for storage
         const pointCustom = utils.convertToCustomCoords(
             pointPos,
             { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
-        let line: Konva.Line = node.node! as Konva.Line;
-        line.points([pointPos.x - length * norm_ux, pointPos.y - length * norm_uy, pointPos.x + length * norm_ux, pointPos.y + length * norm_uy]);
-        [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [pointCustom.x, pointCustom.y];
-        [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [pointCustom.x + norm_ux, pointCustom.y + norm_uy];
+        // Store in CUSTOM coordinates: point + direction vector
+        (node.type as Line).startLine.x = pointCustom.x;
+        (node.type as Line).startLine.y = pointCustom.y;
+        (node.type as Line).endLine.x = pointCustom.x + customNormPerpX;
+        (node.type as Line).endLine.y = pointCustom.y + customNormPerpY;
         if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {
@@ -6690,31 +6817,62 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
 
     private updateParallelLine = (node: ShapeNode): ShapeNode => {
         const [id1, id2] = node.dependsOn;
-        const [start, end] = [this.props.dag.get(id1), this.props.dag.get(id2)];
-        if (!start || !end) {
-            return { ...node! };
-        }
+        const [pointNode, lineNode] = [this.props.dag.get(id1), this.props.dag.get(id2)];
+        if (!pointNode || !lineNode) return { ...node! };
 
-        const pointPos = ((start).node! as Konva.Circle).position();
-        const [s, e] = operation.getStartAndEnd(end.type);
-        const dx = e.x - s.x;
-        const dy = e.y - s.y;
-        const ux = dx, uy = dy;
+        // Get point position in SCREEN coordinates
+        const pointPos = pointNode.node!.position();
 
-        let length = 2 * Math.max(this.props.stageRef.current!.width(), this.props.stageRef.current!.height()) * Math.sqrt(ux * ux + uy * uy) / this.props.geometryState.zoom_level;
-        let norm_ux = ux / Math.sqrt(ux * ux + uy * uy);
-        let norm_uy = uy / Math.sqrt(ux * ux + uy * uy);
+        // Get line direction in CUSTOM coordinates (from the stored type)
+        const [s, e] = operation.getStartAndEnd(lineNode.type);
+        const customDir = { x: e.x - s.x, y: e.y - s.y };
+        
+        // Compute perpendicular in CUSTOM coordinates
+        const customDirDir = { x: customDir.x, y: customDir.y };
+        const customDirLen = Math.sqrt(customDirDir.x ** 2 + customDirDir.y ** 2);
+        const customNormDirX = customDirDir.x / customDirLen;
+        const customNormDirY = customDirDir.y / customDirLen;
 
+        // For visual rendering, get line points in SCREEN coordinates
+        const linePoints = (lineNode.node! as Konva.Line).points();
+        const screenDir = { 
+            x: linePoints[2] - linePoints[0], 
+            y: linePoints[3] - linePoints[1] 
+        };
+        
+        // Compute perpendicular in SCREEN coordinates for rendering
+        const screenDirDir = { x: screenDir.x, y: screenDir.y };
+        const screenDirLen = Math.sqrt(screenDirDir.x ** 2 + screenDirDir.y ** 2);
+        const screenNormDirX = screenDirDir.x / screenDirLen;
+        const screenNormDirY = screenDirDir.y / screenDirLen;
+
+        // Extend line in screen space for visual
+        const length = 2 * Math.max(
+            this.props.stageRef.current!.width(), 
+            this.props.stageRef.current!.height()
+        ) / this.props.geometryState.zoom_level;
+
+        // Update visual line using SCREEN coordinates
+        const perpLine = node.node! as Konva.Line;
+        perpLine.points([
+            pointPos.x - length * screenNormDirX, 
+            pointPos.y - length * screenNormDirY,
+            pointPos.x + length * screenNormDirX, 
+            pointPos.y + length * screenNormDirY
+        ]);
+
+        // Convert point to CUSTOM coordinates for storage
         const pointCustom = utils.convertToCustomCoords(
             pointPos,
             { x: this.props.stageRef.current!.width() / 2, y: this.props.stageRef.current!.height() / 2 },
             this.props.geometryState.spacing
         );
 
-        let line: Konva.Line = node.node! as Konva.Line;
-        line.points([pointPos.x - length * norm_ux, pointPos.y - length * norm_uy, pointPos.x + length * norm_ux, pointPos.y + length * norm_uy]);
-        [(node.type as Line).startLine.x, (node.type as Line).startLine.y] = [pointCustom.x, pointCustom.y];
-        [(node.type as Line).endLine.x, (node.type as Line).endLine.y] = [pointCustom.x + norm_ux, pointCustom.y + norm_uy];
+        // Store in CUSTOM coordinates: point + direction vector
+        (node.type as Line).startLine.x = pointCustom.x;
+        (node.type as Line).startLine.y = pointCustom.y;
+        (node.type as Line).endLine.x = pointCustom.x + customNormDirX;
+        (node.type as Line).endLine.y = pointCustom.y + customNormDirY;
         if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
             let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
             if (label) {

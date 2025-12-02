@@ -2015,7 +2015,6 @@ export const surface_area = (shape: GeometryShape.Shape) => {
 
     if ('base' in shape && 'apex' in shape) {
         let py: GeometryShape.Pyramid = shape as GeometryShape.Pyramid;
-        console.log(py);
         let perimeter = getPerimeter(py.base);
         let mid = midPoint(py.base.points[0], py.base.points[1]);
         let d = L2_norm(mid.x - py.apex.x, mid.y - py.apex.y, (mid.z ?? 0) - (py.apex.z ?? 0));
@@ -2357,7 +2356,6 @@ export const tangentLine = (p: GeometryShape.Point, c: GeometryShape.Circle | Ge
             return [];
         }
 
-        console.log(d, c.radius);
         if (Math.abs(d - c.radius) <= epsilon) {
             let v = {
                 x: c.centerC.x - p.x,

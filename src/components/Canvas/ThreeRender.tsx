@@ -66,6 +66,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
     private transformControlsRef: RefObject<TransformControls | null>;
+    private logStatus: boolean = false;
     constructor(props: ThreeDCanvasProps) {
         super(props);
         this.sceneRef = React.createRef<THREE.Scene>();
@@ -122,13 +123,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     componentWillUnmount() {
         this.disposeResources();
-        this.rendererRef.current!.domElement.removeEventListener('pointerdown', this.handleMouseDown);
-        this.rendererRef.current!.domElement.removeEventListener('contextmenu', this.handleContextMenu);
-        this.rendererRef.current!.domElement.removeEventListener('wheel', this.onMouseWheel);
-        this.transformControlsRef.current!.removeEventListener('dragging-changed', this.onDraggingChanged);
-        this.transformControlsRef.current!.removeEventListener('change', this.handleChange);
-        this.transformControlsRef.current!.removeEventListener('objectChange', this.onMouseUp)
-        this.sceneRef.current!.remove(this.transformControlsRef.current!.getHelper())
+        this.rendererRef.current?.domElement.removeEventListener('pointerdown', this.handleMouseDown);
+        this.rendererRef.current?.domElement.removeEventListener('contextmenu', this.handleContextMenu);
+        this.rendererRef.current?.domElement.removeEventListener('wheel', this.onMouseWheel);
+        this.transformControlsRef.current?.removeEventListener('dragging-changed', this.onDraggingChanged);
+        this.transformControlsRef.current?.removeEventListener('change', this.handleChange);
+        this.transformControlsRef.current?.removeEventListener('objectChange', this.onMouseUp)
+        if (this.transformControlsRef.current) {
+            this.sceneRef.current?.remove(this.transformControlsRef.current.getHelper())
+        }
     }
 
     private handleContextMenu = (e: MouseEvent) => {
@@ -457,7 +460,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         if (object) {
             const name = object.parent ? object.parent.name : object.name;
             const node = this.props.dag.get(name);
-            console.log(node);
             if (!node) return;
             if (!node.isDraggable) return;
             this.updateAndPropagate(name, (node) => {
@@ -605,7 +607,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         // If the material is an array, iterate through it (e.g., MultiMaterial)
                         if (Array.isArray(object.material)) {
                             object.material.forEach(material => material.dispose());
-                        } else {
+                        } 
+                        
+                        else {
                             // Dispose textures associated with the material
                             for (const key in object.material) {
                                 const value = object.material[key];
@@ -628,15 +632,12 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 // **Important:** If the child is a nested Group, call disposeGroup on it first.
                 if (child instanceof THREE.Group) {
                     disposeGroup(child);
-                } else {
+                } 
+                
+                else {
                     // For other objects, just remove them from the group.
                     group.remove(child);
                 }
-            }
-
-            // 4. Finally, remove the group itself from its parent (e.g., the scene)
-            if (group.parent) {
-                group.parent.remove(group);
             }
         }
 
@@ -658,6 +659,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
             });
 
+            this.sceneRef.current.clear();
             this.rendererRef.current.dispose();
         }
     };
@@ -4823,7 +4825,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             // Intersect with your 3D objects
             let intersects = raycaster.intersectObjects(children, true); // true = check all descendants
             const objects = intersects.filter(item => !(item.object instanceof THREE.Sprite));
-            const realObjects: THREE.Object3D[] = [];
+            const realObjects: { shape: THREE.Object3D, point: THREE.Vector3 }[] = [];
             objects.forEach(obj => {
                 function getTopParent(object: THREE.Object3D): THREE.Object3D {
                     let current = object;
@@ -4834,15 +4836,27 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     return current;
                 }
 
-                realObjects.push(getTopParent(obj.object));
+                realObjects.push({ shape: getTopParent(obj.object), point: obj.point });
             });
 
-            const uniqueObjects = Array.from(new Set(realObjects));
-            uniqueObjects.sort((a, b) => (b.renderOrder ?? 0) - (a.renderOrder ?? 0));
+            const map = new Map<THREE.Object3D, THREE.Vector3>();
+            const uniqueObjects: { shape: THREE.Object3D, point: THREE.Vector3 }[] = [];
+            realObjects.forEach(item => {
+                if (!map.has(item.shape)) {
+                    map.set(item.shape, item.point);
+                    uniqueObjects.push(item);
+                }
+            });
 
-            const shape = uniqueObjects.length > 0 ? uniqueObjects[0] : undefined;
-            if (shape && this.props.dag.get(shape.name) && this.props.mode === 'delete') {
-                shape.traverse((child) => {
+            const shape = utils3d.pickFromGroups(
+                new THREE.Vector2(e.offsetX, e.offsetY),
+                this.canvasRef.current!,
+                this.cameraRef.current,
+                uniqueObjects
+            );
+            
+            if (shape && this.props.dag.get(shape.shape.name) && this.props.mode === 'delete') {
+                shape.shape.traverse((child) => {
                     if (child instanceof THREE.Mesh) {
                         // Dispose geometry if present
                         if (child.geometry) {
@@ -4863,16 +4877,16 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 });
 
                 // Finally, remove it from its parent (optional, depends on your use case)
-                if (shape.parent) {
-                    shape.parent.remove(shape);
+                if (shape.shape.parent) {
+                    shape.shape.parent.remove(shape.shape);
                 }
 
                 return;
             }
 
             if (shape) {
-                let pNode = this.props.dag.get(shape.name)!;
-                if (!shape.name.includes('point-')) {
+                let pNode = this.props.dag.get(shape.shape.name)!;
+                if (!shape.shape.name.includes('point-')) {
                     const newSelected = [...this.props.selectedShapes, pNode.type];
                     this.props.onSelectedShapesChange(newSelected);
                 }
@@ -4882,21 +4896,21 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                 }
             }
 
-            if (this.props.mode === 'intersection' && uniqueObjects.filter(item => !item.name.includes('point-')).length > 1) {
-                this.createPoint(mouse, uniqueObjects);
+            if (this.props.mode === 'intersection' && uniqueObjects.filter(item => !item.shape.name.includes('point-')).length > 1) {
+                this.createPoint(shape?.point ?? new THREE.Vector3(), Array.from(map.keys()));
                 return;
             }
 
             if (this.props.mode === 'point') {
-                if (shape !== undefined) {
-                    this.createPoint(mouse, uniqueObjects);
+                if (shape) {
+                    this.createPoint(shape?.point ?? new THREE.Vector3(), Array.from(map.keys()));
                     return;
                 }
             }
 
             else if (['show_label', 'show_object'].includes(this.props.mode)) {
                 if (!shape) return;
-                let shapeNode = this.props.dag.get(shape.name);
+                let shapeNode = this.props.dag.get(shape.shape.name);
                 if (!shapeNode) return;
                 if (this.props.mode === 'show_object') {
                     let prevState = shapeNode.type.props.visible;
@@ -4909,14 +4923,14 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                         shapeNode.type.props.visible.shape = !prevState.shape;
                     }
 
-                    shape.visible = shapeNode.type.props.visible.shape;
+                    shape.shape.visible = shapeNode.type.props.visible.shape;
                 }
 
                 else {
                     shapeNode.type.props.visible.label = !shapeNode.type.props.visible.label;
                 }
 
-                let text = shape.children.find(item => item instanceof THREE.Sprite);
+                let text = shape.shape.children.find(item => item instanceof THREE.Sprite);
                 if (!text) return;
                 text.visible = shapeNode.type.props.visible.label;
                 return;
@@ -4979,19 +4993,56 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         return worldPoint;
     }
 
-    private createPoint = (position: THREE.Vector2, objects: THREE.Object3D<THREE.Object3DEventMap>[]) => {
+    private createPoint = (position: THREE.Vector3, objects: THREE.Object3D<THREE.Object3DEventMap>[]) => {
         const DAG = utils3d.cloneDAG(this.props.dag); // your own DAG clone
-
-        let pos = this.screenToWorld(position); // Use raycaster for accurate projection
         let scaleFactor: number | undefined = undefined;
         let rotFactor: { phi: number, theta: number } | undefined = undefined;
 
-        objects.slice(-2).forEach(s => {
-            const info = utils3d.snapToShape3D(DAG, s, pos); // your own snap logic
-            pos = info.position;
-            rotFactor = info.rotFactor;
-            scaleFactor = info.scaleFactor;
-        });
+        if (objects.length <= 1) {
+            objects.forEach(s => {
+                const info = utils3d.snapToShape3D(DAG, s, position); // your own snap logic
+                position = info.position;
+                rotFactor = info.rotFactor;
+                scaleFactor = info.scaleFactor;
+            })
+        }
+        
+        else {
+            const shape1 = objects.at(0);
+            const shape2 = objects.at(1);
+            if (shape1 && shape2) {
+                const node1 = this.props.dag.get(shape1.name);
+                const node2 = this.props.dag.get(shape2.name);
+                if (node1 && node2) {
+                    const info = operation.getIntersections3D(node1.type, node2.type);
+                    let chosenIdx = -1;
+                    let minDist = Infinity;
+                    for (let i = 0; i < info.length; i++) {
+                        if (info[i].coors === undefined || info[i].ambiguous) continue;
+                        if (Math.hypot(
+                            info[i].coors!.x - position.x,
+                            info[i].coors!.y - position.y,
+                            (info[i].coors!.z ?? 0) - (position.z ?? 0)
+                        ) < minDist) {
+                            minDist = Math.hypot(
+                                info[i].coors!.x - position.x,
+                                info[i].coors!.y - position.y,
+                                (info[i].coors!.z ?? 0) - (position.z ?? 0)
+                            );
+                            chosenIdx = i;
+                        }
+                    }
+
+                    if (chosenIdx !== -1) {
+                        position = new THREE.Vector3(
+                            info[chosenIdx].coors!.x,
+                            info[chosenIdx].coors!.y,
+                            info[chosenIdx].coors!.z ?? 0
+                        );
+                    }
+                }
+            }
+        }
 
         // Label assignment
         let index = 0;
@@ -5004,7 +5055,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.props.onLabelUsed([...this.props.labelUsed, label]);
 
         // Create point
-        const pointPos = utils3d.convertToVector3(pos.x, pos.y, pos.z);
+        const pointPos = utils3d.convertToVector3(position.x, position.y, position.z);
         const point = Factory.createPoint(
             utils.createPointDefaultShapeProps(label),
             pointPos.x,
@@ -5053,7 +5104,11 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
                     ref={this.canvasRef}
                     width={width}
                     height={height}
-                    style={{ background: background_color }}
+                    style={{ 
+                        background: background_color,
+                        width: `${width}px`,      // Add this
+                        height: `${height}px`     // Add this
+                    }}
                 />
             </div>
         )
