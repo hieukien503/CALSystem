@@ -52,7 +52,7 @@ interface CanvasProps {
     }) => void;
     onRenderMenuRightClick: (pos?: { x: number, y: number }) => void;
     onRemoveNode: (id: string) => void;
-    onRenderDialogbox: (mode: DrawingMode, id_to_change?: string) => void;
+    onRenderDialogbox: (mode: string, id_to_change?: string) => void;
     stageRef: RefObject<Konva.Stage | null>;
 }
 

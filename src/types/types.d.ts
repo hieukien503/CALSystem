@@ -1,1 +1,1 @@
-export type SharingMode = 'public' | 'private' | 'organization-wide';
+export type SharingMode = 'edittable' | 'view-only' | 'private';

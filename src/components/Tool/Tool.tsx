@@ -4,6 +4,7 @@ import { GeometryTool } from "./Geometry/GeometryTool";
 import { AnimationTool } from "./Animation/AnimationTool";
 import { Point, Shape, ShapeNode, DrawingMode } from '../../types/geometry'
 import * as constants from "../../types/constants"
+import SettingTools from "./Setting/SettingTools";
 
 interface TimelineItem {
     object: string;
@@ -24,11 +25,15 @@ interface ToolProps {
     selectedShapes: Shape[];
     stageRef: React.RefObject<any>;
     timeline: TimelineItem[];
-    setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;    
+    setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
+    onSaveProject: () => void;
+    onLoadProject: () => void;
+    onExport: () => void;
+    onLoadDocumentation: () => void;    
 }
 
 interface ToolState {
-    mode: 'algebra' | 'geometry' | 'animation';     // | 'project'
+    mode: 'algebra' | 'geometry' | 'animation' | 'setting';     // | 'project'
 }
 
 class Tool extends React.Component<ToolProps, ToolState> {
@@ -39,7 +44,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
         }
     }
 
-    private changeMode = (mode: 'algebra' | 'geometry' | 'animation' = 'geometry', e: React.MouseEvent): void => {
+    private changeMode = (mode: 'algebra' | 'geometry' | 'animation' | 'setting' = 'geometry', e: React.MouseEvent): void => {
         e.stopPropagation();
         this.setState({mode: mode}, () => {
             this.props.onUpdateWidth(Math.max(window.innerWidth * 0.22, constants.MIN_TOOL_WIDTH));
@@ -76,6 +81,13 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         onClick={(e) => this.changeMode('animation', e)}
                                     >
                                         <div className="label">Animation</div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'setting' ? " selected" : "") : ""}`}
+                                        onClick={(e) => this.changeMode('setting', e)}
+                                    >
+                                        <div className="label">Setting</div>
                                     </button>
                                 </div>
                             </div>
@@ -133,7 +145,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                 dag={this.props.dag}
                                 onSelect={this.props.onSelect}
                                 onUpdateDAG={this.props.onUpdateDAG}
-                                /> : <AnimationTool
+                                /> : this.state.mode === 'animation' ? <AnimationTool
                                         width={this.props.width}
                                         height={this.props.height}
                                         dag={this.props.dag}
@@ -142,6 +154,13 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         selectedPoints={this.props.selectedPoints}
                                         selectedShapes={this.props.selectedShapes}
                                         stageRef={this.props.stageRef }
+                                /> : <SettingTools
+                                        width={this.props.width}
+                                        height={this.props.height}
+                                        onSaveProject={this.props.onSaveProject}
+                                        onLoadProject={this.props.onLoadProject}
+                                        onExport={this.props.onExport}
+                                        onLoadDocumentation={this.props.onLoadDocumentation}
                                 />
                             )}
                         </div>

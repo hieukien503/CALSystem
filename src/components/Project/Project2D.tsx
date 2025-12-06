@@ -22,9 +22,6 @@ interface TimelineItem {
 }
 interface Project2DProps {
     id: string;
-    title: string;
-    description: string;
-    sharing: SharingMode;
     projectVersion: {
         versionName: string;
         versionNumber: string;
@@ -32,7 +29,6 @@ interface Project2DProps {
         updatedAt: string;
         updatedBy: string;
     };
-    collaborators: {id: string, role: string}[];
     //ownedBy: string;
 }
 
@@ -56,6 +52,7 @@ interface Project2DState {
         input_label: string;
         angleMode: boolean;
         rotationMode: boolean;
+        loadProjectMode?: string
     } | undefined;
     /** For user input */
     data: {
@@ -85,8 +82,11 @@ interface Project2DState {
     }
     /** Checked for SnapToGrid */
     snapToGridEnabled: boolean;
-
     timeline: TimelineItem[];
+    /** State for Project */
+    title: string;
+    sharing: SharingMode;
+    collaborators: {id: string, role: string}[];
 }
 
 class Project2D extends React.Component<Project2DProps, Project2DState> {
@@ -103,6 +103,9 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private parts = window.location.pathname.split('/');
     private projectId = this.parts[this.parts.length - 1]; // last segment
     private stageRef: RefObject<Konva.Stage | null>;
+    private hasShownRenameDialog = false;
+    private hasShownLoadProjectDialog = false;
+    private fileInputRef: RefObject<HTMLInputElement | null> = React.createRef<HTMLInputElement>();
     constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
@@ -139,7 +142,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 dialogPos: undefined,
                 errorDialogPos: undefined
             },
-            timeline: []
+            timeline: [],
+            title: '',
+            sharing: 'edittable',
+            collaborators: []
         }
 
         this.lastFailedState = null;
@@ -202,6 +208,21 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 }
             }, 0);
         }
+
+        if (this.hasShownRenameDialog && prevState.title === '' && this.state.title !== '') {
+            this.saveProject();
+            this.hasShownRenameDialog = false;
+        }
+
+        // ✅ Only trigger load if title changed AND flag is set  
+        if (this.hasShownLoadProjectDialog && prevState.title !== this.state.title && this.state.title !== '') {
+            this.loadProject();
+            this.hasShownLoadProjectDialog = false;
+        }
+    }
+
+    private loadDocumentation = (): void => {
+        
     }
 
     private handleKeyDown = (e: KeyboardEvent): void => {
@@ -237,6 +258,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
         else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
             this.handleRedoClick();
+        }
+
+        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            this.saveProject();
         }
 
         else if (e.key === 'Delete') {
@@ -449,7 +474,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }, () => {
             if (!this.lastFailedState && storeHistory) {
-                this.saveProject();
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
@@ -644,7 +668,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         })
     }
 
-    private setDialogbox = (mode: DrawingMode, id_to_change?: string): void => {
+    private setDialogbox = (mode: string, id_to_change?: string): void => {
         if (mode === 'circle') {
             this.setState({
                 isDialogBox: {
@@ -733,6 +757,74 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             });
         }
 
+        else if (mode === 'rename-project') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Rename Project',
+                    input_label: 'New Project Title',
+                    angleMode: false,
+                    rotationMode: false
+                },
+                isMenuRightClick: undefined,
+                mode: 'rename-project'
+            });
+        }
+
+        else if (mode === 'load-project-guest') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Load Project',
+                    input_label: 'Choose how to load the project',
+                    angleMode: false,
+                    rotationMode: false,
+                    loadProjectMode: 'guest'
+                },
+                mode: mode,
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'load-project-user') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Load Project',
+                    input_label: 'Choose how to load the project',
+                    angleMode: false,
+                    rotationMode: false,
+                    loadProjectMode: 'user'
+                },
+                mode: mode,
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'warning-save') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Unsaved Changes',
+                    input_label: 'You have unsaved changes in this project. If you continue, your changes will be permanently lost.',
+                    angleMode: false,
+                    rotationMode: false,
+                    loadProjectMode: 'user'
+                },
+                mode: mode,
+                isMenuRightClick: undefined
+            });
+        }
+
+        else if (mode === 'save-success') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Save successfully',
+                    input_label: 'File saved successfully',
+                    angleMode: false,
+                    rotationMode: false,
+                },
+                isMenuRightClick: undefined,
+                mode: mode
+            });
+        }
+
         else {
             throw new Error('Invalid mode');
         }
@@ -805,6 +897,20 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         }
 
         this.setState({selectedPoints: [...this.state.selectedPoints]});
+    }
+
+    private checkTitleExists = async (title: string): Promise<boolean> => {
+        const token = sessionStorage.getItem("token");
+        const res = await fetch(
+            `${process.env.REACT_APP_API_URL}/api/projects/exists?title=${encodeURIComponent(title)}`,
+            {
+                method: "GET",
+                headers: { Authorization: `Bearer ${token}` }
+            }
+        );
+
+        const data = await res.json();
+        return data.exists;
     }
 
     private receiveData = (value: string, CCW: boolean = true): void => {
@@ -1052,38 +1158,203 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 ))
             });
         }
+
+        else if (this.state.mode === 'rename-project') {
+            if (!value.trim()) {
+                this.setState({
+                    error: {
+                        label: 'Project title cannot be empty',
+                        message: 'Project title cannot be empty'
+                    }
+                })
+
+                return;
+            }
+
+            const newName = value.trim();
+            const reservedNames = [
+                "CON", "PRN", "AUX", "NUL",
+                "COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9",
+                "LPT1","LPT2","LPT3","LPT4","LPT5","LPT6","LPT7","LPT8","LPT9"
+            ];
+
+            const maxLength = 50;
+            const check = (projectName: string): boolean => {
+                if (projectName.length > maxLength) return false;
+                const regex = /^(?![ .])[a-zA-Z0-9 _-]+(?<![ .])/;
+                if (!regex.test(projectName)) return false;
+
+                // Check reserved names (without extension)
+                const baseName = projectName.toUpperCase();
+                if (reservedNames.includes(baseName)) return false;
+                return true;
+            }
+
+            if (newName.length === 0 || !check(newName)) {
+                this.setState({
+                    error: {
+                        label: 'Invalid name',
+                        message: 'Name must have the length between 1 to 50 characters, cannot start or end with space or dot, contains only alphanumeric characters, spaces, hyphens and dashes.'
+                    }
+                });
+
+                return;
+            }
+
+            this.checkTitleExists(value).then(exists => {
+                if (exists) {
+                    this.setState({
+                        error: {
+                            label: 'Project title already exists',
+                            message: 'Please choose a different project title.'
+                        },
+                        isDialogBox: undefined
+                    });
+
+                    this.hasShownRenameDialog = false;
+                    return;
+                }
+
+                this.setState({
+                    title: value,
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
+            })
+        }
+
+        else if (['load-project-guest', 'load-project-user'].includes(this.state.mode)) {
+            if (value === 'loadFromFile') {
+                this.fileInputRef.current?.click();
+            }
+
+            else {
+                // Load from server, with value = project ID
+                this.projectId = value;
+                this.loadProject();
+            }
+        }
+
+        else if (this.state.mode === 'save-success') {
+            this.setState({
+                error: {
+                    label: '',
+                    message: '',
+                },
+                isDialogBox: undefined
+            });
+        }
     }
+
+    private exportProject = () => {
+        const content = {
+            format: "BKGeoProject",
+            version: this.props.projectVersion,
+            metadata: {
+                title: this.state.title || "Untitled Project",
+                exportedAt: new Date().toISOString(),
+            },
+
+            data: {
+                geometryState: this.state.geometryState,
+                dag: serializeDAG(this.dag),
+                labelUsed: this.labelUsed,
+                animation: this.state.timeline
+            }
+        };
+
+        const blob = new Blob(
+            [JSON.stringify(content, null, 2)],
+            { type: "application/json" }
+        );
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = (content.metadata.title) + ".bkgeo";
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // ✅ Cleanup memory
+        URL.revokeObjectURL(url);
+    };
 
     // Save Project
     private saveProject = async () => {
+        console.log('Save clicked');
         try {
-            if (this.props.projectVersion) {
-                const token = sessionStorage.getItem("token");
-                const payload = {
-                    title: this.props.title,
-                    description: this.props.description,
-                    sharing: this.props.sharing,
-                    projectVersion: this.props.projectVersion,
-                    //collaborators: this.props.collaborators,
-                    //ownedBy: this.props.ownedBy,
-                    geometryState: this.state.geometryState,
-                    dag: serializeDAG(this.dag),
-                    labelUsed: this.labelUsed,
-                    animation: this.state.timeline,
-                };
-                await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${this.projectId}/`, {
-                    method: "PATCH",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload),
+            const token = sessionStorage.getItem("token");
+            if (!token) {
+                this.setState({
+                    error: {
+                        label: 'Requires Login',
+                        message: 'Please log in to save your project.'
+                    }
                 });
+                return;
             }
-        } catch (err) {
+
+            // ✅ Only show rename dialog if title is empty
+            if (!this.state.title && this.hasShownRenameDialog === false) {
+                this.hasShownRenameDialog = true;
+                this.setDialogbox("rename-project");
+                return;
+            }
+
+            if (this.state.error.message) {  // ✅ Changed from this.state.error
+                this.hasShownRenameDialog = false;
+                return;
+            }
+
+            const payload = {
+                title: this.state.title,
+                sharing: this.state.sharing,
+                projectVersion: this.props.projectVersion,
+                // collaborators: this.props.collaborators,
+                // ownedBy: this.props.ownedBy,
+                geometryState: this.state.geometryState,
+                dag: serializeDAG(this.dag),
+                labelUsed: this.labelUsed,
+                animation: this.state.timeline,
+            };
+
+            await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${this.projectId}/`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload),
+            });
+
+            this.setDialogbox('save-success');
+        } 
+        
+        catch (err) {
             console.error("Error saving project:", err);
         }
     };
+
+    private openProject = async () => {
+        this.setDialogbox('warning-save');
+        const token = sessionStorage.getItem("token");
+        const user = JSON.parse(sessionStorage.getItem("user") || "null");
+        if (user === null || !token) {
+            this.hasShownLoadProjectDialog = true;
+            this.setDialogbox('load-project-guest');
+        }
+
+        else {
+            this.hasShownLoadProjectDialog = true;
+            this.setDialogbox('load-project-user');
+        }
+    }
 
     // Load Project
     public loadProject = async () => {
@@ -1095,6 +1366,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     Authorization: `Bearer ${token}`
                 },
             });
+            
             if (!res.ok) throw new Error("Failed to load project");
 
             const data = await res.json();
@@ -1130,9 +1402,75 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         }
     };
 
+    private handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (!file.name.endsWith('.json') && !file.name.endsWith('.bkgeo')) {
+                this.setState({
+                    error: {
+                        label: 'Invalid file type',
+                        message: 'Please select a valid .json or .bkgeo file.'
+                    }
+                });
+                return;
+            }
+
+            try {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target?.result;
+                    if (typeof content === 'string') {
+                        const data = JSON.parse(content);
+                        this.dag = deserializeDAG(data.data.dag);
+
+                        // force React update
+                        this.setState((prev) => ({ ...prev }));
+                    
+                        //console.log("Updated DAG: ", this.dag);
+                        
+                        //// Restore state
+                        this.setState({
+                            geometryState: data.data.geometryState ?? {
+                                numLoops: 0,
+                                axisTickInterval: 1,
+                                spacing: constants.BASE_SPACING,
+                                gridVisible: true,
+                                zoom_level: 1,
+                                axesVisible: true,
+                                panning: false,
+                            },
+                            selectedPoints: [],
+                            selectedShapes: [],
+                            timeline: data.data.animation,
+                            
+                        });
+
+                        this.labelUsed = data.data.labelUsed;
+                    }
+                }
+            }
+
+            catch (error) {
+                this.setState({
+                    error: {
+                        label: 'File read error',
+                        message: 'An error occurred while reading the file.'
+                    }
+                })
+            }
+        }
+    }
+
     render(): React.ReactNode {
         return (
             <div className="flex justify-start flex-row" style={{overflow: "hidden"}}>
+                <input
+                    type="file"
+                    ref={this.fileInputRef}
+                    style={{ display: "none" }}
+                    accept=".json, .bkgeo"
+                    onChange={this.handleFileSelected}
+                />
                 <Tool 
                     width={this.state.toolWidth}
                     height={window.innerHeight * 0.745}
@@ -1153,6 +1491,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                             selectedShapes: this.state.selectedShapes
                         }
                     )}
+                    onSaveProject={this.saveProject}
+                    onLoadProject={this.openProject}
+                    onExport={this.exportProject}
+                    onLoadDocumentation={this.loadDocumentation}
                 />
                 {this.state.toolWidth > 0 && <div 
                     className="resizer flex justify-center items-center min-w-[20px] rounded-[8px] border-r"
@@ -1205,10 +1547,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     angleMode={this.state.isDialogBox.angleMode}
                     onSubmitClick={this.receiveData}
                     inputError={this.state.error}
-                    onCancelClick={() => this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})}
+                    onCancelClick={() => {
+                        this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})
+                        this.hasShownRenameDialog = false;
+                    }}
                     position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
                     ref={this.dialogRef}
                     rotationMode={this.state.isDialogBox.rotationMode}
+                    loadProjectMode={this.state.isDialogBox.loadProjectMode}
                 />)}
                 {this.state.error.message.length > 0 && <ErrorDialogbox 
                     position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}

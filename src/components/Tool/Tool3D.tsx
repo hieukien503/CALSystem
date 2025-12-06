@@ -27,6 +27,10 @@ interface Tool3DProps {
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
     onUpdateLabelUsed: (labelUsed: string[]) => void;
     onRenderErrorDialogbox: (message: string) => void;
+    // onSaveProject: () => void;
+    // onLoadProject: () => void;
+    // onExport: () => void;
+    // onLoadDocumentation: () => void;
 }
 
 interface Tool3DState {
@@ -130,8 +134,6 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     onPlane3PointClick={() => this.props.onSetMode('plane_3_points')}
                                     onConeClick={() => this.props.onSetMode('cone')}
                                     onCylinderClick={() => this.props.onSetMode('cylinder')}
-                                    onExtrudePrismClick={() => this.props.onSetMode('extrude_prism')}
-                                    onExtrudePyramidClick={() => this.props.onSetMode('extrude_pyramid')}
                                     onPrismClick={() => this.props.onSetMode('prism')}
                                     onPyramidClick={() => this.props.onSetMode('pyramid')}
                                     onReflectPlaneClick={() => this.props.onSetMode('reflect_plane')}

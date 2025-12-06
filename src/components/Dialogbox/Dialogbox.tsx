@@ -10,6 +10,7 @@ interface DialogboxProps {
         label: string;
         message: string;
     };
+    loadProjectMode?: string;
     onCancelClick: () => void;
     onSubmitClick: (value: string, CCW?: boolean) => void;
 };
@@ -19,6 +20,8 @@ interface DialogboxState {
     isFocused: boolean;
     isCCW: boolean;
     value_from_input: string;
+    projectList: Array<{ _id: string; title: string }>,
+    loadingProjects: boolean;
 }
 
 class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
@@ -30,7 +33,9 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
             isFocused: false,
             isHovered: false,
             isCCW: true,
-            value_from_input: ''
+            value_from_input: this.props.title == "Rename Project" ? "Untitled Project" : "",
+            projectList: [],
+            loadingProjects: false
         }
     }
 
@@ -83,6 +88,28 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
         }
     }
 
+    private fetchProjects = async () => {
+        const token = sessionStorage.getItem("token");
+        const user = sessionStorage.getItem("user");
+        try {
+            this.setState({ loadingProjects: true });
+
+            const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/projects/projectList/${user}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const data = await res.json();
+
+            this.setState({
+                projectList: data.projects,
+                loadingProjects: false
+            });
+
+        } catch {
+            this.setState({ loadingProjects: false });
+        }
+    };
+
     render(): React.ReactNode {
         const { x, y } = this.props.position;
         return (
@@ -92,11 +119,11 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                 ref={this.dialogRef}
             >
                 <div className='popupContent'>
-                    <div className='dialogMainPanel'>
+                    {this.props.title !== 'Save successfully' ? <div className='dialogMainPanel'>
                         <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
                         <div className='dialogContent'>
                             {
-                                !this.props.angleMode ? (
+                                !this.props.angleMode ? (this.props.loadProjectMode === undefined ? (
                                     <>
                                         <div>
                                             <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : (this.state.isHovered ? (this.state.isFocused ? " hoverState focusState" : " hoverState") : "")}`}
@@ -148,7 +175,27 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                             </div>
                                         }
                                     </>
-                                ) : (
+                                ) : <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
+                                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                        <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
+                                            const value = e.target.value;
+                                            this.setState({ value_from_input: value });
+
+                                            if (value === "loadExisted") {
+                                                this.fetchProjects();
+                                            }
+                                        }}>
+                                            <option value="loadFromFile">Load Project from File</option>
+                                            {this.props.loadProjectMode === 'user' && <option value="loadExisted">Load Existed Project</option>}
+                                        </select>
+                                        {this.state.loadingProjects && <option>Loading...</option>}
+                                        {this.state.projectList.map(project => (
+                                            <option key={project._id} value={project._id}>
+                                                {project.title}
+                                            </option>
+                                        ))}
+                                    </div>
+                                    ) : (
                                     <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
                                         <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
                                         <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
@@ -163,8 +210,23 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                         </div>
                         <div className='dialogButtonPanel'>
                             <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
-                                <div className='label'>Cancel</div>
+                                <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Discard' : 'Cancel'}</div>
                             </button>
+                            <button type='button' className='okButton'
+                                onClick={() => {
+                                    const value = this.state.value_from_input;
+                                    this.props.onSubmitClick(value, this.state.isCCW);
+                                }}
+                            >
+                                <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Save Changes' : 'OK'}</div>
+                            </button>
+                        </div>
+                    </div> : <div className='dialogMainPanel'>
+                        <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
+                        <div className='dialogContent'>
+                            <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                        </div>
+                        <div className='dialogButtonPanel'>
                             <button type='button' className='okButton'
                                 onClick={() => {
                                     const value = this.state.value_from_input;
@@ -175,6 +237,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                             </button>
                         </div>
                     </div>
+                    }
                 </div>
             </div>
         )

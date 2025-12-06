@@ -70,7 +70,7 @@ const RenderTool: React.FC<RenderToolProps> = ({
                         id={uuidv4()}
                         title={'3D Geometry'}
                         description={'Test Geometry'}
-                        sharing={'public'}
+                        sharing={'edittable'}
                         projectVersion={{
                             versionName: 'alpha',
                             versionNumber: '1.0',
@@ -84,9 +84,6 @@ const RenderTool: React.FC<RenderToolProps> = ({
                 ) : (
                     <Project2D
                         id={uuidv4()}
-                        title={'2D Geometry'}
-                        description={'Test Geometry'}
-                        sharing={'public'}
                         projectVersion={{
                             versionName: 'alpha',
                             versionNumber: '1.0',
@@ -95,7 +92,6 @@ const RenderTool: React.FC<RenderToolProps> = ({
                             updatedBy: user?.name || ""
                         }}
                         //ownedBy='Kien'
-                        collaborators={[]}
                     />
                 )}
             </Suspense>

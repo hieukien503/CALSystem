@@ -604,7 +604,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         }
     }
 
-    private setDialogbox = (mode: DrawingMode): void => {
+    private setDialogbox = (mode: string): void => {
         if (mode === 'point') {
             this.setState({
                 isDialogBox: {

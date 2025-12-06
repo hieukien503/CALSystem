@@ -537,8 +537,6 @@ interface GeometryTool3DProps {
     onCylinderClick: () => void;
     onSphereClick: () => void;
     onTetrahedronClick: () => void;
-    onExtrudePyramidClick: () => void;
-    onExtrudePrismClick: () => void;
 }
 
 export class GeometryTool3D extends React.Component<GeometryTool3DProps, GeometryToolState> {
@@ -725,14 +723,6 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
 
         else if (toolKey === 'cone') {
             this.props.onConeClick();
-        }
-
-        else if (toolKey === 'extrude_pyramid') {
-            this.props.onExtrudePyramidClick();
-        }
-
-        else if (toolKey === 'extrude_prism') {
-            this.props.onExtrudePrismClick();
         }
 
         else if (toolKey === 'plane') {

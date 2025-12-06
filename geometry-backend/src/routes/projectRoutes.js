@@ -1,6 +1,6 @@
 ﻿const express = require("express");
 const router = express.Router();
-const { createProject, loadProject, updateProject, bulkProject, addProjectToUser, deleteProject, updateProjectInfo } = require("../controllers/projectController");
+const { createProject, loadProject, updateProject, bulkProject, addProjectToUser, deleteProject, updateProjectInfo, checkProjectTitleExist, getProjectList } = require("../controllers/projectController");
 
 const { authenticateUser } = require("../controllers/middleware");
 
@@ -12,5 +12,7 @@ router.post("/bulk", authenticateUser, bulkProject);
 router.post("/add", authenticateUser, addProjectToUser);
 router.delete("/:projectId", authenticateUser, deleteProject);    // Delete a project → DELETE /api/projects/:projectId
 router.patch("/:projectId/rename", authenticateUser, updateProjectInfo); // Rename a project → PATCH /api/projects/:projectId
+router.get("/exists", authenticateUser, checkProjectTitleExist);
+router.get("/projectList/:user", authenticateUser, getProjectList); // GET /api/projects/projectList
 
 module.exports = router;

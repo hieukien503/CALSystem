@@ -259,7 +259,8 @@ type DrawingMode = 'edit' | 'point' | 'line' | 'segment' | 'vector' | 'polygon' 
                    'semicircle' | 'reflect_point' | 'rotation' | 'projection' | 'enlarge' | 'translation' | 'tangent_line' | 'regular_polygon' |
                    'angle_bisector' | 'reflect_line' | 'sphere' | 'sphere_2_points' | 'circle_axis_point' | 'circle_center_direction' |
                    'plane' | 'plane_3_points' | 'parallel_plane' | 'perpendicular_plane' | 'cone' | 'cube' | 'prism' | 'pyramid' |
-                   'tetrahedron' | 'cylinder' | 'reflect_plane' | 'changeName';
+                   'tetrahedron' | 'cylinder' | 'reflect_plane' | 'changeName' | 'rename-project' | 'save-success' | 'load-project-user' | 'load-project-guest' |
+                   'warning-save';
 
 /** History */
 interface HistoryEntry {

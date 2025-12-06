@@ -56,7 +56,7 @@ interface ThreeDCanvasProps {
     }) => void;
     onRenderMenuRightClick: (pos?: {x: number, y: number}) => void;
     onRemoveNode: (id: string) => void;
-    onRenderDialogbox: (mode: DrawingMode) => void;
+    onRenderDialogbox: (mode: string) => void;
 }
 
 class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {

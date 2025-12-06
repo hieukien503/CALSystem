@@ -182,3 +182,40 @@ exports.updateProjectInfo = async (req, res) => {
         res.status(500).json({ message: "Error updating project", error: err.message });
     }
 };
+
+exports.checkProjectTitleExist = async (req, res) => {
+    try {
+        const { title } = req.query;
+        if (!title) {
+            return res.status(400).json({ message: "Title is required" });
+        }
+        
+        const project = await Project.findOne({ title: title });
+        if (project) {
+            return res.status(200).json({ exists: true });
+        }
+
+        return res.status(200).json({ exists: false });
+    }
+
+    catch (err) {
+        // console.error("Error checking project title existence:", err);
+        res.status(500).json({ message: "Error checking project title", error: err.message });
+    }
+}
+
+exports.getProjectList = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        if (!userId) {
+            return res.status(400).json({ message: "Missing userId" });
+        }
+
+        const projects = await Project.find();
+        res.status(200).json({ projects: projects });
+    }
+
+    catch (err) {
+        res.status(500).json({ message: "Error fetching project list", error: err.message });
+    }
+}
