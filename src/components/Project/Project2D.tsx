@@ -1,4 +1,4 @@
-import React, { createRef, RefObject, useEffect } from "react";
+import React, { createRef, RefObject } from "react";
 import KonvaCanvas from "../Canvas/KonvaRender";
 import Tool from "../Tool/Tool";
 import Dialogbox from "../Dialogbox/Dialogbox";
@@ -10,6 +10,7 @@ import Konva from "konva";
 import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
 import { SharingMode } from "../../types/types";
 import { serializeDAG, deserializeDAG } from "../../utils/serialize";
+import { NavigateFunction } from "react-router-dom";
 
 const math = require('mathjs');
 
@@ -29,6 +30,7 @@ interface Project2DProps {
         updatedAt: string;
         updatedBy: string;
     };
+    navigate: NavigateFunction
     //ownedBy: string;
 }
 
@@ -106,6 +108,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private hasShownRenameDialog = false;
     private hasShownLoadProjectDialog = false;
     private fileInputRef: RefObject<HTMLInputElement | null> = React.createRef<HTMLInputElement>();
+    private backgroundLayerRef: RefObject<Konva.Layer | null> = React.createRef<Konva.Layer>();
     constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
@@ -825,6 +828,19 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             });
         }
 
+        else if (mode === 'export-project') {
+            this.setState({
+                isDialogBox: {
+                    title: 'Export Project',
+                    input_label: 'Export Project to',
+                    angleMode: false,
+                    rotationMode: false,
+                },
+                isMenuRightClick: undefined,
+                mode: mode
+            });
+        }
+
         else {
             throw new Error('Invalid mode');
         }
@@ -1201,29 +1217,67 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 return;
             }
 
-            this.checkTitleExists(value).then(exists => {
-                if (exists) {
+            if (CCW === false) {
+                this.checkTitleExists(value).then(exists => {
+                    if (exists) {
+                        this.setState({
+                            error: {
+                                label: 'Project title already exists',
+                                message: 'Please choose a different project title.'
+                            },
+                            isDialogBox: undefined
+                        });
+
+                        this.hasShownRenameDialog = false;
+                        return;
+                    }
+
                     this.setState({
+                        title: value,
                         error: {
-                            label: 'Project title already exists',
-                            message: 'Please choose a different project title.'
+                            label: '',
+                            message: '',
                         },
                         isDialogBox: undefined
                     });
+                })
+            }
 
-                    this.hasShownRenameDialog = false;
-                    return;
-                }
-
-                this.setState({
-                    title: value,
-                    error: {
-                        label: '',
-                        message: '',
+            else {
+                const content = {
+                    format: "BKGeoProject",
+                    version: this.props.projectVersion,
+                    metadata: {
+                        title: this.state.title || "Untitled Project",
+                        exportedAt: new Date().toISOString(),
                     },
-                    isDialogBox: undefined
-                });
-            })
+
+                    data: {
+                        geometryState: this.state.geometryState,
+                        dag: serializeDAG(this.dag),
+                        labelUsed: this.labelUsed,
+                        animation: this.state.timeline
+                    }
+                };
+
+                const blob = new Blob(
+                    [JSON.stringify(content, null, 2)],
+                    { type: "application/json" }
+                );
+
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = (content.metadata.title) + ".bkgeo";
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // ✅ Cleanup memory
+                URL.revokeObjectURL(url);
+            }
         }
 
         else if (['load-project-guest', 'load-project-user'].includes(this.state.mode)) {
@@ -1236,6 +1290,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 this.projectId = value;
                 this.loadProject();
             }
+
+            this.setState({
+                error: {
+                    label: '',
+                    message: '',
+                },
+                isDialogBox: undefined
+            });
         }
 
         else if (this.state.mode === 'save-success') {
@@ -1247,47 +1309,28 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: undefined
             });
         }
-    }
 
-    private exportProject = () => {
-        const content = {
-            format: "BKGeoProject",
-            version: this.props.projectVersion,
-            metadata: {
-                title: this.state.title || "Untitled Project",
-                exportedAt: new Date().toISOString(),
-            },
-
-            data: {
-                geometryState: this.state.geometryState,
-                dag: serializeDAG(this.dag),
-                labelUsed: this.labelUsed,
-                animation: this.state.timeline
+        else if (this.state.mode === 'export-project') {
+            if (value === 'toPNG') {
+                this.exportProject('png');
             }
-        };
 
-        const blob = new Blob(
-            [JSON.stringify(content, null, 2)],
-            { type: "application/json" }
-        );
-
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = (content.metadata.title) + ".bkgeo";
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // ✅ Cleanup memory
-        URL.revokeObjectURL(url);
-    };
+            else if (value === 'toJPG' || value === 'toJPEG') {
+                this.exportProject('jpeg');
+            }
+            
+            this.setState({
+                error: {
+                    label: '',
+                    message: '',
+                },
+                isDialogBox: undefined
+            });
+        }
+    }
 
     // Save Project
     private saveProject = async () => {
-        console.log('Save clicked');
         try {
             const token = sessionStorage.getItem("token");
             if (!token) {
@@ -1321,7 +1364,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 geometryState: this.state.geometryState,
                 dag: serializeDAG(this.dag),
                 labelUsed: this.labelUsed,
-                animation: this.state.timeline,
+                animation: this.state.timeline
             };
 
             await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${this.projectId}/`, {
@@ -1364,10 +1407,14 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${this.projectId}/${user?._id || "null"}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
-                },
+                }
             });
             
             if (!res.ok) throw new Error("Failed to load project");
+            if (this.projectId !== this.props.id) {
+                this.props.navigate(`/view/project/${this.projectId}`);
+                return;
+            }
 
             const data = await res.json();
             // Restore DAG (no Konva nodes yet)
@@ -1461,6 +1508,47 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         }
     }
 
+    private exportProject = (mode: string) => {
+        if (!this.stageRef.current) {
+            this.setState({
+                error: {
+                    label: 'File export error',
+                    message: 'An error occurred while exporting the file to PNG.'
+                }
+            })
+        }
+
+        const stageToBlob = async (mode: "png" | "jpg" | 'jpeg') => {
+            if (mode.toLowerCase() === "png") {
+                const blob = await this.stageRef.current!.toBlob({ pixelRatio: 2 }) as Blob;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+
+                a.href = url;
+                a.download = `${this.state.title !== '' ? this.state.title : 'Untitle Project'}.png`;
+                a.click();
+
+                URL.revokeObjectURL(url);
+            }
+
+            else {
+                const blob = await this.stageRef.current!.toBlob({ pixelRatio: 2, mimeType: 'image/jpeg', quality: 0.95 }) as Blob;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+
+                a.href = url;
+                a.download = `${this.state.title !== '' ? this.state.title : 'Untitle Project'}.png`;
+                a.click();
+
+                URL.revokeObjectURL(url);
+            }
+        } 
+        
+        if (['jpg', 'jpeg', 'png'].includes(mode)) {
+            stageToBlob(mode as "png" | "jpg" | 'jpeg');
+        }
+    }
+
     render(): React.ReactNode {
         return (
             <div className="flex justify-start flex-row" style={{overflow: "hidden"}}>
@@ -1493,7 +1581,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     )}
                     onSaveProject={this.saveProject}
                     onLoadProject={this.openProject}
-                    onExport={this.exportProject}
+                    onExport={() => this.setDialogbox('export-project')}
                     onLoadDocumentation={this.loadDocumentation}
                 />
                 {this.state.toolWidth > 0 && <div 
@@ -1540,6 +1628,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onRenderDialogbox={this.setDialogbox}
                     data={this.state.data}
                     stageRef={this.stageRef}
+                    backgroundLayerRef={this.backgroundLayerRef}
                 />}
                 {this.state.isDialogBox && (<Dialogbox 
                     title={this.state.isDialogBox.title}

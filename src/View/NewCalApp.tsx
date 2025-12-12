@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface User {
@@ -9,7 +9,13 @@ interface User {
     project: string[];
 }
 
-const NewCalApp: React.FC = () => {
+interface NewCalAppProps {
+    id: { "2d-graph": string, "3d-graph": string },
+    setId: React.Dispatch<React.SetStateAction<{ "2d-graph": string, "3d-graph": string }>>;
+    selectedTool: string;
+}
+
+const NewCalApp: React.FC<NewCalAppProps> = ({ id, setId, selectedTool }) => {
     const navigate = useNavigate();
 
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
@@ -24,7 +30,8 @@ const NewCalApp: React.FC = () => {
                         { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     _id: user?._id,
-                    title: "Untitled Project"
+                    title: "Untitled Project",
+                    mode: selectedTool
                 })
             });
             const project = await res.json();
@@ -39,6 +46,19 @@ const NewCalApp: React.FC = () => {
                     })
                 });
             }
+
+            let newId: { "2d-graph": string, "3d-graph": string };
+            if (!id) {
+                newId = selectedTool === "2d-graph" ?   { "2d-graph": project._id, "3d-graph": "" } : 
+                                                        { "2d-graph": "", "3d-graph": project._id }
+            }
+
+            else {
+                newId = selectedTool === "2d-graph" ?   { "2d-graph": project._id, "3d-graph": id['3d-graph'] } : 
+                                                        { "2d-graph": id['2d-graph'], "3d-graph": project._id }
+            }
+
+            setId(newId);
             // use Mongo _id for routing
             navigate(`/view/project/${project._id}`);
         };

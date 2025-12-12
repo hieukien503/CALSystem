@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -18,15 +18,16 @@ import E404 from "./View/E404";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
-interface User {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-    project: string[];
-}
+// interface User {
+//     _id: string;
+//     name: string;
+//     email: string;
+//     role: string;
+//     project: string[];
+// }
 function App() {
     const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
+    const [id, setId] = useState<{ "2d-graph": string, "3d-graph": string }>({"2d-graph": "", "3d-graph": ""});
 
     return (
         <Router>
@@ -36,8 +37,8 @@ function App() {
                 <main className="flex-grow">
                     <Routes>
                         <Route path="/" element={<Home />} />
-                        <Route path="/view/project" element={<NewCalApp />} />
-                        <Route path="/view/project/:id" element={<CalApp selectedTool={selectedTool} setSelectedTool={setSelectedTool} />} />
+                        <Route path="/view/project/:id" element={<CalApp id={id} setId={setId} selectedTool={selectedTool} setSelectedTool={setSelectedTool} />} />
+                        <Route path="/view/project" element={<NewCalApp id={id} selectedTool={selectedTool} setId={setId} />} />
                         <Route path="/view/login" element={<Login />} />
                         <Route path="/view/forgot-password" element={<ForgotPassword />} />
                         <Route path="/view/signup" element={<SignUp />} />

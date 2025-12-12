@@ -14,6 +14,7 @@ import { CharStreams, CommonTokenStream } from "antlr4ts";
 import { MathCommandParser } from "../../antlr4/parser/MathCommandParser";
 import ASTGen from "../../antlr4/astgen/ASTGen";
 import * as THREE from 'three';
+import { NavigateFunction } from "react-router-dom";
 const math = require('mathjs');
 
 interface TimelineItem {
@@ -25,17 +26,14 @@ interface TimelineItem {
 }
 interface Project3DProps {
     id: string;
-    title: string;
-    description: string;
-    sharing: SharingMode;
     projectVersion: {
         versionName: string;
         versionNumber: string;
         createdAt: string;
         updatedAt: string;
-        updatedBy: string
+        updatedBy: string;
     };
-    collaborators: {id: string, role: string}[];
+    navigate: NavigateFunction;
     //ownedBy: string;
 }
 
@@ -82,6 +80,11 @@ interface Project3DState {
     snapToGridEnabled: boolean;
 
     timeline: TimelineItem[];
+
+    /** State for Project */
+    title: string;
+    sharing: SharingMode;
+    collaborators: {id: string, role: string}[];
 }
 
 class Project3D extends React.Component<Project3DProps, Project3DState> {
@@ -127,7 +130,10 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 dialogPos: undefined,
                 errorDialogPos: undefined
             },
-            timeline: []
+            timeline: [],
+            title: '',
+            sharing: 'edittable',
+            collaborators: []
         }
 
         this.lastFailedState = null;
@@ -457,7 +463,6 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private handleUndoClick = () => {
-        console.log(this.historyStack);
         function disposeGroup(group: THREE.Group) {
             if (!group) return;
 

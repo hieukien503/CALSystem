@@ -81,7 +81,6 @@ const collaboratorSchema = new mongoose.Schema({
 }, { _id: false });
 
 const projectSchema = new mongoose.Schema({
-
     title: String,
     description: String,
     sharing: { type: String, default: "private" },

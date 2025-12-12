@@ -33,7 +33,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
             isFocused: false,
             isHovered: false,
             isCCW: true,
-            value_from_input: this.props.title == "Rename Project" ? "Untitled Project" : "",
+            value_from_input: this.props.title === "Rename Project" ? "Untitled Project" : "",
             projectList: [],
             loadingProjects: false
         }
@@ -112,18 +112,103 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
 
     render(): React.ReactNode {
         const { x, y } = this.props.position;
-        return (
-            <div 
-                className={`dialogComponent inputDialogComponent${this.props.rotationMode ? " rotateInputDialog" : (this.props.angleMode ? " angleInputDialog" : "")}`}
-                style={{left: x, top: y, position: 'absolute'}}
-                ref={this.dialogRef}
-            >
-                <div className='popupContent'>
-                    {this.props.title !== 'Save successfully' ? <div className='dialogMainPanel'>
-                        <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
-                        <div className='dialogContent'>
-                            {
-                                !this.props.angleMode ? (this.props.loadProjectMode === undefined ? (
+        let reactNode: React.ReactNode | null = null;
+        if (this.props.title === 'Save sucessfully') {
+            reactNode = (
+                <div className='dialogMainPanel'>
+                    <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
+                    <div className='dialogContent'>
+                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                    </div>
+                    <div className='dialogButtonPanel'>
+                        <button type='button' className='okButton'
+                            onClick={() => {
+                                const value = this.state.value_from_input;
+                                this.props.onSubmitClick(value, this.state.isCCW);
+                            }}
+                        >
+                            <div className='label'>OK</div>
+                        </button>
+                    </div>
+                </div>
+            )
+        }
+
+        else {
+            const buttonNode: React.ReactNode = (
+                <div className='dialogButtonPanel'>
+                    <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
+                        <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Discard' : 'Cancel'}</div>
+                    </button>
+                    <button type='button' className='okButton'
+                        onClick={() => {
+                            const value = this.state.value_from_input;
+                            this.props.onSubmitClick(value.length === 0 ? (this.props.angleMode ? "0to360" : "toPNG") : value, this.state.isCCW);
+                        }}
+                    >
+                        <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Save Changes' : 'OK'}</div>
+                    </button>
+                </div>
+            );
+
+            if (!this.props.angleMode) {
+                if (this.props.loadProjectMode !== undefined) {
+                    reactNode = (
+                        <div className='dialogMainPanel'>
+                            <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
+                            <div className='dialogContent'>
+                                <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
+                                    <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                    <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
+                                        const value = e.target.value;
+                                        this.setState({ value_from_input: value });
+
+                                        if (value === "loadExisted") {
+                                            this.fetchProjects();
+                                        }
+                                    }}>
+                                        <option value="loadFromFile">Load Project from File</option>
+                                        {this.props.loadProjectMode === 'user' && <option value="loadExisted">Load Existed Project</option>}
+                                    </select>
+                                    {this.state.loadingProjects && <option>Loading...</option>}
+                                    {this.state.projectList.map(project => (
+                                        <option key={project._id} value={project._id}>
+                                            {project.title}
+                                        </option>
+                                    ))}
+                                </div>
+                            </div>
+                            {buttonNode}
+                        </div>
+                    )
+                }
+
+                else {
+                    if (this.props.title === 'Export Project') {
+                        reactNode = (
+                            <div className='dialogMainPanel'>
+                                <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
+                                <div className='dialogContent'>
+                                    <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
+                                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                        <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
+                                            this.setState({ value_from_input: e.target.value })
+                                        }}>
+                                            <option value="toPNG">PNG Image</option>
+                                            <option value="toJPEG">JPG Image</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                {buttonNode}
+                            </div>
+                        )
+                    }
+
+                    else {
+                        reactNode = (
+                            <div className='dialogMainPanel'>
+                                <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
+                                <div className='dialogContent'>
                                     <>
                                         <div>
                                             <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : (this.state.isHovered ? (this.state.isFocused ? " hoverState focusState" : " hoverState") : "")}`}
@@ -152,6 +237,31 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                 {this.props.inputError.label.length > 0 && <div className='errorLabel'>{this.props.inputError.label}</div>}
                                             </div>
                                         </div>
+                                        {this.props.title === 'Rename Project' &&
+                                            <>
+                                                <div className='inputLabel text-neutral-700'>Save this project to</div>
+                                                    <div className='radioButtonPanel'>
+                                                    <div className={`radioButton${this.state.isCCW ? " selected" : ""}`}
+                                                        onClick={() => this.setState({isCCW: true})}
+                                                    >
+                                                        <div className='radioBg ripple'>
+                                                            <div className='outerCircle'></div>
+                                                            <div className='innerCircle'></div>
+                                                        </div>
+                                                        <div className='label'>Local device</div>
+                                                    </div>
+                                                    <div className={`radioButton${!this.state.isCCW ? " selected" : ""}`}
+                                                        onClick={() => this.setState({isCCW: false})}
+                                                    >
+                                                        <div className='radioBg ripple'>
+                                                            <div className='outerCircle'></div>
+                                                            <div className='innerCircle'></div>
+                                                        </div>
+                                                        <div className='label'>Your account</div>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        }
                                         {this.props.rotationMode && 
                                             <div className='radioButtonPanel'>
                                                 <div className={`radioButton${this.state.isCCW ? " selected" : ""}`}
@@ -175,69 +285,47 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                             </div>
                                         }
                                     </>
-                                ) : <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
-                                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
-                                        <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
-                                            const value = e.target.value;
-                                            this.setState({ value_from_input: value });
+                                </div>
+                                {buttonNode}
+                            </div>
+                        )
+                    }
+                    
+                }
+            }
 
-                                            if (value === "loadExisted") {
-                                                this.fetchProjects();
-                                            }
-                                        }}>
-                                            <option value="loadFromFile">Load Project from File</option>
-                                            {this.props.loadProjectMode === 'user' && <option value="loadExisted">Load Existed Project</option>}
-                                        </select>
-                                        {this.state.loadingProjects && <option>Loading...</option>}
-                                        {this.state.projectList.map(project => (
-                                            <option key={project._id} value={project._id}>
-                                                {project.title}
-                                            </option>
-                                        ))}
-                                    </div>
-                                    ) : (
-                                    <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
-                                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
-                                        <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
-                                            this.setState({ value_from_input: e.target.value })
-                                        }}>
-                                            <option value="0to360">0&deg; - 360&deg;</option>
-                                            <option value="0to180">0&deg; - 180&deg;</option>
-                                        </select>
-                                    </div>
-                                )
-                            }
-                        </div>
-                        <div className='dialogButtonPanel'>
-                            <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
-                                <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Discard' : 'Cancel'}</div>
-                            </button>
-                            <button type='button' className='okButton'
-                                onClick={() => {
-                                    const value = this.state.value_from_input;
-                                    this.props.onSubmitClick(value, this.state.isCCW);
-                                }}
-                            >
-                                <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Save Changes' : 'OK'}</div>
-                            </button>
-                        </div>
-                    </div> : <div className='dialogMainPanel'>
+            else {
+                reactNode = (
+                    <div className='dialogMainPanel'>
                         <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
                         <div className='dialogContent'>
-                            <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                            <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
+                                <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
+                                    this.setState({ value_from_input: e.target.value })
+                                }}>
+                                    <option value="0to360">0&deg; - 360&deg;</option>
+                                    <option value="0to180">0&deg; - 180&deg;</option>
+                                </select>
+                            </div>
                         </div>
-                        <div className='dialogButtonPanel'>
-                            <button type='button' className='okButton'
-                                onClick={() => {
-                                    const value = this.state.value_from_input;
-                                    this.props.onSubmitClick(value, this.state.isCCW);
-                                }}
-                            >
-                                <div className='label'>OK</div>
-                            </button>
-                        </div>
+                        {buttonNode}
                     </div>
-                    }
+                    
+                )
+            }
+        }
+
+        
+        
+        return (
+            <div 
+                className={`dialogComponent inputDialogComponent${this.props.rotationMode ? " rotateInputDialog" : (this.props.angleMode ? " angleInputDialog" : "")}`}
+                style={{left: x, top: y, position: 'absolute'}}
+                ref={this.dialogRef}
+            >
+                <div className='popupContent'>
+                    {reactNode}
                 </div>
             </div>
         )

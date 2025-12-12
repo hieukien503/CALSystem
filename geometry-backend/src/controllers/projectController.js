@@ -15,7 +15,7 @@ exports.createProject = async (req, res) => {
             geometryState: req.body.geometryState || {},
             dag: req.body.dag || [],
             labelUsed: req.body.labelUsed || [],
-            animation: req.body.animation || []
+            animation: req.body.animation || [],
         });
 
         await newProject.save();

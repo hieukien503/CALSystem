@@ -200,7 +200,6 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
             }
             
             else {
-                console.log(labels);
                 labels.forEach(label => {
                     str += label + ",";
                 });
@@ -370,7 +369,6 @@ class AlgebraTool extends React.Component<AlgebraToolProps, {}> {
                                     shapeVisible={value[1].type.props.visible.shape}
                                     onToggleVisibility={() => {
                                         const visible = value[1].type.props.visible;
-                                        console.log(visible);
                                         value[1].type.props.visible.shape = !visible.shape;
                                         if ('x' in value[1].type && 'y' in value[1].type) {
                                             value[1].type.props.visible.label = value[1].type.props.visible.shape;

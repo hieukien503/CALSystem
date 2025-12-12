@@ -66,7 +66,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
     private transformControlsRef: RefObject<TransformControls | null>;
-    private logStatus: boolean = false;
     constructor(props: ThreeDCanvasProps) {
         super(props);
         this.sceneRef = React.createRef<THREE.Scene>();

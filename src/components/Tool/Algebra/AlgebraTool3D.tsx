@@ -755,7 +755,6 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
         }
 
         else if (shape === 'Intersection') {
-            console.log(this.props.dag);
             let str = `$\\mathrm{${formatLabel(label)}}: \\mathrm{${shape}}\\left(`
             let labels = shapeNode.dependsOn.map(id => {
                 const node = this.props.dag.get(id)!;
@@ -786,7 +785,6 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                 \begin{array}{l}
                 \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(
                 `;
-                console.log(shapeNode);
                 let labels = shapeNode.dependsOn.map(id => {
                     const node = this.props.dag.get(id)!;
                     return createLatexString(node.type);
@@ -815,7 +813,6 @@ class AlgebraTool3D extends React.Component<AlgebraTool3DProps, AlgebraTool3DSta
                 \begin{array}{l}
                 \mathrm{${formatLabel(label)}}: \mathrm{${shape}}\left(
                 `;
-                console.log(shapeNode);
                 let labels = shapeNode.dependsOn.map(id => {
                     const node = this.props.dag.get(id)!;
                     return createLatexString(node.type);

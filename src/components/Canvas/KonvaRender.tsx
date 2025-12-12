@@ -1,7 +1,7 @@
 import React, { RefObject } from "react";
 import { Line, Point, Shape, GeometryState, ShapeNode, DrawingMode, HistoryEntry, Segment, Ray, Vector, Circle, Polygon, Angle, SemiCircle } from "../../types/geometry"
 import Konva from "konva";
-import { Stage, Layer } from "react-konva";
+import { Stage, Layer, Rect } from "react-konva";
 import { KonvaAxis } from "../../utils/KonvaAxis";
 import { KonvaGrid } from "../../utils/KonvaGrid";
 import * as Factory from '../../utils/Factory'
@@ -54,6 +54,7 @@ interface CanvasProps {
     onRemoveNode: (id: string) => void;
     onRenderDialogbox: (mode: string, id_to_change?: string) => void;
     stageRef: RefObject<Konva.Stage | null>;
+    backgroundLayerRef: RefObject<Konva.Layer | null>;
 }
 
 class KonvaCanvas extends React.Component<CanvasProps, {}> {
@@ -127,6 +128,20 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             prevProps.dag !== this.props.dag
         ) {
             this.drawShapes();
+        }
+
+        if (prevProps.width !== this.props.width ||
+            prevProps.height !== this.props.height
+        ) {
+            if (this.props.backgroundLayerRef.current && this.props.stageRef.current) {
+                const bgRect = this.props.backgroundLayerRef.current.findOne("Rect");
+                if (bgRect) {
+                    bgRect.width(this.props.stageRef.current.width());
+                    bgRect.height(this.props.stageRef.current.height());
+                    this.props.backgroundLayerRef.current.batchDraw();
+                }
+            }
+            
         }
     }
 
@@ -7804,6 +7819,16 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
                 onPointerMove={this.handleMouseMove}
                 onPointerUp={this.handleMouseUp}
             >
+                <Layer ref={this.props.backgroundLayerRef}>
+                    <Rect
+                        x={0}
+                        y={0}
+                        width={width}
+                        height={height}
+                        fill={background_color}
+                        listening={false}   // VERY IMPORTANT: allows clicks to pass through
+                    />
+                </Layer>
                 <Layer ref={this.layerGridRef} />
                 <Layer ref={this.layerAxisRef} />
                 <Layer ref={this.layerMathObjectRef} />
