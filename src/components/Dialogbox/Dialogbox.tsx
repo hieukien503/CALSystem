@@ -13,6 +13,7 @@ interface DialogboxProps {
     loadProjectMode?: string;
     onCancelClick: () => void;
     onSubmitClick: (value: string, CCW?: boolean) => void;
+    onDiscardClick?: () => void;
 };
 
 interface DialogboxState {
@@ -137,9 +138,6 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
         else {
             const buttonNode: React.ReactNode = (
                 <div className='dialogButtonPanel'>
-                    <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
-                        <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Discard' : 'Cancel'}</div>
-                    </button>
                     <button type='button' className='okButton'
                         onClick={() => {
                             const value = this.state.value_from_input;
@@ -147,6 +145,12 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                         }}
                     >
                         <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Save Changes' : 'OK'}</div>
+                    </button>
+                    {this.props.onDiscardClick && <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
+                        <div className='label'>Discard</div>
+                    </button>}
+                    <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
+                        <div className='label'>Cancel</div>
                     </button>
                 </div>
             );

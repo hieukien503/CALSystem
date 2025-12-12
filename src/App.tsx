@@ -27,7 +27,14 @@ import "bootstrap/dist/css/bootstrap.min.css";
 // }
 function App() {
     const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
-    const [id, setId] = useState<{ "2d-graph": string, "3d-graph": string }>({"2d-graph": "", "3d-graph": ""});
+    const idRef = React.useRef({
+        "2d-graph": "",
+        "3d-graph": ""
+    });
+
+    const updateId = (newId: {"2d-graph": string, "3d-graph": string}) => {
+        idRef.current = newId; // store persistent ID
+    };
 
     return (
         <Router>
@@ -37,8 +44,8 @@ function App() {
                 <main className="flex-grow">
                     <Routes>
                         <Route path="/" element={<Home />} />
-                        <Route path="/view/project/:id" element={<CalApp id={id} setId={setId} selectedTool={selectedTool} setSelectedTool={setSelectedTool} />} />
-                        <Route path="/view/project" element={<NewCalApp id={id} selectedTool={selectedTool} setId={setId} />} />
+                        <Route path="/view/project/:id" element={<CalApp idRef={idRef} updateId={updateId} selectedTool={selectedTool} setSelectedTool={setSelectedTool} />} />
+                        <Route path="/view/project" element={<NewCalApp idRef={idRef} updateId={updateId} selectedTool={selectedTool} />} />
                         <Route path="/view/login" element={<Login />} />
                         <Route path="/view/forgot-password" element={<ForgotPassword />} />
                         <Route path="/view/signup" element={<SignUp />} />

@@ -30,7 +30,7 @@ interface Project2DProps {
         updatedAt: string;
         updatedBy: string;
     };
-    navigate: NavigateFunction
+    navigate: NavigateFunction;
     //ownedBy: string;
 }
 
@@ -109,6 +109,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private hasShownLoadProjectDialog = false;
     private fileInputRef: RefObject<HTMLInputElement | null> = React.createRef<HTMLInputElement>();
     private backgroundLayerRef: RefObject<Konva.Layer | null> = React.createRef<Konva.Layer>();
+    private warning_save = false;
     constructor(props: Project2DProps) {
         super(props);
         this.labelUsed = [];
@@ -175,6 +176,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     componentDidMount(): void {
         window.addEventListener("resize", this.handleWindowResize);
         window.addEventListener("keydown", this.handleKeyDown);
+        window.addEventListener("beforeunload", this.handleBeforeUnload);
 
         this.loadProject();
     }
@@ -182,6 +184,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     componentWillUnmount() {
         window.removeEventListener("resize", this.handleWindowResize);
         window.removeEventListener("keydown", this.handleKeyDown);
+        window.removeEventListener("beforeunload", this.handleBeforeUnload);
     }
 
     componentDidUpdate(prevProps: Readonly<Project2DProps>, prevState: Readonly<Project2DState>): void {
@@ -221,6 +224,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         if (this.hasShownLoadProjectDialog && prevState.title !== this.state.title && this.state.title !== '') {
             this.loadProject();
             this.hasShownLoadProjectDialog = false;
+        }
+    }
+
+    private handleBeforeUnload = (e: BeforeUnloadEvent): void => {
+        if (this.dag.size > 0) {
+            e.preventDefault();
         }
     }
 
@@ -460,6 +469,10 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         });
 
+        if (this.dag !== state.dag || this.state.geometryState !== state.gs) {
+            this.warning_save = true;
+        }
+        
         this.dag = state.dag;
         this.setState({
             geometryState: state.gs,
@@ -807,8 +820,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     title: 'Unsaved Changes',
                     input_label: 'You have unsaved changes in this project. If you continue, your changes will be permanently lost.',
                     angleMode: false,
-                    rotationMode: false,
-                    loadProjectMode: 'user'
+                    rotationMode: false
                 },
                 mode: mode,
                 isMenuRightClick: undefined
@@ -1327,6 +1339,18 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 isDialogBox: undefined
             });
         }
+
+        else if (this.state.mode === 'warning-save') {
+            this.saveProject();
+            this.warning_save = false;
+            this.setState({
+                error: {
+                    label: '',
+                    message: '',
+                },
+                isDialogBox: undefined
+            });
+        }
     }
 
     // Save Project
@@ -1385,17 +1409,22 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     };
 
     private openProject = async () => {
-        this.setDialogbox('warning-save');
-        const token = sessionStorage.getItem("token");
-        const user = JSON.parse(sessionStorage.getItem("user") || "null");
-        if (user === null || !token) {
-            this.hasShownLoadProjectDialog = true;
-            this.setDialogbox('load-project-guest');
+        if (this.warning_save) {
+            this.setDialogbox('warning-save');
         }
-
+        
         else {
-            this.hasShownLoadProjectDialog = true;
-            this.setDialogbox('load-project-user');
+            const token = sessionStorage.getItem("token");
+            const user = JSON.parse(sessionStorage.getItem("user") || "null");
+            if (user === null || !token) {
+                this.hasShownLoadProjectDialog = true;
+                this.setDialogbox('load-project-guest');
+            }
+
+            else {
+                this.hasShownLoadProjectDialog = true;
+                this.setDialogbox('load-project-user');
+            }
         }
     }
 
@@ -1639,6 +1668,9 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onCancelClick={() => {
                         this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})
                         this.hasShownRenameDialog = false;
+                    }}
+                    onDiscardClick={() => {
+                        this.warning_save = false;
                     }}
                     position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
                     ref={this.dialogRef}

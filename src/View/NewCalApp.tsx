@@ -1,21 +1,21 @@
-import React, { useEffect } from "react";
+import React, { RefObject, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-interface User {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-    project: string[];
-}
+// interface User {
+//     _id: string;
+//     name: string;
+//     email: string;
+//     role: string;
+//     project: string[];
+// }
 
 interface NewCalAppProps {
-    id: { "2d-graph": string, "3d-graph": string },
-    setId: React.Dispatch<React.SetStateAction<{ "2d-graph": string, "3d-graph": string }>>;
+    idRef: RefObject<{ "2d-graph": string, "3d-graph": string }>,
+    updateId: (newId: { "2d-graph": string; "3d-graph": string; }) => void;
     selectedTool: string;
 }
 
-const NewCalApp: React.FC<NewCalAppProps> = ({ id, setId, selectedTool }) => {
+const NewCalApp: React.FC<NewCalAppProps> = ({ idRef, updateId, selectedTool }) => {
     const navigate = useNavigate();
 
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
@@ -47,24 +47,18 @@ const NewCalApp: React.FC<NewCalAppProps> = ({ id, setId, selectedTool }) => {
                 });
             }
 
-            let newId: { "2d-graph": string, "3d-graph": string };
-            if (!id) {
-                newId = selectedTool === "2d-graph" ?   { "2d-graph": project._id, "3d-graph": "" } : 
-                                                        { "2d-graph": "", "3d-graph": project._id }
-            }
+            let newId: { "2d-graph": string, "3d-graph": string } = (selectedTool === "2d-graph" ?   
+                { "2d-graph": project._id, "3d-graph": idRef.current['3d-graph'] } : 
+                { "2d-graph": idRef.current['2d-graph'], "3d-graph": project._id }
+            );
 
-            else {
-                newId = selectedTool === "2d-graph" ?   { "2d-graph": project._id, "3d-graph": id['3d-graph'] } : 
-                                                        { "2d-graph": id['2d-graph'], "3d-graph": project._id }
-            }
-
-            setId(newId);
+            updateId(newId);
             // use Mongo _id for routing
             navigate(`/view/project/${project._id}`);
         };
 
         createNewProject();
-    }, [navigate]);
+    }, [navigate, idRef, selectedTool, token, updateId, user]);
 
 
     return <div>Creating new project...</div>;
