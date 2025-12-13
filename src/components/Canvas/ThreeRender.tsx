@@ -27,6 +27,7 @@ interface ThreeDCanvasProps {
     isResize: boolean;
     selectedPoints: Point[];
     selectedShapes: Shape[];
+    selectedShapes2: ShapeNode3D | undefined;
     labelUsed: string[];
     data: number | {
         type: string, x: number, y: number, z: number
@@ -45,6 +46,7 @@ interface ThreeDCanvasProps {
         selectedPoints: Point[]
     }, storeHistory?: boolean) => void;
     onSelectedShapesChange: (s: Shape[]) => void;
+    onSelectedShape2Change: (s: ShapeNode3D) => void;
     onSelectedPointsChange: (s: Point[]) => void;
     onGeometryStateChange: (s: GeometryState) => void;
     pushHistory: (history: HistoryEntry3D) => void;
@@ -457,8 +459,8 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         if (object) {
             const name = object.parent ? object.parent.name : object.name;
             const node = this.props.dag.get(name);
-            console.log(node);
             if (!node) return;
+            this.props.onSelectedShape2Change(node);
             if (!node.isDraggable) return;
             this.updateAndPropagate(name, (node) => {
                 if ('x' in node.type && 'y' in node.type) {

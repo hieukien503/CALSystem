@@ -30,15 +30,16 @@ const SearchResults: React.FC = () => {
         if (!query) return;
         setLoading(true);
 
-        Promise.all([
-            fetch(`http://localhost:3001/api/search?q=${encodeURIComponent(query)}`).then(r => r.json()),
-            fetch(`http://localhost:3001/api/search/users?q=${encodeURIComponent(query)}`).then(r => r.json()),
-        ])
-            .then(([projectData, userData]) => {
-                setProjects(projectData.results || []);
-                setUsers(userData.results || []);
+        fetch(`http://localhost:3001/api/search?q=${encodeURIComponent(query)}`)
+            .then((r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
             })
-            .catch(err => console.error("Search error:", err))
+            .then((data) => {
+                setProjects(data.projects || []);
+                setUsers(data.users || []);
+            })
+            .catch((err) => console.error("Search error:", err))
             .finally(() => setLoading(false));
     }, [query]);
 

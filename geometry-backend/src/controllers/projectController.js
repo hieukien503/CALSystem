@@ -34,6 +34,7 @@ exports.loadProject = async (req, res) => {
         if (!project) return res.status(404).json({ message: "Project not found" });
 
         let canView = false;
+        console.log("project.collaborators: ", project.collaborators);
         if (project.ownedBy !== "") {
             canView = project.sharing === "public" || project.ownedBy === user || (project.collaborators || []).includes(user);
         }
@@ -169,7 +170,8 @@ exports.updateProjectInfo = async (req, res) => {
         // ✅ Handle collaborator updates (replace array)
         if (Array.isArray(collaborators)) {
             project.collaborators = collaborators.map(c => ({
-                email: c.email,
+                id: c.id,
+                name: c.name,
                 role: c.role || "viewer",
             }));
         }

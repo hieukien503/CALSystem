@@ -43,6 +43,7 @@ interface Project3DState {
     geometryState: GeometryState;
     selectedPoints: Point[];
     selectedShapes: Shape[];
+    selectedShapes2: ShapeNode3D | undefined;
     mode: DrawingMode;
     isSnapToGrid: boolean;
     /** Tool resizes or not */
@@ -112,6 +113,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             mode: 'edit',
             selectedPoints: new Array<Point>(),
             selectedShapes: new Array<Shape>(),
+            selectedShapes2: undefined,
             snapToGridEnabled: false,
             isSnapToGrid: false,
             isResize: false,
@@ -375,6 +377,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         this.setState({
             selectedShapes: [...state.selectedShapes],
             selectedPoints: [...state.selectedPoints]
+        })
+    }
+
+    private onSelectedShape2Change = (s: ShapeNode3D): void => {
+        this.setState({
+            selectedShapes2: s,
         })
     }
 
@@ -997,6 +1005,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     onSetMode={(mode) => this.setMode(mode)}
                     selectedPoints={this.state.selectedPoints}
                     selectedShapes={this.state.selectedShapes}
+                    selectedShapes2={this.state.selectedShapes2}
                     timeline={this.state.timeline}
                     setTimeline={this.setTimeline}
                     onUpdateLabelUsed={this.updateLabelUsed}
@@ -1028,10 +1037,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     onSelectedPointsChange={this.onSelectedPointsChange}
                     onGeometryStateChange={(s) => this.setState({geometryState: s})}
                     onSelectedChange = {this.onSelectedChange}
+                    onSelectedShape2Change={this.onSelectedShape2Change}
                     mode={this.state.mode}
                     isSnapToGrid={this.state.isSnapToGrid}
                     selectedPoints={this.state.selectedPoints}
                     selectedShapes={this.state.selectedShapes}
+                    selectedShapes2={this.state.selectedShapes2}
                     labelUsed={this.labelUsed}
                     onLabelUsed={this.updateLabelUsed}
                     geometryState={this.state.geometryState}

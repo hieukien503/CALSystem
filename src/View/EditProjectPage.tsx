@@ -2,8 +2,8 @@
 import { useNavigate, useParams } from "react-router-dom";
 
 interface Collaborator {
-    _id?: string;
-    email: string;
+    id: string;
+    name: string;
     role: string;
 }
 
@@ -22,8 +22,12 @@ const EditProjectPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const [userSearch, setUserSearch] = useState(""); // current input for searching users
+    const [userResults, setUserResults] = useState<any[]>([]); // search results
+    const [searching, setSearching] = useState(false);
     const navigate = useNavigate();
     const token = sessionStorage.getItem("token");
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     // Fetch project data
     useEffect(() => {
@@ -31,7 +35,7 @@ const EditProjectPage: React.FC = () => {
 
         const fetchProject = async () => {
             try {
-                const res = await fetch(`http://localhost:3001/api/projects/${id}`, {
+                const res = await fetch(`http://localhost:3001/api/projects/${id}/${user?._id || "null"}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const data = await res.json();
@@ -48,6 +52,22 @@ const EditProjectPage: React.FC = () => {
         fetchProject();
     }, [id, token]);
 
+    useEffect(() => {
+        if (!userSearch.trim()) {
+            setUserResults([]);
+            return;
+        }
+
+        setSearching(true);
+        fetch(`http://localhost:3001/api/search?q=${encodeURIComponent(userSearch)}`)
+            .then((r) => r.json())
+            .then((data) => {
+                setUserResults(data.users || []);
+            })
+            .catch((err) => console.error("User search failed:", err))
+            .finally(() => setSearching(false));
+    }, [userSearch]);
+
     // Handle form field changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         if (!project) return;
@@ -60,16 +80,21 @@ const EditProjectPage: React.FC = () => {
         if (!project) return;
         setProject({
             ...project,
-            collaborators: [...project.collaborators, { email: "", role: "viewer" }],
+            collaborators: [...project.collaborators, { id: "", name: "", role: "viewer" }],
         });
     };
 
     // Update collaborator
     const updateCollaborator = (index: number, key: string, value: string) => {
+        console.log("index: ", index);
+        console.log("key: ", key);
+        console.log("value: ", value);
         if (!project) return;
         const updated = [...project.collaborators];
         updated[index] = { ...updated[index], [key]: value };
         setProject({ ...project, collaborators: updated });
+        console.log("updated: ", updated);
+        console.log("project: ", project);
     };
 
     // Remove collaborator
@@ -104,7 +129,7 @@ const EditProjectPage: React.FC = () => {
                 const text = await res.text();
                 throw new Error(text || "Failed to update project");
             }
-
+            console.log("collaborators: ", project.collaborators);
             alert("Project updated successfully!");
         } catch (err: any) {
             console.error("Error updating project:", err);
@@ -193,31 +218,63 @@ const EditProjectPage: React.FC = () => {
                             )}
 
                             {project.collaborators.map((col, index) => (
-                                <div key={index} className="d-flex align-items-center gap-2 mb-2">
-                                    <input
-                                        type="email"
-                                        className="form-control"
-                                        placeholder="Email"
-                                        value={col.email}
-                                        onChange={(e) => updateCollaborator(index, "email", e.target.value)}
-                                        required
-                                    />
-                                    <select
-                                        className="form-select"
-                                        style={{ width: "150px" }}
-                                        value={col.role}
-                                        onChange={(e) => updateCollaborator(index, "role", e.target.value)}
-                                    >
-                                        <option value="viewer">Viewer</option>
-                                        <option value="editor">Editor</option>
-                                    </select>
-                                    <button
-                                        type="button"
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() => removeCollaborator(index)}
-                                    >
-                                        ✕
-                                    </button>
+                                <div key={index} className="mb-3">
+                                    <div className="d-flex align-items-center gap-2">
+                                        {/* Searchable input for collaborator name */}
+                                        <div style={{ position: "relative", flex: 1 }}>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Search user by name..."
+                                                value={col.name}
+                                                onChange={(e) => {
+                                                    updateCollaborator(index, "name", e.target.value);
+                                                    setUserSearch(e.target.value);
+                                                }}
+                                                autoComplete="off"
+                                            />
+                                            {/* Suggestion dropdown */}
+                                            {userSearch && userResults.length > 0 && (
+                                                <ul
+                                                    className="list-group position-absolute w-100 shadow-sm"
+                                                    style={{ zIndex: 1000 }}
+                                                >
+                                                    {userResults.map((u) => (
+                                                        <li
+                                                            key={u._id}
+                                                            className="list-group-item list-group-item-action"
+                                                            onClick={() => {
+                                                                updateCollaborator(index, "name", u.name);  
+                                                                updateCollaborator(index, "id", u._id);   
+                                                                setUserResults([]);
+                                                                setUserSearch("");
+                                                            }}
+                                                        >
+                                                            {u.name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+
+                                        <select
+                                            className="form-select"
+                                            style={{ width: "150px" }}
+                                            value={col.role}
+                                            onChange={(e) => updateCollaborator(index, "role", e.target.value)}
+                                        >
+                                            <option value="viewer">Viewer</option>
+                                            <option value="editor">Editor</option>
+                                        </select>
+
+                                        <button
+                                            type="button"
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => removeCollaborator(index)}
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

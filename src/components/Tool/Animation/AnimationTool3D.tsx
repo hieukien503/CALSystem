@@ -19,8 +19,7 @@ interface AnimationTool3DProps {
     dag: Map<string, ShapeNode3D>;
     timeline: TimelineItem[];
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
-    selectedPoints: Point[];
-    selectedShapes: Shape[];
+    selectedShapes: ShapeNode3D | undefined;
     stageRef?: React.RefObject<any>; // Accept stageRef (Three renderer wrapper or dom element)
 }
 
@@ -178,237 +177,240 @@ export class AnimationTool3D extends React.Component<
         });
     }
 
-    // -----------------------
-    // Move: uses world pos from click
-    // -----------------------
+    /** -------------------------
+     * Move Object — input destination manually
+     * ------------------------- */
     handleMoveObject() {
-        const { selectedPoints, selectedShapes } = this.props;
-        const { dom, camera } = this.getDomAndCamera();
-        if (!dom || !camera) {
-            alert("Stage or camera not available");
+        const { selectedShapes } = this.props;
+        if (!selectedShapes) {
+            alert("Please select a shape first.");
             return;
         }
 
-        if (selectedShapes.length === 0 && selectedPoints.length === 0) return;
+        const name = selectedShapes.id ?? "UnnamedObject";
 
-        const name =
-            selectedShapes.length > 0
-                ? selectedShapes[0].props.id
-                : selectedPoints[0].props.id;
+        const xStr = window.prompt("Destination X:", "0");
+        const yStr = window.prompt("Destination Y:", "0");
+        const zStr = window.prompt("Destination Z:", "0");
 
-        alert("Click the destination position to move the object to.");
+        if (xStr === null || yStr === null || zStr === null) return;
 
-        const clickHandler = (ev: MouseEvent) => {
-            const pos = this.getWorldPositionFromEvent(ev);
-            if (!pos) return;
+        const x = parseFloat(xStr);
+        const y = parseFloat(yStr);
+        const z = parseFloat(zStr);
 
-            const confirm = window.confirm(`Move ${name} to (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})?`);
-            if (!confirm) return;
+        if ([x, y, z].some(isNaN)) {
+            alert("Invalid input. Please enter numeric values.");
+            return;
+        }
 
-            this.props.setTimeline(prev => {
-                const updated = [...prev];
-                const { selectedIndex } = this.state;
+        this.props.setTimeline(prev => {
+            const updated = [...prev];
+            const { selectedIndex } = this.state;
 
-                if (
-                    selectedIndex !== null &&
-                    updated[selectedIndex] &&
-                    updated[selectedIndex].object === name
-                ) {
-                    const item = { ...updated[selectedIndex] };
-                    item.values = {
-                        ...(item.values ?? {}),
-                        translateTo: { x: pos.x, y: pos.y, z: pos.z }
-                    };
-                    item.action = `Translate (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`;
-                    updated[selectedIndex] = item;
-                    return updated;
-                }
-
-                const lastIndex = updated
-                    .map((it, i) => ({ it, i }))
-                    .filter(({ it }) => it.object === name)
-                    .map(({ i }) => i)
-                    .pop();
-
-                const newStart = lastIndex !== undefined ? updated[lastIndex].end : 1;
-                updated.push({
-                    object: name,
-                    start: newStart,
-                    end: newStart + 2,
-                    action: `Translate (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`,
-                    values: { translateTo: { x: pos.x, y: pos.y, z: pos.z } },
-                });
-
+            // Update existing timeline item if same object
+            if (
+                selectedIndex !== null &&
+                updated[selectedIndex] &&
+                updated[selectedIndex].object === name
+            ) {
+                const item = { ...updated[selectedIndex] };
+                item.values = { ...(item.values ?? {}), translateTo: { x, y, z } };
+                item.action = `Translate (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`;
+                updated[selectedIndex] = item;
                 return updated;
+            }
+
+            // Add new timeline item
+            const lastIndex = updated
+                .map((it, i) => ({ it, i }))
+                .filter(({ it }) => it.object === name)
+                .map(({ i }) => i)
+                .pop();
+
+            const newStart = lastIndex !== undefined ? updated[lastIndex].end : 1;
+            updated.push({
+                object: name,
+                start: newStart,
+                end: newStart + 2,
+                action: `Translate (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`,
+                values: { translateTo: { x, y, z } },
             });
 
-            // remove listener
-            (dom as HTMLElement).removeEventListener("click", clickHandler);
-        };
-
-        (dom as HTMLElement).addEventListener("click", clickHandler);
+            return updated;
+        });
     }
 
-    /** Re-select translate destination for current transition */
+    /** -------------------------
+     * Re-select Move Destination
+     * ------------------------- */
     handleReselectDestination = () => {
         const { selectedIndex } = this.state;
         const { timeline, setTimeline } = this.props;
-        const { dom, camera } = this.getDomAndCamera();
         if (selectedIndex === null) return;
-        if (!dom || !camera) {
-            alert("Stage or camera not available");
-            return;
-        }
 
         const selectedItem = timeline[selectedIndex];
         if (!selectedItem) return;
 
-        alert("Click new destination position for transition.");
+        const xStr = window.prompt("New destination X:", "0");
+        const yStr = window.prompt("New destination Y:", "0");
+        const zStr = window.prompt("New destination Z:", "0");
 
-        const clickHandler = (ev: MouseEvent) => {
-            const pos = this.getWorldPositionFromEvent(ev);
-            if (!pos) return;
+        if (xStr === null || yStr === null || zStr === null) return;
 
-            const confirm = window.confirm(`Set new destination to (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})?`);
-            if (!confirm) return;
+        const x = parseFloat(xStr);
+        const y = parseFloat(yStr);
+        const z = parseFloat(zStr);
 
-            setTimeline(prev => {
-                const updated = [...prev];
-                const item = { ...updated[selectedIndex] };
-                item.values = { ...(item.values ?? {}), translateTo: { x: pos.x, y: pos.y, z: pos.z } };
-                item.action = `Translate (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`;
-                updated[selectedIndex] = item;
-                return updated;
-            });
-
-            (dom as HTMLElement).removeEventListener("click", clickHandler);
-        };
-
-        (dom as HTMLElement).addEventListener("click", clickHandler);
-    };
-
-    // -----------------------
-    // Rotate: pick pivot in world coordinates and store ccw=false by default
-    // -----------------------
-    handleRotateObject() {
-        const { selectedPoints, selectedShapes } = this.props;
-        const { dom, camera } = this.getDomAndCamera();
-        if (!dom || !camera) {
-            alert("Stage or camera not available");
+        if ([x, y, z].some(isNaN)) {
+            alert("Invalid input. Please enter numeric values.");
             return;
         }
 
-        if (selectedShapes.length === 0 && selectedPoints.length === 0) return;
-        const name =
-            selectedShapes.length > 0
-                ? selectedShapes[0].props.id
-                : selectedPoints[0].props.id;
+        const confirm = window.confirm(
+            `Set new destination to (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})?`
+        );
+        if (!confirm) return;
 
-        alert("Click a point on canvas to set the rotation center");
+        setTimeline(prev => {
+            const updated = [...prev];
+            const item = { ...updated[selectedIndex] };
+            item.values = { ...(item.values ?? {}), translateTo: { x, y, z } };
+            item.action = `Translate (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`;
+            updated[selectedIndex] = item;
+            return updated;
+        });
+    };
 
-        const clickHandler = (ev: MouseEvent) => {
-            const pos = this.getWorldPositionFromEvent(ev);
-            if (!pos) return;
+    /** -------------------------
+     * Rotate Object — pivot, normal vector, and CCW (all manual input)
+     * ------------------------- */
+    handleRotateObject() {
+        const { selectedShapes } = this.props;
+        if (!selectedShapes) {
+            alert("Please select a shape first.");
+            return;
+        }
 
-            const angleStr = window.prompt("Enter rotation angle (degrees):", "90");
-            if (angleStr === null) {
-                (dom as HTMLElement).removeEventListener("click", clickHandler);
-                return;
-            }
+        const name = selectedShapes.id ?? "UnnamedObject";
 
-            const angle = parseFloat(angleStr);
-            if (isNaN(angle)) {
-                (dom as HTMLElement).removeEventListener("click", clickHandler);
-                return;
-            }
+        const pxStr = window.prompt("Pivot X:", "0");
+        const pyStr = window.prompt("Pivot Y:", "0");
+        const pzStr = window.prompt("Pivot Z:", "0");
+        if (pxStr === null || pyStr === null || pzStr === null) return;
 
-            this.props.setTimeline(prev => {
-                const updated = [...prev];
-                const lastIndex = updated
-                    .map((it, i) => ({ it, i }))
-                    .filter(({ it }) => it.object === name)
-                    .map(({ i }) => i)
-                    .pop();
+        const pivotX = parseFloat(pxStr);
+        const pivotY = parseFloat(pyStr);
+        const pivotZ = parseFloat(pzStr);
+        if ([pivotX, pivotY, pivotZ].some(isNaN)) {
+            alert("Invalid pivot coordinates.");
+            return;
+        }
 
-                const newStart = lastIndex !== undefined ? updated[lastIndex].end : 1;
-                updated.push({
-                    object: name,
-                    start: newStart,
-                    end: newStart + 2,
-                    action: `Rotate ${angle}° around (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`,
-                    values: {
-                        rotate: angle,
-                        pivotX: pos.x,
-                        pivotY: pos.y,
-                        pivotZ: pos.z,
-                        ccw: false,
-                    },
-                });
-                return updated;
+        const angleStr = window.prompt("Rotation angle (degrees):", "90");
+        if (angleStr === null) return;
+        const angle = parseFloat(angleStr);
+        if (isNaN(angle)) {
+            alert("Invalid angle input.");
+            return;
+        }
+
+        const normalStr = window.prompt("Rotation normal vector (x,y,z):", "0,0,1");
+        if (!normalStr) return;
+        const [nx, ny, nz] = normalStr.split(",").map(Number);
+        if ([nx, ny, nz].some(isNaN)) {
+            alert("Invalid normal vector input.");
+            return;
+        }
+
+        const ccwStr = window.prompt("Rotate counter-clockwise? (yes/no):", "no");
+        const ccw = ccwStr?.toLowerCase().startsWith("y") ?? false;
+
+        this.props.setTimeline(prev => {
+            const updated = [...prev];
+            const lastIndex = updated
+                .map((it, i) => ({ it, i }))
+                .filter(({ it }) => it.object === name)
+                .map(({ i }) => i)
+                .pop();
+
+            const newStart = lastIndex !== undefined ? updated[lastIndex].end : 1;
+            updated.push({
+                object: name,
+                start: newStart,
+                end: newStart + 2,
+                action: `Rotate ${angle}° around (${pivotX.toFixed(1)}, ${pivotY.toFixed(1)}, ${pivotZ.toFixed(1)}) with normal (${nx},${ny},${nz}) ${ccw ? "CCW" : "CW"}`,
+                values: {
+                    rotate: angle,
+                    pivotX,
+                    pivotY,
+                    pivotZ,
+                    normal: { x: nx, y: ny, z: nz },
+                    ccw,
+                },
             });
-
-            (dom as HTMLElement).removeEventListener("click", clickHandler);
-        };
-
-        (dom as HTMLElement).addEventListener("click", clickHandler);
+            return updated;
+        });
     }
 
+    /** -------------------------
+     * Re-select Rotation Pivot (manual input)
+     * ------------------------- */
     handleReselectRotationPivot = () => {
         const { selectedIndex } = this.state;
         const { timeline, setTimeline } = this.props;
-        const { dom, camera } = this.getDomAndCamera();
         if (selectedIndex === null) return;
-        if (!dom || !camera) {
-            alert("Stage or camera not available");
-            return;
-        }
 
         const selectedItem = timeline[selectedIndex];
         if (!selectedItem || !selectedItem.values?.rotate) return;
 
-        alert("Click new pivot point for rotation.");
+        const pxStr = window.prompt("New pivot X:", "0");
+        const pyStr = window.prompt("New pivot Y:", "0");
+        const pzStr = window.prompt("New pivot Z:", "0");
+        if (pxStr === null || pyStr === null || pzStr === null) return;
 
-        const clickHandler = (ev: MouseEvent) => {
-            const pos = this.getWorldPositionFromEvent(ev);
-            if (!pos) return;
+        const pivotX = parseFloat(pxStr);
+        const pivotY = parseFloat(pyStr);
+        const pivotZ = parseFloat(pzStr);
+        if ([pivotX, pivotY, pivotZ].some(isNaN)) {
+            alert("Invalid pivot coordinates.");
+            return;
+        }
 
-            const confirm = window.confirm(
-                `Set new pivot point to (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})?`
-            );
-            if (!confirm) return;
+        const confirm = window.confirm(
+            `Set new pivot point to (${pivotX.toFixed(1)}, ${pivotY.toFixed(1)}, ${pivotZ.toFixed(1)})?`
+        );
+        if (!confirm) return;
 
-            setTimeline(prev => {
-                const updated = [...prev];
-                const item = { ...updated[selectedIndex] };
-                item.values = {
-                    ...(item.values ?? {}),
-                    pivotX: pos.x,
-                    pivotY: pos.y,
-                    pivotZ: pos.z
-                };
-                item.action = `Rotate ${item.values.rotate}° around (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`;
-                updated[selectedIndex] = item;
-                return updated;
-            });
-
-            (dom as HTMLElement).removeEventListener("click", clickHandler);
-        };
-
-        (dom as HTMLElement).addEventListener("click", clickHandler);
+        setTimeline(prev => {
+            const updated = [...prev];
+            const item = { ...updated[selectedIndex] };
+            item.values = { ...(item.values ?? {}), pivotX, pivotY, pivotZ };
+            item.action = `Rotate ${item.values.rotate}° around (${pivotX.toFixed(1)}, ${pivotY.toFixed(1)}, ${pivotZ.toFixed(1)})`;
+            updated[selectedIndex] = item;
+            return updated;
+        });
     };
 
-    handleScaleObject() {
-        const { selectedPoints, selectedShapes } = this.props;
-        if (selectedShapes.length === 0 && selectedPoints.length === 0) return;
 
-        const name = selectedShapes.length > 0
-            ? selectedShapes[0].props.id
-            : selectedPoints[0].props.id;
+
+    handleScaleObject() {
+        const { selectedShapes } = this.props;
+
+        if (!selectedShapes) {
+            alert("Please select a shape first.");
+            return;
+        }
+
+        const name = selectedShapes.id ?? "UnnamedObject";
 
         const factorStr = window.prompt("Enter scale factor:", "1.5");
         if (factorStr === null) return;
         const factor = parseFloat(factorStr);
-        if (isNaN(factor)) return;
+        if (isNaN(factor)) {
+            alert("Please enter a valid number.");
+            return;
+        }
 
         this.addOrMergeTransform(name, "scale", factor, `Scale x${factor}`);
     }
@@ -519,9 +521,8 @@ export class AnimationTool3D extends React.Component<
             const q = new THREE.Quaternion();
             q.setFromAxisAngle(new THREE.Vector3(0, 0, 1), angleRad);
             const targetQuat = node.quaternion.clone();
-            targetQuat.premultiply(q); // rotate in world space
+            targetQuat.premultiply(q);
 
-            // We will animate both quaternion and position (position changes due to pivot)
             // Compute rotated end position (apply rotation around pivot to start pos)
             const pivotToObj = node.position.clone().sub(pivot);
             const cos = Math.cos(angleRad);
@@ -540,7 +541,11 @@ export class AnimationTool3D extends React.Component<
         // --- Scaling ---
         if ("scale" in values) {
             const factor = Number(values.scale ?? 1);
-            to.scale = new THREE.Vector3(node.scale.x * factor, node.scale.y * factor, node.scale.z * factor);
+            to.scale = new THREE.Vector3(
+                node.scale.x * factor,
+                node.scale.y * factor,
+                node.scale.z * factor
+            );
         }
 
         // --- TranslateTo absolute (x,y,z) ---
@@ -556,16 +561,46 @@ export class AnimationTool3D extends React.Component<
             const dx = Number(values.translateX ?? 0);
             const dy = Number(values.translateY ?? 0);
             const dz = Number(values.translateZ ?? 0);
-            to.position = new THREE.Vector3(node.position.x + dx, node.position.y + dy, node.position.z + dz);
+            to.position = new THREE.Vector3(
+                node.position.x + dx,
+                node.position.y + dy,
+                node.position.z + dz
+            );
         }
 
-        // If only rotation specified, ensure we animate quaternion and position (already filled)
-        // If nothing to animate, return
-        const hasAnim = to.position || to.scale || to.quaternion;
-        if (!hasAnim) return;
+        // Nothing to animate?
+        if (!to.position && !to.scale && !to.quaternion) return;
 
-        // Animate over durationSec
-        this.animateObject(node, from, to, durationSec);
+        // --- Animation loop ---
+        const startTime = performance.now();
+        const duration = durationSec * 1000;
+
+        const animate = (time: number) => {
+            const elapsed = time - startTime;
+            const t = Math.min(elapsed / duration, 1); // clamp 0–1
+
+            // Interpolate position
+            if (to.position) {
+                node.position.lerpVectors(from.position, to.position, t);
+            }
+
+            // Interpolate scale
+            if (to.scale) {
+                node.scale.lerpVectors(from.scale, to.scale, t);
+            }
+
+            // Interpolate rotation (quaternion)
+            if (to.quaternion) {
+                node.quaternion.copy(from.quaternion.clone().slerp(to.quaternion, t));
+            }
+
+            // Continue animation until done
+            if (t < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        requestAnimationFrame(animate);
     }
 
     // helper

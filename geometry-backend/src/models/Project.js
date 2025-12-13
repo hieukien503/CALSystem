@@ -77,6 +77,7 @@ const projectVersionSchema = new mongoose.Schema({
 
 const collaboratorSchema = new mongoose.Schema({
     id: String,
+    name: String,
     role: String
 }, { _id: false });
 

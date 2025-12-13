@@ -23,6 +23,7 @@ interface Tool3DProps {
     onUpdateDAG: (dag: Map<string, ShapeNode3D>) => void;
     selectedPoints: Point[];
     selectedShapes: Shape[];
+    selectedShapes2: ShapeNode3D | undefined;
     timeline: TimelineItem[];
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
     onUpdateLabelUsed: (labelUsed: string[]) => void;
@@ -151,8 +152,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     dag={this.props.dag}
                                     timeline={this.props.timeline}
                                     setTimeline={this.props.setTimeline}
-                                    selectedPoints={this.props.selectedPoints}
-                                    selectedShapes={this.props.selectedShapes}
+                                    selectedShapes={this.props.selectedShapes2}
                                     //stageRef={this.props.stageRef}
                                 />
                                 )}
