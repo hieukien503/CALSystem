@@ -1,4 +1,9 @@
 import React from 'react';
+import Load from '../../../assets/images/Load.svg';
+import Save from '../../../assets/images/Save.svg';
+import Documentation from '../../../assets/images/Documentation.svg';
+import Export from '../../../assets/images/Export.svg';
+
 
 interface ButtonProps {
     label: string;
@@ -17,7 +22,7 @@ class Button extends React.Component<ButtonProps> {
                 onClick={this.props.onClick}
                 title={this.props.title}
             >
-                <img src={this.props.imgSrc} className="image" draggable="false" tabIndex={-1} alt=""></img>
+                <img src={this.props.imgSrc} className="image" draggable="false" tabIndex={-1} alt="" style={{paddingBottom: 0}}></img>
                 <div className="label">{this.props.label}</div>
             </button>                 
         );
@@ -88,34 +93,38 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                         padding: "8px 0px 14px 16px"
                     }}
                 >
-                    <Button
-                        label="Save"
-                        title="Save Project"
-                        imgSrc="assets/icons/save_icon.svg"
-                        onClick={() => this.setSelectedTool("save")}
-                        selected={this.state.selectedTool === "save"}
-                    />
-                    <Button
-                        label="Load"
-                        title="Load Project"
-                        imgSrc="assets/icons/load_icon.svg"
-                        onClick={() => this.setSelectedTool("load")}
-                        selected={this.state.selectedTool === "load"}
-                    />
-                    <Button
-                        label="Documentation"
-                        title="User Guide"
-                        imgSrc="assets/icons/pdf.svg"
-                        onClick={() => this.setSelectedTool("documentation")}
-                        selected={this.state.selectedTool === "documentation"}
-                    />
-                    <Button
-                        label="Export"
-                        title="Export Project"
-                        imgSrc="assets/icons/export_icon.svg"
-                        onClick={() => this.setSelectedTool("export")}
-                        selected={this.state.selectedTool === "export"}
-                    />
+                    <div
+                        className="categoryPanel"
+                    >
+                        <Button
+                            label="Save"
+                            title="Save Project"
+                            imgSrc={Save}
+                            onClick={() => this.setSelectedTool("save")}
+                            selected={this.state.selectedTool === "save"}
+                        />
+                        <Button
+                            label="Load"
+                            title="Load Project"
+                            imgSrc={Load}
+                            onClick={() => this.setSelectedTool("load")}
+                            selected={this.state.selectedTool === "load"}
+                        />
+                        <Button
+                            label="Documentation"
+                            title="User Guide"
+                            imgSrc={Documentation}
+                            onClick={() => this.setSelectedTool("documentation")}
+                            selected={this.state.selectedTool === "documentation"}
+                        />
+                        <Button
+                            label="Export"
+                            title="Export Project"
+                            imgSrc={Export}
+                            onClick={() => this.setSelectedTool("export")}
+                            selected={this.state.selectedTool === "export"}
+                        />
+                    </div>
                 </div>
             </div>
         )

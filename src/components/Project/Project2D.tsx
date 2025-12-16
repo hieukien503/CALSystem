@@ -11,6 +11,7 @@ import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
 import { SharingMode } from "../../types/types";
 import { serializeDAG, deserializeDAG } from "../../utils/serialize";
 import { NavigateFunction } from "react-router-dom";
+import { withProjectQueries, ProjectQueriesProps } from "../projectQuery";
 
 const math = require('mathjs');
 
@@ -21,7 +22,8 @@ interface TimelineItem {
     action: string;
     tweens?: string[];
 }
-interface Project2DProps {
+
+interface Project2DProps extends ProjectQueriesProps {
     id: string;
     projectVersion: {
         versionName: string;
@@ -928,17 +930,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private checkTitleExists = async (title: string): Promise<boolean> => {
-        const token = sessionStorage.getItem("token");
-        const res = await fetch(
-            `${process.env.REACT_APP_API_URL}/api/projects/exists?title=${encodeURIComponent(title)}`,
-            {
-                method: "GET",
-                headers: { Authorization: `Bearer ${token}` }
-            }
-        );
-
-        const data = await res.json();
-        return data.exists;
+        return await this.props.projectQueries.checkTitleExists.mutateAsync(title);
     }
 
     private receiveData = (value: string, CCW: boolean = true): void => {
@@ -1391,15 +1383,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 animation: this.state.timeline
             };
 
-            await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${this.projectId}/`, {
-                method: "PATCH",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload),
-            });
-
+            await this.props.projectQueries.saveProject.mutateAsync(payload);
             this.setDialogbox('save-success');
         } 
         
@@ -1431,21 +1415,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     // Load Project
     public loadProject = async () => {
         try {
-            const token = sessionStorage.getItem("token");
-            const user = JSON.parse(sessionStorage.getItem("user") || "null");
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${this.projectId}/${user?._id || "null"}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            
-            if (!res.ok) throw new Error("Failed to load project");
             if (this.projectId !== this.props.id) {
                 this.props.navigate(`/view/project/${this.projectId}`);
                 return;
             }
 
-            const data = await res.json();
+            const data = await this.props.projectQueries.loadProject.refetch(this.projectId);
+            if (!data) console.error('No data returned!');
             // Restore DAG (no Konva nodes yet)
             this.dag = deserializeDAG(data.dag);
 
@@ -1706,4 +1682,4 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 }
 
-export default Project2D;
+export default withProjectQueries(Project2D);

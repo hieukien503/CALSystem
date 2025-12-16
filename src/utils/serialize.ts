@@ -1,4 +1,4 @@
-﻿import { ShapeNode } from "../types/geometry";
+import { ShapeNode } from "../types/geometry";
 
 export function serializeDAG(dag: Map<string, ShapeNode>) {
     const obj: Record<string, any> = {};
