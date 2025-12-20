@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { Point, Shape, ShapeNode3D } from '../../../types/geometry'
 import Dialogbox from "../../Dialogbox/Dialogbox";
 import ErrorDialogbox from "../../Dialogbox/ErrorDialogbox";
+import { t } from "../../../translation/i18n";
 
 interface TimelineItem {
     object: string;
@@ -101,7 +102,9 @@ export class AnimationTool3D extends React.Component<
 
         const item = this.props.timeline[selectedIndex];
         const current = item[field];
-        const newVal = window.prompt(`Enter new ${field} value:`, String(current));
+        const newVal = window.prompt(lang === "en" ? `Enter new ${t(field)} value:` : 
+        `Nhập giá trị mới cho ${t(field)}:`
+        , String(current));
 
         if (newVal !== null) {
             const num = parseFloat(newVal);
@@ -185,7 +188,7 @@ export class AnimationTool3D extends React.Component<
         const { selectedPoints, selectedShapes } = this.props;
         const { dom, camera } = this.getDomAndCamera();
         if (!dom || !camera) {
-            alert("Stage or camera not available");
+            alert(t("stageNotAvailable"));
             return;
         }
 
@@ -196,13 +199,19 @@ export class AnimationTool3D extends React.Component<
                 ? selectedShapes[0].props.id
                 : selectedPoints[0].props.id;
 
-        alert("Click the destination position to move the object to.");
+        alert(t("clickDestination"));
 
         const clickHandler = (ev: MouseEvent) => {
             const pos = this.getWorldPositionFromEvent(ev);
             if (!pos) return;
 
-            const confirm = window.confirm(`Move ${name} to (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})?`);
+            // Optional: Confirm the destination
+            const lang = sessionStorage.getItem("lang") || "en";
+            const confirm = window.confirm( 
+                lang === "en" ? 
+                `Move ${name} to (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})?` :
+                `Di chuyển ${name} đến (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, , ${pos.z.toFixed(1)})?`
+            );
             if (!confirm) return;
 
             this.props.setTimeline(prev => {
@@ -256,14 +265,14 @@ export class AnimationTool3D extends React.Component<
         const { dom, camera } = this.getDomAndCamera();
         if (selectedIndex === null) return;
         if (!dom || !camera) {
-            alert("Stage or camera not available");
+            alert(t("stageNotAvailable"));
             return;
         }
 
         const selectedItem = timeline[selectedIndex];
         if (!selectedItem) return;
 
-        alert("Click new destination position for transition.");
+        alert(t("clickNewDestination"));
 
         const clickHandler = (ev: MouseEvent) => {
             const pos = this.getWorldPositionFromEvent(ev);
@@ -294,7 +303,7 @@ export class AnimationTool3D extends React.Component<
         const { selectedPoints, selectedShapes } = this.props;
         const { dom, camera } = this.getDomAndCamera();
         if (!dom || !camera) {
-            alert("Stage or camera not available");
+            alert(t("stageNotAvailable"));
             return;
         }
 
@@ -304,13 +313,13 @@ export class AnimationTool3D extends React.Component<
                 ? selectedShapes[0].props.id
                 : selectedPoints[0].props.id;
 
-        alert("Click a point on canvas to set the rotation center");
+        alert(t("clickRotationCenter"));
 
         const clickHandler = (ev: MouseEvent) => {
             const pos = this.getWorldPositionFromEvent(ev);
             if (!pos) return;
 
-            const angleStr = window.prompt("Enter rotation angle (degrees):", "90");
+            const angleStr = window.prompt(t("enterRotationAngle"), "90");
             if (angleStr === null) {
                 (dom as HTMLElement).removeEventListener("click", clickHandler);
                 return;
@@ -359,14 +368,14 @@ export class AnimationTool3D extends React.Component<
         const { dom, camera } = this.getDomAndCamera();
         if (selectedIndex === null) return;
         if (!dom || !camera) {
-            alert("Stage or camera not available");
+            alert(t("stageNotAvailable"));
             return;
         }
 
         const selectedItem = timeline[selectedIndex];
         if (!selectedItem || !selectedItem.values?.rotate) return;
 
-        alert("Click new pivot point for rotation.");
+        alert(t("clickNewPivot"));
 
         const clickHandler = (ev: MouseEvent) => {
             const pos = this.getWorldPositionFromEvent(ev);
@@ -405,7 +414,7 @@ export class AnimationTool3D extends React.Component<
             ? selectedShapes[0].props.id
             : selectedPoints[0].props.id;
 
-        const factorStr = window.prompt("Enter scale factor:", "1.5");
+        const factorStr = window.prompt(t("enterScaleFactor"), "1.5");
         if (factorStr === null) return;
         const factor = parseFloat(factorStr);
         if (isNaN(factor)) return;
@@ -579,8 +588,9 @@ export class AnimationTool3D extends React.Component<
         if (selectedIndex === null) return;
         const selectedItem = this.props.timeline[selectedIndex];
         const currentVal = selectedItem.values?.[key] ?? 0;
-
-        const newVal = window.prompt(`Enter new value for ${this.capitalize(key)}:`, String(currentVal));
+        const newVal = window.prompt(lang === "en" ? `Enter new ${this.capitalize(key)} value:` : 
+        `Nhập giá trị mới cho ${this.capitalize(key)}:`
+        , String(currentVal));
         if (newVal !== null) {
             const num = parseFloat(newVal);
             if (!isNaN(num)) {
@@ -593,7 +603,7 @@ export class AnimationTool3D extends React.Component<
                     return updated;
                 });
             } else {
-                alert("Please enter a valid number.");
+                alert(t("invalidNumber"));
             }
         }
     };
@@ -601,7 +611,7 @@ export class AnimationTool3D extends React.Component<
     handleDeleteSelected = () => {
         const { selectedIndex } = this.state;
         if (selectedIndex === null) return;
-        if (!window.confirm("Delete selected animation?")) return;
+        if (!window.confirm(t("deleteSelectedAnimation"))) return;
         this.props.setTimeline(prev => prev.filter((_, i) => i !== selectedIndex));
         this.setState({ selectedIndex: null });
     };
@@ -624,21 +634,21 @@ export class AnimationTool3D extends React.Component<
             const dx = values.translateX ?? 0;
             const dy = values.translateY ?? 0;
             const dz = values.translateZ ?? 0;
-            return `Translate (${dx}, ${dy}, ${dz})`;
+            return `${t("translation")} (${dx}, ${dy}, ${dz})`;
         }
 
         if ("rotate" in values) {
-            return `Rotate ${values.rotate}°`;
+            return `${t("rotation")} ${values.rotate}°`;
         }
 
         if ("scale" in values) {
-            return `Scale ×${values.scale}`;
+            return `${t("scaling")} ×${values.scale}`;
         }
 
         const readable = Object.keys(values)
             .map(k => this.capitalize(k))
             .join(", ");
-        return readable || "Transform";
+        return readable || t("transform");
     }
 
     resumePointerAnimation(maxTime: number) {
@@ -717,7 +727,7 @@ export class AnimationTool3D extends React.Component<
 
         return (
             <div style={{ marginTop: "12px" }}>
-                <div className="text-left mb-2 font-bold">Timeline</div>
+                <div className="text-left mb-2 font-bold">{t("timeline")}</div>
                 <div
                     style={{
                         position: "relative",
@@ -755,7 +765,7 @@ export class AnimationTool3D extends React.Component<
                             }
                         }}
                     >
-                        <div style={{ fontWeight: "bold" }}>Second</div>
+                        <div style={{ fontWeight: "bold" }}>{t("second")}</div>
                         {Array.from({ length: totalColumns }).map((_, i) => (
                             <div key={i} style={{ textAlign: "left" }}>{i}</div>
                         ))}
@@ -810,18 +820,18 @@ export class AnimationTool3D extends React.Component<
                             {selectedItem.object}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px", marginBottom: "12px" }}>
-                            <div style={{ width: "100px", padding: "4px", textAlign: "left", background: "#f7f7f7" }}>Basic</div>
-                            <label>Start</label>
+                            <div style={{ width: "100px", padding: "4px", textAlign: "left", background: "#f7f7f7" }}>{t("basic")}</div>
+                            <label>{t("start")}</label>
                             <div onClick={() => this.handleTimeEdit("start")} style={{
                                 width: "60px", padding: "4px", border: "1px solid #ccc", borderRadius: "6px", textAlign: "center", cursor: "pointer", background: "#f7f7f7"
                             }}>{selectedItem.start}</div>
 
-                            <label>End</label>
+                            <label>{t("end")}</label>
                             <div onClick={() => this.handleTimeEdit("end")} style={{
                                 width: "60px", padding: "4px", border: "1px solid #ccc", borderRadius: "6px", textAlign: "center", cursor: "pointer", background: "#f7f7f7"
                             }}>{selectedItem.end}</div>
 
-                            <button onClick={this.handleDeleteSelected} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>Delete</button>
+                            <button onClick={this.handleDeleteSelected} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>{t("delete")}</button>
                         </div>
                     </div>
                 )}
@@ -836,12 +846,12 @@ export class AnimationTool3D extends React.Component<
                                     const vz = val.z ?? val[2] ?? 0;
                                     return (
                                         <div key={key} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                            <div style={{ width: "100px" }}>Translate To</div>
+                                            <div style={{ width: "100px" }}>{t("translateTo")}</div>
                                             <div style={{ width: "160px", padding: "4px", border: "1px solid #ccc", borderRadius: "6px", textAlign: "center", background: "#f7f7f7" }}>
                                                 ({vx.toFixed(1)}, {vy.toFixed(1)}, {vz.toFixed(1)})
                                             </div>
-                                            <button onClick={this.handleReselectDestination} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>Re-select</button>
-                                            <button onClick={() => this.handleDeleteTransform(key)} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>Delete</button>
+                                            <button onClick={this.handleReselectDestination} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>{t("reselect")}</button>
+                                            <button onClick={() => this.handleDeleteTransform(key)} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>{t("delete")}</button>
                                         </div>
                                     );
                                 } else if (key === "rotate") {
@@ -853,7 +863,7 @@ export class AnimationTool3D extends React.Component<
                                     return (
                                         <div key={`rot-block-${key}`}>
                                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                                <div style={{ width: "100px" }}>Rotate</div>
+                                                <div style={{ width: "100px" }}>{t("rotation")}</div>
                                                 <div onClick={() => this.handleValueEdit(key)} style={{
                                                     width: "80px", padding: "4px", border: "1px solid #ccc", borderRadius: "6px",
                                                     textAlign: "center", cursor: "pointer", background: "#f7f7f7"
@@ -865,13 +875,13 @@ export class AnimationTool3D extends React.Component<
                                                     </div>
                                                 )}
 
-                                                <button onClick={this.handleReselectRotationPivot} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>Re-select Pivot</button>
+                                                <button onClick={this.handleReselectRotationPivot} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>{t("reselectPivot")}</button>
 
-                                                <button onClick={() => this.handleDeleteTransform(key)} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>Delete</button>
+                                                <button onClick={() => this.handleDeleteTransform(key)} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>{t("delete")}</button>
                                             </div>
 
                                             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
-                                                <label>CCW</label>
+                                                <label>{t("ccw")}</label>
                                                 <input type="checkbox" checked={ccw} onChange={(e) => {
                                                     const newCCW = e.target.checked;
                                                     this.props.setTimeline(prev => {
@@ -889,12 +899,12 @@ export class AnimationTool3D extends React.Component<
                                 } else if (key === "scale") {
                                     return (
                                         <div key={key} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                            <div style={{ width: "100px" }}>{this.capitalize(key)}</div>
+                                            <div style={{ width: "100px" }}>{t("scaling")}</div>
                                             <div onClick={() => this.handleValueEdit(key)} style={{
                                                 width: "80px", padding: "4px", border: "1px solid #ccc",
                                                 borderRadius: "6px", textAlign: "center", cursor: "pointer", background: "#f7f7f7"
                                             }} title={`Edit ${this.capitalize(key)}`}>{val}</div>
-                                            <button onClick={() => this.handleDeleteTransform(key)} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>Delete</button>
+                                            <button onClick={() => this.handleDeleteTransform(key)} style={{ border: "1px solid black", background: "white", padding: "2px 6px", cursor: "pointer" }}>{t("delete")}</button>
                                         </div>
                                     );
                                 }
@@ -911,9 +921,9 @@ export class AnimationTool3D extends React.Component<
 
     render(): React.ReactNode {
         const tools = [
-            { key: "translate", label: "Translate", title: "Move selected object or add new", onClick: () => this.setActiveTool("translate") },
-            { key: "rotate", label: "Rotate", title: "...", onClick: () => this.setActiveTool("rotate") },
-            { key: "scale", label: "Scale", title: "...", onClick: () => this.setActiveTool("scale") },
+            { key: "translate", label: t("translation"), title: t("toolTranslate"), onClick: () => this.setActiveTool("translate") },
+            { key: "rotate", label: t("rotation"), title: t("toolRotate"), onClick: () => this.setActiveTool("rotate") },
+            { key: "scale", label: t("scaling"), title: t("toolScale"), onClick: () => this.setActiveTool("scale") },
         ];
 
         return (
@@ -930,18 +940,18 @@ export class AnimationTool3D extends React.Component<
                 {this.renderTimelineGrid()}
 
                 <div className="d-flex justify-content-evenly items-center mb-4" style={{ marginTop: "12px" }}>
-                    <button onClick={this.handleReset} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>⏪ Return</button>
+                    <button onClick={this.handleReset} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>⏪ {t("return")}</button>
 
                     {this.state.isPlaying ? (
-                        <button onClick={this.handlePause} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>⏸ Pause</button>
+                        <button onClick={this.handlePause} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>⏸ {t("pause")}</button>
                     ) : (
-                        <button onClick={this.handlePlay} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>▶ Play</button>
+                        <button onClick={this.handlePlay} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>▶ {t("play")}</button>
                     )}
 
-                    <button onClick={this.handleExport} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>Export</button>
+                    <button onClick={this.handleExport} style={{ border: "1px solid black", background: "white", padding: "4px 8px" }}>{t("export")}</button>
                 </div>
 
-                <div className="catLabel text-neutral-900 mb-2">Animation Tools</div>
+                <div className="catLabel text-neutral-900 mb-2">{t("animationTools")}</div>
                 <div className="categoryPanel" style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
                     {tools.map(tool => (
                         <button key={tool.key} type="button" className={`toolButton${this.state.activeButton === tool.key ? " selected" : ""}`} onClick={tool.onClick} title={tool.title}>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNavigate } from "react-router-dom";
 import { lazy, Suspense } from 'react';
+import { t } from "../translation/i18n";
 
 const Project3D = lazy(() => import('./Project/Project3D'));
 const Project2D = lazy(() => import('./Project/Project2D'));
@@ -109,11 +110,11 @@ const RenderTool: React.FC<RenderToolProps> = ({
         // eslint-disable-next-line
     }, [selectedTool, navigate, updateId, token, user, idRef]);
 
-    if (loading) return <div className="p-5 text-center">Loading Project...</div>;
-    if (!project) return <div className="p-5 text-center">Project not found.</div>;
+    if (loading) return <div className="p-5 text-center">{t("loadingProject")}</div>;
+    if (!project) return <div className="p-5 text-center">{t("projectNotFound")}</div>;
     if (selectedTool === '2d-graph') {
         return (
-            <Suspense fallback={<div className="p-5 text-center">Loading Project...</div>}>
+            <Suspense fallback={<div className="p-5 text-center">{t("loadingProject")}</div>}>
                 <Project2D
                     id={idRef.current['2d-graph']}
                     navigate={navigate}
@@ -127,7 +128,7 @@ const RenderTool: React.FC<RenderToolProps> = ({
 
     else {
         return (
-            <Suspense fallback={<div className="p-5 text-center">Loading Project...</div>}>
+            <Suspense fallback={<div className="p-5 text-center">{t("loadingProject")}</div>}>
                 <Project3D
                     id={idRef.current['2d-graph']}
                     navigate={navigate}

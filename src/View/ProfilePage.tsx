@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useParams } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 interface User {
     _id: string;
@@ -30,7 +31,7 @@ const ProfilePage: React.FC = () => {
         const userId = id || loggedInUser?._id;
         if (!userId) return;
 
-        fetch(`${process.env.REACT_APP_API_URL}/auth/profile/${userId}`, {
+        fetch(`${process.env.REACT_APP_API_URL}/api/auth/profile/${userId}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then((res) => res.json())
@@ -61,7 +62,7 @@ const ProfilePage: React.FC = () => {
     }, [viewedUser]);
 
     if (!viewedUser) {
-        return <div className="p-5 text-center">Loading profile...</div>;
+        return <div className="p-5 text-center">{t("loading")}</div>;
     }
 
     return (
@@ -71,7 +72,7 @@ const ProfilePage: React.FC = () => {
                     backgroundColor: "#5297b3"
                 }}
             >
-                Profile page
+                {t("title")}
             </h1>
             <main className="outer-main">
                 <div
@@ -103,12 +104,6 @@ const ProfilePage: React.FC = () => {
                                 paddingRight: "30px",
                             }}
                         >
-                            <button style={{ backgroundColor: "inherit", border: 0 }}>
-                                Edit profile
-                            </button>
-                            <button style={{ backgroundColor: "inherit", border: 0 }}>
-                                Setting
-                            </button>
                         </div>
 
                         {/* Avatar + Name */}
@@ -133,7 +128,7 @@ const ProfilePage: React.FC = () => {
                                     {viewedUser.name}
                                 </div>
                                 <div>
-                                    Role: {viewedUser.role}
+                                    {t("role")}: {viewedUser.role}
                                 </div>
                             </div>
                         </div>
@@ -157,7 +152,7 @@ const ProfilePage: React.FC = () => {
                                 color: "#5000F1",
                             }}
                         >
-                            PROJECT
+                            {t("project")}
                         </button>
                         <button
                             className="d-flex flex-column align-items-center justify-content-center"
@@ -168,7 +163,7 @@ const ProfilePage: React.FC = () => {
                                 color: "black",
                             }}
                         >
-                            FAVORITE
+                            {t("favorite")}
                         </button>
                     </div>
 
@@ -208,7 +203,7 @@ const ProfilePage: React.FC = () => {
                                         />
                                         <div className="d-flex flex-column text-left justify-content-start gap-2">
                                             <div className="fw-bold">{proj.title}</div>
-                                            <div>Shared: {proj.sharing}</div>
+                                            <div>{t("shared")}: {proj.sharing}</div>
                                         </div>
                                     </div>
                                 ))

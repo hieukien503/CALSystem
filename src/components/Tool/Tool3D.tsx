@@ -4,6 +4,7 @@ import { GeometryTool3D } from "./Geometry/GeometryTool";
 import { DrawingMode, ShapeNode3D, Point, Shape } from "../../types/geometry";
 import { AnimationTool3D } from "./Animation/AnimationTool3D";
 import * as constants from '../../types/constants';
+import { t } from "../../translation/i18n";
 
 interface TimelineItem {
     object: string;
@@ -67,21 +68,21 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'algebra' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('algebra', e)}
                                     >
-                                        <div className="label">Algebra</div>
+                                        <div className="label">{t("algebra")}</div>
                                     </button>
                                     <button
                                         type="button"
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'geometry' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('geometry', e)}
                                     >
-                                        <div className="label">Geometry</div>
+                                        <div className="label">{t("geometry")}</div>
                                     </button>
                                     <button
                                         type="button"
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'animation' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('animation', e)}
                                     >
-                                        <div className="label">Animation</div>
+                                        <div className="label">{t("animation")}</div>
                                     </button>
                                 </div>
                             </div>

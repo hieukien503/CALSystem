@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from "../../../translation/i18n"
 
 interface ButtonProps {
     label: string;
@@ -17,13 +18,18 @@ class Button extends React.Component<ButtonProps> {
                 onClick={this.props.onClick}
                 title={this.props.title}
             >
-                <img src={this.props.imgSrc} className="image" draggable="false" tabIndex={-1} alt=""></img>
+                <img
+                    src={this.props.imgSrc}
+                    className="image"
+                    draggable="false"
+                    tabIndex={-1}
+                    alt=""
+                />
                 <div className="label">{this.props.label}</div>
             </button>                 
         );
     }
 }
-
 
 interface SettingToolsProps {
     width: number;
@@ -43,27 +49,22 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
         super(props);
         this.state = {
             selectedTool: null,
-        }
+        };
     }
 
     setSelectedTool = (tool: string) => {
         this.setState({ selectedTool: tool });
+
         if (tool === "documentation") {
             this.props.onLoadDocumentation();
-        }
-
-        else if (tool === "save") {
+        } else if (tool === "save") {
             this.props.onSaveProject();
-        }
-
-        else if (tool === "load") {
+        } else if (tool === "load") {
             this.props.onLoadProject();
-        }
-
-        else if (tool === "export") {
+        } else if (tool === "export") {
             this.props.onExport();
         }
-    }
+    };
 
     render(): React.ReactNode {
         return (
@@ -89,36 +90,39 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                     }}
                 >
                     <Button
-                        label="Save"
-                        title="Save Project"
+                        label={t("save")}
+                        title={t("saveProject")}
                         imgSrc="assets/icons/save_icon.svg"
                         onClick={() => this.setSelectedTool("save")}
                         selected={this.state.selectedTool === "save"}
                     />
+
                     <Button
-                        label="Load"
-                        title="Load Project"
+                        label={t("load")}
+                        title={t("loadProject")}
                         imgSrc="assets/icons/load_icon.svg"
                         onClick={() => this.setSelectedTool("load")}
                         selected={this.state.selectedTool === "load"}
                     />
+
                     <Button
-                        label="Documentation"
-                        title="User Guide"
+                        label={t("documentation")}
+                        title={t("userGuide")}
                         imgSrc="assets/icons/pdf.svg"
                         onClick={() => this.setSelectedTool("documentation")}
                         selected={this.state.selectedTool === "documentation"}
                     />
+
                     <Button
-                        label="Export"
-                        title="Export Project"
+                        label={t("export")}
+                        title={t("exportProject")}
                         imgSrc="assets/icons/export_icon.svg"
                         onClick={() => this.setSelectedTool("export")}
                         selected={this.state.selectedTool === "export"}
                     />
                 </div>
             </div>
-        )
+        );
     }
 }
 

@@ -5,6 +5,7 @@ import { AnimationTool } from "./Animation/AnimationTool";
 import { Point, Shape, ShapeNode, DrawingMode } from '../../types/geometry'
 import * as constants from "../../types/constants"
 import SettingTools from "./Setting/SettingTools";
+import { t } from "../../translation/i18n";
 
 interface TimelineItem {
     object: string;
@@ -66,28 +67,28 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'algebra' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('algebra', e)}
                                     >
-                                        <div className="label">Algebra</div>
+                                        <div className="label">{t("algebra")}</div>
                                     </button>
                                     <button
                                         type="button"
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'geometry' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('geometry', e)}
                                     >
-                                        <div className="label">Geometry</div>
+                                        <div className="label">{t("geometry")}</div>
                                     </button>
                                     <button
                                         type="button"
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'animation' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('animation', e)}
                                     >
-                                        <div className="label">Animation</div>
+                                        <div className="label">{t("animation")}</div>
                                     </button>
                                     <button
                                         type="button"
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'setting' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('setting', e)}
                                     >
-                                        <div className="label">Setting</div>
+                                        <div className="label">{t("setting")}</div>
                                     </button>
                                 </div>
                             </div>

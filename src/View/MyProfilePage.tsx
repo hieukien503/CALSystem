@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useParams } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 interface User {
     _id: string;
@@ -72,7 +73,7 @@ const ProfilePage: React.FC = () => {
     }, []);
 
     if (!viewedUser) {
-        return <div className="p-5 text-center">Loading profile...</div>;
+        return <div className="p-5 text-center">{t("loading")}</div>;
     }
 
     // handlers
@@ -88,7 +89,7 @@ const ProfilePage: React.FC = () => {
 
     const handleRemoveProject = async (projId: string) => {
         setOpenMenuId(null);
-        if (!window.confirm("Are you sure you want to delete this project?")) return;
+        if (!window.confirm(t("confirmDelete"))) return;
 
         try {
             const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${projId}`, {
@@ -107,7 +108,7 @@ const ProfilePage: React.FC = () => {
             setViewedUser((prev) => (prev ? { ...prev, project: prev.project.filter((id) => id !== projId) } : prev));
         } catch (err) {
             console.error("Error deleting project:", err);
-            alert("Failed to delete project. See console for details.");
+            alert(t("deleteFail"));
         }
     };
 
@@ -119,7 +120,7 @@ const ProfilePage: React.FC = () => {
                     backgroundColor: "#5297b3",
                 }}
             >
-                Profile page
+                {t("title")}
             </h1>
             <main className="outer-main">
                 <div
@@ -143,8 +144,8 @@ const ProfilePage: React.FC = () => {
                                     paddingRight: "30px",
                                 }}
                             >
-                                <button style={{ backgroundColor: "inherit", border: 0 }}>Edit profile</button>
-                                <button style={{ backgroundColor: "inherit", border: 0 }}>Setting</button>
+                                <button style={{ backgroundColor: "inherit", border: 0 }}>{t("editProfile")}</button>
+                                <button style={{ backgroundColor: "inherit", border: 0 }}>{t("setting")}</button>
                             </div>
                         )}
 
@@ -160,7 +161,7 @@ const ProfilePage: React.FC = () => {
                             <div style={{ width: "100px", height: "100px", backgroundColor: "black", borderRadius: "50%" }} />
                             <div className="text-left">
                                 <div className="fw-bold fs-4">{viewedUser.name}</div>
-                                <div>Role: {viewedUser.role}</div>
+                                <div>{t("role")}: {viewedUser.role === "teacher" ? t("teacher") : t("student")}</div>
                             </div>
                         </div>
                     </div>
@@ -183,7 +184,7 @@ const ProfilePage: React.FC = () => {
                                 color: "#5000F1",
                             }}
                         >
-                            PROJECT
+                            {t("project")}
                         </button>
                         <button
                             className="d-flex flex-column align-items-center justify-content-center"
@@ -194,7 +195,7 @@ const ProfilePage: React.FC = () => {
                                 color: "black",
                             }}
                         >
-                            FAVORITE
+                            {t("favorite")}
                         </button>
                     </div>
 
@@ -202,13 +203,13 @@ const ProfilePage: React.FC = () => {
                     <div className="d-flex flex-column align-items-center justify-content-start p-3 gap-3" style={{ backgroundColor: "white" }}>
                         {(!id || id === loggedInUser?._id) && (
                             <button style={{ width: "200px", borderWidth: "5px" }} onClick={() => navigate("/view/project")}>
-                                + New Project
+                                {t("newProject")}
                             </button>
                         )}
 
                         <div className="d-flex flex-wrap gap-3 w-100">
                             {viewedUser.project.length === 0 ? (
-                                <div className="text-center">Click + Add project to create a new project!</div>
+                                <div className="text-center">{t("emptyProject")}</div>
                             ) : (
                                 projects.map((proj) => (
                                     <div
@@ -251,7 +252,7 @@ const ProfilePage: React.FC = () => {
                                                     cursor: "pointer",
                                                     padding: "2px 6px",
                                                 }}
-                                                title="More actions"
+                                                title={t("moreActions")}
                                             >
                                                 ⋮
                                             </button>
@@ -277,7 +278,7 @@ const ProfilePage: React.FC = () => {
                                                         style={{ padding: "8px 12px", background: "transparent", border: "none", cursor: "pointer" }}
                                                         onClick={() => handleEditProject(proj._id)}
                                                     >
-                                                        ✏️ Edit Project
+                                                        ✏️ {t("editProject")}
                                                     </button>
                                                     <button
                                                         className="d-block w-100 text-start"
@@ -290,7 +291,7 @@ const ProfilePage: React.FC = () => {
                                                         }}
                                                         onClick={() => handleRemoveProject(proj._id)}
                                                     >
-                                                        🗑️ Remove Project
+                                                        🗑️ {t("removeProject")}
                                                     </button>
                                                 </div>
                                             )}
@@ -309,7 +310,7 @@ const ProfilePage: React.FC = () => {
 
                                         <div className="d-flex flex-column text-left justify-content-start gap-2 mt-2 px-2">
                                             <div className="fw-bold">{proj.title}</div>
-                                            <div>Shared: {proj.sharing}</div>
+                                            <div>{t("shared")}: {proj.sharing === "public" ? t("public") : t("private")}</div>
                                         </div>
                                     </div>
                                 ))

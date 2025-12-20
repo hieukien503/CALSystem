@@ -1,5 +1,7 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { t } from "../translation/i18n";
+
 
 const Home = () => {
     return (
@@ -9,7 +11,7 @@ const Home = () => {
                     backgroundColor: "#46443f"
                 }}
             >
-                404: Page not exist
+                {t("pageNotFoundTitle")}
             </h1>
         </div>
     );

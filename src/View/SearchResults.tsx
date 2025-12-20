@@ -1,6 +1,7 @@
 // SearchResults.tsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 interface Project {
     _id: string;
@@ -30,13 +31,15 @@ const SearchResults: React.FC = () => {
         if (!query) return;
         setLoading(true);
 
+        fetch(`${process.env.REACT_APP_API_URL}/api/search?q=${encodeURIComponent(query)}`).then(r => r.json())
+
         Promise.all([
-            fetch(`${process.env.REACT_APP_API_URL}/search?q=${encodeURIComponent(query)}`).then(r => r.json()),
-            fetch(`${process.env.REACT_APP_API_URL}/search/users?q=${encodeURIComponent(query)}`).then(r => r.json()),
+            fetch(`${process.env.REACT_APP_API_URL}/api/search?q=${encodeURIComponent(query)}`).then(r => r.json()),
+            //fetch(`${process.env.REACT_APP_API_URL}/api/search/users?q=${encodeURIComponent(query)}`).then(r => r.json()),
         ])
-            .then(([projectData, userData]) => {
-                setProjects(projectData.results || []);
-                setUsers(userData.results || []);
+            .then(data => {
+                setProjects(data[0].projects || []);
+                setUsers(data[0].users|| []);
             })
             .catch(err => console.error("Search error:", err))
             .finally(() => setLoading(false));
@@ -49,18 +52,18 @@ const SearchResults: React.FC = () => {
                     backgroundColor: "#e37f6e"
                 }}
             >
-                Search results for "{query}"
+                {t("searchResultsFor")} "{query}"
             </h1>
             <main className="outer-main">
                 <div className="inner-main text-gray-600 text-xl" style={{ height: "100%", overflow: "auto" }}>
                     {loading ? (
-                        <div className="text-center py-10">Loading...</div>
+                        <div className="text-center py-10">{t("loading")}</div>
                     ) : (
                         <>
-                            <h2 className="font-bold text-lg mb-3">Projects</h2>
+                            <h2 className="font-bold text-lg mb-3">{t("projects")}</h2>
                             <div className="d-flex flex-wrap gap-3">
                                 {projects.length === 0 ? (
-                                    <div>No matching projects</div>
+                                    <div>{t("noMatchingProjects")}</div>
                                 ) : (
                                     projects.map(p => (
                                         <div
@@ -90,17 +93,17 @@ const SearchResults: React.FC = () => {
                                             />
                                             <div className="d-flex flex-column text-left justify-content-start gap-2 mt-2">
                                                 <div className="fw-bold">{p.title}</div>
-                                                <div>{p.ownerName || "Unknown user"}</div>
+                                                <div>{p.ownerName || t("unknownUser")}</div>
                                             </div>
                                         </div>
                                     ))
                                 )}
                             </div>
 
-                            <h2 className="font-bold text-lg mt-5 mb-3">Users</h2>
+                            <h2 className="font-bold text-lg mt-5 mb-3">{t("users")}</h2>
                             <div className="d-flex flex-wrap gap-3">
                                 {users.length === 0 ? (
-                                    <div>No matching users</div>
+                                    <div>{t("noMatchingUsers")}</div>
                                 ) : (
                                     users.map(u => (
                                         <div
