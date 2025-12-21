@@ -108,15 +108,16 @@ const RenderTool: React.FC<RenderToolProps> = ({
         // eslint-disable-next-line
     }, [selectedTool, navigate, updateId, token, user, idRef]);
 
-    if (loading) return <div className="p-5 text-center">{t("loadingProject")}</div>;
-    if (!project) return <div className="p-5 text-center">{t("projectNotFound")}</div>;
     useEffect(() => {
         if (!project || loading) return;
         if (navigatedToolRef.current === selectedTool) return;
         navigatedToolRef.current = selectedTool as "2d-graph" | "3d-graph" | null;
         navigate(`/view/project/${project._id}`, { replace: true });
     }, [project, loading, selectedTool, navigate]);
-    
+
+    if (loading) return <div className="p-5 text-center">{t("loadingProject")}</div>;
+    if (!project) return <div className="p-5 text-center">{t("projectNotFound")}</div>;
+
     if (selectedTool === '2d-graph') {
         return (
             <Suspense fallback={<div className="p-5 text-center">{t("loadingProject")}</div>}>
