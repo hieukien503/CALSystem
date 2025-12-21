@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { t } from "../translation/i18n";
+
 interface User {
     _id: string;
     name: string;
@@ -31,7 +33,7 @@ const Login = () => {
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.error || "Login failed");
+                setError(data.error || t("loginError"));
                 return;
             }
 
@@ -54,7 +56,7 @@ const Login = () => {
                     backgroundColor: "#9992B9",
                 }}
             >
-                Login
+                {t("login")}
             </h1>
             <div
                 className="inner-main text-gray-600 align-items-center text-xl"
@@ -71,14 +73,14 @@ const Login = () => {
                         }}
                     >
                         <div className="d-flex flex-column text-center">
-                            <div className="fw-bold fs-3">Login</div>
-                            <div>Sign in to your Geometry Learning account</div>
+                            <div className="fw-bold fs-3">{t("loginTitle")}</div>
+                            <div>{t("loginSubtitle")}</div>
                         </div>
 
                         <form onSubmit={handleSubmit} id="form">
                             <div className="mb-3">
                                 <label htmlFor="email" className="form-label">
-                                    Email:
+                                    {t("email")}:
                                 </label>
                                 <input
                                     type="email"
@@ -94,7 +96,7 @@ const Login = () => {
 
                             <div className="mb-3">
                                 <label htmlFor="password" className="form-label">
-                                    Password:
+                                    {t("password")}:
                                 </label>
                                 <input
                                     type="password"
@@ -108,19 +110,24 @@ const Login = () => {
                             </div>
 
                             <div className="mb-3">
-                                <a href="#" className="accent-blue">
-                                    Forget password?
-                                </a>
+                                <div className="accent-blue"
+                                onClick={() => navigate("/view/signup")}
+                                style={{
+                                    cursor: "pointer"
+                                }}
+                                >
+                                    {t("forgetPassword")}
+                                </div>
                             </div>
 
                             {error && <div className="text-danger mb-3">{error}</div>}
 
                             <button type="submit" className="btn btn-dark w-100">
-                                Submit
+                                {t("submit")}
                             </button>
                         </form>
                         <div className="d-flex flex-row align-self-center text-center gap-2">
-                            <div>Don't have an account?</div>
+                            <div>{t("noAccount")}</div>
                             <div
                                 className="accent-blue"
                                 onClick={() => navigate("/view/signup")}
@@ -128,7 +135,7 @@ const Login = () => {
                                     cursor: "pointer",
                                 }}
                             >
-                                Sign up
+                                {t("signUp")}
                             </div>
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 const SignUp: React.FC = () => {
     const navigate = useNavigate();
@@ -25,7 +26,7 @@ const SignUp: React.FC = () => {
         setError(null);
 
         if (formData.password !== formData.confirmPassword) {
-            setError("Passwords do not match");
+            setError(t("passwordsNotMatch"));
             return;
         }
 
@@ -46,10 +47,10 @@ const SignUp: React.FC = () => {
 
             const data = await res.json();
             if (!res.ok) {
-                throw new Error(data.message || "Signup failed");
+                throw new Error(data.message || t("signupFailed"));
             }
 
-            alert("Signup successful! Please login.");
+            alert(t("signupSuccess"));
             navigate("/view/login");
         } catch (err: any) {
             setError(err.message);
@@ -64,7 +65,7 @@ const SignUp: React.FC = () => {
                 className="upper-main"
                 style={{ backgroundColor: "#9992B9" }}
             >
-                Login
+                {t("login")}
             </h1>
             <div
                 className="inner-main text-gray-600 align-items-center text-xl"
@@ -76,15 +77,15 @@ const SignUp: React.FC = () => {
                         style={{ width: "600px" }}
                     >
                         <div className="d-flex flex-column text-center">
-                            <div className="fw-bold fs-3">Sign up</div>
-                            <div>Create your Geometry Learning account</div>
+                            <div className="fw-bold fs-3">{t("signup")}</div>
+                            <div>{t("createAccount")}</div>
                         </div>
 
                         <form onSubmit={handleSubmit}>
                             <div className="d-flex flex-row justify-content-between">
                                 <div className="mb-3" style={{ width: "250px" }}>
                                     <label htmlFor="firstName" className="form-label">
-                                        First name:
+                                        {t("firstName")}:
                                     </label>
                                     <input
                                         type="text"
@@ -99,7 +100,7 @@ const SignUp: React.FC = () => {
 
                                 <div className="mb-3" style={{ width: "250px" }}>
                                     <label htmlFor="lastName" className="form-label">
-                                        Last name:
+                                        {t("lastName")}:
                                     </label>
                                     <input
                                         type="text"
@@ -115,7 +116,7 @@ const SignUp: React.FC = () => {
 
                             <div className="mb-3">
                                 <label htmlFor="email" className="form-label">
-                                    Email:
+                                    {t("email")}:
                                 </label>
                                 <input
                                     type="email"
@@ -131,7 +132,7 @@ const SignUp: React.FC = () => {
 
                             <div className="mb-3">
                                 <label htmlFor="password" className="form-label">
-                                    Password:
+                                    {t("password")}:
                                 </label>
                                 <input
                                     type="password"
@@ -146,7 +147,7 @@ const SignUp: React.FC = () => {
 
                             <div className="mb-3">
                                 <label htmlFor="confirmPassword" className="form-label">
-                                    Confirm Password:
+                                    {t("confirmPassword")}:
                                 </label>
                                 <input
                                     type="password"
@@ -168,18 +169,18 @@ const SignUp: React.FC = () => {
                                 className="btn btn-dark w-100"
                                 disabled={loading}
                             >
-                                {loading ? "Signing up..." : "Submit"}
+                                {loading ? t("signingUp") : t("submit")}
                             </button>
                         </form>
 
                         <div className="d-flex flex-row align-self-center text-center gap-2 mt-3">
-                            <div>Already have an account?</div>
+                            <div>{t("alreadyHaveAccount")}</div>
                             <div
                                 className="accent-blue"
                                 onClick={() => navigate("/view/login")}
                                 style={{ cursor: "pointer" }}
                             >
-                                Login
+                                {t("login")}
                             </div>
                         </div>
                     </div>

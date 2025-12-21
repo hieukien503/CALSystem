@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 interface Collaborator {
     _id?: string;
@@ -24,6 +25,7 @@ const EditProjectPage: React.FC = () => {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const token = sessionStorage.getItem("token");
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     // Fetch project data
     useEffect(() => {
@@ -31,7 +33,7 @@ const EditProjectPage: React.FC = () => {
 
         const fetchProject = async () => {
             try {
-                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${id}`, {
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${id}/${user?._id || "null"}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const data = await res.json();
@@ -105,18 +107,18 @@ const EditProjectPage: React.FC = () => {
                 throw new Error(text || "Failed to update project");
             }
 
-            alert("Project updated successfully!");
+            alert(t("projectUpdated"));
         } catch (err: any) {
             console.error("Error updating project:", err);
-            alert("Failed to update project.");
+            alert(t("projectUpdateFailed"));
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return <div className="p-5 text-center">Loading project...</div>;
-    if (error) return <div className="p-5 text-danger text-center">{error}</div>;
-    if (!project) return <div className="p-5 text-center">Project not found.</div>;
+    if (loading) return <div>{t("loadingProject")}</div>;
+    if (error) return <div>{t("projectFetchFailed")}</div>;
+    if (!project) return <div>{t("projectNotFound")}</div>;
 
     return (
         <div>
@@ -125,7 +127,7 @@ const EditProjectPage: React.FC = () => {
                     backgroundColor: "#9346DC"
                 }}
             >
-                Edit Project
+                {t("editProject")}
             </h1>
             <main className="outer-main">
                 <div
@@ -138,7 +140,7 @@ const EditProjectPage: React.FC = () => {
                     <form onSubmit={handleSubmit} className="card p-4 shadow-sm">
                         {/* Title */}
                         <div className="mb-3">
-                            <label className="form-label">Project Name</label>
+                            <label className="form-label">{t("projectName")}</label>
                             <input
                                 type="text"
                                 name="title"
@@ -151,7 +153,7 @@ const EditProjectPage: React.FC = () => {
 
                         {/* Description */}
                         <div className="mb-3">
-                            <label className="form-label">Description</label>
+                            <label className="form-label">{t("description")}</label>
                             <textarea
                                 name="description"
                                 className="form-control"
@@ -163,33 +165,33 @@ const EditProjectPage: React.FC = () => {
 
                         {/* Visibility */}
                         <div className="mb-3">
-                            <label className="form-label">Visibility</label>
+                            <label className="form-label">{t("visibility")}</label>
                             <select
                                 name="sharing"
                                 className="form-select"
                                 value={project.sharing}
                                 onChange={handleChange}
                             >
-                                <option value="private">Private</option>
-                                <option value="public">Public</option>
+                                <option value="private">{t("private")}</option>
+                                <option value="public">{t("public")}</option>
                             </select>
                         </div>
 
                         {/* Collaborators */}
                         <div className="mb-4">
                             <label className="form-label d-flex justify-content-between align-items-center">
-                                <span>Collaborators</span>
+                                <span>{t("collaborators")}</span>
                                 <button
                                     type="button"
                                     className="btn btn-sm btn-outline-primary"
                                     onClick={addCollaborator}
                                 >
-                                    + Add Collaborator
+                                    + {t("addCollaborator")}
                                 </button>
                             </label>
 
                             {project.collaborators.length === 0 && (
-                                <p className="text-muted">No collaborators added yet.</p>
+                                <p className="text-muted">{t("noCollaborators")}</p>
                             )}
 
                             {project.collaborators.map((col, index) => (
@@ -197,7 +199,7 @@ const EditProjectPage: React.FC = () => {
                                     <input
                                         type="email"
                                         className="form-control"
-                                        placeholder="Email"
+                                        placeholder={t("email")}
                                         value={col.email}
                                         onChange={(e) => updateCollaborator(index, "email", e.target.value)}
                                         required
@@ -208,8 +210,8 @@ const EditProjectPage: React.FC = () => {
                                         value={col.role}
                                         onChange={(e) => updateCollaborator(index, "role", e.target.value)}
                                     >
-                                        <option value="viewer">Viewer</option>
-                                        <option value="editor">Editor</option>
+                                        <option value="viewer">{t("viewer")}</option>
+                                        <option value="editor">{t("editor")}</option>
                                     </select>
                                     <button
                                         type="button"
@@ -229,14 +231,14 @@ const EditProjectPage: React.FC = () => {
                                 className="btn btn-secondary"
                                 onClick={() => navigate(-1)}
                             >
-                                Return
+                                {t("return")}
                             </button>
                             <button
                                 type="submit"
                                 className="btn btn-primary"
                                 disabled={saving}
                             >
-                                {saving ? "Saving..." : "Save Changes"}
+                                {saving ? t("saving") : t("saveChanges")}
                             </button>
                         </div>
                     </form>

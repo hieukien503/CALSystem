@@ -1,6 +1,7 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNavigate } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 const Home = () => {
     const navigate = useNavigate();
@@ -8,7 +9,7 @@ const Home = () => {
     return (
         <div>
             <h1 className="upper-main" color="#46443f">
-                Home
+                {t("home")}
             </h1>
             <main className="outer-main">
                 <div className="inner-main text-center text-gray-600 align-items-center text-xl"
@@ -23,10 +24,10 @@ const Home = () => {
                         }}
                     >
                         <div className="fw-bold fs-2"
-                        >Computer Aided Learning for Geometry</div>
-                        <div>Interactive tools to visualize and understand geometric concepts for 9th and 12th grade students</div>
+                        >{t("homeTitle")}</div>
+                        <div>{t("homeSubtitle")}</div>
                     </div>
-                    <img src="/image/homeProject.png" alt="Project"
+                    <img src="image/homeProject.png" alt="Project"
                         style={{
                             height: "250px",
                             margin: "25px",
@@ -45,7 +46,7 @@ const Home = () => {
                             }}
                             onClick={() => navigate("/view/project")}
                         >
-                            CREATE NOW
+                            {t("createNow")}
                         </button>
                         <button
                             style={{
@@ -54,7 +55,7 @@ const Home = () => {
                             }}
                             onClick={() => navigate("/view/signup")}
                         >
-                            SIGN UP
+                            {t("signUp")}
                         </button>
                     </div>
                 </div>

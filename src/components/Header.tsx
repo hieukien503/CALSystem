@@ -1,6 +1,7 @@
 ﻿// Header.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 interface HeaderProps {
     selectedTool: string;
@@ -42,7 +43,7 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
                 <div className="logo flex items-center gap-2">
                     <img src="/image/Menu.svg" alt="Menu" className="menu-icon" />
                     <button className="btn" onClick={() => navigate("/")}>
-                        <div className="font-bold text-lg">GRAPHIC CALCULATOR</div>
+                        <div className="font-bold text-lg">{t("appTitle")}</div>
                     </button>
                 </div>
 
@@ -53,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         onKeyDown={handleSearchKey}
-                        placeholder="Search projects or users..."
+                        placeholder={t("searchPlaceholder")}
                         className="border border-gray-300 px-3 py-1 rounded-full w-full text-sm focus:outline-none"
                     />
                     <button
@@ -76,8 +77,8 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
                                 value={selectedTool}
                                 onChange={handleChange}
                             >
-                                <option value="2d-graph">2D Geometry</option>
-                                <option value="3d-graph">3D Geometry</option>
+                                <option value="2d-graph">{t("geometry2D")}</option>
+                                <option value="3d-graph">{t("geometry3D")}</option>
                                 {//<option value="3d-calc">3D Calculator</option>
                                 }
                             </select>
@@ -86,19 +87,19 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
                         {!user ? (
                             <li>
                                 <button className="btn" onClick={() => navigate("/view/login")}>
-                                    Login/Signup
+                                    {t("loginSignup")}
                                 </button>
                             </li>
                         ) : (
                             <>
                                 <li>
                                     <button className="btn" onClick={() => navigate("/view/myprofile")}>
-                                        Profile
+                                        {t("profile")}
                                     </button>
                                 </li>
                                 <li>
                                     <button className="btn" onClick={handleLogout}>
-                                        Logout
+                                        {t("logout")}
                                     </button>
                                 </li>
                             </>

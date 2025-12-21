@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from "../../../translation/i18n"
 import Load from '../../../assets/images/Load.svg';
 import Save from '../../../assets/images/Save.svg';
 import Documentation from '../../../assets/images/Documentation.svg';
@@ -29,7 +30,6 @@ class Button extends React.Component<ButtonProps> {
     }
 }
 
-
 interface SettingToolsProps {
     width: number;
     height: number;
@@ -48,27 +48,28 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
         super(props);
         this.state = {
             selectedTool: null,
-        }
+        };
     }
 
     setSelectedTool = (tool: string) => {
         this.setState({ selectedTool: tool });
+
         if (tool === "documentation") {
             this.props.onLoadDocumentation();
-        }
-
+        } 
+      
         else if (tool === "save") {
             this.props.onSaveProject();
-        }
-
+        } 
+      
         else if (tool === "load") {
             this.props.onLoadProject();
-        }
-
+        } 
+      
         else if (tool === "export") {
             this.props.onExport();
         }
-    }
+    };
 
     render(): React.ReactNode {
         return (
@@ -93,41 +94,40 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                         padding: "8px 0px 14px 16px"
                     }}
                 >
-                    <div
-                        className="categoryPanel"
-                    >
-                        <Button
-                            label="Save"
-                            title="Save Project"
-                            imgSrc={Save}
-                            onClick={() => this.setSelectedTool("save")}
-                            selected={this.state.selectedTool === "save"}
-                        />
-                        <Button
-                            label="Load"
-                            title="Load Project"
-                            imgSrc={Load}
-                            onClick={() => this.setSelectedTool("load")}
-                            selected={this.state.selectedTool === "load"}
-                        />
-                        <Button
-                            label="Documentation"
-                            title="User Guide"
-                            imgSrc={Documentation}
-                            onClick={() => this.setSelectedTool("documentation")}
-                            selected={this.state.selectedTool === "documentation"}
-                        />
-                        <Button
-                            label="Export"
-                            title="Export Project"
-                            imgSrc={Export}
-                            onClick={() => this.setSelectedTool("export")}
-                            selected={this.state.selectedTool === "export"}
-                        />
-                    </div>
+                    <Button
+                        label={t("save")}
+                        title={t("saveProject")}
+                        imgSrc={Save}
+                        onClick={() => this.setSelectedTool("save")}
+                        selected={this.state.selectedTool === "save"}
+                    />
+
+                    <Button
+                        label={t("load")}
+                        title={t("loadProject")}
+                        imgSrc={Load}
+                        onClick={() => this.setSelectedTool("load")}
+                        selected={this.state.selectedTool === "load"}
+                    />
+
+                    <Button
+                        label={t("documentation")}
+                        title={t("userGuide")}
+                        imgSrc={Documentation}
+                        onClick={() => this.setSelectedTool("documentation")}
+                        selected={this.state.selectedTool === "documentation"}
+                    />
+
+                    <Button
+                        label={t("export")}
+                        title={t("exportProject")}
+                        imgSrc={Export}
+                        onClick={() => this.setSelectedTool("export")}
+                        selected={this.state.selectedTool === "export"}
+                    />
                 </div>
             </div>
-        )
+        );
     }
 }
 

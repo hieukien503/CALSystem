@@ -1,5 +1,6 @@
 import React, { RefObject, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { t } from "../translation/i18n";
 
 // interface User {
 //     _id: string;
@@ -30,7 +31,7 @@ const NewCalApp: React.FC<NewCalAppProps> = ({ idRef, updateId, selectedTool }) 
                         { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     _id: user?._id,
-                    title: "Untitled Project",
+                    title: t("untitledProject"),
                     mode: selectedTool
                 })
             });
@@ -61,7 +62,7 @@ const NewCalApp: React.FC<NewCalAppProps> = ({ idRef, updateId, selectedTool }) 
     }, [navigate, idRef, selectedTool, token, updateId, user]);
 
 
-    return <div>Creating new project...</div>;
+    return <div>{t("createNewProject")}</div>;
 };
 
 export default NewCalApp;

@@ -59,7 +59,8 @@ import prism from '../../../assets/images/prism.svg';
 import cylinder from '../../../assets/images/cylinder.svg';
 import circle_center_radius_direction from '../../../assets/images/circle_center_radius_direction.svg';
 import circle_point_axis from '../../../assets/images/circle_point_axis.svg';
-import plane_projection from '../../../assets/images/plane_projection.svg'
+import plane_projection from '../../../assets/images/plane_projection.svg';
+import { t } from "../../../translation/i18n";
 
 interface ButtonProps {
     label: string;
@@ -335,95 +336,95 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
     render(): React.ReactNode {
         const toolCategories = [
             {
-                name: "Basic Tools",
+                name: t("basicTools"),
                 tools: [
-                    { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
-                    { key: "line", label: "Line", onClick: () => this.setActiveTool("line"), title: "Select 2 points", imgSrc: line },
-                    { key: "segment", label: "Segment", onClick: () => this.setActiveTool("segment"), title: "Select 2 points", imgSrc: segment },
-                    { key: "polygon", label: "Polygon", onClick: () => this.setActiveTool("polygon"), title: "Select all vertices, then click on the first point again",imgSrc: polygon },
-                    { key: "circle", label: "Circle: Center & Radius", onClick: () => this.setActiveTool("circle"), title: "Select a center, then enter its radius", imgSrc: circle_center_radius },
-                    { key: "edit", label: "Edit", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View", imgSrc: edit }
+                    { key: "point", label: t("point"), onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
+                    { key: "line", label: t("line"), onClick: () => this.setActiveTool("line"), title: "Select 2 points", imgSrc: line },
+                    { key: "segment", label: t("segment"), onClick: () => this.setActiveTool("segment"), title: "Select 2 points", imgSrc: segment },
+                    { key: "polygon", label: t("polygon"), onClick: () => this.setActiveTool("polygon"), title: "Select all vertices, then click on the first point again",imgSrc: polygon },
+                    { key: "circle", label: t("circle"), onClick: () => this.setActiveTool("circle"), title: "Select a center, then enter its radius", imgSrc: circle_center_radius },
+                    { key: "edit", label: t("edit"), onClick: () => this.setActiveTool("edit"), title: "Move the objects or View", imgSrc: edit }
                 ]
             },
             {
-                name: "Edit",
+                name: t("edit"),
                 tools: [
-                    { key: "delete", label: "Delete", onClick: () => this.setActiveTool("delete"), title: "Select the object to delete", imgSrc: deleteObject },
-                    { key: "show_label", label: "Show / Hide Label", onClick: () => this.setActiveTool("show_label"), title: "Select object", imgSrc: showLabel },
-                    { key: "show_object", label: "Show / Hide Object", onClick: () => this.setActiveTool("show_object"), title: "Select object", imgSrc: showObject },
-                    { key: "undo", label: "Undo", onClick: () => this.setActiveTool("undo"), title: "Undo the process", imgSrc: iconundo },
-                    { key: "redo", label: "Redo", onClick: () => this.setActiveTool("redo"), title: "Redo the process", imgSrc: iconredo },
-                    { key: "clear", label: "Clear", onClick: () => this.setActiveTool("clear"), title: "Clear all objects", imgSrc: deleteAll }
+                    { key: "delete", label: t("delete"), onClick: () => this.setActiveTool("delete"), title: "Select the object to delete", imgSrc: deleteObject },
+                    { key: "show_label", label: t("showLabel"), onClick: () => this.setActiveTool("show_label"), title: "Select object", imgSrc: showLabel },
+                    { key: "show_object", label: t("showObject"), onClick: () => this.setActiveTool("show_object"), title: "Select object", imgSrc: showObject },
+                    { key: "undo", label: t("undo"), onClick: () => this.setActiveTool("undo"), title: "Undo the process", imgSrc: iconundo },
+                    { key: "redo", label: t("redo"), onClick: () => this.setActiveTool("redo"), title: "Redo the process", imgSrc: iconredo },
+                    { key: "clear", label: t("clear"), onClick: () => this.setActiveTool("clear"), title: "Clear all objects", imgSrc: deleteAll }
                 ]
             },
             {
-                name: "Construct",
+                name: t("construct"),
                 tools: [
-                    { key: "midpoint", label: "Midpoint or Center", onClick: () => this.setActiveTool("midpoint"), title: "Select 2 points, a segment or a circle", imgSrc: midpoint_center },
-                    { key: "perpendicular", label: "Perpendicular Line", onClick: () => this.setActiveTool("perpendicular"), title: "Select perpendicular line and point", imgSrc: perpen_line },
-                    { key: "perpendicular_bisector", label: "Perpendicular Bisector", onClick: () => this.setActiveTool("perpendicular_bisector"), title: "Select 2 points or a segment", imgSrc: perpen_bisector },
-                    { key: "parallel", label: "Parallel Line", onClick: () => this.setActiveTool("parallel"), title: "Select parallel line and point", imgSrc: parallel_line },
-                    { key: "angle_bisector", label: "Angle Bisector", onClick: () => this.setActiveTool("angle_bisector"), title: "Select 2 lines, or 3 points", imgSrc: angle_bisector },
-                    { key: "tangent", label: "Tangents", onClick: () => this.setActiveTool("tangent"), title: "Select point, then circle", imgSrc: tangents },
+                    { key: "midpoint", label: t("midpoint"), onClick: () => this.setActiveTool("midpoint"), title: "Select 2 points, a segment or a circle", imgSrc: midpoint_center },
+                    { key: "perpendicular", label: t("perpendicular"), onClick: () => this.setActiveTool("perpendicular"), title: "Select perpendicular line and point", imgSrc: perpen_line },
+                    { key: "perpendicular_bisector", label: t("perpendicularBisector"), onClick: () => this.setActiveTool("perpendicular_bisector"), title: "Select 2 points or a segment", imgSrc: perpen_bisector },
+                    { key: "parallel", label: t("parallel"), onClick: () => this.setActiveTool("parallel"), title: "Select parallel line and point", imgSrc: parallel_line },
+                    { key: "angle_bisector", label: t("angleBisector"), onClick: () => this.setActiveTool("angle_bisector"), title: "Select 2 lines, or 3 points", imgSrc: angle_bisector },
+                    { key: "tangent", label: t("tangents"), onClick: () => this.setActiveTool("tangent"), title: "Select point, then circle", imgSrc: tangents },
                 ]
             },
             {
-                name: "Points",
+                name: t("points"),
                 tools: [
-                    { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
-                    { key: "intersection", label: "Intersect", onClick: () => this.setActiveTool("intersection"), title: "Select intersection or 2 objects", imgSrc: intersection },
-                    { key: "circumcenter", label: "Circumcenter of Triangle", onClick: () => this.setActiveTool("circumcenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: circumcenter },
-                    { key: "incenter", label: "Incenter of Triangle", onClick: () => this.setActiveTool("incenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: incenter },
-                    { key: "excenter", label: "Excenter of Triangle", onClick: () => this.setActiveTool("excenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: excenter },
-                    { key: "orthocenter", label: "Orthocenter of Triangle", onClick: () => this.setActiveTool("orthocenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: orthocenter },
-                    { key: "centroid", label: "Centroid of Triangle", onClick: () => this.setActiveTool("centroid"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: centroid }
+                    { key: "point", label: t("point"), onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
+                    { key: "intersection", label: t("intersection"), onClick: () => this.setActiveTool("intersection"), title: "Select intersection or 2 objects", imgSrc: intersection },
+                    { key: "circumcenter", label: t("circumcenter"), onClick: () => this.setActiveTool("circumcenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: circumcenter },
+                    { key: "incenter", label: t("excenter"), onClick: () => this.setActiveTool("incenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: incenter },
+                    { key: "excenter", label: t("incenter"), onClick: () => this.setActiveTool("excenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: excenter },
+                    { key: "orthocenter", label: t("orthocenter"), onClick: () => this.setActiveTool("orthocenter"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: orthocenter },
+                    { key: "centroid", label: t("centroid"), onClick: () => this.setActiveTool("centroid"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: centroid }
                 ]
             },
             {
-                name: "Measure",
+                name: t("measure"),
                 tools: [
-                    { key: "angle", label: "Angle", onClick: () => this.setActiveTool("angle"), title: "Select 2 lines or 3 points", imgSrc: angle },
-                    { key: "length", label: "Distance or Length", onClick: () => this.setActiveTool("length"), title: "Select 2 points or segment, polygon, circle", imgSrc: length },
-                    { key: "area", label: "Area", onClick: () => this.setActiveTool("area"), title: "Select polygon or circle", imgSrc: area }
+                    { key: "angle", label: t("angle"), onClick: () => this.setActiveTool("angle"), title: "Select 2 lines or 3 points", imgSrc: angle },
+                    { key: "length", label: t("length"), onClick: () => this.setActiveTool("length"), title: "Select 2 points or segment, polygon, circle", imgSrc: length },
+                    { key: "area", label: t("area"), onClick: () => this.setActiveTool("area"), title: "Select polygon or circle", imgSrc: area }
                 ]
             },
             {
-                name: "Lines",
+                name: t("lines"),
                 tools: [
-                    { key: "vector", label: "Vector", onClick: () => this.setActiveTool("vector"), title: "Select 2 points", imgSrc: vector },
-                    { key: "line", label: "Line", onClick: () => this.setActiveTool("line"), title: "Select 2 points", imgSrc: line },
-                    { key: "ray", label: "Ray", onClick: () => this.setActiveTool("ray"), title: "Select 2 points", imgSrc: ray },
-                    { key: "segment", label: "Segment", onClick: () => this.setActiveTool("segment"), title: "Select 2 points", imgSrc: segment },
-                    { key: "segment_length", label: "Segment with Given Length", onClick: () => this.setActiveTool("segment_length"), title: "Select point, then enter length", imgSrc: segment_length },
+                    { key: "vector", label: t("vector"), onClick: () => this.setActiveTool("vector"), title: "Select 2 points", imgSrc: vector },
+                    { key: "line", label: t("line"), onClick: () => this.setActiveTool("line"), title: "Select 2 points", imgSrc: line },
+                    { key: "ray", label: t("ray"), onClick: () => this.setActiveTool("ray"), title: "Select 2 points", imgSrc: ray },
+                    { key: "segment", label: t("segment"), onClick: () => this.setActiveTool("segment"), title: "Select 2 points", imgSrc: segment },
+                    { key: "segment_length", label: t("segmentLength"), onClick: () => this.setActiveTool("segment_length"), title: "Select point, then enter length", imgSrc: segment_length },
                 ]
             },
             {
-                name: "Circles",
+                name: t("circles"),
                 tools: [
-                    { key: "circle", label: "Circle: Center & Radius", onClick: () => this.setActiveTool("circle"), title: "Select a center, then enter its radius", imgSrc: circle_center_radius },
-                    { key: "circle_2_points", label: "Circle: Center & Point", onClick: () => this.setActiveTool("circle_2_points"), title: "Select a center, then point on circle", imgSrc: circle_center_point },
-                    { key: "circumcircle", label: "Circle through 3 points", onClick: () => this.setActiveTool("circumcircle"), title: "Select 3 points on the circle", imgSrc: circle_3_points },
-                    { key: "semicircle", label: "Semicircle", onClick: () => this.setActiveTool("semicircle"), title: "Select 2 end points", imgSrc: semicircle },
-                    { key: "incircle", label: "Incircle of Triangle", onClick: () => this.setActiveTool("incircle"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: incircle },
-                    { key: "excircle", label: "Excircle of Triangle", onClick: () => this.setActiveTool("excircle"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: excircle },
+                    { key: "circle", label: t("circle"), onClick: () => this.setActiveTool("circle"), title: "Select a center, then enter its radius", imgSrc: circle_center_radius },
+                    { key: "circle_2_points", label: t("circle2Points"), onClick: () => this.setActiveTool("circle_2_points"), title: "Select a center, then point on circle", imgSrc: circle_center_point },
+                    { key: "circumcircle", label: t("circumcircle"), onClick: () => this.setActiveTool("circumcircle"), title: "Select 3 points on the circle", imgSrc: circle_3_points },
+                    { key: "semicircle", label: t("semicircle"), onClick: () => this.setActiveTool("semicircle"), title: "Select 2 end points", imgSrc: semicircle },
+                    { key: "incircle", label: t("incircle"), onClick: () => this.setActiveTool("incircle"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: incircle },
+                    { key: "excircle", label: t("excircle"), onClick: () => this.setActiveTool("excircle"), title: "Select 3 non-collinear points or polygon with 3 vertices", imgSrc: excircle },
                 ]
             },
             {
-                name: "Polygon",
+                name: t("polygon"),
                 tools: [
-                    { key: "polygon", label: "Polygon", onClick: () => this.setActiveTool("polygon"), title: "Select all vertices, then click on the first point again", imgSrc: polygon },
-                    { key: "reg_polygon", label: "Regular Polygon", onClick: () => this.setActiveTool("reg_polygon"), title: "Select 2 points, then enter number of vertices", imgSrc: reg_polygon },
+                    { key: "polygon", label: t("polygon"), onClick: () => this.setActiveTool("polygon"), title: "Select all vertices, then click on the first point again", imgSrc: polygon },
+                    { key: "reg_polygon", label: t("regPolygon"), onClick: () => this.setActiveTool("reg_polygon"), title: "Select 2 points, then enter number of vertices", imgSrc: reg_polygon },
                 ]
             },
             {
-                name: "Transform",
+                name: t("transform"),
                 tools: [
-                    { key: "translation", label: "Translate by Vector", onClick: () => this.setActiveTool("translation"), title: "Select object to translate, then vector", imgSrc: translation },
-                    { key: "rotation", label: "Rotate around Point", onClick: () => this.setActiveTool("rotation"), title: "Select object to rotate and center point, then enter angle", imgSrc: rotation },
-                    { key: "scaling", label: "Dilate from Point", onClick: () => this.setActiveTool("scaling"), title: "Select object, then center point, then enter factor", imgSrc: dilate },
-                    { key: "reflect_point", label: "Reflect about Point", onClick: () => this.setActiveTool("reflect_point"), title: "Select object to reflect, then center point", imgSrc: reflect_point },
-                    { key: "reflect_line", label: "Reflect about Line", onClick: () => this.setActiveTool("reflect_line"), title: "Select object to reflect, then line of reflection", imgSrc: reflect_line },
-                    { key: "projection", label: "Project to Line", onClick: () => this.setActiveTool("projection"), title: "Select point or segment to project, then line to project onto", imgSrc: projection },
+                    { key: "translation", label: t("translation"), onClick: () => this.setActiveTool("translation"), title: "Select object to translate, then vector", imgSrc: translation },
+                    { key: "rotation", label: t("rotation"), onClick: () => this.setActiveTool("rotation"), title: "Select object to rotate and center point, then enter angle", imgSrc: rotation },
+                    { key: "scaling", label: t("scaling"), onClick: () => this.setActiveTool("scaling"), title: "Select object, then center point, then enter factor", imgSrc: dilate },
+                    { key: "reflect_point", label: t("reflectPoint"), onClick: () => this.setActiveTool("reflect_point"), title: "Select object to reflect, then center point", imgSrc: reflect_point },
+                    { key: "reflect_line", label: t("reflectLine"), onClick: () => this.setActiveTool("reflect_line"), title: "Select object to reflect, then line of reflection", imgSrc: reflect_line },
+                    { key: "projection", label: t("projection"), onClick: () => this.setActiveTool("projection"), title: "Select point or segment to project, then line to project onto", imgSrc: projection },
                 ]
             }
         ];
@@ -757,110 +758,110 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
     render(): React.ReactNode {
         const toolCategories = [
             {
-                name: "Basic Tools",
+                name: t("basicTools"),
                 tools: [
-                    { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
-                    { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex", imgSrc: pyramid },
-                    { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere", imgSrc: sphere_2_points },
-                    { key: "plane_3_points", label: "Plane through 3 Points", onClick: () => this.setActiveTool("plane_3_points"), title: "Select 3 points", imgSrc: plane_3_points },
-                    { key: "edit", label: "Edit", onClick: () => this.setActiveTool("edit"), title: "Move the objects or View", imgSrc: edit }
+                    { key: "point", label: t("point"), onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
+                    { key: "pyramid", label: t("pyramid"), onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex", imgSrc: pyramid },
+                    { key: "sphere_2_points", label: t("sphere2Points"), onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere", imgSrc: sphere_2_points },
+                    { key: "plane_3_points", label: t("plane3Points"), onClick: () => this.setActiveTool("plane_3_points"), title: "Select 3 points", imgSrc: plane_3_points },
+                    { key: "edit", label: t("edit"), onClick: () => this.setActiveTool("edit"), title: "Move the objects or View", imgSrc: edit }
                 ]
             },
             {
-                name: "Edit",
+                name: t("edit"),
                 tools: [
-                    { key: "delete", label: "Delete", onClick: () => this.setActiveTool("delete"), title: "Select the object to delete", imgSrc: deleteObject },
-                    { key: "show_label", label: "Show / Hide Label", onClick: () => this.setActiveTool("show_label"), title: "Select object", imgSrc: showLabel },
-                    { key: "show_object", label: "Show / Hide Object", onClick: () => this.setActiveTool("show_object"), title: "Select object", imgSrc: showObject },
-                    { key: "undo", label: "Undo", onClick: () => this.setActiveTool("undo"), title: "Undo the process", imgSrc: iconundo },
-                    { key: "redo", label: "Redo", onClick: () => this.setActiveTool("redo"), title: "Redo the process", imgSrc: iconredo },
-                    { key: "clear", label: "Clear", onClick: () => this.setActiveTool("clear"), title: "Clear all objects", imgSrc: deleteAll }
+                    { key: "delete", label: t("delete"), onClick: () => this.setActiveTool("delete"), title: "Select the object to delete", imgSrc: deleteObject },
+                    { key: "show_label", label: t("showLabel"), onClick: () => this.setActiveTool("show_label"), title: "Select object", imgSrc: showLabel },
+                    { key: "show_object", label: t("showObject"), onClick: () => this.setActiveTool("show_object"), title: "Select object", imgSrc: showObject },
+                    { key: "undo", label: t("undo"), onClick: () => this.setActiveTool("undo"), title: "Undo the process", imgSrc: iconundo },
+                    { key: "redo", label: t("redo"), onClick: () => this.setActiveTool("redo"), title: "Redo the process", imgSrc: iconredo },
+                    { key: "clear", label: t("clear"), onClick: () => this.setActiveTool("clear"), title: "Clear all objects", imgSrc: deleteAll }
                 ]
             },
             {
-                name: "Construct",
+                name: t("construct"),
                 tools: [
-                    { key: "midpoint", label: "Midpoint or Center", onClick: () => this.setActiveTool("midpoint"), title: "Select 2 points, a segment or a circle", imgSrc: midpoint_center },
-                    { key: "perpendicular", label: "Perpendicular Line", onClick: () => this.setActiveTool("perpendicular"), title: "Select perpendicular line or plane, then a point", imgSrc: perpen_line_3d },
-                    { key: "perpendicular_bisector", label: "Perpendicular Bisector", onClick: () => this.setActiveTool("perpendicular_bisector"), title: "Select 2 points or a segment", imgSrc: perpen_bisector_plane },
-                    { key: "parallel", label: "Parallel Line", onClick: () => this.setActiveTool("parallel"), title: "Select parallel line and point", imgSrc: parallel_line },
-                    { key: "angle_bisector", label: "Angle Bisector", onClick: () => this.setActiveTool("angle_bisector"), title: "Select 2 lines, or 3 points", imgSrc: angle_bisector },
-                    { key: "tangent", label: "Tangents", onClick: () => this.setActiveTool("tangent"), title: "Select point, then circle", imgSrc: tangents },
+                    { key: "midpoint", label: t("midpoint"), onClick: () => this.setActiveTool("midpoint"), title: "Select 2 points, a segment or a circle", imgSrc: midpoint_center },
+                    { key: "perpendicular", label: t("perpendicular"), onClick: () => this.setActiveTool("perpendicular"), title: "Select perpendicular line or plane, then a point", imgSrc: perpen_line_3d },
+                    { key: "perpendicular_bisector", label: t("perpendicularBisector"), onClick: () => this.setActiveTool("perpendicular_bisector"), title: "Select 2 points or a segment", imgSrc: perpen_bisector_plane },
+                    { key: "parallel", label: t("parallel"), onClick: () => this.setActiveTool("parallel"), title: "Select parallel line and point", imgSrc: parallel_line },
+                    { key: "angle_bisector", label: t("angleBisector"), onClick: () => this.setActiveTool("angle_bisector"), title: "Select 2 lines, or 3 points", imgSrc: angle_bisector },
+                    { key: "tangent", label: t("tangents"), onClick: () => this.setActiveTool("tangent"), title: "Select point, then circle", imgSrc: tangents },
                 ]
             },
             {
-                name: "Points",
+                name: t("points"),
                 tools: [
-                    { key: "point", label: "Point", onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
-                    { key: "intersection", label: "Intersect", onClick: () => this.setActiveTool("intersection"), title: "Select intersection or 2 objects", imgSrc: intersection },
+                    { key: "point", label: t("point"), onClick: () => this.setActiveTool("point"), title: "Select position or object", imgSrc: newPoint },
+                    { key: "intersection", label: t("intersection"), onClick: () => this.setActiveTool("intersection"), title: "Select intersection or 2 objects", imgSrc: intersection },
                 ]
             },
             {
-                name: "Measure",
+                name: t("measure"),
                 tools: [
-                    { key: "angle", label: "Angle", onClick: () => this.setActiveTool("angle"), title: "Select 2 lines or 3 points", imgSrc: angle },
-                    { key: "length", label: "Distance or Length", onClick: () => this.setActiveTool("length"), title: "Select 2 points or segment, polygon, circle", imgSrc: length },
-                    { key: "area", label: "Area", onClick: () => this.setActiveTool("area"), title: "Select polygon or circle for normal area calculation, solid for surface area", imgSrc: area },
-                    { key: "volume", label: "Volume", onClick: () => this.setActiveTool("volume"), title: "Select a solid (pyramid, sphere, prism, etc.)", imgSrc: volume }
+                    { key: "angle", label: t("angle"), onClick: () => this.setActiveTool("angle"), title: "Select 2 lines or 3 points", imgSrc: angle },
+                    { key: "length", label: t("length"), onClick: () => this.setActiveTool("length"), title: "Select 2 points or segment, polygon, circle", imgSrc: length },
+                    { key: "area", label: t("area"), onClick: () => this.setActiveTool("area"), title: "Select polygon or circle for normal area calculation, solid for surface area", imgSrc: area },
+                    { key: "volume", label: t("volume"), onClick: () => this.setActiveTool("volume"), title: "Select a solid (pyramid, sphere, prism, etc.)", imgSrc: volume }
                 ]
             },
             {
-                name: "Lines",
+                name: t("lines"),
                 tools: [
-                    { key: "vector", label: "Vector", onClick: () => this.setActiveTool("vector"), title: "Select 2 points", imgSrc: vector },
-                    { key: "line", label: "Line", onClick: () => this.setActiveTool("line"), title: "Select 2 points", imgSrc: line },
-                    { key: "ray", label: "Ray", onClick: () => this.setActiveTool("ray"), title: "Select 2 points", imgSrc: ray },
-                    { key: "segment", label: "Segment", onClick: () => this.setActiveTool("segment"), title: "Select 2 points", imgSrc: segment },
-                    { key: "segment_length", label: "Segment with Given Length", onClick: () => this.setActiveTool("segment_length"), title: "Select point, then enter length", imgSrc: segment_length },
+                    { key: "vector", label: t("vector"), onClick: () => this.setActiveTool("vector"), title: "Select 2 points", imgSrc: vector },
+                    { key: "line", label: t("line"), onClick: () => this.setActiveTool("line"), title: "Select 2 points", imgSrc: line },
+                    { key: "ray", label: t("ray"), onClick: () => this.setActiveTool("ray"), title: "Select 2 points", imgSrc: ray },
+                    { key: "segment", label: t("segment"), onClick: () => this.setActiveTool("segment"), title: "Select 2 points", imgSrc: segment },
+                    { key: "segment_length", label: t("segmentLength"), onClick: () => this.setActiveTool("segment_length"), title: "Select point, then enter length", imgSrc: segment_length },
                 ]
             },
             {
-                name: "Planes",
+                name: t("planes"),
                 tools: [
-                    { key: "plane_3_points", label: "Plane through 3 Points", onClick: () => this.setActiveTool("plane_3_points"), title: "Select 3 points", imgSrc: plane_3_points },
-                    { key: "plane", label: "Plane", onClick: () => this.setActiveTool("plane"), title: "Select 3 points, or point and line, or 2 lines, or polygon", imgSrc: plane },
-                    { key: "parallel_plane", label: "Parallel Plane", onClick: () => this.setActiveTool("parallel_plane"), title: "Select point and parallel plane", imgSrc: parallel_plane },
-                    { key: "perpendicular_plane", label: "Perpendicular Plane", onClick: () => this.setActiveTool("perpendicular_plane"), title: "Select point and perpendicular line", imgSrc: perpendicular_plane },
-                    { key: "perpendicular_bisector", label: "Perpendicular Bisector", onClick: () => this.setActiveTool("perpendicular_bisector"), title: "Select 2 points or a segment", imgSrc: perpen_bisector_plane }
+                    { key: "plane_3_points", label: t("plane3Points"), onClick: () => this.setActiveTool("plane_3_points"), title: "Select 3 points", imgSrc: plane_3_points },
+                    { key: "plane", label: t("plane"), onClick: () => this.setActiveTool("plane"), title: "Select 3 points, or point and line, or 2 lines, or polygon", imgSrc: plane },
+                    { key: "parallel_plane", label: t("parallelPlane"), onClick: () => this.setActiveTool("parallel_plane"), title: "Select point and parallel plane", imgSrc: parallel_plane },
+                    { key: "perpendicular_plane", label: t("perpendicularPlane"), onClick: () => this.setActiveTool("perpendicular_plane"), title: "Select point and perpendicular line", imgSrc: perpendicular_plane },
+                    { key: "perpendicular_bisector", label: t("perpendicularBisectorPlane"), onClick: () => this.setActiveTool("perpendicular_bisector"), title: "Select 2 points or a segment", imgSrc: perpen_bisector_plane }
                 ]
             },
             {
-                name: "Solids",
+                name: t("solids"),
                 tools: [
-                    { key: "pyramid", label: "Pyramid", onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex", imgSrc: pyramid },
-                    { key: "tetrahedron", label: "Tetrahedron", onClick: () => this.setActiveTool("tetrahedron"), title: "Select 3 points on the same plane, then apex", imgSrc: tetrahedron },
-                    { key: "sphere_2_points", label: "Sphere: Center & Point", onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere", imgSrc: sphere_2_points },
-                    { key: "sphere", label: "Sphere: Center & Radius", onClick: () => this.setActiveTool("sphere"), title: "Select a center, then enter radius", imgSrc: sphere_radius },
-                    { key: "cone", label: "Cone", onClick: () => this.setActiveTool("cone"), title: "Select a bottom point, then top point, then enter radius", imgSrc: cone },
-                    { key: "cylinder", label: "Cylinder", onClick: () => this.setActiveTool("cylinder"), title: "Select a bottom point, then top point, then enter radius", imgSrc: cylinder },
-                    { key: "prism", label: "Prism", onClick: () => this.setActiveTool("prism"), title: "Select a polygon for bottom, then enter its height", imgSrc: prism },
+                    { key: "pyramid", label: t("pyramid"), onClick: () => this.setActiveTool("pyramid"), title: "Select a polygon for bottom, then select apex", imgSrc: pyramid },
+                    { key: "tetrahedron", label: t("tetrahedron"), onClick: () => this.setActiveTool("tetrahedron"), title: "Select 3 points on the same plane, then apex", imgSrc: tetrahedron },
+                    { key: "sphere_2_points", label: t("sphere2Points"), onClick: () => this.setActiveTool("sphere_2_points"), title: "Select a center, then point on sphere", imgSrc: sphere_2_points },
+                    { key: "sphere", label: t("sphere"), onClick: () => this.setActiveTool("sphere"), title: "Select a center, then enter radius", imgSrc: sphere_radius },
+                    { key: "cone", label: t("cone"), onClick: () => this.setActiveTool("cone"), title: "Select a bottom point, then top point, then enter radius", imgSrc: cone },
+                    { key: "cylinder", label: t("cylinder"), onClick: () => this.setActiveTool("cylinder"), title: "Select a bottom point, then top point, then enter radius", imgSrc: cylinder },
+                    { key: "prism", label: t("prism"), onClick: () => this.setActiveTool("prism"), title: "Select a polygon for bottom, then enter its height", imgSrc: prism },
                 ]
             },
             {
-                name: "Circles",
+                name: t("circles"),
                 tools: [
-                    { key: "circle_axis_point", label: "Circle with Axis through Point", onClick: () => this.setActiveTool("circle_axis_point"), title: "Select an axis, then point on circle", imgSrc: circle_point_axis },
-                    { key: "circle_center_direction", label: "Circle: Center, Radius and Direction", onClick: () => this.setActiveTool("circle_center_direction"), title: "Select center point, then direction, then enter radius", imgSrc: circle_center_radius_direction },
-                    { key: "circumcircle", label: "Circle through 3 points", onClick: () => this.setActiveTool("circumcircle"), title: "Select 3 points on the circle", imgSrc: circumcenter },
+                    { key: "circle_axis_point", label: t("circleAxisPoint"), onClick: () => this.setActiveTool("circle_axis_point"), title: "Select an axis, then point on circle", imgSrc: circle_point_axis },
+                    { key: "circle_center_direction", label: t("circleCenterDirection"), onClick: () => this.setActiveTool("circle_center_direction"), title: "Select center point, then direction, then enter radius", imgSrc: circle_center_radius_direction },
+                    { key: "circumcircle", label: t("circumcircle"), onClick: () => this.setActiveTool("circumcircle"), title: "Select 3 points on the circle", imgSrc: circumcenter },
                 ]
             },
             {
-                name: "Polygon",
+                name: t("polygon"),
                 tools: [
-                    { key: "polygon", label: "Polygon", onClick: () => this.setActiveTool("polygon"), title: "Select all vertices on the same plane, then click on the first point again", imgSrc: polygon },
-                    { key: "reg_polygon", label: "Regular Polygon", onClick: () => this.setActiveTool("reg_polygon"), title: "Select 2 points, then direction, then enter number of vertices", imgSrc: reg_polygon },
+                    { key: "polygon", label: t("polygon"), onClick: () => this.setActiveTool("polygon"), title: "Select all vertices on the same plane, then click on the first point again", imgSrc: polygon },
+                    { key: "reg_polygon", label: t("regPolygon"), onClick: () => this.setActiveTool("reg_polygon"), title: "Select 2 points, then direction, then enter number of vertices", imgSrc: reg_polygon },
                 ]
             },
             {
-                name: "Transform",
+                name: t("transform"),
                 tools: [
-                    { key: "translation", label: "Translate by Vector", onClick: () => this.setActiveTool("translation"), title: "Select object to translate, then vector", imgSrc: translation },
-                    { key: "rotation", label: "Rotate around Point", onClick: () => this.setActiveTool("rotation"), title: "Select object to rotate and center point, then enter angle", imgSrc: rotation },
-                    { key: "scaling", label: "Dilate from Point", onClick: () => this.setActiveTool("scaling"), title: "Select object, then center point, then enter factor", imgSrc: dilate },
-                    { key: "reflect_point", label: "Reflect about Point", onClick: () => this.setActiveTool("reflect_point"), title: "Select object to reflect, then center point", imgSrc: reflect_point },
-                    { key: "reflect_line", label: "Reflect about Line", onClick: () => this.setActiveTool("reflect_line"), title: "Select object to reflect, then line of reflection", imgSrc: reflect_line },
-                    { key: "reflect_plane", label: "Reflect about Plane", onClick: () => this.setActiveTool("reflect_plane"), title: "Select object to reflect, then plane of reflection", imgSrc: reflect_plane },
-                    { key: "projection", label: "Project to Plane", onClick: () => this.setActiveTool("projection"), title: "Select point or segment to project, then plane to project onto", imgSrc: plane_projection },
+                    { key: "translation", label: t("translation"), onClick: () => this.setActiveTool("translation"), title: "Select object to translate, then vector", imgSrc: translation },
+                    { key: "rotation", label: t("rotation"), onClick: () => this.setActiveTool("rotation"), title: "Select object to rotate and center point, then enter angle", imgSrc: rotation },
+                    { key: "scaling", label: t("scaling"), onClick: () => this.setActiveTool("scaling"), title: "Select object, then center point, then enter factor", imgSrc: dilate },
+                    { key: "reflect_point", label: t("reflectPoint"), onClick: () => this.setActiveTool("reflect_point"), title: "Select object to reflect, then center point", imgSrc: reflect_point },
+                    { key: "reflect_line", label: t("reflectLine"), onClick: () => this.setActiveTool("reflect_line"), title: "Select object to reflect, then line of reflection", imgSrc: reflect_line },
+                    { key: "reflect_plane", label: t("reflectPlane"), onClick: () => this.setActiveTool("reflect_plane"), title: "Select object to reflect, then plane of reflection", imgSrc: reflect_plane },
+                    { key: "projection", label: t("projectPlane"), onClick: () => this.setActiveTool("projection"), title: "Select point or segment to project, then plane to project onto", imgSrc: plane_projection },
                 ]
             }
         ];

@@ -4,6 +4,7 @@ import { GeometryTool3D } from "./Geometry/GeometryTool";
 import { DrawingMode, ShapeNode3D, Point, Shape } from "../../types/geometry";
 import { AnimationTool3D } from "./Animation/AnimationTool3D";
 import * as constants from '../../types/constants';
+import { t } from "../../translation/i18n";
 import Geometry from '../../assets/images/Geometry.svg';
 import Animation from '../../assets/images/Animation.svg';
 import Setting from '../../assets/images/Setting.svg';
@@ -72,7 +73,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                         onClick={(e) => this.changeMode('algebra', e)}
                                     >
                                         <img src={Algebra} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
-                                        <div className="label">Algebra</div>
+                                        <div className="label">{t("algebra")}</div>
                                     </button>
                                     <button
                                         type="button"
@@ -80,7 +81,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                         onClick={(e) => this.changeMode('geometry', e)}
                                     >
                                         <img src={Geometry} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
-                                        <div className="label">Geometry</div>
+                                        <div className="label">{t("geometry")}</div>
                                     </button>
                                     <button
                                         type="button"
@@ -88,7 +89,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                         onClick={(e) => this.changeMode('animation', e)}
                                     >
                                         <img src={Animation} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
-                                        <div className="label">Animation</div>
+                                        <div className="label">{t("animation")}</div>
                                     </button>
                                     <button
                                         type="button"
@@ -96,7 +97,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                         onClick={(e) => this.changeMode('setting', e)}
                                     >
                                         <img src={Setting} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
-                                        <div className="label">Setting</div>
+                                        <div className="label">{t("setting")}</div>
                                     </button>
                                 </div>
                             </div>
