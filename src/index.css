@@ -692,10 +692,6 @@ input[type=text].TextField {
     font-size: 14px;
 }
 
-button img {
-    pointer-events: none;
-}
-
 .okButton {
     padding: 0px 16px;
     background: #a7d3d2;

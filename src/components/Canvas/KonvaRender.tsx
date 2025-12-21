@@ -7649,7 +7649,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
         position: { x: number, y: number },
         children: Konva.Shape[]
     ): void => {
-        let shape = children.length > 0 ? children[children.length - 1] : undefined;
         let scaleFactor: number | undefined = undefined;
         let rotFactor: { degree: number, CCW: boolean } | undefined = undefined;
         const DAG = utils.cloneDAG(this.props.dag);
@@ -7732,50 +7731,7 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             point.type = 'Intersection';
         }
 
-        else if (shape) {
-            pNode.off('dragmove');
-            pNode.on('dragmove', (e) => {
-                if (this.props.mode !== 'edit') {
-                    return;
-                }
-
-                e.cancelBubble = true;
-                let stage = e.target.getStage();
-                let pos = {
-                    x: 0,
-                    y: 0
-                }
-
-                if (stage) {
-                    stage.container().style.cursor = 'pointer';
-                    pos = stage.getPointerPosition() ?? pos;
-                }
-
-                const updateFn = (node: ShapeNode): ShapeNode => {
-                    let posInfo = utils.snapToShape(
-                        DAG, shape, pos, this.layerMathObjectRef.current!, this.props.isSnapToGrid,
-                        this.props.stageRef.current!, this.props.geometryState.axisTickInterval
-                    );
-
-                    position = posInfo.position;
-                    rotFactor = posInfo.rotFactor;
-                    scaleFactor = posInfo.scaleFactor;
-                    node.node!.position(position);
-                    this.updatePointPos(node.type as Point, position.x, position.y);
-
-                    if (!this.isBatchUpdating && this.layerUnchangeVisualRef.current) {
-                        let label = this.layerUnchangeVisualRef.current.getChildren().find(labelNode => labelNode.id().includes(node.node!.id()));
-                        if (label) {
-                            label.setAttrs(this.createLabel(node).getAttrs());
-                        }
-                    }
-
-                    return { ...node };
-                };
-
-                this.updateAndPropagateBatch([pNode.id()], updateFn);
-            })
-        }
+        console.log(point.type);
 
         let shapeNode: ShapeNode = {
             id: point.props.id,

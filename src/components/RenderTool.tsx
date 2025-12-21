@@ -34,6 +34,8 @@ const RenderTool: React.FC<RenderToolProps> = ({
     const token = sessionStorage.getItem("token");
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
+    const navigatedToolRef = React.useRef<"2d-graph" | "3d-graph" | null>(null);
+
     useEffect(() => {
         if (idRef.current[selectedTool as "2d-graph" | "3d-graph"].length === 0) {
             const createNewProject = async () => {
@@ -75,9 +77,6 @@ const RenderTool: React.FC<RenderToolProps> = ({
                 setProject(newProject);
                 updateId(newId);
                 setLoading(false);
-
-                // Navigate using new project ID
-                navigate(`/view/project/${newProject._id}`);
             }
 
             createNewProject();
@@ -101,7 +100,6 @@ const RenderTool: React.FC<RenderToolProps> = ({
 
             const data = await res.json();
             setProject(data);
-            navigate(`/view/project/${idRef.current[selectedTool as "2d-graph" | "3d-graph"]}`)
         })
         .catch((err) => console.error(err))
         .finally(() => setLoading(false));
@@ -112,6 +110,13 @@ const RenderTool: React.FC<RenderToolProps> = ({
 
     if (loading) return <div className="p-5 text-center">{t("loadingProject")}</div>;
     if (!project) return <div className="p-5 text-center">{t("projectNotFound")}</div>;
+    useEffect(() => {
+        if (!project || loading) return;
+        if (navigatedToolRef.current === selectedTool) return;
+        navigatedToolRef.current = selectedTool as "2d-graph" | "3d-graph" | null;
+        navigate(`/view/project/${project._id}`, { replace: true });
+    }, [project, loading, selectedTool, navigate]);
+    
     if (selectedTool === '2d-graph') {
         return (
             <Suspense fallback={<div className="p-5 text-center">{t("loadingProject")}</div>}>

@@ -448,16 +448,16 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                     style={{
                         width: this.props.width,
                         height: this.props.height,
-                        padding: "8px 0px 14px 16px"
+                        padding: "8px 0px 14px 16px",
                     }}
                 >
                 {toolCategories.map((category) => (
                     <div key={category.name}
                         className={`tool-category ${this.state.openCategory.includes(category.name) ? "open" : ""}`}
+                        style={{cursor: 'pointer'}}
                     >
                         <div className="catLabel text-neutral-900" 
                             onClick={() => this.toolCategoryClicked(category.name)}
-                            style={{cursor: 'pointer'}}
                         >
                             <span>{category.name}</span>
                             <div className={`arrowBox ${this.state.openCategory.includes(category.name) ? "open" : ""}`}>
