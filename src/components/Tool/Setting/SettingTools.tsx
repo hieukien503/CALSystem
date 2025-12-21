@@ -1,5 +1,10 @@
 import React from 'react';
 import { t } from "../../../translation/i18n"
+import Load from '../../../assets/images/Load.svg';
+import Save from '../../../assets/images/Save.svg';
+import Documentation from '../../../assets/images/Documentation.svg';
+import Export from '../../../assets/images/Export.svg';
+
 
 interface ButtonProps {
     label: string;
@@ -18,13 +23,7 @@ class Button extends React.Component<ButtonProps> {
                 onClick={this.props.onClick}
                 title={this.props.title}
             >
-                <img
-                    src={this.props.imgSrc}
-                    className="image"
-                    draggable="false"
-                    tabIndex={-1}
-                    alt=""
-                />
+                <img src={this.props.imgSrc} className="image" draggable="false" tabIndex={-1} alt="" style={{paddingBottom: 0}}></img>
                 <div className="label">{this.props.label}</div>
             </button>                 
         );
@@ -57,11 +56,17 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
 
         if (tool === "documentation") {
             this.props.onLoadDocumentation();
-        } else if (tool === "save") {
+        } 
+      
+        else if (tool === "save") {
             this.props.onSaveProject();
-        } else if (tool === "load") {
+        } 
+      
+        else if (tool === "load") {
             this.props.onLoadProject();
-        } else if (tool === "export") {
+        } 
+      
+        else if (tool === "export") {
             this.props.onExport();
         }
     };
@@ -92,7 +97,7 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                     <Button
                         label={t("save")}
                         title={t("saveProject")}
-                        imgSrc="assets/icons/save_icon.svg"
+                        imgSrc={Save}
                         onClick={() => this.setSelectedTool("save")}
                         selected={this.state.selectedTool === "save"}
                     />
@@ -100,7 +105,7 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                     <Button
                         label={t("load")}
                         title={t("loadProject")}
-                        imgSrc="assets/icons/load_icon.svg"
+                        imgSrc={Load}
                         onClick={() => this.setSelectedTool("load")}
                         selected={this.state.selectedTool === "load"}
                     />
@@ -108,7 +113,7 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                     <Button
                         label={t("documentation")}
                         title={t("userGuide")}
-                        imgSrc="assets/icons/pdf.svg"
+                        imgSrc={Documentation}
                         onClick={() => this.setSelectedTool("documentation")}
                         selected={this.state.selectedTool === "documentation"}
                     />
@@ -116,7 +121,7 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                     <Button
                         label={t("export")}
                         title={t("exportProject")}
-                        imgSrc="assets/icons/export_icon.svg"
+                        imgSrc={Export}
                         onClick={() => this.setSelectedTool("export")}
                         selected={this.state.selectedTool === "export"}
                     />

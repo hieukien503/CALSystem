@@ -592,6 +592,15 @@ button {
     min-height: 68px;
 }
 
+.rename-panel {
+    margin-bottom: 8px;
+    display: flex;
+    min-height: 68px;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
 select.angleDropDown {
     width: 100%;
     border: 1px solid #46443f;
@@ -681,6 +690,10 @@ input[type=text].TextField {
     cursor: pointer;
     padding: 0px 16px;
     font-size: 14px;
+}
+
+button img {
+    pointer-events: none;
 }
 
 .okButton {

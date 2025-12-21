@@ -10,6 +10,7 @@
     "@pixi-essentials/svg": "^3.0.0",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
+    "@tanstack/react-query": "^5.90.12",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

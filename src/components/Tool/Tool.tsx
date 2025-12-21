@@ -6,6 +6,10 @@ import { Point, Shape, ShapeNode, DrawingMode } from '../../types/geometry'
 import * as constants from "../../types/constants"
 import SettingTools from "./Setting/SettingTools";
 import { t } from "../../translation/i18n";
+import Geometry from '../../assets/images/Geometry.svg';
+import Animation from '../../assets/images/Animation.svg';
+import Setting from '../../assets/images/Setting.svg';
+import Algebra from '../../assets/images/Algebra.svg';
 
 interface TimelineItem {
     object: string;
@@ -67,6 +71,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'algebra' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('algebra', e)}
                                     >
+                                        <img src={Algebra} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
                                         <div className="label">{t("algebra")}</div>
                                     </button>
                                     <button
@@ -74,6 +79,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'geometry' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('geometry', e)}
                                     >
+                                        <img src={Geometry} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
                                         <div className="label">{t("geometry")}</div>
                                     </button>
                                     <button
@@ -81,6 +87,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'animation' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('animation', e)}
                                     >
+                                        <img src={Animation} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
                                         <div className="label">{t("animation")}</div>
                                     </button>
                                     <button
@@ -88,6 +95,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
                                         className={`button tabButton${this.props.width > 0 ? (this.state.mode === 'setting' ? " selected" : "") : ""}`}
                                         onClick={(e) => this.changeMode('setting', e)}
                                     >
+                                        <img src={Setting} className="image" draggable="false" tabIndex={-1} alt="" style={{marginLeft: 9, width: 24, height: 24}}></img>
                                         <div className="label">{t("setting")}</div>
                                     </button>
                                 </div>

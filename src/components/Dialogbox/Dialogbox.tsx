@@ -1,4 +1,5 @@
 import React, { createRef, RefObject } from 'react';
+import { Link } from 'react-router-dom';
 
 interface DialogboxProps {
     title: string;
@@ -146,7 +147,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                     >
                         <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Save Changes' : 'OK'}</div>
                     </button>
-                    {this.props.onDiscardClick && <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
+                    {this.props.title === 'Unsaved Changes' || this.props.title === 'Rename Pr' && <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
                         <div className='label'>Discard</div>
                     </button>}
                     <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
@@ -200,7 +201,17 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                         }}>
                                             <option value="toPNG">PNG Image</option>
                                             <option value="toJPEG">JPG Image</option>
+                                            <option value="toManim">Manim video</option>
                                         </select>
+                                        {this.state.value_from_input === 'toManim' && 
+                                            <a
+                                                href="https://www.manim.community/"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                What is Manim?
+                                            </a>
+                                        }
                                     </div>
                                 </div>
                                 {buttonNode}
@@ -242,9 +253,9 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                             </div>
                                         </div>
                                         {this.props.title === 'Rename Project' &&
-                                            <>
+                                            <div className='rename-panel'>
                                                 <div className='inputLabel text-neutral-700'>Save this project to</div>
-                                                    <div className='radioButtonPanel'>
+                                                    <div className='radioButtonPanel' style={{display: 'flex', gap: 120}}>
                                                     <div className={`radioButton${this.state.isCCW ? " selected" : ""}`}
                                                         onClick={() => this.setState({isCCW: true})}
                                                     >
@@ -264,7 +275,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                         <div className='label'>Your account</div>
                                                     </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         }
                                         {this.props.rotationMode && 
                                             <div className='radioButtonPanel'>
