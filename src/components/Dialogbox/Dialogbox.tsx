@@ -1,7 +1,7 @@
 import React, { createRef, RefObject } from 'react';
-import { Link } from 'react-router-dom';
+import { withTranslation, WithTranslation } from 'react-i18next';
 
-interface DialogboxProps {
+interface DialogboxProps extends WithTranslation {
     title: string;
     input_label: string;
     rotationMode: boolean;
@@ -26,7 +26,7 @@ interface DialogboxState {
     loadingProjects: boolean;
 }
 
-class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
+export class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
     private dialogRef: RefObject<HTMLDivElement | null> = createRef();
     private inputRef: RefObject<HTMLInputElement | null> = createRef();
     constructor(props: DialogboxProps) {
@@ -115,12 +115,13 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
     render(): React.ReactNode {
         const { x, y } = this.props.position;
         let reactNode: React.ReactNode | null = null;
+        const { t } = this.props;
         if (this.props.title === 'Save sucessfully') {
             reactNode = (
                 <div className='dialogMainPanel'>
-                    <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
+                    <div className='dialogTitle text-neutral-900'>{t(this.props.title)}</div>
                     <div className='dialogContent'>
-                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                        <div className='inputLabel text-neutral-700'>{t(this.props.input_label)}</div>
                     </div>
                     <div className='dialogButtonPanel'>
                         <button type='button' className='okButton'
@@ -145,13 +146,13 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                             this.props.onSubmitClick(value.length === 0 ? (this.props.angleMode ? "0to360" : "toPNG") : value, this.state.isCCW);
                         }}
                     >
-                        <div className='label'>{this.props.title === 'Unsaved Changes' ? 'Save Changes' : 'OK'}</div>
+                        <div className='label'>{this.props.title === 'Unsaved Changes' ? t('Save Changes') : 'OK'}</div>
                     </button>
-                    {this.props.title === 'Unsaved Changes' || this.props.title === 'Rename Pr' && <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
-                        <div className='label'>Discard</div>
+                    {this.props.title === 'Unsaved Changes' || this.props.title === 'Rename Project' && <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
+                        <div className='label'>{t('Discard')}</div>
                     </button>}
                     <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
-                        <div className='label'>Cancel</div>
+                        <div className='label'>{t('Cancel')}</div>
                     </button>
                 </div>
             );
@@ -163,7 +164,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                             <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
                             <div className='dialogContent'>
                                 <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
-                                    <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                    <div className='inputLabel text-neutral-700'>{t(this.props.input_label)}</div>
                                     <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
                                         const value = e.target.value;
                                         this.setState({ value_from_input: value });
@@ -172,10 +173,10 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                             this.fetchProjects();
                                         }
                                     }}>
-                                        <option value="loadFromFile">Load Project from File</option>
-                                        {this.props.loadProjectMode === 'user' && <option value="loadExisted">Load Existed Project</option>}
+                                        <option value="loadFromFile">{t('Load Project from File')}</option>
+                                        {this.props.loadProjectMode === 'user' && <option value="loadExisted">{t('Load Existed Project')}</option>}
                                     </select>
-                                    {this.state.loadingProjects && <option>Loading...</option>}
+                                    {this.state.loadingProjects && <option>{t('Loading...')}</option>}
                                     {this.state.projectList.map(project => (
                                         <option key={project._id} value={project._id}>
                                             {project.title}
@@ -195,13 +196,13 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                 <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
                                 <div className='dialogContent'>
                                     <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
-                                        <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                        <div className='inputLabel text-neutral-700'>{t(this.props.input_label)}</div>
                                         <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
                                             this.setState({ value_from_input: e.target.value })
                                         }}>
-                                            <option value="toPNG">PNG Image</option>
-                                            <option value="toJPEG">JPG Image</option>
-                                            <option value="toManim">Manim video</option>
+                                            <option value="toPNG">{t('PNG Image')}</option>
+                                            <option value="toJPEG">{t('JPG Image')}</option>
+                                            <option value="toManim">{t('Manim video')}</option>
                                         </select>
                                         {this.state.value_from_input === 'toManim' && 
                                             <a
@@ -209,7 +210,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
-                                                What is Manim?
+                                                {t('What is Manim?')}
                                             </a>
                                         }
                                     </div>
@@ -222,7 +223,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                     else {
                         reactNode = (
                             <div className='dialogMainPanel'>
-                                <div className='dialogTitle text-neutral-900'>{this.props.title}</div>
+                                <div className='dialogTitle text-neutral-900'>{t(this.props.title)}</div>
                                 <div className='dialogContent'>
                                     <>
                                         <div>
@@ -230,7 +231,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                 onMouseEnter={this.activeInputHover}
                                                 onMouseLeave={this.deactiveInputHover}
                                             >
-                                                <div className='inputLabel text-neutral-700'>{this.props.input_label}</div>
+                                                <div className='inputLabel text-neutral-700'>{t(this.props.input_label)}</div>
                                                 <div className='textField'>
                                                     <div className='TextFieldW'>
                                                         <div className='fieldContainer'>
@@ -249,12 +250,12 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                {this.props.inputError.label.length > 0 && <div className='errorLabel'>{this.props.inputError.label}</div>}
+                                                {this.props.inputError.label.length > 0 && <div className='errorLabel'>{t(this.props.inputError.label)}</div>}
                                             </div>
                                         </div>
                                         {this.props.title === 'Rename Project' &&
                                             <div className='rename-panel'>
-                                                <div className='inputLabel text-neutral-700'>Save this project to</div>
+                                                <div className='inputLabel text-neutral-700'>{t('Save this project to')}</div>
                                                     <div className='radioButtonPanel' style={{display: 'flex', gap: 120}}>
                                                     <div className={`radioButton${this.state.isCCW ? " selected" : ""}`}
                                                         onClick={() => this.setState({isCCW: true})}
@@ -263,7 +264,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                             <div className='outerCircle'></div>
                                                             <div className='innerCircle'></div>
                                                         </div>
-                                                        <div className='label'>Local device</div>
+                                                        <div className='label'>{t('Local device')}</div>
                                                     </div>
                                                     <div className={`radioButton${!this.state.isCCW ? " selected" : ""}`}
                                                         onClick={() => this.setState({isCCW: false})}
@@ -272,7 +273,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                             <div className='outerCircle'></div>
                                                             <div className='innerCircle'></div>
                                                         </div>
-                                                        <div className='label'>Your account</div>
+                                                        <div className='label'>{t('Your account')}</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -286,7 +287,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                         <div className='outerCircle'></div>
                                                         <div className='innerCircle'></div>
                                                     </div>
-                                                    <div className='label'>counterclockwise</div>
+                                                    <div className='label'>{t('counterclockwise')}</div>
                                                 </div>
                                                 <div className={`radioButton${!this.state.isCCW ? " selected" : ""}`}
                                                     onClick={() => this.setState({isCCW: false})}
@@ -295,7 +296,7 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                                         <div className='outerCircle'></div>
                                                         <div className='innerCircle'></div>
                                                     </div>
-                                                    <div className='label'>clockwise</div>
+                                                    <div className='label'>{t('clockwise')}</div>
                                                 </div>
                                             </div>
                                         }
@@ -347,4 +348,4 @@ class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
     }
 };
 
-export default Dialogbox;
+export default withTranslation(undefined, { withRef: true })(Dialogbox);

@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 interface Collaborator {
     _id?: string;
@@ -26,6 +26,7 @@ const EditProjectPage: React.FC = () => {
     const navigate = useNavigate();
     const token = sessionStorage.getItem("token");
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
+    const { t } = useTranslation();
 
     // Fetch project data
     useEffect(() => {
@@ -199,7 +200,7 @@ const EditProjectPage: React.FC = () => {
                                     <input
                                         type="email"
                                         className="form-control"
-                                        placeholder={t("email")}
+                                        placeholder={t("email") as string | undefined}
                                         value={col.email}
                                         onChange={(e) => updateCollaborator(index, "email", e.target.value)}
                                         required

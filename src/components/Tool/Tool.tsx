@@ -1,11 +1,11 @@
 import React from "react";
 import AlgebraTool from "./Algebra/AlgebraTool";
 import { GeometryTool } from "./Geometry/GeometryTool";
-import { AnimationTool } from "./Animation/AnimationTool";
+import AnimationTool from "./Animation/AnimationTool";
 import { Point, Shape, ShapeNode, DrawingMode } from '../../types/geometry'
 import * as constants from "../../types/constants"
 import SettingTools from "./Setting/SettingTools";
-import { t } from "../../translation/i18n";
+import { withTranslation, WithTranslation } from "react-i18next";
 import Geometry from '../../assets/images/Geometry.svg';
 import Animation from '../../assets/images/Animation.svg';
 import Setting from '../../assets/images/Setting.svg';
@@ -18,7 +18,7 @@ interface TimelineItem {
     action: string;
     tweens?: string[];
 }
-interface ToolProps {
+interface ToolProps extends WithTranslation {
     width: number;
     height: number;
     dag: Map<string, ShapeNode>;
@@ -57,6 +57,7 @@ class Tool extends React.Component<ToolProps, ToolState> {
     }
 
     render(): React.ReactNode {
+        const { t } = this.props;
         return (
             <div
                 className="dockPanelParent min-w-[72px]"
@@ -180,4 +181,4 @@ class Tool extends React.Component<ToolProps, ToolState> {
     }
 }
 
-export default Tool;
+export default withTranslation()(Tool);

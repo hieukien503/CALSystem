@@ -1,13 +1,13 @@
 import React, { createRef, RefObject } from "react";
 import KonvaCanvas from "../Canvas/KonvaRender";
 import Tool from "../Tool/Tool";
-import Dialogbox from "../Dialogbox/Dialogbox";
+import Dialogbox, { Dialogbox as DialogboxClass } from "../Dialogbox/Dialogbox";
 import { Point, GeometryState, Shape, ShapeNode, DrawingMode, HistoryEntry } from '../../types/geometry'
 import * as constants from '../../types/constants'
 import * as utils from '../../utils/utilities'
 import MenuItem from "../MenuItem";
 import Konva from "konva";
-import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
+import ErrorDialogbox, { ErrorDialogbox as ErrorDialogboxClass } from "../Dialogbox/ErrorDialogbox";
 import { SharingMode } from "../../types/types";
 import { serializeDAG, deserializeDAG } from "../../utils/serialize";
 import { NavigateFunction } from "react-router-dom";
@@ -101,8 +101,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         selectedPoints: Point[];
         selectedShapes: Shape[];
     } | null;
-    private dialogRef: RefObject<Dialogbox | null>;
-    private errorDialogRef: RefObject<ErrorDialogbox | null>;
+    private dialogRef: RefObject<DialogboxClass | null>;
+    private errorDialogRef: RefObject<ErrorDialogboxClass | null>;
     private dag: Map<string, ShapeNode> = new Map<string, ShapeNode>();
     private parts = window.location.pathname.split('/');
     private projectId = this.parts[this.parts.length - 1]; // last segment
@@ -165,8 +165,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             )
         ]; // Initialize history stack
         this.futureStack = new Array<HistoryEntry>();
-        this.dialogRef = createRef<Dialogbox | null>();
-        this.errorDialogRef = createRef<ErrorDialogbox | null>();
+        this.dialogRef = createRef<DialogboxClass | null>();
+        this.errorDialogRef = createRef<ErrorDialogboxClass | null>();
     }
 
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>> = (value) => {
@@ -1518,7 +1518,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.setState({
                 error: {
                     label: 'File export error',
-                    message: 'An error occurred while exporting the file to PNG.'
+                    message: 'An error occurred while exporting the file.'
                 }
             })
         }
@@ -1570,13 +1570,13 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     dag={this.dag}
                     onUpdateWidth={(width: number) => this.setState({ toolWidth: width, geometryState: { ...this.state.geometryState } })}
                     onSelect={this.handleSelectObject}
-                    onSetMode={(mode) => this.setMode(mode)}
+                    onSetMode={(mode: DrawingMode) => this.setMode(mode)}
                     selectedPoints={this.state.selectedPoints}
                     selectedShapes={this.state.selectedShapes}
                     stageRef={this.stageRef}
                     timeline={this.state.timeline}
                     setTimeline={this.setTimeline}
-                    onUpdateDAG={(dag) => this.updateAll(
+                    onUpdateDAG={(dag: Map<string, ShapeNode>) => this.updateAll(
                         {
                             gs: this.state.geometryState,
                             dag: dag,

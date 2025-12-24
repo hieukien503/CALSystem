@@ -1,10 +1,10 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useNavigate } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 
 const Home = () => {
+    const { t } = useTranslation();
     return (
         <div>
             <h1 className="upper-main"

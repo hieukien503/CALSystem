@@ -1,6 +1,6 @@
 import React, { createRef, RefObject } from "react";
-import Dialogbox from "../Dialogbox/Dialogbox";
-import ErrorDialogbox from "../Dialogbox/ErrorDialogbox";
+import Dialogbox, { Dialogbox as DialogboxClass } from "../Dialogbox/Dialogbox";
+import ErrorDialogbox, { ErrorDialogbox as ErrorDialogboxClass } from "../Dialogbox/ErrorDialogbox";
 import * as constants3D from '../../types/constants3D';
 import * as utils from '../../utils/utilities3D';
 import MenuItem from "../MenuItem";
@@ -95,8 +95,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         selectedPoints: Point[];
         selectedShapes: Shape[];
     } | null;
-    private dialogRef: RefObject<Dialogbox | null>;
-    private errorDialogRef: RefObject<ErrorDialogbox | null>;
+    private dialogRef: RefObject<DialogboxClass | null>;
+    private errorDialogRef: RefObject<ErrorDialogboxClass | null>;
     private dag: Map<string, ShapeNode3D> = new Map<string, ShapeNode3D>();
     //private stageRef: RefObject<Konva.Stage | null>;
     constructor(props: Project3DProps) {
@@ -146,8 +146,8 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         )); // Initialize history stack
         
         this.futureStack = new Array<HistoryEntry3D>();
-        this.dialogRef = createRef<Dialogbox | null>();
-        this.errorDialogRef = createRef<ErrorDialogbox | null>();
+        this.dialogRef = createRef<DialogboxClass | null>();
+        this.errorDialogRef = createRef<ErrorDialogboxClass | null>();
     }
 
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>> = (value) => {
@@ -991,7 +991,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     labelUsed={this.labelUsed}
                     onUpdateWidth={(width: number) =>this.setState({toolWidth: width, geometryState: {...this.state.geometryState}})}
                     onSelect={this.handleSelectObject}
-                    onUpdateDAG={(dag) => this.updateAll(
+                    onUpdateDAG={(dag: Map<string, ShapeNode3D>) => this.updateAll(
                         {
                             gs: this.state.geometryState,
                             dag: dag,
@@ -999,13 +999,13 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                             selectedShapes: this.state.selectedShapes
                         }
                     )}
-                    onSetMode={(mode) => this.setMode(mode)}
+                    onSetMode={(mode: DrawingMode) => this.setMode(mode)}
                     selectedPoints={this.state.selectedPoints}
                     selectedShapes={this.state.selectedShapes}
                     timeline={this.state.timeline}
                     setTimeline={this.setTimeline}
                     onUpdateLabelUsed={this.updateLabelUsed}
-                    onRenderErrorDialogbox={(msg) => {
+                    onRenderErrorDialogbox={(msg: string) => {
                         this.setState({
                             error: {
                                 label: 'Invalid command',

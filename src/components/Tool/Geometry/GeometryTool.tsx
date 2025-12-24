@@ -60,7 +60,7 @@ import cylinder from '../../../assets/images/cylinder.svg';
 import circle_center_radius_direction from '../../../assets/images/circle_center_radius_direction.svg';
 import circle_point_axis from '../../../assets/images/circle_point_axis.svg';
 import plane_projection from '../../../assets/images/plane_projection.svg';
-import { t } from "../../../translation/i18n";
+import { withTranslation, WithTranslation } from "react-i18next";
 
 interface ButtonProps {
     label: string;
@@ -86,7 +86,7 @@ class Button extends React.Component<ButtonProps> {
     }
 }
 
-interface GeometryToolProps {
+interface GeometryToolProps extends WithTranslation {
     width: number;
     height: number;
     onPointClick: () => void;
@@ -138,7 +138,7 @@ interface GeometryToolState {
     openCategory: string[];
 }
 
-export class GeometryTool extends React.Component<GeometryToolProps, GeometryToolState> {
+class GeometryToolNoWrap extends React.Component<GeometryToolProps, GeometryToolState> {
     constructor(props: GeometryToolProps) {
         super(props);
         this.state = {
@@ -334,6 +334,7 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
     }
 
     render(): React.ReactNode {
+        const { t } = this.props;
         const toolCategories = [
             {
                 name: t("basicTools"),
@@ -471,8 +472,8 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
                                 {category.tools.map((tool) => (
                                     <Button
                                         key={tool.key}
-                                        label={tool.label}
-                                        title={tool.title}
+                                        label={t(tool.label)}
+                                        title={t(tool.title)}
                                         imgSrc={'imgSrc' in tool ? tool.imgSrc as string : ""}
                                         onClick={tool.onClick}
                                         selected={this.state.activeButton === tool.key}
@@ -488,7 +489,7 @@ export class GeometryTool extends React.Component<GeometryToolProps, GeometryToo
     }
 }
 
-interface GeometryTool3DProps {
+interface GeometryTool3DProps extends WithTranslation {
     width: number;
     height: number;
     onPointClick: () => void;
@@ -540,7 +541,7 @@ interface GeometryTool3DProps {
     onTetrahedronClick: () => void;
 }
 
-export class GeometryTool3D extends React.Component<GeometryTool3DProps, GeometryToolState> {
+class GeometryTool3DNoWrap extends React.Component<GeometryTool3DProps, GeometryToolState> {
     constructor(props: GeometryTool3DProps) {
         super(props);
         this.state = {
@@ -756,6 +757,7 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
     }
 
     render(): React.ReactNode {
+        const { t } = this.props;
         const toolCategories = [
             {
                 name: t("basicTools"),
@@ -924,3 +926,6 @@ export class GeometryTool3D extends React.Component<GeometryTool3DProps, Geometr
         )
     }
 }
+
+export const GeometryTool = withTranslation()(GeometryToolNoWrap);
+export const GeometryTool3D = withTranslation()(GeometryTool3DNoWrap);

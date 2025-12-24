@@ -1,6 +1,7 @@
 import React, { createRef, RefObject } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 
-interface ErrorDialogboxProps {
+interface ErrorDialogboxProps extends WithTranslation {
     position: { x: number; y: number };
     error: {
         message: string;
@@ -8,7 +9,7 @@ interface ErrorDialogboxProps {
     onCancelClick: () => void;
 };
 
-class ErrorDialogbox extends React.Component<ErrorDialogboxProps, {}> {
+export class ErrorDialogbox extends React.Component<ErrorDialogboxProps, {}> {
     private dialogRef: RefObject<HTMLDivElement | null> = createRef();
     componentDidMount() {
         document.addEventListener('mousedown', this.handleClickOutside);
@@ -30,6 +31,7 @@ class ErrorDialogbox extends React.Component<ErrorDialogboxProps, {}> {
 
     render(): React.ReactNode {
         const { x, y } = this.props.position;
+        const { t } = this.props;
         return (
             <div 
                 className={`dialogComponent`}
@@ -43,12 +45,12 @@ class ErrorDialogbox extends React.Component<ErrorDialogboxProps, {}> {
                 <div className='popupContent'>
                     <div className='dialogMainPanel'>
                         <div id="error-dialog-title" className='dialogTitle text-neutral-900'>
-                            Error
+                            {t('Error')}
                         </div>
                         <div className='dialogContent'>
                             <div>
                                 <div id="error-dialog-message" className="label">
-                                    {this.props.error.message}
+                                    {t(this.props.error.message)}
                                 </div>
                             </div>
                         </div>
@@ -59,7 +61,7 @@ class ErrorDialogbox extends React.Component<ErrorDialogboxProps, {}> {
                                 onClick={this.props.onCancelClick}
                                 aria-label="Close error dialog"
                             >
-                                <div className='buttonLabel'>Close</div>
+                                <div className='buttonLabel'>{t('Close')}</div>
                             </button>
                         </div>
                     </div>
@@ -69,4 +71,4 @@ class ErrorDialogbox extends React.Component<ErrorDialogboxProps, {}> {
     }
 }
 
-export default ErrorDialogbox;
+export default withTranslation(undefined, { withRef: true })(ErrorDialogbox);

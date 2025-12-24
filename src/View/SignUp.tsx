@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 const SignUp: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const [formData, setFormData] = useState({
         firstName: "",

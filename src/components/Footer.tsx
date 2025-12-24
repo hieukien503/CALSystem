@@ -1,21 +1,26 @@
 ﻿import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { t } from "../translation/i18n";//i18n
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
 
     const [lang, setLang] = useState(
         sessionStorage.getItem("lang") || "vi"
     );
 
-    const handleLangChange = (e) => {
+    const handleLangChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        // const selectedLang = e.target.value;
+        // sessionStorage.setItem("lang", selectedLang);
+        // setLang(selectedLang);
+
+        // // Reload so translations apply everywhere
+        // window.location.reload();
         const selectedLang = e.target.value;
         sessionStorage.setItem("lang", selectedLang);
         setLang(selectedLang);
-
-        // Reload so translations apply everywhere
-        window.location.reload();
+        i18n.changeLanguage(selectedLang);
     };
 
     return (

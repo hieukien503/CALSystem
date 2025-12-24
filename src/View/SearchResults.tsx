@@ -1,7 +1,7 @@
 // SearchResults.tsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 interface Project {
     _id: string;
@@ -26,6 +26,7 @@ const SearchResults: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (!query) return;

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 interface User {
     _id: string;
@@ -13,6 +13,7 @@ interface User {
 
 const Login = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     // local form states
     const [email, setEmail] = useState("");

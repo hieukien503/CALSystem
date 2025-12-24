@@ -1052,7 +1052,6 @@ export function pickFromGroups(mouse: {x:number, y:number}, canvas: HTMLCanvasEl
         // Project intersection point to screen
         const screenPos = projectToScreen(p, camera, canvas);
         const d = distance2D(mouse, screenPos);
-        console.log(mouse, p, screenPos, d);
 
         if (d <= hitRadius) {
             candidates.push({

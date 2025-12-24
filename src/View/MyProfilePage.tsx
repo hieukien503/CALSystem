@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useParams } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 interface User {
     _id: string;
@@ -24,6 +24,7 @@ const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const loggedInUser = JSON.parse(sessionStorage.getItem("user") || "null");
     const token = sessionStorage.getItem("token");
+    const { t } = useTranslation();
 
     // Load user info (either from sessionStorage or fetch by id)
     useEffect(() => {
@@ -89,7 +90,7 @@ const ProfilePage: React.FC = () => {
 
     const handleRemoveProject = async (projId: string) => {
         setOpenMenuId(null);
-        if (!window.confirm(t("confirmDelete"))) return;
+        if (!window.confirm(t("confirmDelete") as string | undefined)) return;
 
         try {
             const res = await fetch(`${process.env.REACT_APP_API_URL}/api/projects/${projId}`, {
@@ -252,7 +253,7 @@ const ProfilePage: React.FC = () => {
                                                     cursor: "pointer",
                                                     padding: "2px 6px",
                                                 }}
-                                                title={t("moreActions")}
+                                                title={t("moreActions") as string | undefined}
                                             >
                                                 ⋮
                                             </button>

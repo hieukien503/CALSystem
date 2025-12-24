@@ -27,7 +27,8 @@ export function withProjectQueries<P extends ProjectQueriesProps>(Component: Rea
         const [currentProjectId, setCurrentProjectId] = React.useState((props as any).id);
     
         React.useEffect(() => {
-        setCurrentProjectId((props as any).id);
+            setCurrentProjectId((props as any).id);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [(props as any).id]);
         
         const loadProject = useQuery({

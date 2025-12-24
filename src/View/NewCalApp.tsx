@@ -1,6 +1,6 @@
 import React, { RefObject, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 // interface User {
 //     _id: string;
@@ -18,6 +18,7 @@ interface NewCalAppProps {
 
 const NewCalApp: React.FC<NewCalAppProps> = ({ idRef, updateId, selectedTool }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
     const token = sessionStorage.getItem("token");
@@ -59,6 +60,7 @@ const NewCalApp: React.FC<NewCalAppProps> = ({ idRef, updateId, selectedTool }) 
         };
 
         createNewProject();
+        // eslint-disable-next-line
     }, [navigate, idRef, selectedTool, token, updateId, user]);
 
 

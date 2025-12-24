@@ -2,9 +2,9 @@ import React from "react";
 import AlgebraTool3D from "./Algebra/AlgebraTool3D";
 import { GeometryTool3D } from "./Geometry/GeometryTool";
 import { DrawingMode, ShapeNode3D, Point, Shape } from "../../types/geometry";
-import { AnimationTool3D } from "./Animation/AnimationTool3D";
+import AnimationTool3D from "./Animation/AnimationTool3D";
 import * as constants from '../../types/constants';
-import { t } from "../../translation/i18n";
+import { withTranslation, WithTranslation } from "react-i18next";
 import Geometry from '../../assets/images/Geometry.svg';
 import Animation from '../../assets/images/Animation.svg';
 import Setting from '../../assets/images/Setting.svg';
@@ -17,7 +17,7 @@ interface TimelineItem {
     action: string;
     tweens?: string[];
 }
-interface Tool3DProps {
+interface Tool3DProps extends WithTranslation {
     width: number;
     height: number;
     dag: Map<string, ShapeNode3D>;
@@ -58,6 +58,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
     }
 
     render(): React.ReactNode {
+        const { t } = this.props;
         return (
             <div
                 className="dockPanelParent min-w-[72px]"
@@ -182,4 +183,4 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
     }
 }
 
-export default Tool3D;
+export default withTranslation()(Tool3D);

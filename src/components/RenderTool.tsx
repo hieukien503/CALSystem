@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNavigate } from "react-router-dom";
 import { lazy, Suspense } from 'react';
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 const Project3D = lazy(() => import('./Project/Project3D'));
 const Project2D = lazy(() => import('./Project/Project2D'));
@@ -35,6 +35,7 @@ const RenderTool: React.FC<RenderToolProps> = ({
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     const navigatedToolRef = React.useRef<"2d-graph" | "3d-graph" | null>(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (idRef.current[selectedTool as "2d-graph" | "3d-graph"].length === 0) {
@@ -71,8 +72,8 @@ const RenderTool: React.FC<RenderToolProps> = ({
                 // Update id map
                 const newId =
                     selectedTool === "2d-graph"
-                        ? { "2d-graph": newProject._id, "3d-graph": idRef.current["3d-graph"] || "" }
-                        : { "2d-graph": idRef.current["2d-graph"] || "", "3d-graph": newProject._id };
+                        ? { "2d-graph": newProject._id, "3d-graph": idRef.current["3d-graph"] }
+                        : { "2d-graph": idRef.current["2d-graph"], "3d-graph": newProject._id };
 
                 setProject(newProject);
                 updateId(newId);
@@ -106,13 +107,14 @@ const RenderTool: React.FC<RenderToolProps> = ({
 
         return;
         // eslint-disable-next-line
-    }, [selectedTool, navigate, updateId, token, user, idRef]);
+    }, [selectedTool, navigate, updateId, token, idRef, user]);
 
     useEffect(() => {
         if (!project || loading) return;
         if (navigatedToolRef.current === selectedTool) return;
         navigatedToolRef.current = selectedTool as "2d-graph" | "3d-graph" | null;
-        navigate(`/view/project/${project._id}`, { replace: true });
+        navigate(`/view/project/${idRef.current[selectedTool as "2d-graph" | "3d-graph"]}`);
+        // eslint-disable-next-line
     }, [project, loading, selectedTool, navigate]);
 
     if (loading) return <div className="p-5 text-center">{t("loadingProject")}</div>;
@@ -136,7 +138,7 @@ const RenderTool: React.FC<RenderToolProps> = ({
         return (
             <Suspense fallback={<div className="p-5 text-center">{t("loadingProject")}</div>}>
                 <Project3D
-                    id={idRef.current['2d-graph']}
+                    id={idRef.current['3d-graph']}
                     navigate={navigate}
                     {...project}
                 >

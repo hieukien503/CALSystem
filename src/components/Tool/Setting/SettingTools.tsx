@@ -1,5 +1,5 @@
 import React from 'react';
-import { t } from "../../../translation/i18n"
+import { withTranslation, WithTranslation } from 'react-i18next';
 import Load from '../../../assets/images/Load.svg';
 import Save from '../../../assets/images/Save.svg';
 import Documentation from '../../../assets/images/Documentation.svg';
@@ -30,7 +30,7 @@ class Button extends React.Component<ButtonProps> {
     }
 }
 
-interface SettingToolsProps {
+interface SettingToolsProps extends WithTranslation {
     width: number;
     height: number;
     onSaveProject: () => void;
@@ -72,6 +72,7 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
     };
 
     render(): React.ReactNode {
+        const { t } = this.props;
         return (
             <div 
                 className="customScrollBar"
@@ -131,4 +132,4 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
     }
 }
 
-export default SettingTools;
+export default withTranslation()(SettingTools);

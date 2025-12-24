@@ -1,10 +1,8 @@
-﻿// AnimationTool3D.tsx
+// AnimationTool3D.tsx
 import React from "react";
 import * as THREE from "three";
 import { Point, Shape, ShapeNode3D } from '../../../types/geometry'
-import Dialogbox from "../../Dialogbox/Dialogbox";
-import ErrorDialogbox from "../../Dialogbox/ErrorDialogbox";
-import { t } from "../../../translation/i18n";
+import { withTranslation, WithTranslation } from 'react-i18next';
 
 interface TimelineItem {
     object: string;
@@ -14,7 +12,7 @@ interface TimelineItem {
     values?: Record<string, any>;
 }
 
-interface AnimationTool3DProps {
+interface AnimationTool3DProps extends WithTranslation {
     width: number;
     height: number;
     dag: Map<string, ShapeNode3D>;
@@ -36,7 +34,7 @@ interface AnimationTool3DState {
     rotationPivotTarget: string | null;
 }
 
-export class AnimationTool3D extends React.Component<
+class AnimationTool3D extends React.Component<
     AnimationTool3DProps,
     AnimationTool3DState
 > {
@@ -101,7 +99,9 @@ export class AnimationTool3D extends React.Component<
         if (selectedIndex === null) return;
 
         const item = this.props.timeline[selectedIndex];
+        const { t } = this.props;
         const current = item[field];
+        const lang = sessionStorage.getItem("lang") || "vi";
         const newVal = window.prompt(lang === "en" ? `Enter new ${t(field)} value:` : 
         `Nhập giá trị mới cho ${t(field)}:`
         , String(current));
@@ -185,7 +185,7 @@ export class AnimationTool3D extends React.Component<
     // Move: uses world pos from click
     // -----------------------
     handleMoveObject() {
-        const { selectedPoints, selectedShapes } = this.props;
+        const { selectedPoints, selectedShapes, t } = this.props;
         const { dom, camera } = this.getDomAndCamera();
         if (!dom || !camera) {
             alert(t("stageNotAvailable"));
@@ -261,7 +261,7 @@ export class AnimationTool3D extends React.Component<
     /** Re-select translate destination for current transition */
     handleReselectDestination = () => {
         const { selectedIndex } = this.state;
-        const { timeline, setTimeline } = this.props;
+        const { timeline, setTimeline, t } = this.props;
         const { dom, camera } = this.getDomAndCamera();
         if (selectedIndex === null) return;
         if (!dom || !camera) {
@@ -300,7 +300,7 @@ export class AnimationTool3D extends React.Component<
     // Rotate: pick pivot in world coordinates and store ccw=false by default
     // -----------------------
     handleRotateObject() {
-        const { selectedPoints, selectedShapes } = this.props;
+        const { selectedPoints, selectedShapes, t } = this.props;
         const { dom, camera } = this.getDomAndCamera();
         if (!dom || !camera) {
             alert(t("stageNotAvailable"));
@@ -319,7 +319,7 @@ export class AnimationTool3D extends React.Component<
             const pos = this.getWorldPositionFromEvent(ev);
             if (!pos) return;
 
-            const angleStr = window.prompt(t("enterRotationAngle"), "90");
+            const angleStr = window.prompt(t("enterRotationAngle") as string | undefined, "90");
             if (angleStr === null) {
                 (dom as HTMLElement).removeEventListener("click", clickHandler);
                 return;
@@ -364,7 +364,7 @@ export class AnimationTool3D extends React.Component<
 
     handleReselectRotationPivot = () => {
         const { selectedIndex } = this.state;
-        const { timeline, setTimeline } = this.props;
+        const { timeline, setTimeline, t } = this.props;
         const { dom, camera } = this.getDomAndCamera();
         if (selectedIndex === null) return;
         if (!dom || !camera) {
@@ -407,14 +407,14 @@ export class AnimationTool3D extends React.Component<
     };
 
     handleScaleObject() {
-        const { selectedPoints, selectedShapes } = this.props;
+        const { selectedPoints, selectedShapes, t } = this.props;
         if (selectedShapes.length === 0 && selectedPoints.length === 0) return;
 
         const name = selectedShapes.length > 0
             ? selectedShapes[0].props.id
             : selectedPoints[0].props.id;
 
-        const factorStr = window.prompt(t("enterScaleFactor"), "1.5");
+        const factorStr = window.prompt(t("enterScaleFactor") as string | undefined, "1.5");
         if (factorStr === null) return;
         const factor = parseFloat(factorStr);
         if (isNaN(factor)) return;
@@ -588,6 +588,8 @@ export class AnimationTool3D extends React.Component<
         if (selectedIndex === null) return;
         const selectedItem = this.props.timeline[selectedIndex];
         const currentVal = selectedItem.values?.[key] ?? 0;
+        const { t } = this.props;
+        const lang = sessionStorage.getItem("lang") || "vi";
         const newVal = window.prompt(lang === "en" ? `Enter new ${this.capitalize(key)} value:` : 
         `Nhập giá trị mới cho ${this.capitalize(key)}:`
         , String(currentVal));
@@ -610,8 +612,9 @@ export class AnimationTool3D extends React.Component<
 
     handleDeleteSelected = () => {
         const { selectedIndex } = this.state;
+        const { t } = this.props;
         if (selectedIndex === null) return;
-        if (!window.confirm(t("deleteSelectedAnimation"))) return;
+        if (!window.confirm(t("deleteSelectedAnimation") as string | undefined)) return;
         this.props.setTimeline(prev => prev.filter((_, i) => i !== selectedIndex));
         this.setState({ selectedIndex: null });
     };
@@ -630,6 +633,7 @@ export class AnimationTool3D extends React.Component<
     };
 
     updateActionLabel(values: Record<string, number>) {
+        const { t } = this.props;
         if ("translateX" in values || "translateY" in values || "translateZ" in values) {
             const dx = values.translateX ?? 0;
             const dy = values.translateY ?? 0;
@@ -718,7 +722,7 @@ export class AnimationTool3D extends React.Component<
     }
 
     renderTimelineGrid() {
-        const { timeline } = this.props;
+        const { timeline, t } = this.props;
         const { selectedIndex } = this.state;
         const selectedItem = selectedIndex !== null ? timeline[selectedIndex] : null;
 
@@ -920,6 +924,7 @@ export class AnimationTool3D extends React.Component<
     }
 
     render(): React.ReactNode {
+        const { t } = this.props;
         const tools = [
             { key: "translate", label: t("translation"), title: t("toolTranslate"), onClick: () => this.setActiveTool("translate") },
             { key: "rotate", label: t("rotation"), title: t("toolRotate"), onClick: () => this.setActiveTool("rotate") },
@@ -963,3 +968,5 @@ export class AnimationTool3D extends React.Component<
         );
     }
 }
+
+export default withTranslation()(AnimationTool3D)

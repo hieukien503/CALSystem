@@ -7731,8 +7731,6 @@ class KonvaCanvas extends React.Component<CanvasProps, {}> {
             point.type = 'Intersection';
         }
 
-        console.log(point.type);
-
         let shapeNode: ShapeNode = {
             id: point.props.id,
             type: point,

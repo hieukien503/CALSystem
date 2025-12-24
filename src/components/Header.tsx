@@ -1,7 +1,7 @@
 ﻿// Header.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
     selectedTool: string;
@@ -13,6 +13,7 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
     const [searchTerm, setSearchTerm] = useState<string>("");
 
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
 
     useEffect(() => {
@@ -54,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ selectedTool, setSelectedTool }) => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         onKeyDown={handleSearchKey}
-                        placeholder={t("searchPlaceholder")}
+                        placeholder={t("searchPlaceholder") as string | undefined}
                         className="border border-gray-300 px-3 py-1 rounded-full w-full text-sm focus:outline-none"
                     />
                     <button

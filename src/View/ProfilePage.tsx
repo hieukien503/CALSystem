@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useParams } from "react-router-dom";
-import { t } from "../translation/i18n";
+import { useTranslation } from 'react-i18next';
 
 interface User {
     _id: string;
@@ -22,6 +22,7 @@ const ProfilePage: React.FC = () => {
     const [viewedUser, setViewedUser] = useState<User | null>(null);
     const navigate = useNavigate();
     const loggedInUser = JSON.parse(sessionStorage.getItem("user") || "null");
+    const { t } = useTranslation();
 
     const user = JSON.parse(sessionStorage.getItem("user") || "null");
     const token = sessionStorage.getItem("token");

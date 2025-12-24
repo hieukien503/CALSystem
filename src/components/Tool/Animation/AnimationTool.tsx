@@ -1,8 +1,6 @@
-﻿import React from "react";
+import React from "react";
 import { Point, Shape, ShapeNode } from '../../../types/geometry'
-import Dialogbox from "../../Dialogbox/Dialogbox";
-import ErrorDialogbox from "../../Dialogbox/ErrorDialogbox";
-import { t } from "../../../translation/i18n";
+import { withTranslation, WithTranslation } from 'react-i18next';
 
 interface TimelineItem {
     object: string;
@@ -12,7 +10,7 @@ interface TimelineItem {
     values?: Record<string, any>;
 }
 
-interface AnimationToolProps {
+interface AnimationToolProps extends WithTranslation {
     width: number;
     height: number;
     dag: Map<string, ShapeNode>;
@@ -34,7 +32,7 @@ interface AnimationToolState {
     rotationPivotTarget: string | null;
 }
 
-export class AnimationTool extends React.Component<
+class AnimationTool extends React.Component<
     AnimationToolProps,
     AnimationToolState
 > {
@@ -59,6 +57,7 @@ export class AnimationTool extends React.Component<
 
         const item = this.props.timeline[selectedIndex];
         const current = item[field];
+        const { t } = this.props;
         const newVal = window.prompt(lang === "en" ? `Enter new ${t(field)} value:` : 
         `Nhập giá trị mới cho ${t(field)}:`
         , String(current));
@@ -146,7 +145,7 @@ export class AnimationTool extends React.Component<
     }
 
     handleMoveObject() {
-        const { stageRef, selectedPoints, selectedShapes } = this.props;
+        const { stageRef, selectedPoints, selectedShapes, t } = this.props;
         const stage = stageRef?.current;
         if (!stage) {
             alert(t("stageNotAvailable"));
@@ -169,6 +168,7 @@ export class AnimationTool extends React.Component<
 
             // Optional: Confirm the destination
             const lang = sessionStorage.getItem("lang") || "en";
+            const { t } = this.props;
             const confirm = window.confirm( 
                 lang === "en" ? 
                 `Move ${name} to (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)})?` :
@@ -230,7 +230,7 @@ export class AnimationTool extends React.Component<
     /** Re-select translate destination for current transition */
     handleReselectDestination = () => {
         const { selectedIndex } = this.state;
-        const { stageRef, timeline, setTimeline } = this.props;
+        const { stageRef, timeline, setTimeline, t } = this.props;
         if (selectedIndex === null) return;
 
         const stage = stageRef?.current;
@@ -272,7 +272,7 @@ export class AnimationTool extends React.Component<
 
 
     handleRotateObject() {
-        const { stageRef, selectedPoints, selectedShapes } = this.props;
+        const { stageRef, selectedPoints, selectedShapes, t } = this.props;
         const stage = stageRef?.current;
         if (!stage) {
             alert(t("stageNotAvailable"));
@@ -291,8 +291,9 @@ export class AnimationTool extends React.Component<
             const pos = stage.getPointerPosition();
             if (!pos) return;
 
+            const { t } = this.props;
             const angleStr = window.prompt(
-                t("enterRotationAngle"),
+                t("enterRotationAngle") as string | undefined,
                 "90"
             );
             if (angleStr === null) {
@@ -341,7 +342,7 @@ export class AnimationTool extends React.Component<
 
     handleReselectRotationPivot = () => {
         const { selectedIndex } = this.state;
-        const { stageRef, timeline, setTimeline } = this.props;
+        const { stageRef, timeline, setTimeline, t } = this.props;
         if (selectedIndex === null) return;
 
         const stage = stageRef?.current;
@@ -392,7 +393,7 @@ export class AnimationTool extends React.Component<
 
 
     handleScaleObject() {
-        const { selectedPoints, selectedShapes } = this.props;
+        const { selectedPoints, selectedShapes, t } = this.props;
         if (selectedShapes.length === 0 && selectedPoints.length === 0) return;
 
         const name = selectedShapes.length > 0
@@ -400,7 +401,7 @@ export class AnimationTool extends React.Component<
             : selectedPoints[0].props.id;
 
         const factorStr = window.prompt(
-            t("enterScaleFactor"),
+            t("enterScaleFactor") as string | undefined,
             "1.5"
         );
         if (factorStr === null) return;
@@ -551,7 +552,9 @@ export class AnimationTool extends React.Component<
         const { selectedIndex } = this.state;
         if (selectedIndex === null) return;
         const selectedItem = this.props.timeline[selectedIndex];
+        const { t } = this.props;
         const currentVal = selectedItem.values?.[key] ?? 0;
+        const lang = sessionStorage.getItem("lang") || "vi";
 
         const newVal = window.prompt(lang === "en" ? `Enter new ${this.capitalize(key)} value:` : 
         `Nhập giá trị mới cho ${this.capitalize(key)}:`
@@ -576,9 +579,10 @@ export class AnimationTool extends React.Component<
 
     handleDeleteSelected = () => {
         const { selectedIndex } = this.state;
+        const { t } = this.props;
         if (selectedIndex === null) return;
 
-        if (!window.confirm(t("deleteSelectedAnimation"))) return;
+        if (!window.confirm(t("deleteSelectedAnimation") as string | undefined)) return;
 
         this.props.setTimeline(prev => prev.filter((_, i) => i !== selectedIndex));
         this.setState({ selectedIndex: null });
@@ -639,7 +643,7 @@ export class AnimationTool extends React.Component<
 
 
     renderTimelineGrid() {
-        const { timeline } = this.props;
+        const { timeline, t } = this.props;
         const { selectedIndex } = this.state;
         const selectedItem = selectedIndex !== null ? timeline[selectedIndex] : null;
 
@@ -994,6 +998,7 @@ export class AnimationTool extends React.Component<
     }
 
     render(): React.ReactNode {
+        const { t } = this.props;
         const tools = [
             {
                 key: "translate",
@@ -1091,3 +1096,5 @@ export class AnimationTool extends React.Component<
         );
     }
 }
+
+export default withTranslation()(AnimationTool);

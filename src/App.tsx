@@ -18,6 +18,7 @@ import E404 from "./View/E404";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./translation/i18n";
 
 // interface User {
 //     _id: string;
@@ -29,9 +30,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-        refetchOnWindowFocus: false,
-        retry: 1,
-        staleTime: 5 * 60 * 1000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+            staleTime: 5 * 60 * 1000,
         },
     },
 });
