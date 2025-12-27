@@ -9,6 +9,7 @@ import Geometry from '../../assets/images/Geometry.svg';
 import Animation from '../../assets/images/Animation.svg';
 import Setting from '../../assets/images/Setting.svg';
 import Algebra from '../../assets/images/Algebra.svg';
+import SettingTools from "./Setting/SettingTools";
 
 interface TimelineItem {
     object: string;
@@ -32,10 +33,10 @@ interface Tool3DProps extends WithTranslation {
     setTimeline: React.Dispatch<React.SetStateAction<TimelineItem[]>>;
     onUpdateLabelUsed: (labelUsed: string[]) => void;
     onRenderErrorDialogbox: (message: string) => void;
-    // onSaveProject: () => void;
-    // onLoadProject: () => void;
-    // onExport: () => void;
-    // onLoadDocumentation: () => void;
+    onSaveProject: () => void;
+    onLoadProject: () => void;
+    onExport: () => void;
+    onLoadDocumentation: () => void;
 }
 
 interface Tool3DState {
@@ -164,7 +165,7 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     onUpdateLabelUsed={this.props.onUpdateLabelUsed}
                                     labelUsed={this.props.labelUsed}
                                     onRenderErrorDialogbox={this.props.onRenderErrorDialogbox}
-                                /> : <AnimationTool3D
+                                /> : this.state.mode === "animation" ? <AnimationTool3D
                                     width={this.props.width}
                                     height={this.props.height}
                                     dag={this.props.dag}
@@ -173,6 +174,13 @@ class Tool3D extends React.Component<Tool3DProps, Tool3DState> {
                                     selectedPoints={this.props.selectedPoints}
                                     selectedShapes={this.props.selectedShapes}
                                     //stageRef={this.props.stageRef}
+                                /> : <SettingTools
+                                        width={this.props.width}
+                                        height={this.props.height}
+                                        onSaveProject={this.props.onSaveProject}
+                                        onLoadProject={this.props.onLoadProject}
+                                        onExport={this.props.onExport}
+                                        onLoadDocumentation={this.props.onLoadDocumentation}
                                 />
                                 )}
                         </div>

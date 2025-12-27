@@ -10,7 +10,7 @@ router.get("/:id/:user", loadProject);           // GET /api/projects/:id
 router.patch("/:id", authenticateUser, updateProject);       // PATCH /api/projects/:id
 router.post("/bulk", authenticateUser, bulkProject);
 router.post("/add", authenticateUser, addProjectToUser);
-router.delete("/:projectId", authenticateUser, deleteProject);    // Delete a project → DELETE /api/projects/:projectId
+router.post("/:projectId/cleanup", authenticateUser, deleteProject);    // Delete a project → DELETE /api/projects/:projectId
 router.patch("/:projectId/rename", authenticateUser, updateProjectInfo); // Rename a project → PATCH /api/projects/:projectId
 router.get("/exists", authenticateUser, checkProjectTitleExist);
 router.get("/projectList/:user", authenticateUser, getProjectList); // GET /api/projects/projectList

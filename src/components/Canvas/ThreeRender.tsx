@@ -22,18 +22,14 @@ interface ThreeDCanvasProps {
     background_color: string;
     geometryState: GeometryState;
     dag: Map<string, ShapeNode3D>,
+    rendererRef: RefObject<THREE.WebGLRenderer | null>;
     mode: DrawingMode;
     isSnapToGrid: boolean;
     isResize: boolean;
     selectedPoints: Point[];
     selectedShapes: Shape[];
     labelUsed: string[];
-    data: number | {
-        type: string, x: number, y: number, z: number
-    } | {
-        degree: number;
-        CCW: boolean;
-    } | undefined;
+    data: number | {type: string, label: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | {id_to_change: string | undefined } | undefined;
     onChangeMode: (mode: DrawingMode) => void;
     onUpdateLastFailedState: (state?: {
         selectedPoints: Point[], selectedShapes: Shape[]
@@ -56,13 +52,12 @@ interface ThreeDCanvasProps {
     }) => void;
     onRenderMenuRightClick: (pos?: {x: number, y: number}) => void;
     onRemoveNode: (id: string) => void;
-    onRenderDialogbox: (mode: string) => void;
+    onRenderDialogbox: (mode: string, id_to_change?: string) => void;
 }
 
 class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     private sceneRef: RefObject<THREE.Scene | null>;
     private cameraRef: RefObject<THREE.PerspectiveCamera | null>;
-    private rendererRef: RefObject<THREE.WebGLRenderer | null>;
     private controlsRef: RefObject<OrbitControls | null>;
     private canvasRef: RefObject<HTMLCanvasElement | null>;
     private transformControlsRef: RefObject<TransformControls | null>;
@@ -70,7 +65,6 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         super(props);
         this.sceneRef = React.createRef<THREE.Scene>();
         this.cameraRef = React.createRef<THREE.PerspectiveCamera>();
-        this.rendererRef = React.createRef<THREE.WebGLRenderer>();
         this.controlsRef = React.createRef<OrbitControls>();
         this.canvasRef = React.createRef<HTMLCanvasElement>();
         this.transformControlsRef = React.createRef<TransformControls>();
@@ -80,8 +74,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     componentDidMount(): void {
         this.initializeScene();
         this.updateShapes();
-        this.rendererRef.current!.domElement.addEventListener("pointerdown", this.handleMouseDown);
-        this.rendererRef.current!.domElement.addEventListener('contextmenu', this.handleContextMenu);
+        this.props.rendererRef.current!.domElement.addEventListener("pointerdown", this.handleMouseDown);
+        this.props.rendererRef.current!.domElement.addEventListener('contextmenu', this.handleContextMenu);
+        this.props.rendererRef.current!.domElement.addEventListener('dblclick', this.handleDoubleClick);
     }
 
     componentDidUpdate(prevProps: ThreeDCanvasProps, prevState: GeometryState): void {
@@ -122,9 +117,9 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
 
     componentWillUnmount() {
         this.disposeResources();
-        this.rendererRef.current?.domElement.removeEventListener('pointerdown', this.handleMouseDown);
-        this.rendererRef.current?.domElement.removeEventListener('contextmenu', this.handleContextMenu);
-        this.rendererRef.current?.domElement.removeEventListener('wheel', this.onMouseWheel);
+        this.props.rendererRef.current?.domElement.removeEventListener('pointerdown', this.handleMouseDown);
+        this.props.rendererRef.current?.domElement.removeEventListener('contextmenu', this.handleContextMenu);
+        this.props.rendererRef.current?.domElement.removeEventListener('wheel', this.onMouseWheel);
         this.transformControlsRef.current?.removeEventListener('dragging-changed', this.onDraggingChanged);
         this.transformControlsRef.current?.removeEventListener('change', this.handleChange);
         this.transformControlsRef.current?.removeEventListener('objectChange', this.onMouseUp)
@@ -137,11 +132,70 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         e.preventDefault();
     };
 
+    private handleDoubleClick = (e: MouseEvent) => {
+        if (!this.cameraRef.current || !this.sceneRef.current || !this.props.rendererRef.current || !this.canvasRef.current) return;
+        if (this.props.mode !== 'edit') return;
+        e.preventDefault();
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const rect = this.props.rendererRef.current.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, this.cameraRef.current);
+
+        const children = this.sceneRef.current.children.filter(obj => !(obj instanceof THREE.GridHelper || obj === this.transformControlsRef.current!.getHelper()));
+
+        // Intersect with your 3D objects
+        let intersects = raycaster.intersectObjects(children, true); // true = check all descendants
+        const objects = intersects.filter(item => !(item.object instanceof THREE.Sprite));
+        const realObjects: { shape: THREE.Object3D, point: THREE.Vector3 }[] = [];
+        objects.forEach(obj => {
+            function getTopParent(object: THREE.Object3D): THREE.Object3D {
+                let current = object;
+                while (current.parent && !(current.parent instanceof THREE.Scene)) {
+                    current = current.parent;
+                }
+
+                return current;
+            }
+
+            realObjects.push({ shape: getTopParent(obj.object), point: obj.point });
+        });
+
+        const map = new Map<THREE.Object3D, THREE.Vector3>();
+        const uniqueObjects: { shape: THREE.Object3D, point: THREE.Vector3 }[] = [];
+        realObjects.forEach(item => {
+            if (!map.has(item.shape)) {
+                map.set(item.shape, item.point);
+                uniqueObjects.push(item);
+            }
+        });
+
+        const shape = utils3d.pickFromGroups(
+            new THREE.Vector2(e.offsetX, e.offsetY),
+            this.canvasRef.current!,
+            this.cameraRef.current,
+            uniqueObjects
+        );
+
+        if (shape) {
+            const node = this.props.dag.get(shape.shape.name);
+            if (!node) return;
+            if ('x' in node.type && 'y' in node.type) {
+                const newName = this.props.data;
+                if (newName === undefined || typeof newName !== 'object' || (typeof newName === 'object' && !('id_to_change' in newName))) {
+                    this.props.onRenderDialogbox('changeName', node.id);
+                    return;
+                }
+            }
+        }
+    }
+
     animate = () => {
         requestAnimationFrame(this.animate);
-        if (this.controlsRef.current && this.rendererRef.current && this.sceneRef.current && this.cameraRef.current) {
+        if (this.controlsRef.current && this.props.rendererRef.current && this.sceneRef.current && this.cameraRef.current) {
             this.controlsRef.current.update();
-            this.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current);
+            this.props.rendererRef.current.render(this.sceneRef.current, this.cameraRef.current);
         }
 
         if (this.cameraRef.current && this.sceneRef.current) {
@@ -186,14 +240,15 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         const renderer = new THREE.WebGLRenderer({
             canvas: this.canvasRef.current,
             antialias: true,
-            alpha: true
+            alpha: true,
+            preserveDrawingBuffer: true
         });
 
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 0); // Transparent background
         renderer.autoClear = false;
-        this.rendererRef.current = renderer;
+        this.props.rendererRef.current = renderer;
 
         // Add lights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -424,7 +479,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         this.controlsRef.current = controls;
 
         // Add transform controls
-        const transformControls = new TransformControls(this.cameraRef.current, this.rendererRef.current.domElement);
+        const transformControls = new TransformControls(this.cameraRef.current, this.props.rendererRef.current.domElement);
         transformControls.addEventListener('dragging-changed', this.onDraggingChanged);
         transformControls.addEventListener('change', this.handleChange);
         transformControls.addEventListener('objectChange', this.onMouseUp)
@@ -640,7 +695,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             }
         }
 
-        if (this.sceneRef.current && this.rendererRef.current) {
+        if (this.sceneRef.current && this.props.rendererRef.current) {
             this.sceneRef.current.traverse((object) => {
                 if (object instanceof THREE.Mesh) {
                     object.geometry.dispose();
@@ -659,13 +714,13 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             });
 
             this.sceneRef.current.clear();
-            this.rendererRef.current.dispose();
+            this.props.rendererRef.current.dispose();
         }
     };
 
     updateRendererSize = () => {
-        if (this.rendererRef.current) {
-            this.rendererRef.current.setSize(this.props.width, this.props.height);
+        if (this.props.rendererRef.current) {
+            this.props.rendererRef.current.setSize(this.props.width, this.props.height);
         }
     };
 
@@ -4803,7 +4858,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
     }
 
     private handleMouseDown = (e: MouseEvent) => {
-        if (!this.cameraRef.current || !this.sceneRef.current || !this.rendererRef.current || !this.canvasRef.current) return;
+        if (!this.cameraRef.current || !this.sceneRef.current || !this.props.rendererRef.current || !this.canvasRef.current) return;
         if (e.button !== 0) {
             this.props.onRenderMenuRightClick({x: e.clientX, y: e.clientY});
             return;
@@ -4814,7 +4869,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
             this.controlsRef.current!.enabled = false;
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
-            const rect = this.rendererRef.current.domElement.getBoundingClientRect();
+            const rect = this.props.rendererRef.current.domElement.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, this.cameraRef.current);
@@ -4942,7 +4997,7 @@ class ThreeDCanvas extends React.Component<ThreeDCanvasProps, GeometryState> {
         else {
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
-            const rect = this.rendererRef.current.domElement.getBoundingClientRect();
+            const rect = this.props.rendererRef.current.domElement.getBoundingClientRect();
             mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, this.cameraRef.current);

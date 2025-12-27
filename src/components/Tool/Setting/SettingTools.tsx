@@ -92,7 +92,11 @@ class SettingTools extends React.Component<SettingToolsProps, SettingToolsState>
                     style={{
                         width: this.props.width,
                         height: this.props.height,
-                        padding: "8px 0px 14px 16px"
+                        padding: "24px 0px 14px 16px",
+                        display: 'flex',
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        alignContent: 'flex-start',
                     }}
                 >
                     <Button

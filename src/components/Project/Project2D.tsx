@@ -232,6 +232,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private handleBeforeUnload = (e: BeforeUnloadEvent): void => {
         if (this.dag.size > 0) {
             e.preventDefault();
+            navigator.sendBeacon(`${process.env.REACT_APP_API_URL}/api/projects/${this.props.id}/cleanup`)
         }
     }
 
@@ -492,6 +493,19 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }, () => {
             if (!this.lastFailedState && storeHistory) {
+                const payload = {
+                    title: this.state.title,
+                    sharing: this.state.sharing,
+                    projectVersion: this.props.projectVersion,
+                    // collaborators: this.props.collaborators,
+                    // ownedBy: this.props.ownedBy,
+                    geometryState: this.state.geometryState,
+                    dag: serializeDAG(this.dag),
+                    labelUsed: this.labelUsed,
+                    animation: this.state.timeline
+                };
+
+                this.props.projectQueries.saveProject.mutateAsync(payload);
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
