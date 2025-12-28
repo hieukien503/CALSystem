@@ -39,6 +39,7 @@ const queryClient = new QueryClient({
 
 function App() {
     const [selectedTool, setSelectedTool] = useState<string>('2d-graph');
+    const headerRef = React.useRef<HTMLDivElement>(null);
     const idRef = React.useRef({
         "2d-graph": "",
         "3d-graph": ""
@@ -52,7 +53,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <Router>
                 <div className="flex flex-col min-h-screen">
-                    <Header selectedTool={selectedTool} setSelectedTool={setSelectedTool} />
+                    <Header selectedTool={selectedTool} setSelectedTool={setSelectedTool}/>
 
                     <main className="flex-grow">
                         <Routes>
