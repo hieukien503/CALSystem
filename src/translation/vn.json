@@ -319,5 +319,7 @@
   "Create a vector with start point and end point": "Tạo một vector từ điểm đầu và điểm cuối",
   "Create a vector from point, with origin as the start point": "Tạo một vector từ điểm, với gốc tọa độ là điểm đầu",
   "Create a polygon from the list of points": "Tạo một đa giác từ danh sách các điểm",
-  "Create a regular polygon with 2 starting vertices and number of edges, lies on the plane": "Tạo một đa giác đều nằm trên mặt phẳng với hai đỉnh bắt đầu và số cạnh của đa giác"
+  "Create a regular polygon with 2 starting vertices and number of edges, lies on the plane": "Tạo một đa giác đều nằm trên mặt phẳng với hai đỉnh bắt đầu và số cạnh của đa giác",
+  "Please select a valid 2D file": "Vui lòng chọn một tệp 2D hợp lệ",
+  "Please select a valid 3D file": "Vui lòng chọn một tệp 3D hợp lệ"
 }

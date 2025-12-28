@@ -1290,6 +1290,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     metadata: {
                         title: this.state.title || "Untitled Project",
                         exportedAt: new Date().toISOString(),
+                        mode: "3D"
                     },
 
                     data: {
@@ -1545,6 +1546,17 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     const content = e.target?.result;
                     if (typeof content === 'string') {
                         const data = JSON.parse(content);
+                        if (data.metadata?.mode !== '3D') {
+                            this.setState({
+                                error: {
+                                    label: 'Invalid file type',
+                                    message: 'Please select a valid 3D file'
+                                }
+                            })
+
+                            return;
+                        }
+                        
                         this.dag = this.deserializeDAG(data.data.dag);
 
                         // force React update

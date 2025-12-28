@@ -323,5 +323,7 @@
   "Create a vector with start point and end point": "Create a vector with start point and end point",
   "Create a vector from point, with origin as the start point": "Create a vector from point, with origin as the start point",
   "Create a polygon from the list of points": "Create a polygon from the list of points",
-  "Create a regular polygon with 2 starting vertices and number of edges, lies on the plane": "Create a regular polygon with 2 starting vertices and number of edges, lies on the plane"
+  "Create a regular polygon with 2 starting vertices and number of edges, lies on the plane": "Create a regular polygon with 2 starting vertices and number of edges, lies on the plane",
+  "Please select a valid 2D file": "Please select a valid 2D file",
+  "Please select a valid 3D file": "Please select a valid 3D file"
 }

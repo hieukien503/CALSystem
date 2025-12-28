@@ -143,12 +143,12 @@ export class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                     <button type='button' className='okButton'
                         onClick={() => {
                             const value = this.state.value_from_input;
-                            this.props.onSubmitClick(value.length === 0 ? (this.props.angleMode ? "0to360" : "toPNG") : value, this.state.isCCW);
+                            this.props.onSubmitClick(value.length === 0 ? (this.props.angleMode ? "0to360" : (this.props.loadProjectMode ? "loadFromFile" : "toPNG")) : value, this.state.isCCW);
                         }}
                     >
                         <div className='label'>{this.props.title === 'Unsaved Changes' ? t('Save Changes') : 'OK'}</div>
                     </button>
-                    {this.props.title === 'Unsaved Changes' || this.props.title === 'Rename Project' && <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
+                    {(this.props.title === 'Unsaved Changes' || this.props.title === 'Rename Project') && <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
                         <div className='label'>{t('Discard')}</div>
                     </button>}
                     <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
@@ -167,11 +167,11 @@ export class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                     <div className='inputLabel text-neutral-700'>{t(this.props.input_label)}</div>
                                     <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
                                         const value = e.target.value;
-                                        this.setState({ value_from_input: value });
-
-                                        if (value === "loadExisted") {
-                                            this.fetchProjects();
-                                        }
+                                        this.setState({ value_from_input: value }, () => {
+                                            if (value === "loadExisted") {
+                                                this.fetchProjects();
+                                            }
+                                        });
                                     }}>
                                         <option value="loadFromFile">{t('Load Project from File')}</option>
                                         {this.props.loadProjectMode === 'user' && <option value="loadExisted">{t('Load Existed Project')}</option>}
@@ -197,7 +197,7 @@ export class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
                                 <div className='dialogContent'>
                                     <div className={`inputTextField${this.props.inputError.label.length > 0 ? " error" : ""}`}>
                                         <div className='inputLabel text-neutral-700'>{t(this.props.input_label)}</div>
-                                        <select className='angleDropDown' value={this.state.value_from_input} onChange={(e) => {
+                                        <select className='angleDropDown' value={this.state.value_from_input || "toPNG"} onChange={(e) => {
                                             this.setState({ value_from_input: e.target.value })
                                         }}>
                                             <option value="toPNG">{t('PNG Image')}</option>

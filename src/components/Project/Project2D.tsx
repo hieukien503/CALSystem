@@ -1270,8 +1270,9 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     format: "BKGeoProject",
                     version: this.props.projectVersion,
                     metadata: {
-                        title: this.state.title || "Untitled Project",
+                        title: newName || "Untitled Project",
                         exportedAt: new Date().toISOString(),
+                        mode: "2D"
                     },
 
                     data: {
@@ -1299,12 +1300,20 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
                 // ✅ Cleanup memory
                 URL.revokeObjectURL(url);
+                this.setState({
+                    error: {
+                        label: '',
+                        message: '',
+                    },
+                    isDialogBox: undefined
+                });
             }
         }
 
         else if (['load-project-guest', 'load-project-user'].includes(this.state.mode)) {
             if (value === 'loadFromFile') {
                 this.fileInputRef.current?.click();
+                
             }
 
             else {
@@ -1486,6 +1495,16 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     const content = e.target?.result;
                     if (typeof content === 'string') {
                         const data = JSON.parse(content);
+                        if (data.metadata?.mode !== '2D') {
+                            this.setState({
+                                error: {
+                                    label: 'Invalid file type',
+                                    message: 'Please select a valid 2D file'
+                                }
+                            })
+
+                            return;
+                        }
                         this.dag = deserializeDAG(data.data.dag);
 
                         // force React update
@@ -1513,6 +1532,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                         this.labelUsed = data.data.labelUsed;
                     }
                 }
+
+                reader.readAsText(file);
             }
 
             catch (error) {
