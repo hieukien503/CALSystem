@@ -16,7 +16,7 @@ export interface ProjectQueriesProps {
         };
 
         checkTitleExists: {
-            mutateAsync: (title: string) => Promise<boolean>;
+            mutateAsync: (title: string, id: string) => Promise<boolean>;
         };
     };
 }
@@ -105,7 +105,8 @@ export function withProjectQueries<P extends ProjectQueriesProps>(Component: Rea
                     );
 
                 const data = await res.json();
-                return data.exists;
+                if (!res.ok) return false;
+                return data._id === currentProjectId;
             }
         });
 

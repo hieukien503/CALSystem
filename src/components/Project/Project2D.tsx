@@ -948,7 +948,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     }
 
     private checkTitleExists = async (title: string): Promise<boolean> => {
-        return await this.props.projectQueries.checkTitleExists.mutateAsync(title);
+        return await this.props.projectQueries.checkTitleExists.mutateAsync(title, this.props.id);
     }
 
     private receiveData = (value: string, CCW: boolean = true): void => {
@@ -1240,6 +1240,16 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
 
             if (CCW === false) {
+                if (sessionStorage.getItem("token") === null) {
+                    this.setState({
+                        error: {
+                            label: 'Requires Login',
+                            message: 'Please log in to save your project.'
+                        }
+                    });
+                    return;
+                }
+                
                 this.checkTitleExists(value).then(exists => {
                     if (exists) {
                         this.setState({
@@ -1262,6 +1272,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                         },
                         isDialogBox: undefined
                     });
+
+                    this.saveProject();
                 })
             }
 
@@ -1618,7 +1630,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                             selectedShapes: this.state.selectedShapes
                         }
                     )}
-                    onSaveProject={this.saveProject}
+                    onSaveProject={() => this.setDialogbox('rename-project')}
                     onLoadProject={this.openProject}
                     onExport={() => this.setDialogbox('export-project')}
                     onLoadDocumentation={this.loadDocumentation}

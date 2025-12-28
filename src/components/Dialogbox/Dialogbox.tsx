@@ -116,7 +116,8 @@ export class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
         const { x, y } = this.props.position;
         let reactNode: React.ReactNode | null = null;
         const { t } = this.props;
-        if (this.props.title === 'Save sucessfully') {
+        console.log(this.props.title);
+        if (this.props.title === 'Save successfully') {
             reactNode = (
                 <div className='dialogMainPanel'>
                     <div className='dialogTitle text-neutral-900'>{t(this.props.title)}</div>

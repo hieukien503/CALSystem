@@ -192,10 +192,10 @@ exports.checkProjectTitleExist = async (req, res) => {
         
         const project = await Project.findOne({ title: title });
         if (project) {
-            return res.status(200).json({ exists: true });
+            return res.status(200).json({ id: project._id });
         }
 
-        return res.status(200).json({ exists: false });
+        return res.status(404).json({ message: "Title does not exist" });
     }
 
     catch (err) {

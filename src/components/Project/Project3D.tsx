@@ -1383,7 +1383,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     private checkTitleExists = async (title: string): Promise<boolean> => {
-        return await this.props.projectQueries.checkTitleExists.mutateAsync(title);
+        return await this.props.projectQueries.checkTitleExists.mutateAsync(title, this.props.id);
     }
 
     private exportProject = (mode: string) => {
@@ -1556,7 +1556,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
                             return;
                         }
-                        
+
                         this.dag = this.deserializeDAG(data.data.dag);
 
                         // force React update

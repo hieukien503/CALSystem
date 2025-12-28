@@ -123,7 +123,7 @@ const ProfilePage: React.FC = () => {
             >
                 {t("title")}
             </h1>
-            <main className="outer-main">
+            <main className="outer-main" style={{height: "calc(100vh - 195px)"}}>
                 <div
                     className="inner-main text-center text-gray-600 text-xl"
                     style={{
