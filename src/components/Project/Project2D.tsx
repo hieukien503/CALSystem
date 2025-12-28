@@ -493,19 +493,23 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
         }, () => {
             if (!this.lastFailedState && storeHistory) {
-                const payload = {
-                    title: this.state.title,
-                    sharing: this.state.sharing,
-                    projectVersion: this.props.projectVersion,
-                    // collaborators: this.props.collaborators,
-                    // ownedBy: this.props.ownedBy,
-                    geometryState: this.state.geometryState,
-                    dag: serializeDAG(this.dag),
-                    labelUsed: this.labelUsed,
-                    animation: this.state.timeline
-                };
+                const token = sessionStorage.getItem("token");
+                if (token !== null) {
+                    const payload = {
+                        title: this.state.title,
+                        sharing: this.state.sharing,
+                        projectVersion: this.props.projectVersion,
+                        // collaborators: this.props.collaborators,
+                        // ownedBy: this.props.ownedBy,
+                        geometryState: this.state.geometryState,
+                        dag: serializeDAG(this.dag),
+                        labelUsed: this.labelUsed,
+                        animation: this.state.timeline
+                    };
 
-                this.props.projectQueries.saveProject.mutateAsync(payload);
+                    this.props.projectQueries.saveProject.mutateAsync(payload);
+                }
+                
                 this.pushHistory(utils.clone(
                     this.state.geometryState,
                     this.dag,
@@ -1429,12 +1433,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     // Load Project
     public loadProject = async () => {
         try {
-            if (this.projectId !== this.props.id) {
-                this.props.navigate(`/view/project/${this.projectId}`);
-                return;
-            }
-
-            const data = await this.props.projectQueries.loadProject.refetch(this.projectId);
+            const data = await this.props.projectQueries.loadProject.refetch(this.props.id);
             if (!data) console.error('No data returned!');
             // Restore DAG (no Konva nodes yet)
             this.dag = deserializeDAG(data.dag);

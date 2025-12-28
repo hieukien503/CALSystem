@@ -15,7 +15,7 @@ import { MathCommandParser } from "../../antlr4/parser/MathCommandParser";
 import ASTGen from "../../antlr4/astgen/ASTGen";
 import * as THREE from 'three';
 import { NavigateFunction } from "react-router-dom";
-import { ProjectQueriesProps } from "../projectQuery";
+import { ProjectQueriesProps, withProjectQueries } from "../projectQuery";
 const math = require('mathjs');
 
 interface TimelineItem {
@@ -222,14 +222,9 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 
     // Load Project
-        public loadProject = async () => {
+    public loadProject = async () => {
         try {
-            if (this.projectId !== this.props.id) {
-                this.props.navigate(`/view/project/${this.projectId}`);
-                return;
-            }
-
-            const data = await this.props.projectQueries.loadProject.refetch(this.projectId);
+            const data = await this.props.projectQueries.loadProject.refetch(this.props.id);
             if (!data) console.error('No data returned!');
             // Restore DAG (no Konva nodes yet)
             this.dag = this.deserializeDAG(data.dag);
@@ -1720,4 +1715,4 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     }
 }
 
-export default Project3D;
+export default withProjectQueries(Project3D);
