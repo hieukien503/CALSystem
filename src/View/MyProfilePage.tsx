@@ -48,6 +48,7 @@ const ProfilePage: React.FC = () => {
     // Load projects of the viewed user
     useEffect(() => {
         if (viewedUser && viewedUser.project && viewedUser.project.length > 0) {
+            console.log()
             fetch(`${process.env.REACT_APP_API_URL}/api/projects/bulk`, {
                 method: "POST",
                 headers: {

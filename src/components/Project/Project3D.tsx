@@ -65,6 +65,7 @@ interface Project3DState {
     data: number | {type: string, label: string, x: number, y: number, z: number} | { degree: number, CCW: boolean } | {id_to_change: string | undefined } | undefined;
     /** For error */
     error: {
+        mode: string;
         label: string; // for dialogbox error
         message: string; // for error dialogbox
     }
@@ -132,6 +133,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             isDialogBox: undefined,
             data: undefined,
             error: {
+                mode: '',
                 label: '',
                 message: ''
             },
@@ -389,6 +391,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             isDialogBox: undefined,
             data: undefined,
             error: {
+                mode: this.state.mode,
                 label: '',
                 message: ''
             }
@@ -687,7 +690,13 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     input_label: 'Enter point in form (x, y, z)',
                     angleMode: false,
                     rotationMode: false
-                }
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
+                isMenuRightClick: undefined
             });
         }
         
@@ -698,6 +707,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     input_label: 'Radius',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 isMenuRightClick: undefined
             });
@@ -711,6 +725,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     angleMode: false,
                     rotationMode: false
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -722,6 +741,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     input_label: 'New name',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 data: {id_to_change: id_to_change},
                 isMenuRightClick: undefined
@@ -736,6 +760,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     angleMode: false,
                     rotationMode: false
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -747,6 +776,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     input_label: 'Radius',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 isMenuRightClick: undefined
             });
@@ -760,6 +794,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     angleMode: false,
                     rotationMode: false
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -771,6 +810,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     input_label: 'Vertices',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 isMenuRightClick: undefined
             });
@@ -784,6 +828,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     angleMode: false,
                     rotationMode: true
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -795,6 +844,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     input_label: 'Length',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 isMenuRightClick: undefined
             });
@@ -808,6 +862,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     angleMode: false,
                     rotationMode: false
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -819,6 +878,11 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     input_label: 'Angle Range',
                     angleMode: true,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 isMenuRightClick: undefined
             });
@@ -833,7 +897,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     rotationMode: false
                 },
                 isMenuRightClick: undefined,
-                mode: 'rename-project'
+                mode: 'rename-project',
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -847,7 +916,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     loadProjectMode: 'guest'
                 },
                 mode: mode,
-                isMenuRightClick: undefined
+                isMenuRightClick: undefined,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -861,7 +935,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     loadProjectMode: 'user'
                 },
                 mode: mode,
-                isMenuRightClick: undefined
+                isMenuRightClick: undefined,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -874,7 +953,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     rotationMode: false
                 },
                 mode: mode,
-                isMenuRightClick: undefined
+                isMenuRightClick: undefined,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -887,7 +971,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     rotationMode: false,
                 },
                 isMenuRightClick: undefined,
-                mode: mode
+                mode: mode,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -900,7 +989,12 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     rotationMode: false,
                 },
                 isMenuRightClick: undefined,
-                mode: mode
+                mode: mode,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -988,6 +1082,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Invalid expression',
                         message: `Invalid expression for point`
                     }
@@ -996,7 +1091,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             catch (error) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Invalid expression',
                         message: `Invalid expression for point`
                     }
@@ -1011,7 +1106,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const radius = math.evaluate(value);
                 if (typeof radius !== 'number' || radius <= 0) {
                     this.setState({
-                        error: {
+                        error: { mode: this.state.mode,
                             label: 'Number expected',
                             message: ''
                         }
@@ -1022,7 +1117,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
                 this.setState({
                     data: radius,
-                    error: {
+                    error: { mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1032,7 +1127,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             catch(error) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for ${this.state.mode === 'sphere' ? 'radius' : 'length'}`
                     }
@@ -1045,7 +1140,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const vertices = math.evaluate(value);
                 if (typeof vertices !== 'number' || (Number.isInteger(vertices) && vertices <= 2)) {
                     this.setState({
-                        error: {
+                        error: { mode: this.state.mode,
                             label: 'Expected: number of vertices > 2',
                             message: ''
                         }
@@ -1056,7 +1151,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
                 this.setState({
                     data: vertices,
-                    error: {
+                    error: { mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1066,7 +1161,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             catch(error) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for number of vertices`
                     }
@@ -1079,7 +1174,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const degree = math.evaluate(value);
                 if (typeof degree !== 'number') {
                     this.setState({
-                        error: {
+                        error: { mode: this.state.mode,
                             label: 'Number expected',
                             message: ''
                         }
@@ -1093,7 +1188,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                         degree: degree,
                         CCW: CCW
                     },
-                    error: {
+                    error: { mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1103,7 +1198,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             catch(error) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for angle`
                     }
@@ -1116,7 +1211,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 const scaleFactor = math.evaluate(value);
                 if (typeof scaleFactor !== 'number') {
                     this.setState({
-                        error: {
+                        error: { mode: this.state.mode,
                             label: 'Number expected',
                             message: ''
                         }
@@ -1125,7 +1220,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
                 this.setState({
                     data: scaleFactor,
-                    error: {
+                    error: { mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1135,7 +1230,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             catch(error) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for scale factor`
                     }
@@ -1148,7 +1243,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             const newName = value.trim();
             if (newName.length === 0 || !/^[A-Z][A-Za-z]*(?:'|_[0-9]+|[₀₁₂₃₄₅₆₇₈₉]+)?$/.test(newName)) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Invalid name',
                         message: 'Name must start with a letter and contain only letters, apostrophes, or underscores followed by subscripts.'
                     }
@@ -1177,7 +1272,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             // Check for duplicate names
             if (this.labelUsed.includes(formatName)) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Name already used',
                         message: 'Name already used. Please choose a different name.'
                     }
@@ -1198,7 +1293,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             this.setState({
                 data: undefined,
-                error: {
+                error: { mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1218,7 +1313,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         else if (this.state.mode === 'rename-project') {
             if (!value.trim()) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Project title cannot be empty',
                         message: 'Project title cannot be empty'
                     }
@@ -1248,7 +1343,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             if (newName.length === 0 || !check(newName)) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Invalid name',
                         message: 'Name must have the length between 1 to 50 characters, cannot start or end with space or dot, contains only alphanumeric characters, spaces, hyphens and dashes.'
                     }
@@ -1261,7 +1356,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 this.checkTitleExists(value).then(exists => {
                     if (exists) {
                         this.setState({
-                            error: {
+                            error: { mode: this.state.mode,
                                 label: 'Project title already exists',
                                 message: 'Please choose a different project title.'
                             },
@@ -1274,7 +1369,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
                     this.setState({
                         title: value,
-                        error: {
+                        error: { mode: this.state.mode,
                             label: '',
                             message: '',
                         },
@@ -1333,7 +1428,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             }
 
             this.setState({
-                error: {
+                error: { mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1343,7 +1438,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
         else if (this.state.mode === 'save-success') {
             this.setState({
-                error: {
+                error: { mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1361,7 +1456,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             }
             
             this.setState({
-                error: {
+                error: { mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1373,7 +1468,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             this.saveProject();
             this.warning_save = false;
             this.setState({
-                error: {
+                error: { mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1389,7 +1484,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
     private exportProject = (mode: string) => {
         if (!this.rendererRef.current) {
             this.setState({
-                error: {
+                error: { mode: this.state.mode,
                     label: 'File export error',
                     message: 'An error occurred while exporting the file.'
                 }
@@ -1417,7 +1512,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
             const token = sessionStorage.getItem("token");
             if (!token) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Requires Login',
                         message: 'Please log in to save your project.'
                     }
@@ -1532,7 +1627,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
         if (file) {
             if (!file.name.endsWith('.json') && !file.name.endsWith('.bkgeo')) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'Invalid file type',
                         message: 'Please select a valid .json or .bkgeo file.'
                     }
@@ -1548,7 +1643,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                         const data = JSON.parse(content);
                         if (data.metadata?.mode !== '3D') {
                             this.setState({
-                                error: {
+                                error: { mode: this.state.mode,
                                     label: 'Invalid file type',
                                     message: 'Please select a valid 3D file'
                                 }
@@ -1588,7 +1683,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
 
             catch (error) {
                 this.setState({
-                    error: {
+                    error: { mode: this.state.mode,
                         label: 'File read error',
                         message: 'An error occurred while reading the file.'
                     }
@@ -1630,7 +1725,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                     onUpdateLabelUsed={this.updateLabelUsed}
                     onRenderErrorDialogbox={(msg: string) => {
                         this.setState({
-                            error: {
+                            error: { mode: this.state.mode,
                                 label: 'Invalid command',
                                 message: `The command is invalid. Please try again`
                             }
@@ -1701,7 +1796,7 @@ class Project3D extends React.Component<Project3DProps, Project3DState> {
                 {this.state.error.message.length > 0 && <ErrorDialogbox 
                     position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}
                     error={{message: this.state.error.message}}
-                    onCancelClick={() => this.setState({error: {label: this.state.error.label, message: ''}})}
+                    onCancelClick={() => this.setState({error: { mode: this.state.mode,label: this.state.error.label, message: ''}})}
                     ref={this.errorDialogRef}
                 />}
                 {this.state.isMenuRightClick && !this.state.isDialogBox && (<MenuItem 

@@ -83,6 +83,7 @@ exports.updateProject = async (req, res) => {
 exports.bulkProject = async (req, res) => {
     try {
         const { ids } = req.body;
+        console.log(ids);
         if (!Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ message: "Missing or invalid ids array" });
         }

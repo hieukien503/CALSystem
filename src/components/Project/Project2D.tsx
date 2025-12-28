@@ -70,6 +70,7 @@ interface Project2DState {
     };
     /** For error */
     error: {
+        mode: string;
         label: string; // for dialogbox error
         message: string; // for error dialogbox
     }
@@ -107,7 +108,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     private parts = window.location.pathname.split('/');
     private projectId = this.parts[this.parts.length - 1]; // last segment
     private stageRef: RefObject<Konva.Stage | null>;
-    private hasShownRenameDialog = false;
     private hasShownLoadProjectDialog = false;
     private fileInputRef: RefObject<HTMLInputElement | null> = React.createRef<HTMLInputElement>();
     private backgroundLayerRef: RefObject<Konva.Layer | null> = React.createRef<Konva.Layer>();
@@ -141,6 +141,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 rotation: undefined
             },
             error: {
+                mode: '',
                 label: '',
                 message: ''
             },
@@ -215,11 +216,6 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     this.setState({position: {errorDialogPos: {x: x, y: y}, dialogPos: this.state.position.dialogPos}});
                 }
             }, 0);
-        }
-
-        if (this.hasShownRenameDialog && prevState.title === '' && this.state.title !== '') {
-            this.saveProject();
-            this.hasShownRenameDialog = false;
         }
 
         // ✅ Only trigger load if title changed AND flag is set  
@@ -488,6 +484,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 rotation: undefined
             },
             error: {
+                mode: this.state.mode,
                 label: '',
                 message: ''
             }
@@ -713,6 +710,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     angleMode: false,
                     rotationMode: false
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -724,6 +726,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     input_label: 'Vertices',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 isMenuRightClick: undefined
             });
@@ -737,6 +744,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     angleMode: false,
                     rotationMode: true
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -748,6 +760,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     input_label: 'Length',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 isMenuRightClick: undefined
             });
@@ -761,6 +778,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     angleMode: false,
                     rotationMode: false
                 },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
                 isMenuRightClick: undefined
             });
         }
@@ -772,6 +794,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     input_label: 'New name',
                     angleMode: false,
                     rotationMode: false
+                },
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
                 },
                 data: {...this.state.data, id_to_change: id_to_change},
                 isMenuRightClick: undefined
@@ -789,7 +816,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 selectedPoints: [],
                 selectedShapes: [],
                 mode: mode,
-                isMenuRightClick: undefined
+                isMenuRightClick: undefined,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -802,7 +834,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     rotationMode: false
                 },
                 isMenuRightClick: undefined,
-                mode: 'rename-project'
+                mode: 'rename-project',
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -816,7 +853,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     loadProjectMode: 'guest'
                 },
                 mode: mode,
-                isMenuRightClick: undefined
+                isMenuRightClick: undefined,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -830,7 +872,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     loadProjectMode: 'user'
                 },
                 mode: mode,
-                isMenuRightClick: undefined
+                isMenuRightClick: undefined,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -843,7 +890,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     rotationMode: false
                 },
                 mode: mode,
-                isMenuRightClick: undefined
+                isMenuRightClick: undefined,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -856,7 +908,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     rotationMode: false,
                 },
                 isMenuRightClick: undefined,
-                mode: mode
+                mode: mode,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -869,7 +926,12 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     rotationMode: false,
                 },
                 isMenuRightClick: undefined,
-                mode: mode
+                mode: mode,
+                error: this.state.error.mode === mode ? this.state.error : {
+                    mode: mode,
+                    label: '',
+                    message: ''
+                },
             });
         }
 
@@ -958,6 +1020,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 if (typeof radius !== 'number' || radius <= 0) {
                     this.setState({
                         error: {
+                            mode: this.state.mode,
                             label: 'Number expected',
                             message: ''
                         }
@@ -973,6 +1036,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                         rotation: undefined
                     },
                     error: {
+                        mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -983,6 +1047,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             catch(error) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for ${this.state.mode === 'circle' ? 'radius' : 'length'}`
                     }
@@ -996,6 +1061,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 if (typeof vertices !== 'number' || (Number.isInteger(vertices) && vertices <= 2)) {
                     this.setState({
                         error: {
+                            mode: this.state.mode,
                             label: 'Expected: number of vertices > 2',
                             message: ''
                         }
@@ -1011,6 +1077,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                         rotation: undefined
                     },
                     error: {
+                        mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1021,6 +1088,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             catch(error) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for number of vertices`
                     }
@@ -1036,6 +1104,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     rotation: undefined
                 },
                 error: {
+                    mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1049,6 +1118,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 if (typeof degree !== 'number') {
                     this.setState({
                         error: {
+                            mode: this.state.mode,
                             label: 'Number expected',
                             message: ''
                         }
@@ -1067,6 +1137,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                         }
                     },
                     error: {
+                        mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1077,6 +1148,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             catch(error) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for angle`
                     }
@@ -1090,6 +1162,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 if (typeof scaleFactor !== 'number') {
                     this.setState({
                         error: {
+                            mode: this.state.mode,
                             label: 'Number expected',
                             message: ''
                         }
@@ -1103,6 +1176,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                         rotation: undefined
                     },
                     error: {
+                        mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1113,6 +1187,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             catch(error) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Number expected',
                         message: `Invalid expression for scale factor`
                     }
@@ -1126,6 +1201,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (newName.length === 0 || !/^[A-Z][A-Za-z]*(?:'|_[0-9]+|[₀₁₂₃₄₅₆₇₈₉]+)?$/.test(newName)) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Invalid name',
                         message: 'Name must start with a letter and contain only letters, apostrophes, or underscores followed by subscripts.'
                     }
@@ -1155,6 +1231,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (this.labelUsed.includes(formatName)) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Name already used',
                         message: 'Name already used. Please choose a different name.'
                     }
@@ -1181,6 +1258,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     id_to_change: undefined
                 },
                 error: {
+                    mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1201,6 +1279,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (!value.trim()) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Project title cannot be empty',
                         message: 'Project title cannot be empty'
                     }
@@ -1231,6 +1310,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (newName.length === 0 || !check(newName)) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Invalid name',
                         message: 'Name must have the length between 1 to 50 characters, cannot start or end with space or dot, contains only alphanumeric characters, spaces, hyphens and dashes.'
                     }
@@ -1240,12 +1320,16 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             }
 
             if (CCW === false) {
+                console.log(sessionStorage.getItem("token") === null);
                 if (sessionStorage.getItem("token") === null) {
                     this.setState({
                         error: {
+                            mode: this.state.mode,
                             label: 'Requires Login',
                             message: 'Please log in to save your project.'
                         }
+                    }, () => {
+                        console.log(this.state.isDialogBox)
                     });
                     return;
                 }
@@ -1254,19 +1338,19 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     if (exists) {
                         this.setState({
                             error: {
+                                mode: this.state.mode,
                                 label: 'Project title already exists',
                                 message: 'Please choose a different project title.'
-                            },
-                            isDialogBox: undefined
+                            }
                         });
 
-                        this.hasShownRenameDialog = false;
                         return;
                     }
 
                     this.setState({
                         title: value,
                         error: {
+                            mode: this.state.mode,
                             label: '',
                             message: '',
                         },
@@ -1314,6 +1398,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 URL.revokeObjectURL(url);
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: '',
                         message: '',
                     },
@@ -1336,6 +1421,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
 
             this.setState({
                 error: {
+                    mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1346,6 +1432,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         else if (this.state.mode === 'save-success') {
             this.setState({
                 error: {
+                    mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1364,6 +1451,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             
             this.setState({
                 error: {
+                    mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1376,6 +1464,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             this.warning_save = false;
             this.setState({
                 error: {
+                    mode: this.state.mode,
                     label: '',
                     message: '',
                 },
@@ -1391,22 +1480,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (!token) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Requires Login',
                         message: 'Please log in to save your project.'
                     }
                 });
-                return;
-            }
-
-            // ✅ Only show rename dialog if title is empty
-            if (!this.state.title && this.hasShownRenameDialog === false) {
-                this.hasShownRenameDialog = true;
-                this.setDialogbox("rename-project");
-                return;
-            }
-
-            if (this.state.error.message) {  // ✅ Changed from this.state.error
-                this.hasShownRenameDialog = false;
                 return;
             }
 
@@ -1494,6 +1572,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             if (!file.name.endsWith('.json') && !file.name.endsWith('.bkgeo')) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'Invalid file type',
                         message: 'Please select a valid .json or .bkgeo file.'
                     }
@@ -1510,6 +1589,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                         if (data.metadata?.mode !== '2D') {
                             this.setState({
                                 error: {
+                                    mode: this.state.mode,
                                     label: 'Invalid file type',
                                     message: 'Please select a valid 2D file'
                                 }
@@ -1551,6 +1631,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
             catch (error) {
                 this.setState({
                     error: {
+                        mode: this.state.mode,
                         label: 'File read error',
                         message: 'An error occurred while reading the file.'
                     }
@@ -1563,6 +1644,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
         if (!this.stageRef.current) {
             this.setState({
                 error: {
+                    mode: this.state.mode,
                     label: 'File export error',
                     message: 'An error occurred while exporting the file.'
                 }
@@ -1688,8 +1770,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onSubmitClick={this.receiveData}
                     inputError={this.state.error}
                     onCancelClick={() => {
+                        console.log("Dialogbox cancel fired");
                         this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})
-                        this.hasShownRenameDialog = false;
                     }}
                     onDiscardClick={() => {
                         this.warning_save = false;
@@ -1702,7 +1784,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                 {this.state.error.message.length > 0 && <ErrorDialogbox 
                     position={this.state.position.errorDialogPos ?? {x: -9999, y: -9999}}
                     error={{message: this.state.error.message}}
-                    onCancelClick={() => this.setState({error: {label: this.state.error.label, message: ''}})}
+                    onCancelClick={() => this.setState({error: {mode: this.state.mode, label: this.state.error.label, message: ''}})}
                     ref={this.errorDialogRef}
                 />}
                 {this.state.isMenuRightClick && !this.state.isDialogBox && (<MenuItem 
