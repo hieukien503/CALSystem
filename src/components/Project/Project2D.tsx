@@ -1510,7 +1510,8 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     };
 
     private openProject = async () => {
-        if (this.warning_save) {
+        if (this.dag.size > 0) {
+            this.warning_save = true;
             this.setDialogbox('warning-save');
         }
         

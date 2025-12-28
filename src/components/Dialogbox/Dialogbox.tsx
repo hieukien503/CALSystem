@@ -137,6 +137,33 @@ export class Dialogbox extends React.Component<DialogboxProps, DialogboxState> {
             )
         }
 
+        else if (this.props.title === 'Unsaved Changes') {
+            reactNode = (
+                <div className='dialogMainPanel'>
+                    <div className='dialogTitle text-neutral-900'>{t(this.props.title)}</div>
+                    <div className='dialogContent'>
+                        <div className='inputLabel text-neutral-700'>{t(this.props.input_label)}</div>
+                    </div>
+                    <div className='dialogButtonPanel'>
+                        <button type='button' className='okButton'
+                            onClick={() => {
+                                const value = this.state.value_from_input;
+                                this.props.onSubmitClick(value.length === 0 ? (this.props.angleMode ? "0to360" : (this.props.loadProjectMode ? "loadFromFile" : "toPNG")) : value, this.state.isCCW);
+                            }}
+                        >
+                            <div className='label'>{this.props.title === 'Unsaved Changes' ? t('Save Changes') : 'OK'}</div>
+                        </button>
+                        <button type='button' className='cancelButton' onClick={this.props.onDiscardClick}>
+                            <div className='label'>{t('Discard')}</div>
+                        </button>
+                        <button type='button' className='cancelButton' onClick={this.props.onCancelClick}>
+                            <div className='label'>{t('Cancel')}</div>
+                        </button>
+                    </div>
+                </div>
+            )
+        }
+
         else {
             const buttonNode: React.ReactNode = (
                 <div className='dialogButtonPanel'>
