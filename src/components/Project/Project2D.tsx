@@ -1510,8 +1510,7 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
     };
 
     private openProject = async () => {
-        if (this.dag.size > 0) {
-            this.warning_save = true;
+        if (this.warning_save) {
             this.setDialogbox('warning-save');
         }
         
@@ -1771,11 +1770,11 @@ class Project2D extends React.Component<Project2DProps, Project2DState> {
                     onSubmitClick={this.receiveData}
                     inputError={this.state.error}
                     onCancelClick={() => {
-                        console.log("Dialogbox cancel fired");
                         this.setState({isDialogBox: undefined, selectedPoints: [], selectedShapes: []})
                     }}
                     onDiscardClick={() => {
                         this.warning_save = false;
+                        this.setState({isDialogBox: undefined});
                     }}
                     position={this.state.position.dialogPos ?? {x: -9999, y: -9999}}
                     ref={this.dialogRef}

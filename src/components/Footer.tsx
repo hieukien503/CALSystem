@@ -34,6 +34,7 @@ const Footer = () => {
                     value={lang}
                     onChange={handleLangChange}
                     className="form-select w-auto d-inline"
+
                 >
                     <option value="vi">{t("languageVietnamese")}</option>
                     <option value="en">{t("languageEnglish")}</option>
